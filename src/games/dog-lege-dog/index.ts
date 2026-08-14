@@ -2,7 +2,7 @@ import type { GameLaunchContext, GameResult } from "../../catalog";
 import { GAME_ID } from "../../progress-store";
 import {
   FIRST_LEVEL,
-  FIRST_LEVEL_PATTERN_TYPES,
+  getDogLegeDogLevel,
   type DogLegeDogLevel,
   type DogPatternType,
 } from "./first-level";
@@ -25,6 +25,7 @@ export {
   FIRST_LEVEL_PATTERN_TYPES,
   FIRST_LEVEL_REWARD,
   FIRST_LEVEL_SEED,
+  getDogLegeDogLevel,
 } from "./first-level";
 export type { DogBlock, DogBoard, DogLegeDogLevel, DogPatternType } from "./first-level";
 
@@ -77,7 +78,8 @@ export function createDogLegeDogGame(
   root: HTMLElement,
   options: DogLegeDogGameOptions = {},
 ): DogLegeDogGame {
-  const session = new GameSession(FIRST_LEVEL);
+  const level = getDogLegeDogLevel(options.levelNumber ?? FIRST_LEVEL.number);
+  const session = new GameSession(level);
   let started = false;
   let destroyed = false;
   let hasInteracted = false;
@@ -111,9 +113,9 @@ export function createDogLegeDogGame(
     resultReported = true;
     const result: GameResult = {
       gameId: GAME_ID,
-      levelNumber: FIRST_LEVEL.number,
+      levelNumber: level.number,
       status,
-      reward: status === "won" ? FIRST_LEVEL.reward : 0,
+      reward: status === "won" ? level.reward : 0,
     };
     options.onResult?.(result);
   }
@@ -193,7 +195,7 @@ function renderGame(root: HTMLElement, state: DogLegeDogGameState): void {
         </div>
         <dl class="dog-game__stats">
           <div><dt>剩余方块</dt><dd>${blocks.length}</dd></div>
-          <div><dt>图案</dt><dd>${FIRST_LEVEL_PATTERN_TYPES.length} 种</dd></div>
+          <div><dt>图案</dt><dd>${state.level.patternTypes.length} 种</dd></div>
           <div><dt>层数</dt><dd>${state.level.maxLayers} 层</dd></div>
         </dl>
       </header>

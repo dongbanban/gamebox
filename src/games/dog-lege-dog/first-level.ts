@@ -34,10 +34,10 @@ export interface DogBlock {
 }
 
 export interface DogLegeDogLevel {
-  readonly number: 1;
+  readonly number: number;
   readonly seed: string;
-  readonly generatorVersion: 1;
-  readonly maxLayers: 3;
+  readonly generatorVersion: number;
+  readonly maxLayers: number;
   readonly reward: number;
   readonly board: DogBoard;
   readonly patternTypes: readonly DogPatternType[];
@@ -65,6 +65,33 @@ export const FIRST_LEVEL: DogLegeDogLevel = Object.freeze({
   patternTypes: FIRST_LEVEL_PATTERN_TYPES,
   blocks: Object.freeze(createFirstLevelBlocks()),
 });
+
+/**
+ * Level 1 is the fixed benchmark. Later levels reuse its playable shape until
+ * the deterministic level generator lands, while keeping level identity
+ * stable for navigation and progress tests.
+ */
+export function getDogLegeDogLevel(levelNumber: number): DogLegeDogLevel {
+  if (!Number.isSafeInteger(levelNumber) || levelNumber < FIRST_LEVEL_NUMBER) {
+    throw new Error("狗了个狗 level number must be a positive integer");
+  }
+
+  if (levelNumber === FIRST_LEVEL_NUMBER) {
+    return FIRST_LEVEL;
+  }
+
+  return Object.freeze({
+    ...FIRST_LEVEL,
+    number: levelNumber,
+    seed: `${FIRST_LEVEL_SEED}:level-${levelNumber}`,
+    blocks: Object.freeze(
+      FIRST_LEVEL.blocks.map((block, index) => ({
+        ...block,
+        id: `level-${levelNumber}-block-${index + 1}`,
+      })),
+    ),
+  });
+}
 
 function createFirstLevelBlocks(): DogBlock[] {
   const blocks: DogBlock[] = [];

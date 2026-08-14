@@ -14,15 +14,23 @@ export interface MountAppOptions {
   store?: ProgressStore;
 }
 
+interface ActiveLevel {
+  readonly gameId: string;
+  readonly levelNumber: number;
+}
+
 export class GameboxApp {
   private readonly root: HTMLElement;
   private readonly store: ProgressStore;
   private activeGame: GameLaunchHandle | null = null;
+  private activeLevel: ActiveLevel | null = null;
 
   constructor(root: HTMLElement, options: MountAppOptions = {}) {
     this.root = root;
     this.store = options.store ?? new ProgressStore();
+    replaceHistoryWithCatalog();
     this.root.addEventListener("click", this.handleClick);
+    window.addEventListener("popstate", this.handlePopState);
   }
 
   render(): void {
@@ -39,6 +47,7 @@ export class GameboxApp {
   destroy(): void {
     this.disposeActiveGame();
     this.root.removeEventListener("click", this.handleClick);
+    window.removeEventListener("popstate", this.handlePopState);
   }
 
   private readonly handleClick = (event: Event): void => {
@@ -66,11 +75,39 @@ export class GameboxApp {
     }
 
     if (action === "retry") {
-      this.renderGameEntry(actionElement?.dataset.gameId);
+      this.renderGameEntry(
+        actionElement?.dataset.gameId,
+        parseLevelNumber(actionElement?.dataset.levelNumber),
+      );
+      return;
+    }
+
+    if (action === "select-level") {
+      this.renderGameEntry(
+        actionElement?.dataset.gameId,
+        parseLevelNumber(actionElement?.dataset.levelNumber),
+      );
       return;
     }
 
     if (action === "catalog") {
+      this.leaveToCatalog();
+    }
+  };
+
+  private readonly handlePopState = (): void => {
+    if (this.activeGame !== null) {
+      if (this.confirmLeave()) {
+        this.disposeActiveGame();
+        replaceHistoryWithCatalog();
+        this.render();
+      } else {
+        restoreGameHistory(this.activeLevel);
+      }
+      return;
+    }
+
+    if (getHistoryRoute() === "catalog") {
       this.render();
     }
   };
@@ -175,16 +212,37 @@ export class GameboxApp {
     `;
   }
 
-  private renderGameEntry(gameId: string | undefined): void {
+  private renderGameEntry(gameId: string | undefined, requestedLevelNumber?: number): void {
     const game = GAME_CATALOG.find((item) => item.id === gameId);
-    if (game === undefined || !game.playable) {
+    const snapshot = this.store.snapshot();
+    const state = snapshot.state;
+    if (game === undefined || !game.playable || state === null) {
       this.render();
       return;
     }
 
+    const progress = state.games[game.id] ?? createInitialGameProgress();
+    const levelNumber = requestedLevelNumber ?? progress.highestUnlockedLevel;
+    if (levelNumber < 1 || levelNumber > progress.highestUnlockedLevel) {
+      return;
+    }
+
+    const isSameActiveLevel =
+      this.activeGame !== null &&
+      this.activeLevel?.gameId === game.id &&
+      this.activeLevel?.levelNumber === levelNumber;
+    if (isSameActiveLevel) {
+      return;
+    }
+
+    if (this.activeGame !== null && !this.confirmLeave()) {
+      return;
+    }
+
     this.disposeActiveGame();
+    setGameHistory(game.id, levelNumber);
     this.root.innerHTML = `
-      <main class="game-entry-view" data-view="game-entry" data-game-id="${game.id}">
+      <main class="game-entry-view" data-view="game-entry" data-game-id="${game.id}" data-level-number="${levelNumber}">
         <header class="game-entry-view__header">
           <div>
             <div class="brand-lockup brand-lockup--compact">
@@ -196,6 +254,7 @@ export class GameboxApp {
           </div>
           <button class="text-button" type="button" data-action="catalog">返回游戏目录</button>
         </header>
+        ${renderLevelPicker(game.id, levelNumber, progress.highestUnlockedLevel)}
         <div class="game-entry-view__game" data-game-mount></div>
       </main>
     `;
@@ -205,7 +264,25 @@ export class GameboxApp {
       return;
     }
 
-    this.activeGame = game.launch(gameMount, { onResult: this.handleGameResult });
+    this.activeLevel = { gameId: game.id, levelNumber };
+    this.activeGame = game.launch(gameMount, {
+      onResult: this.handleGameResult,
+      levelNumber,
+    });
+  }
+
+  private leaveToCatalog(): void {
+    if (this.activeGame !== null && !this.confirmLeave()) {
+      return;
+    }
+
+    this.disposeActiveGame();
+    replaceHistoryWithCatalog();
+    this.render();
+  }
+
+  private confirmLeave(): boolean {
+    return window.confirm("当前关卡不会保存，确认离开？");
   }
 
   private readonly handleGameResult = (result: GameResult): void => {
@@ -248,7 +325,7 @@ export class GameboxApp {
           <p class="game-result-card__intro">第 ${result.levelNumber} 关暂存槽已满，进度未改变。</p>
           ${renderPersistenceNotice(this.store.snapshot().warning)}
           <div class="game-result-card__actions">
-            <button class="primary-button primary-button--wide" type="button" data-action="retry" data-game-id="${result.gameId}">
+            <button class="primary-button primary-button--wide" type="button" data-action="retry" data-game-id="${result.gameId}" data-level-number="${result.levelNumber}">
               重新挑战
             </button>
             <button class="text-button" type="button" data-action="catalog">返回游戏目录</button>
@@ -274,6 +351,7 @@ export class GameboxApp {
   private disposeActiveGame(): void {
     this.activeGame?.destroy();
     this.activeGame = null;
+    this.activeLevel = null;
   }
 }
 
@@ -294,4 +372,98 @@ function renderPersistenceNotice(warning: string | null): string {
       ${warning}
     </p>
   `;
+}
+
+function renderLevelPicker(
+  gameId: string,
+  selectedLevelNumber: number,
+  highestUnlockedLevel: number,
+): string {
+  const visibleLevelCount = Math.max(5, highestUnlockedLevel + 1);
+  const buttons = Array.from({ length: visibleLevelCount }, (_, index) => {
+    const levelNumber = index + 1;
+    const unlocked = levelNumber <= highestUnlockedLevel;
+    const selected = levelNumber === selectedLevelNumber;
+    return `
+      <button
+        class="level-button${selected ? " level-button--selected" : ""}"
+        type="button"
+        data-action="select-level"
+        data-game-id="${gameId}"
+        data-level-number="${levelNumber}"
+        aria-current="${selected ? "true" : "false"}"
+        aria-label="第 ${levelNumber} 关${unlocked ? "" : "，已锁定"}"
+        ${unlocked ? "" : "disabled"}
+      >${unlocked ? `第 ${levelNumber} 关` : `锁定 · 第 ${levelNumber} 关`}</button>
+    `;
+  }).join("");
+
+  return `
+    <section class="level-picker" data-testid="level-picker" aria-label="关卡选择">
+      <div class="level-picker__heading">
+        <h2>关卡选择</h2>
+        <span>已解锁至第 ${highestUnlockedLevel} 关</span>
+      </div>
+      <div class="level-picker__list">${buttons}</div>
+    </section>
+  `;
+}
+
+function parseLevelNumber(value: string | undefined): number | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const levelNumber = Number(value);
+  return Number.isSafeInteger(levelNumber) && levelNumber > 0 ? levelNumber : undefined;
+}
+
+type GameboxHistoryState = {
+  readonly gameboxRoute: "catalog" | "game";
+  readonly gameId?: string;
+  readonly levelNumber?: number;
+};
+
+function setGameHistory(gameId: string, levelNumber: number): void {
+  const nextState: GameboxHistoryState = {
+    gameboxRoute: "game",
+    gameId,
+    levelNumber,
+  };
+  if (getHistoryRoute() === "game") {
+    window.history.replaceState(nextState, "", getCurrentUrl());
+    return;
+  }
+
+  window.history.pushState(nextState, "", getCurrentUrl());
+}
+
+function restoreGameHistory(activeLevel: ActiveLevel | null): void {
+  if (activeLevel === null) {
+    return;
+  }
+
+  setGameHistory(activeLevel.gameId, activeLevel.levelNumber);
+}
+
+function replaceHistoryWithCatalog(): void {
+  window.history.replaceState({ gameboxRoute: "catalog" } satisfies GameboxHistoryState, "", getCurrentUrl());
+}
+
+function getHistoryRoute(): GameboxHistoryState["gameboxRoute"] | null {
+  const state: unknown = window.history.state;
+  if (
+    typeof state !== "object" ||
+    state === null ||
+    !("gameboxRoute" in state) ||
+    (state.gameboxRoute !== "catalog" && state.gameboxRoute !== "game")
+  ) {
+    return null;
+  }
+
+  return state.gameboxRoute;
+}
+
+function getCurrentUrl(): string {
+  return `${window.location.pathname}${window.location.search}${window.location.hash}`;
 }

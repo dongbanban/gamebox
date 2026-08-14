@@ -1,9 +1,9 @@
 /** @vitest-environment jsdom */
 
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { mountApp } from "../src/app";
 import { FIRST_LEVEL } from "../src/games/dog-lege-dog";
-import { ProgressStore, type StorageLike } from "../src/progress-store";
+import { GAME_ID, ProgressStore, type StorageLike } from "../src/progress-store";
 
 class DamagedStorage implements StorageLike {
   getItem(): string {
@@ -35,7 +35,139 @@ class MemoryStorage implements StorageLike {
   }
 }
 
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 describe("注册与游戏目录 UI", () => {
+  it("默认打开最高解锁关卡，并区分已解锁与锁定关卡", () => {
+    const storage = new MemoryStorage();
+    const store = new ProgressStore({
+      storage,
+      userIdFactory: () => "123e4567-e89b-12d3-a456-426614174000",
+    });
+    store.register();
+    store.recordLevelCompletion({ gameId: GAME_ID, levelNumber: 1, reward: 100 });
+
+    const root = document.createElement("div");
+    const app = mountApp(root, { store });
+
+    root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
+
+    expect(root.querySelector('[data-testid="dog-game"] h2')?.textContent).toContain(
+      "第 2 关",
+    );
+    expect(
+      root.querySelector<HTMLButtonElement>(
+        '[data-action="select-level"][data-level-number="1"]',
+      )?.disabled,
+    ).toBe(false);
+    expect(
+      root.querySelector<HTMLButtonElement>(
+        '[data-action="select-level"][data-level-number="2"]',
+      )?.disabled,
+    ).toBe(false);
+    expect(
+      root.querySelector<HTMLButtonElement>(
+        '[data-action="select-level"][data-level-number="3"]',
+      )?.disabled,
+    ).toBe(true);
+
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    root
+      .querySelector<HTMLButtonElement>(
+        '[data-action="select-level"][data-level-number="2"]',
+      )
+      ?.click();
+    expect(confirm).not.toHaveBeenCalled();
+
+    root
+      .querySelector<HTMLButtonElement>(
+        '[data-action="select-level"][data-level-number="1"]',
+      )
+      ?.click();
+
+    expect(root.querySelector('[data-testid="dog-game"] h2')?.textContent).toContain(
+      "第 1 关",
+    );
+
+    app.destroy();
+  });
+
+  it("重玩已完成关卡不重复发放通关奖励", () => {
+    const storage = new MemoryStorage();
+    const store = new ProgressStore({
+      storage,
+      userIdFactory: () => "123e4567-e89b-12d3-a456-426614174000",
+    });
+    store.register();
+    store.recordLevelCompletion({ gameId: GAME_ID, levelNumber: 1, reward: 100 });
+
+    const root = document.createElement("div");
+    const app = mountApp(root, { store });
+    root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
+
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    root
+      .querySelector<HTMLButtonElement>(
+        '[data-action="select-level"][data-level-number="1"]',
+      )
+      ?.click();
+
+    for (const block of [...FIRST_LEVEL.blocks].reverse()) {
+      root
+        .querySelector<HTMLButtonElement>(
+          `[data-testid="dog-block"][data-block-id="${block.id}"]`,
+        )
+        ?.click();
+    }
+
+    expect(root.querySelector('[data-result="won"]')).not.toBeNull();
+    const savedState = JSON.parse(storage.getItem("gamebox.state") ?? "null");
+    expect(savedState.games[GAME_ID]).toMatchObject({
+      highestUnlockedLevel: 2,
+      totalScore: 100,
+      completedLevels: [1],
+    });
+
+    app.destroy();
+  });
+
+  it("离开活动关卡前确认，取消后继续且确认后返回目录", () => {
+    const storage = new MemoryStorage();
+    const root = document.createElement("div");
+    const app = mountApp(root, {
+      store: new ProgressStore({
+        storage,
+        userIdFactory: () => "123e4567-e89b-12d3-a456-426614174000",
+      }),
+    });
+
+    root.querySelector<HTMLButtonElement>('[data-action="register"]')?.click();
+    root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
+    root
+      .querySelector<HTMLButtonElement>(
+        '[data-testid="dog-block"][data-block-id="first-level-block-73"]',
+      )
+      ?.click();
+    const savedBeforeLeaving = storage.getItem("gamebox.state");
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+
+    root.querySelector<HTMLButtonElement>('[data-action="catalog"]')?.click();
+
+    expect(confirm).toHaveBeenCalledWith("当前关卡不会保存，确认离开？");
+    expect(root.querySelector('[data-view="game-entry"]')).not.toBeNull();
+    expect(storage.getItem("gamebox.state")).toBe(savedBeforeLeaving);
+
+    confirm.mockReturnValue(true);
+    root.querySelector<HTMLButtonElement>('[data-action="catalog"]')?.click();
+
+    expect(root.querySelector('[data-view="catalog"]')).not.toBeNull();
+    expect(storage.getItem("gamebox.state")).toBe(savedBeforeLeaving);
+
+    app.destroy();
+  });
+
   it("shows a persistence warning and still permits temporary registration", () => {
     const root = document.createElement("div");
     const app = mountApp(root, {
@@ -80,6 +212,7 @@ describe("注册与游戏目录 UI", () => {
     expect(root.querySelector('[data-testid="dog-board"]')).not.toBeNull();
     expect(root.querySelectorAll('[data-testid="dog-block"]')).toHaveLength(90);
 
+    vi.spyOn(window, "confirm").mockReturnValue(true);
     root.querySelector<HTMLButtonElement>('[data-action="catalog"]')?.click();
 
     expect(root.querySelector('[data-view="catalog"]')).not.toBeNull();

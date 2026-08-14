@@ -14,6 +14,7 @@ export interface GameResult {
 
 export interface GameLaunchContext {
   readonly onResult?: (result: GameResult) => void;
+  readonly levelNumber?: number;
 }
 
 export type GameLauncher = (
