@@ -5,6 +5,14 @@ import {
   type DogLegeDogLevel,
   type DogPatternType,
 } from "./first-level";
+import { GameSession, type GameSessionSnapshot } from "./game-session";
+export {
+  GAME_SESSION_TRAY_CAPACITY,
+  GameSession,
+  type GameSessionOptions,
+  type GameSessionSnapshot,
+  type GameSessionStatus,
+} from "./game-session";
 
 export {
   BLOCK_HEIGHT,
@@ -20,13 +28,15 @@ export type { DogBlock, DogBoard, DogLegeDogLevel, DogPatternType } from "./firs
 
 export interface DogLegeDogGameState {
   readonly gameId: typeof GAME_ID;
-  readonly status: "ready";
+  readonly status: "ready" | GameSessionSnapshot["status"];
   readonly level: DogLegeDogLevel;
+  readonly session: GameSessionSnapshot;
 }
 
 export interface DogLegeDogGame {
   start(): DogLegeDogGameState;
   getState(): DogLegeDogGameState;
+  selectBlock(blockId: string): GameSessionSnapshot;
   destroy(): void;
 }
 
@@ -60,13 +70,43 @@ const PATTERN_PRESENTATIONS: Record<DogPatternType, PatternPresentation> = {
 };
 
 export function createDogLegeDogGame(root: HTMLElement): DogLegeDogGame {
-  const state: DogLegeDogGameState = {
-    gameId: GAME_ID,
-    status: "ready",
-    level: FIRST_LEVEL,
-  };
+  const session = new GameSession(FIRST_LEVEL);
   let started = false;
   let destroyed = false;
+  let hasInteracted = false;
+
+  const selectBlock = (blockId: string): GameSessionSnapshot => {
+    if (destroyed) {
+      throw new Error("Cannot select a block in a destroyed 狗了个狗 game");
+    }
+
+    const canSelect = session.canSelectBlock(blockId);
+    const nextState = session.selectBlock(blockId);
+    if (canSelect) {
+      hasInteracted = true;
+    }
+
+    if (started) {
+      renderGame(root, createGameState(session, hasInteracted));
+    }
+
+    return nextState;
+  };
+
+  const handleBlockClick = (event: Event): void => {
+    const target = event.target;
+    if (!(target instanceof Element)) {
+      return;
+    }
+
+    const block = target.closest<HTMLElement>('[data-testid="dog-block"]');
+    const blockId = block?.dataset.blockId;
+    if (blockId !== undefined) {
+      selectBlock(blockId);
+    }
+  };
+
+  root.addEventListener("click", handleBlockClick);
 
   return {
     start(): DogLegeDogGameState {
@@ -75,15 +115,19 @@ export function createDogLegeDogGame(root: HTMLElement): DogLegeDogGame {
       }
 
       if (!started) {
-        renderGame(root, state);
+        renderGame(root, createGameState(session, hasInteracted));
         started = true;
       }
 
-      return cloneState(state);
+      return createGameState(session, hasInteracted);
     },
 
     getState(): DogLegeDogGameState {
-      return cloneState(state);
+      return createGameState(session, hasInteracted);
+    },
+
+    selectBlock(blockId: string): GameSessionSnapshot {
+      return selectBlock(blockId);
     },
 
     destroy(): void {
@@ -91,6 +135,7 @@ export function createDogLegeDogGame(root: HTMLElement): DogLegeDogGame {
         return;
       }
 
+      root.removeEventListener("click", handleBlockClick);
       root.replaceChildren();
       destroyed = true;
     },
@@ -104,9 +149,12 @@ export function startDogLegeDogGame(root: HTMLElement): DogLegeDogGame {
 }
 
 function renderGame(root: HTMLElement, state: DogLegeDogGameState): void {
-  const { board, blocks } = state.level;
-  const boardColumns = board.width / blocks[0].width;
-  const boardRows = board.height / blocks[0].height;
+  const { board } = state.level;
+  const { remainingBlocks, selectableBlockIds } = state.session;
+  const blocks = remainingBlocks;
+  const blockSize = state.level.blocks[0];
+  const boardColumns = board.width / blockSize.width;
+  const boardRows = board.height / blockSize.height;
 
   root.innerHTML = `
     <section class="dog-game" data-testid="dog-game" data-game-id="${state.gameId}">
@@ -116,11 +164,14 @@ function renderGame(root: HTMLElement, state: DogLegeDogGameState): void {
           <h2>第 ${state.level.number} 关</h2>
         </div>
         <dl class="dog-game__stats">
-          <div><dt>方块</dt><dd>${blocks.length}</dd></div>
+          <div><dt>剩余方块</dt><dd>${blocks.length}</dd></div>
           <div><dt>图案</dt><dd>${FIRST_LEVEL_PATTERN_TYPES.length} 种</dd></div>
           <div><dt>层数</dt><dd>${state.level.maxLayers} 层</dd></div>
         </dl>
       </header>
+      <p class="dog-game__status dog-game__status--${state.session.status}" data-testid="dog-status" role="status">
+        ${renderStatusMessage(state.session.status)}
+      </p>
       <div class="dog-board-frame">
         <div
           class="dog-board"
@@ -132,10 +183,10 @@ function renderGame(root: HTMLElement, state: DogLegeDogGameState): void {
           role="img"
           aria-label="第 ${state.level.number} 关矩形棋盘，${blocks.length} 个层叠方块"
         >
-          ${blocks.map((block) => renderBlock(block, boardColumns, boardRows)).join("")}
+          ${blocks.map((block) => renderBlock(block, boardColumns, boardRows, selectableBlockIds)).join("")}
         </div>
       </div>
-      <p class="dog-game__hint">首关棋盘已准备好。下一步将加入选择方块与三消规则。</p>
+      ${renderTray(state.session)}
     </section>
   `;
 }
@@ -144,15 +195,18 @@ function renderBlock(
   block: DogLegeDogLevel["blocks"][number],
   boardColumns: number,
   boardRows: number,
+  selectableBlockIds: readonly string[],
 ): string {
   const presentation = PATTERN_PRESENTATIONS[block.patternType];
   const gridX = block.x / block.width;
   const gridY = block.y / block.height;
   const blockWidth = 100 / boardColumns;
   const blockHeight = 100 / boardRows;
+  const selectable = selectableBlockIds.includes(block.id);
 
   return `
-    <span
+    <button
+      type="button"
       class="dog-block dog-block--${presentation.className}"
       data-testid="dog-block"
       data-block-id="${block.id}"
@@ -160,10 +214,49 @@ function renderBlock(
       data-x="${block.x}"
       data-y="${block.y}"
       data-z="${block.z}"
+      aria-label="可选择方块"
+      ${selectable ? "" : "disabled"}
       style="--block-left: ${gridX * blockWidth}%; --block-top: ${gridY * blockHeight}%; --block-width: ${blockWidth}%; --block-height: ${blockHeight}%; --block-z: ${block.z};"
-      aria-hidden="true"
-    ><span class="dog-block__glyph">${renderPatternAsset(presentation)}</span></span>
+    ><span class="dog-block__glyph">${renderPatternAsset(presentation)}</span></button>
   `;
+}
+
+function renderTray(session: GameSessionSnapshot): string {
+  const slots = Array.from({ length: session.trayCapacity }, (_, index) => {
+    const patternType = session.tray[index];
+    if (patternType === undefined) {
+      return '<li class="dog-tray__slot" data-testid="dog-tray-slot" aria-label="空暂存槽"></li>';
+    }
+
+    const presentation = PATTERN_PRESENTATIONS[patternType];
+    return `
+      <li class="dog-tray__slot dog-tray__slot--filled" data-testid="dog-tray-slot" data-pattern-type="${patternType}" aria-label="${patternType}">
+        <span class="dog-block__glyph">${renderPatternAsset(presentation)}</span>
+      </li>
+    `;
+  }).join("");
+
+  return `
+    <section class="dog-tray" aria-label="暂存槽">
+      <div class="dog-tray__heading">
+        <h3>暂存槽</h3>
+        <span>${session.tray.length}/${session.trayCapacity}</span>
+      </div>
+      <ol class="dog-tray__slots" data-testid="dog-tray">${slots}</ol>
+    </section>
+  `;
+}
+
+function renderStatusMessage(status: GameSessionSnapshot["status"]): string {
+  if (status === "won") {
+    return "通关！棋盘已清空。";
+  }
+
+  if (status === "lost") {
+    return "失败！暂存槽已满。";
+  }
+
+  return "选择没有遮挡的方块，凑齐三个相同图案。";
 }
 
 function renderPatternAsset(presentation: PatternPresentation): string {
@@ -178,15 +271,13 @@ function renderPatternAsset(presentation: PatternPresentation): string {
   `;
 }
 
-function cloneState(state: DogLegeDogGameState): DogLegeDogGameState {
+function createGameState(session: GameSession, hasInteracted: boolean): DogLegeDogGameState {
+  const sessionState = session.getState();
+
   return {
-    gameId: state.gameId,
-    status: state.status,
-    level: {
-      ...state.level,
-      board: { ...state.level.board },
-      patternTypes: [...state.level.patternTypes],
-      blocks: state.level.blocks.map((block) => ({ ...block })),
-    },
+    gameId: GAME_ID,
+    status: sessionState.status === "playing" && !hasInteracted ? "ready" : sessionState.status,
+    level: sessionState.level,
+    session: sessionState,
   };
 }

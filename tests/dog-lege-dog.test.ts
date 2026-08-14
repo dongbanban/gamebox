@@ -75,4 +75,42 @@ describe("狗了个狗固定首关", () => {
 
     expect(root.innerHTML).toBe("");
   });
+
+  it("只让可点击方块进入暂存槽，并在三消后移除", () => {
+    const root = document.createElement("div");
+    const game = startDogLegeDogGame(root);
+    const blockedBlock = root.querySelector<HTMLButtonElement>(
+      '[data-testid="dog-block"][data-block-id="first-level-block-16"]',
+    );
+    const firstTriple = [73, 74, 75].map((blockNumber) =>
+      root.querySelector<HTMLButtonElement>(
+        `[data-testid="dog-block"][data-block-id="first-level-block-${blockNumber}"]`,
+      ),
+    );
+
+    expect(blockedBlock?.disabled).toBe(true);
+    expect(firstTriple.every((block) => block?.disabled === false)).toBe(true);
+
+    clickBlock(73);
+    clickBlock(74);
+
+    expect(game.getState().session.tray).toEqual(["打工狗", "打工狗"]);
+    expect(root.querySelectorAll('[data-testid="dog-tray-slot"][data-pattern-type]')).toHaveLength(2);
+
+    clickBlock(75);
+
+    expect(game.getState().session.tray).toEqual([]);
+    expect(root.querySelectorAll('[data-testid="dog-tray-slot"][data-pattern-type]')).toHaveLength(0);
+    expect(root.querySelector('[data-testid="dog-status"]')?.textContent).toContain("选择没有遮挡");
+
+    game.destroy();
+
+    function clickBlock(blockNumber: number): void {
+      root
+        .querySelector<HTMLButtonElement>(
+          `[data-testid="dog-block"][data-block-id="first-level-block-${blockNumber}"]`,
+        )
+        ?.click();
+    }
+  });
 });
