@@ -386,43 +386,145 @@ h2 {
 }
 
 .game-entry-view {
-  display: grid;
-  grid-template-columns: minmax(240px, 42%) minmax(0, 1fr);
-  width: min(100%, 820px);
-  min-height: 420px;
-  margin: auto;
-  overflow: hidden;
+  width: min(100%, 1080px);
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 32px 24px 56px;
+}
+
+.game-entry-view__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 0 0 28px;
+}
+
+.game-entry-view__header h1 {
+  margin-bottom: 0;
+  font-size: clamp(42px, 8vw, 76px);
+}
+
+.game-entry-view__game {
+  min-width: 0;
+}
+
+.dog-game {
+  padding: clamp(20px, 4vw, 38px);
   border: 1px solid rgba(255, 255, 255, 0.9);
   border-radius: 26px;
   background: rgba(255, 253, 248, 0.9);
   box-shadow: var(--shadow);
 }
 
-.game-entry-view__cover-wrap {
-  min-height: 420px;
-  background: #f1c58a;
-}
-
-.game-entry-view__cover {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.game-entry-view__content {
+.dog-game__header {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 44px;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
 }
 
-.game-entry-view__content p:not(.eyebrow) {
-  max-width: 26em;
-  margin: 0 0 28px;
+.dog-game__header h2 {
+  margin-bottom: 0;
+}
+
+.dog-game__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(64px, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.dog-game__stats > div {
+  min-width: 70px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #f6f0e5;
+  text-align: center;
+}
+
+.dog-game__stats dt {
   color: var(--ink-muted);
-  line-height: 1.8;
+  font-size: 11px;
+}
+
+.dog-game__stats dd {
+  margin: 4px 0 0;
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.dog-board-frame {
+  display: flex;
+  justify-content: center;
+  padding: clamp(12px, 3vw, 28px);
+  border-radius: 22px;
+  background: #e7d5b8;
+}
+
+.dog-board {
+  position: relative;
+  width: min(100%, 720px);
+  aspect-ratio: 7 / 6;
+  overflow: hidden;
+  border: 10px solid #b6875a;
+  border-radius: 18px;
+  background:
+    linear-gradient(rgba(255, 253, 248, 0.22) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 253, 248, 0.22) 1px, transparent 1px),
+    #c79e6b;
+  background-size: calc(100% / 7) calc(100% / 6);
+  box-shadow: inset 0 0 0 2px rgba(24, 59, 72, 0.12), 0 16px 28px rgba(24, 59, 72, 0.14);
+}
+
+.dog-block {
+  position: absolute;
+  left: var(--block-left);
+  top: var(--block-top);
+  width: var(--block-width);
+  height: var(--block-height);
+  display: grid;
+  place-items: center;
+  padding: 4px;
+  border: 2px solid rgba(255, 253, 248, 0.82);
+  border-radius: 10px;
+  color: #183b48;
+  font-size: clamp(14px, 2.4vw, 26px);
+  transform: translate(0, calc(var(--block-z) * -4px));
+  z-index: calc(10 + var(--block-z));
+  box-shadow: 3px 4px 0 rgba(24, 59, 72, 0.18), inset 0 0 0 1px rgba(24, 59, 72, 0.1);
+}
+
+.dog-block--working-dog {
+  background: #ffe0a6;
+}
+
+.dog-block--single-dog {
+  background: #ffc0ae;
+}
+
+.dog-block--licking-dog {
+  background: #bde3d1;
+}
+
+.dog-block--guard-dog {
+  background: #bcd7ee;
+}
+
+.dog-block__glyph {
+  display: block;
+  line-height: 1;
+  filter: drop-shadow(0 1px 0 rgba(255, 253, 248, 0.6));
+}
+
+.dog-game__hint {
+  margin: 18px 0 0;
+  color: var(--ink-muted);
+  font-size: 12px;
+  line-height: 1.7;
+  text-align: center;
 }
 
 @media (max-width: 700px) {
@@ -467,21 +569,24 @@ h2 {
   }
 
   .game-entry-view {
-    grid-template-columns: 1fr;
-    min-height: 0;
+    padding: 20px 16px 40px;
   }
 
-  .game-entry-view__cover-wrap {
-    min-height: 220px;
-    height: 220px;
+  .game-entry-view__header {
+    align-items: flex-start;
+    padding-bottom: 22px;
   }
 
-  .game-entry-view__content {
-    padding: 28px 24px 32px;
+  .game-entry-view__header h1 {
+    font-size: 52px;
   }
 
-  .game-entry-view__content .primary-button {
-    width: 100%;
+  .dog-game__header {
+    display: block;
+  }
+
+  .dog-game__stats {
+    margin-top: 18px;
   }
 }
 
@@ -492,5 +597,18 @@ h2 {
 
   .catalog-header .text-button {
     margin-top: 18px;
+  }
+
+  .game-entry-view__header {
+    display: block;
+  }
+
+  .game-entry-view__header .text-button {
+    margin-top: 18px;
+  }
+
+  .dog-game__stats > div {
+    min-width: 0;
+    padding: 9px 6px;
   }
 }

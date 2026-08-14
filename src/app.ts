@@ -1,7 +1,6 @@
-import { GAME_CATALOG } from "./catalog";
+import { GAME_CATALOG, type GameLaunchHandle } from "./catalog";
 import {
   createInitialGameProgress,
-  GAME_ID,
   ProgressStore,
   type StoreSnapshot,
 } from "./progress-store";
@@ -13,6 +12,7 @@ export interface MountAppOptions {
 export class GameboxApp {
   private readonly root: HTMLElement;
   private readonly store: ProgressStore;
+  private activeGame: GameLaunchHandle | null = null;
 
   constructor(root: HTMLElement, options: MountAppOptions = {}) {
     this.root = root;
@@ -21,6 +21,7 @@ export class GameboxApp {
   }
 
   render(): void {
+    this.disposeActiveGame();
     const snapshot = this.store.snapshot();
     if (snapshot.state === null) {
       this.renderRegistration(snapshot);
@@ -31,6 +32,7 @@ export class GameboxApp {
   }
 
   destroy(): void {
+    this.disposeActiveGame();
     this.root.removeEventListener("click", this.handleClick);
   }
 
@@ -54,7 +56,7 @@ export class GameboxApp {
     }
 
     if (action === "enter-game") {
-      this.renderGameEntry();
+      this.renderGameEntry(actionElement?.dataset.gameId);
       return;
     }
 
@@ -133,7 +135,7 @@ export class GameboxApp {
                 <dd>${progress.totalScore}</dd>
               </div>
             </dl>
-            <button class="primary-button" type="button" data-action="enter-game" ${game.playable ? "" : "disabled"}>
+            <button class="primary-button" type="button" data-action="enter-game" data-game-id="${game.id}" ${game.playable ? "" : "disabled"}>
               进入游戏 <span aria-hidden="true">↗</span>
             </button>
           </div>
@@ -163,26 +165,42 @@ export class GameboxApp {
     `;
   }
 
-  private renderGameEntry(): void {
-    const game = GAME_CATALOG.find((item) => item.id === GAME_ID);
-    if (game === undefined) {
+  private renderGameEntry(gameId: string | undefined): void {
+    const game = GAME_CATALOG.find((item) => item.id === gameId);
+    if (game === undefined || !game.playable) {
       this.render();
       return;
     }
 
+    this.disposeActiveGame();
     this.root.innerHTML = `
-      <main class="game-entry-view" data-view="game-entry">
-        <div class="game-entry-view__cover-wrap">
-          <img class="game-entry-view__cover" src="${game.cover}" alt="${game.name}封面" />
-        </div>
-        <section class="game-entry-view__content" aria-labelledby="game-entry-title">
-          <p class="eyebrow">游戏入口已打开</p>
-          <h1 id="game-entry-title">${game.name}</h1>
-          <p>首关挑战即将开始。返回游戏目录可继续浏览其他游戏。</p>
-          <button class="primary-button" type="button" data-action="catalog">返回游戏目录</button>
-        </section>
+      <main class="game-entry-view" data-view="game-entry" data-game-id="${game.id}">
+        <header class="game-entry-view__header">
+          <div>
+            <div class="brand-lockup brand-lockup--compact">
+              <span class="brand-lockup__mark" aria-hidden="true">🐶</span>
+              <span class="brand-lockup__name">GAMEBOX</span>
+            </div>
+            <p class="eyebrow">游戏入口已打开</p>
+            <h1 id="game-entry-title">${game.name}</h1>
+          </div>
+          <button class="text-button" type="button" data-action="catalog">返回游戏目录</button>
+        </header>
+        <div class="game-entry-view__game" data-game-mount></div>
       </main>
     `;
+
+    const gameMount = this.root.querySelector<HTMLElement>("[data-game-mount]");
+    if (gameMount === null) {
+      return;
+    }
+
+    this.activeGame = game.launch(gameMount);
+  }
+
+  private disposeActiveGame(): void {
+    this.activeGame?.destroy();
+    this.activeGame = null;
   }
 }
 
@@ -204,5 +222,3 @@ function renderPersistenceNotice(warning: string | null): string {
     </p>
   `;
 }
-
-export { GAME_ID };

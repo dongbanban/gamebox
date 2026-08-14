@@ -1,4 +1,11 @@
 import { GAME_ID } from "./progress-store";
+import { startDogLegeDogGame } from "./games/dog-lege-dog";
+
+export interface GameLaunchHandle {
+  destroy(): void;
+}
+
+export type GameLauncher = (root: HTMLElement) => GameLaunchHandle;
 
 export interface GameCatalogItem {
   id: string;
@@ -6,6 +13,7 @@ export interface GameCatalogItem {
   description: string;
   cover: string;
   playable: boolean;
+  launch: GameLauncher;
 }
 
 export const GAME_CATALOG: readonly GameCatalogItem[] = [
@@ -15,6 +23,7 @@ export const GAME_CATALOG: readonly GameCatalogItem[] = [
     description: "看清层叠关系，找出相同图案，完成一场轻松的三消挑战。",
     cover: createDogCover(),
     playable: true,
+    launch: startDogLegeDogGame,
   },
 ];
 
