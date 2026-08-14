@@ -183,7 +183,10 @@ function cloneBlock(block: DogBlock): DogBlock {
 function cloneLevel(level: DogLegeDogLevel): DogLegeDogLevel {
   return {
     ...level,
-    board: { ...level.board },
+    board: {
+      ...level.board,
+      playableCells: level.board.playableCells.map((cell) => ({ ...cell })),
+    },
     patternTypes: [...level.patternTypes],
     blocks: level.blocks.map(cloneBlock),
   };

@@ -1,10 +1,35 @@
+import {
+  BLOCK_HEIGHT,
+  BLOCK_WIDTH,
+  type DogBlock,
+  type DogBoard,
+  type DogLegeDogLevel,
+  type DogPatternType,
+} from "./level-types";
+import {
+  DEFAULT_LEVEL_GENERATOR,
+  DEFAULT_LEVEL_REWARD,
+  DEFAULT_LEVEL_SEED,
+  LEVEL_GENERATOR_VERSION,
+} from "./level-generator";
+
+export {
+  BLOCK_HEIGHT,
+  BLOCK_WIDTH,
+  DOG_PATTERN_TYPES,
+  type DogBlock,
+  type DogBoard,
+  type DogBoardCell,
+  type DogBoardShape,
+  type DogLegeDogLevel,
+  type DogPatternType,
+} from "./level-types";
+
 export const FIRST_LEVEL_NUMBER = 1 as const;
 export const FIRST_LEVEL_SEED = "dog-lege-dog:first-level:v1";
-export const FIRST_LEVEL_GENERATOR_VERSION = 1 as const;
+export const FIRST_LEVEL_GENERATOR_VERSION = LEVEL_GENERATOR_VERSION;
 export const FIRST_LEVEL_MAX_LAYERS = 3 as const;
-export const FIRST_LEVEL_REWARD = 100 as const;
-export const BLOCK_WIDTH = 2 as const;
-export const BLOCK_HEIGHT = 2 as const;
+export const FIRST_LEVEL_REWARD = DEFAULT_LEVEL_REWARD;
 
 export const FIRST_LEVEL_PATTERN_TYPES = [
   "打工狗",
@@ -13,42 +38,13 @@ export const FIRST_LEVEL_PATTERN_TYPES = [
   "看门狗",
 ] as const;
 
-export type DogPatternType = (typeof FIRST_LEVEL_PATTERN_TYPES)[number];
-
-export interface DogBoard {
-  readonly shape: "rectangle";
-  readonly width: number;
-  readonly height: number;
-  readonly logicalCellSize: 2;
-}
-
-export interface DogBlock {
-  readonly id: string;
-  readonly x: number;
-  readonly y: number;
-  readonly z: number;
-  readonly width: 2;
-  readonly height: 2;
-  readonly rotation: 0;
-  readonly patternType: DogPatternType;
-}
-
-export interface DogLegeDogLevel {
-  readonly number: number;
-  readonly seed: string;
-  readonly generatorVersion: number;
-  readonly maxLayers: number;
-  readonly reward: number;
-  readonly board: DogBoard;
-  readonly patternTypes: readonly DogPatternType[];
-  readonly blocks: readonly DogBlock[];
-}
-
 const BOARD: DogBoard = Object.freeze({
   shape: "rectangle",
+  templateId: "rectangle-first-level",
   width: 14,
   height: 12,
   logicalCellSize: BLOCK_WIDTH,
+  playableCells: Object.freeze(createFirstLevelPlayableCells()),
 });
 
 /**
@@ -67,9 +63,8 @@ export const FIRST_LEVEL: DogLegeDogLevel = Object.freeze({
 });
 
 /**
- * Level 1 is the fixed benchmark. Later levels reuse its playable shape until
- * the deterministic level generator lands, while keeping level identity
- * stable for navigation and progress tests.
+ * Level 1 is fixed benchmark. Later levels use deterministic generator while
+ * keeping level identity stable for navigation and progress tests.
  */
 export function getDogLegeDogLevel(levelNumber: number): DogLegeDogLevel {
   if (!Number.isSafeInteger(levelNumber) || levelNumber < FIRST_LEVEL_NUMBER) {
@@ -80,17 +75,22 @@ export function getDogLegeDogLevel(levelNumber: number): DogLegeDogLevel {
     return FIRST_LEVEL;
   }
 
-  return Object.freeze({
-    ...FIRST_LEVEL,
-    number: levelNumber,
-    seed: `${FIRST_LEVEL_SEED}:level-${levelNumber}`,
-    blocks: Object.freeze(
-      FIRST_LEVEL.blocks.map((block, index) => ({
-        ...block,
-        id: `level-${levelNumber}-block-${index + 1}`,
-      })),
-    ),
+  return DEFAULT_LEVEL_GENERATOR.generate({
+    levelNumber,
+    seed: DEFAULT_LEVEL_SEED,
+    generatorVersion: LEVEL_GENERATOR_VERSION,
   });
+}
+
+function createFirstLevelPlayableCells(): Array<{ x: number; y: number }> {
+  const cells: Array<{ x: number; y: number }> = [];
+  for (let y = 0; y < 12; y += 1) {
+    for (let x = 0; x < 14; x += 1) {
+      cells.push({ x, y });
+    }
+  }
+
+  return cells;
 }
 
 function createFirstLevelBlocks(): DogBlock[] {

@@ -608,7 +608,7 @@ h2 {
 .dog-board {
   position: relative;
   width: min(100%, 720px);
-  aspect-ratio: 7 / 6;
+  aspect-ratio: var(--board-columns) / var(--board-rows);
   overflow: hidden;
   border: 10px solid #b6875a;
   border-radius: 18px;
@@ -616,8 +616,20 @@ h2 {
     linear-gradient(rgba(255, 253, 248, 0.22) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 253, 248, 0.22) 1px, transparent 1px),
     #c79e6b;
-  background-size: calc(100% / 7) calc(100% / 6);
+  background-size: calc(100% / var(--board-columns)) calc(100% / var(--board-rows));
   box-shadow: inset 0 0 0 2px rgba(24, 59, 72, 0.12), 0 16px 28px rgba(24, 59, 72, 0.14);
+}
+
+.dog-board[data-shape="star"] {
+  clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 56%, 79% 94%, 50% 70%, 21% 94%, 32% 56%, 2% 35%, 39% 35%);
+}
+
+.dog-board[data-shape="heart"] {
+  clip-path: polygon(50% 100%, 8% 58%, 8% 28%, 20% 8%, 36% 8%, 50% 22%, 64% 8%, 80% 8%, 92% 28%, 92% 58%);
+}
+
+.dog-board[data-shape="irregular"] {
+  clip-path: polygon(10% 0, 82% 0, 100% 18%, 88% 48%, 100% 100%, 12% 100%, 0 78%, 8% 42%, 0 20%);
 }
 
 .dog-block {
@@ -665,6 +677,30 @@ h2 {
 
 .dog-block--guard-dog {
   background: #bcd7ee;
+}
+
+.dog-block--mad-dog {
+  background: #e4b4df;
+}
+
+.dog-block--destructive-dog {
+  background: #f0c38f;
+}
+
+.dog-block--snarling-dog {
+  background: #cfe39f;
+}
+
+.dog-block--shy-dog {
+  background: #c9c9ea;
+}
+
+.dog-block--foodie-dog {
+  background: #f5d895;
+}
+
+.dog-block--silly-dog {
+  background: #b9dcdd;
 }
 
 .dog-block__glyph {

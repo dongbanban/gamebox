@@ -18,6 +18,7 @@ export {
 export {
   BLOCK_HEIGHT,
   BLOCK_WIDTH,
+  DOG_PATTERN_TYPES,
   FIRST_LEVEL,
   FIRST_LEVEL_GENERATOR_VERSION,
   FIRST_LEVEL_MAX_LAYERS,
@@ -27,7 +28,32 @@ export {
   FIRST_LEVEL_SEED,
   getDogLegeDogLevel,
 } from "./first-level";
-export type { DogBlock, DogBoard, DogLegeDogLevel, DogPatternType } from "./first-level";
+export type {
+  DogBlock,
+  DogBoard,
+  DogBoardCell,
+  DogBoardShape,
+  DogLegeDogLevel,
+  DogPatternType,
+} from "./first-level";
+
+export {
+  DEFAULT_LEVEL_GENERATOR,
+  DEFAULT_LEVEL_REWARD,
+  DEFAULT_LEVEL_SEED,
+  DOG_GAME_ID,
+  DOG_SHAPE_TEMPLATES,
+  LEVEL_GENERATOR_VERSION,
+  LevelGenerator,
+  generateDogLegeDogLevel,
+  getBlockCount,
+  getMaxLayers,
+  getPatternTypeCount,
+  getShapePool,
+  type DogShapeTemplate,
+  type LevelGeneratorOptions,
+  type LevelGeneratorRequest,
+} from "./level-generator";
 
 export interface DogLegeDogGameState {
   readonly gameId: typeof GAME_ID;
@@ -71,6 +97,36 @@ const PATTERN_PRESENTATIONS: Record<DogPatternType, PatternPresentation> = {
     className: "guard-dog",
     accent: "#6c9dc4",
     marker: '<path d="m24 34 8 3-2 6h-12l-2-6 8-3Z" fill="#183b48"/><path d="M24 36v5" stroke="#ffc966" stroke-width="2"/>',
+  },
+  疯狗: {
+    className: "mad-dog",
+    accent: "#d47bd0",
+    marker: '<path d="M17 36 21 32l3 4 3-4 4 4-7 5Z" fill="#183b48"/>',
+  },
+  拆家狗: {
+    className: "destructive-dog",
+    accent: "#e8a15b",
+    marker: '<path d="m17 35 5-3 2 3 2-3 5 3-2 7H19Z" fill="#183b48"/>',
+  },
+  龇牙狗: {
+    className: "snarling-dog",
+    accent: "#a8c86e",
+    marker: '<path d="M17 33c4 4 10 4 14 0v7H17Z" fill="#fffdf8" stroke="#183b48" stroke-width="1.5"/>',
+  },
+  社恐狗: {
+    className: "shy-dog",
+    accent: "#a5a6d8",
+    marker: '<path d="M17 35h14v7H17Z" fill="#183b48" opacity=".8"/>',
+  },
+  吃货狗: {
+    className: "foodie-dog",
+    accent: "#f0bd68",
+    marker: '<circle cx="24" cy="37" r="6" fill="#183b48"/><circle cx="22" cy="35" r="1.5" fill="#fff3d7"/>',
+  },
+  傻狗: {
+    className: "silly-dog",
+    accent: "#8ec5c7",
+    marker: '<path d="M18 34c4 3 8 3 12 0l-2 8H20Z" fill="#183b48"/>',
   },
 };
 
@@ -190,7 +246,7 @@ function renderGame(root: HTMLElement, state: DogLegeDogGameState): void {
     <section class="dog-game" data-testid="dog-game" data-game-id="${state.gameId}">
       <header class="dog-game__header">
         <div>
-          <p class="eyebrow">固定首关 · ${state.level.seed}</p>
+            <p class="eyebrow">${state.level.number === FIRST_LEVEL.number ? "固定首关" : "稳定关卡"} · ${state.level.seed}</p>
           <h2>第 ${state.level.number} 关</h2>
         </div>
         <dl class="dog-game__stats">
@@ -207,11 +263,12 @@ function renderGame(root: HTMLElement, state: DogLegeDogGameState): void {
           class="dog-board"
           data-testid="dog-board"
           data-shape="${board.shape}"
+          data-template-id="${board.templateId}"
           data-logical-width="${board.width}"
           data-logical-height="${board.height}"
           style="--board-columns: ${boardColumns}; --board-rows: ${boardRows};"
           role="img"
-          aria-label="第 ${state.level.number} 关矩形棋盘，${blocks.length} 个层叠方块"
+          aria-label="第 ${state.level.number} 关${renderShapeLabel(board.shape)}棋盘，${blocks.length} 个层叠方块"
         >
           ${blocks.map((block) => renderBlock(block, boardColumns, boardRows, selectableBlockIds)).join("")}
         </div>
@@ -219,6 +276,16 @@ function renderGame(root: HTMLElement, state: DogLegeDogGameState): void {
       ${renderTray(state.session)}
     </section>
   `;
+}
+
+function renderShapeLabel(shape: DogLegeDogLevel["board"]["shape"]): string {
+  const labels: Record<DogLegeDogLevel["board"]["shape"], string> = {
+    rectangle: "长方形",
+    star: "五角星形",
+    heart: "爱心形",
+    irregular: "不规则形",
+  };
+  return labels[shape];
 }
 
 function renderBlock(
