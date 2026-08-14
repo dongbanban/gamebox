@@ -2,8 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   DOG_PATTERN_TYPES,
   DOG_SHAPE_TEMPLATES,
+  FIRST_LEVEL,
+  GameSession,
   LEVEL_GENERATOR_VERSION,
+  MAX_LEVEL_GENERATION_ATTEMPTS,
   LevelGenerator,
+  getDifficultyTarget,
   getBlockCount,
   getMaxLayers,
   getPatternTypeCount,
@@ -11,6 +15,31 @@ import {
 } from "../src/games/dog-lege-dog";
 
 describe("LevelGenerator", () => {
+  it("固定首关 replay 返回固定棋盘", () => {
+    const generator = new LevelGenerator();
+
+    expect(generator.replay(FIRST_LEVEL.generation.replay)).toEqual(FIRST_LEVEL);
+    expect(generator.replayAttempt(FIRST_LEVEL.generation.replay)).toEqual(FIRST_LEVEL);
+  });
+
+  it("guaranteed fallback replay 保持相同候选", () => {
+    const generator = new LevelGenerator();
+    const replay = {
+      attempt: MAX_LEVEL_GENERATION_ATTEMPTS,
+      levelNumber: 31,
+      seed: "fallback-seed",
+      levelSeed: "fallback-seed:v2:level-31",
+      testSeed: "fallback-test-seed",
+      generatorVersion: LEVEL_GENERATOR_VERSION,
+      mode: "guaranteed" as const,
+      randomSeed: "fallback-random-seed",
+    };
+
+    const level = generator.replayAttempt(replay);
+
+    expect(generator.replayAttempt(level.generation.replay)).toEqual(level);
+  });
+
   it("通过明确的关卡号、seed 与生成器版本稳定生成同一棋盘", () => {
     const generator = new LevelGenerator();
     const request = {
@@ -143,13 +172,101 @@ describe("LevelGenerator", () => {
     const generator = new LevelGenerator();
 
     for (let levelNumber = 2; levelNumber <= 100; levelNumber += 1) {
-      expect(() =>
-        generator.generate({
-          levelNumber,
-          seed: `range-${levelNumber}`,
-          generatorVersion: LEVEL_GENERATOR_VERSION,
-        }),
-      ).not.toThrow();
+      const level = generator.generate({
+        levelNumber,
+        seed: `range-${levelNumber}`,
+        generatorVersion: LEVEL_GENERATOR_VERSION,
+      });
+      const session = new GameSession(level);
+      let state = session.getState();
+      for (const blockId of level.solutionPath) {
+        state = session.selectBlock(blockId);
+      }
+
+      expect(state.status).toBe("won");
+    }
+  });
+
+  it("先验证无道具通关路径，再暴露难度指标与可重放信息", () => {
+    const generator = new LevelGenerator();
+    const request = {
+      levelNumber: 12,
+      seed: "replay-seed",
+      testSeed: "test-seed-12",
+      generatorVersion: LEVEL_GENERATOR_VERSION,
+    } as const;
+
+    const level = generator.generate(request);
+    const path = generator.findSolvablePath(level);
+    const target = getDifficultyTarget(request.levelNumber);
+
+    expect(generator.isSolvable(level)).toBe(true);
+    expect(path).not.toBeNull();
+    expect(path).toEqual(level.solutionPath);
+    expect(path).toHaveLength(level.blocks.length);
+    const session = new GameSession(level);
+    let replayedState = session.getState();
+    for (const blockId of path ?? []) {
+      replayedState = session.selectBlock(blockId);
+    }
+    expect(replayedState.status).toBe("won");
+    expect(level.difficulty).toMatchObject({
+      blockCount: level.blocks.length,
+      maxLayers: level.maxLayers,
+      patternTypeCount: level.patternTypes.length,
+    });
+    expect(level.difficulty.estimatedDurationMinutes).toBeGreaterThanOrEqual(
+      target.durationMinutes.min,
+    );
+    expect(level.difficulty.estimatedDurationMinutes).toBeLessThanOrEqual(
+      target.durationMinutes.max,
+    );
+    expect(level.difficulty.safeChoiceCount).toBeGreaterThanOrEqual(
+      target.safeChoiceCount.min,
+    );
+    expect(level.generation.replay).toMatchObject({
+      levelNumber: request.levelNumber,
+      testSeed: request.testSeed,
+      generatorVersion: request.generatorVersion,
+    });
+    expect(generator.replay(level.generation.replay)).toEqual(level);
+    expect(generator.replayAttempt(level.generation.replay)).toMatchObject({
+      seed: level.seed,
+      blocks: level.blocks,
+      solutionPath: level.solutionPath,
+    });
+  });
+
+  it("按阶段筛选安全选择与目标时长，失败时保留有限重试与重放 seam", () => {
+    const generator = new LevelGenerator();
+
+    for (const levelNumber of [2, 6, 16, 31, 60, 100]) {
+      const level = generator.generate({
+        levelNumber,
+        seed: "difficulty-seed",
+        testSeed: `test-seed-${levelNumber}`,
+        generatorVersion: LEVEL_GENERATOR_VERSION,
+      });
+      const target = getDifficultyTarget(levelNumber);
+
+      expect(generator.isSolvable(level)).toBe(true);
+      expect(level.difficulty.withinTarget).toBe(true);
+      expect(level.difficulty.safeChoiceCount).toBeGreaterThanOrEqual(
+        target.safeChoiceCount.min,
+      );
+      expect(level.difficulty.safeChoiceCount).toBeLessThanOrEqual(
+        target.safeChoiceCount.max,
+      );
+      expect(level.difficulty.estimatedDurationMinutes).toBeGreaterThanOrEqual(
+        target.durationMinutes.min,
+      );
+      expect(level.difficulty.estimatedDurationMinutes).toBeLessThanOrEqual(
+        target.durationMinutes.max,
+      );
+      expect(level.generation.attempts).toBeLessThanOrEqual(MAX_LEVEL_GENERATION_ATTEMPTS);
+      expect(level.generation.replay.levelSeed).toBe(level.seed);
+      expect(level.generation.replay.testSeed).toBe(`test-seed-${levelNumber}`);
+      expect(generator.replay(level.generation.replay)).toEqual(level);
     }
   });
 });

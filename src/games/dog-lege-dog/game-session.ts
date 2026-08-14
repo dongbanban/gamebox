@@ -4,6 +4,11 @@ import {
   type DogLegeDogLevel,
   type DogPatternType,
 } from "./first-level";
+import {
+  hasPositiveAreaOverlap,
+  insertPatternIntoTray,
+  resolvePatternMatches,
+} from "./level-rules";
 
 export const GAME_SESSION_TRAY_CAPACITY = 7 as const;
 
@@ -48,7 +53,7 @@ export class GameSession {
       throw new Error("GameSession tray cannot contain more than 7 blocks");
     }
 
-    this.resolveMatches();
+    resolvePatternMatches(this.tray);
     this.updateResult();
   }
 
@@ -92,8 +97,7 @@ export class GameSession {
     }
 
     this.remainingBlocks.delete(blockId);
-    this.insertIntoTray(block.patternType);
-    this.resolveMatches();
+    insertPatternIntoTray(this.tray, block.patternType);
     this.updateResult();
 
     return this.getState();
@@ -103,52 +107,6 @@ export class GameSession {
     return [...this.remainingBlocks.values()]
       .filter((block) => this.canSelectBlock(block.id))
       .map((block) => block.id);
-  }
-
-  private insertIntoTray(patternType: DogPatternType): void {
-    let lastSameTypeIndex = -1;
-    for (let index = this.tray.length - 1; index >= 0; index -= 1) {
-      if (this.tray[index] === patternType) {
-        lastSameTypeIndex = index;
-        break;
-      }
-    }
-
-    if (lastSameTypeIndex === -1) {
-      this.tray.push(patternType);
-      return;
-    }
-
-    this.tray.splice(lastSameTypeIndex + 1, 0, patternType);
-  }
-
-  private resolveMatches(): void {
-    const counts = new Map<DogPatternType, number>();
-    for (const patternType of this.tray) {
-      counts.set(patternType, (counts.get(patternType) ?? 0) + 1);
-    }
-
-    const removals = new Map<DogPatternType, number>();
-    for (const [patternType, count] of counts) {
-      const removableCount = Math.floor(count / 3) * 3;
-      if (removableCount > 0) {
-        removals.set(patternType, removableCount);
-      }
-    }
-
-    if (removals.size === 0) {
-      return;
-    }
-
-    this.tray = this.tray.filter((patternType) => {
-      const remainingRemovals = removals.get(patternType) ?? 0;
-      if (remainingRemovals === 0) {
-        return true;
-      }
-
-      removals.set(patternType, remainingRemovals - 1);
-      return false;
-    });
   }
 
   private updateResult(): void {
@@ -167,15 +125,6 @@ function isLevel(value: DogLegeDogLevel | GameSessionOptions): value is DogLegeD
   return "blocks" in value;
 }
 
-function hasPositiveAreaOverlap(block: DogBlock, other: DogBlock): boolean {
-  return (
-    block.x < other.x + other.width &&
-    other.x < block.x + block.width &&
-    block.y < other.y + other.height &&
-    other.y < block.y + block.height
-  );
-}
-
 function cloneBlock(block: DogBlock): DogBlock {
   return { ...block };
 }
@@ -189,5 +138,18 @@ function cloneLevel(level: DogLegeDogLevel): DogLegeDogLevel {
     },
     patternTypes: [...level.patternTypes],
     blocks: level.blocks.map(cloneBlock),
+    solutionPath: [...level.solutionPath],
+    difficulty: {
+      ...level.difficulty,
+      target: {
+        safeChoiceCount: { ...level.difficulty.target.safeChoiceCount },
+        durationMinutes: { ...level.difficulty.target.durationMinutes },
+      },
+    },
+    generation: {
+      ...level.generation,
+      replay: { ...level.generation.replay },
+      failures: level.generation.failures.map((failure) => ({ ...failure })),
+    },
   };
 }

@@ -7,6 +7,7 @@ import {
   type DogPatternType,
 } from "./level-types";
 import {
+  calculateDifficultyMetrics,
   DEFAULT_LEVEL_GENERATOR,
   DEFAULT_LEVEL_REWARD,
   DEFAULT_LEVEL_SEED,
@@ -23,10 +24,17 @@ export {
   type DogBoardShape,
   type DogLegeDogLevel,
   type DogPatternType,
+  type DogDifficultyRange,
+  type DogDifficultyTarget,
+  type DogLevelDifficulty,
+  type DogLevelGeneration,
+  type DogLevelGenerationFailure,
+  type DogLevelReplay,
+  type DogLevelReplayMode,
 } from "./level-types";
 
 export const FIRST_LEVEL_NUMBER = 1 as const;
-export const FIRST_LEVEL_SEED = "dog-lege-dog:first-level:v1";
+export const FIRST_LEVEL_SEED = "dog-lege-dog:first-level:v2";
 export const FIRST_LEVEL_GENERATOR_VERSION = LEVEL_GENERATOR_VERSION;
 export const FIRST_LEVEL_MAX_LAYERS = 3 as const;
 export const FIRST_LEVEL_REWARD = DEFAULT_LEVEL_REWARD;
@@ -47,6 +55,23 @@ const BOARD: DogBoard = Object.freeze({
   playableCells: Object.freeze(createFirstLevelPlayableCells()),
 });
 
+const FIRST_LEVEL_BLOCKS = Object.freeze(createFirstLevelBlocks());
+const FIRST_LEVEL_SOLUTION_PATH = Object.freeze(
+  [...FIRST_LEVEL_BLOCKS]
+    .sort((first, second) => second.z - first.z || first.id.localeCompare(second.id))
+    .map((block) => block.id),
+);
+const FIRST_LEVEL_DIFFICULTY = calculateDifficultyMetrics(
+  {
+    number: FIRST_LEVEL_NUMBER,
+    maxLayers: FIRST_LEVEL_MAX_LAYERS,
+    board: BOARD,
+    patternTypes: FIRST_LEVEL_PATTERN_TYPES,
+    blocks: FIRST_LEVEL_BLOCKS,
+  },
+  FIRST_LEVEL_SOLUTION_PATH,
+);
+
 /**
  * Fixed first level layout. Each layer is a separate rectangle of 2×2 cells;
  * upper layers overlap the center of lower layers to make the hierarchy visible.
@@ -59,7 +84,24 @@ export const FIRST_LEVEL: DogLegeDogLevel = Object.freeze({
   reward: FIRST_LEVEL_REWARD,
   board: BOARD,
   patternTypes: FIRST_LEVEL_PATTERN_TYPES,
-  blocks: Object.freeze(createFirstLevelBlocks()),
+  blocks: FIRST_LEVEL_BLOCKS,
+  solutionPath: FIRST_LEVEL_SOLUTION_PATH,
+  difficulty: FIRST_LEVEL_DIFFICULTY,
+  generation: Object.freeze({
+    attempts: 1,
+    fallbackUsed: false,
+    replay: Object.freeze({
+      attempt: 1,
+      levelNumber: FIRST_LEVEL_NUMBER,
+      seed: DEFAULT_LEVEL_SEED,
+      levelSeed: FIRST_LEVEL_SEED,
+      testSeed: DEFAULT_LEVEL_SEED,
+      generatorVersion: FIRST_LEVEL_GENERATOR_VERSION,
+      mode: "fixed",
+      randomSeed: FIRST_LEVEL_SEED,
+    }),
+    failures: Object.freeze([]),
+  }),
 });
 
 /**
