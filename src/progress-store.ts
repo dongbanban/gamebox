@@ -15,6 +15,7 @@ export interface StorageLike {
 export interface GameProgress {
   highestUnlockedLevel: number;
   totalScore: number;
+  completedLevels: readonly number[];
 }
 
 export interface AppState {
@@ -32,6 +33,20 @@ export interface StoreSnapshot {
   state: AppState | null;
   persistence: PersistenceMode;
   warning: string | null;
+}
+
+export interface LevelCompletionResult {
+  readonly gameId: string;
+  readonly levelNumber: number;
+  readonly firstCompletion: boolean;
+  readonly reward: number;
+  readonly progress: GameProgress;
+}
+
+export interface LevelCompletion {
+  readonly gameId: string;
+  readonly levelNumber: number;
+  readonly reward: number;
 }
 
 export interface ProgressStoreOptions {
@@ -71,6 +86,50 @@ export class ProgressStore {
     return cloneState(nextState) as AppState;
   }
 
+  recordLevelCompletion(completion: LevelCompletion): LevelCompletionResult {
+    if (this.state === null) {
+      throw new Error("Cannot record level completion before registration");
+    }
+
+    assertCompletionInput(completion);
+
+    const currentProgress =
+      this.state.games[completion.gameId] ?? createInitialGameProgress();
+    const firstCompletion = !currentProgress.completedLevels.includes(
+      completion.levelNumber,
+    );
+    const nextProgress: GameProgress = {
+      highestUnlockedLevel: Math.max(
+        currentProgress.highestUnlockedLevel,
+        completion.levelNumber + 1,
+      ),
+      totalScore:
+        currentProgress.totalScore + (firstCompletion ? completion.reward : 0),
+      completedLevels: firstCompletion
+        ? [...currentProgress.completedLevels, completion.levelNumber].sort(
+            (left, right) => left - right,
+          )
+        : [...currentProgress.completedLevels],
+    };
+
+    this.state = {
+      ...this.state,
+      games: {
+        ...this.state.games,
+        [completion.gameId]: nextProgress,
+      },
+    };
+    this.persist();
+
+    return {
+      gameId: completion.gameId,
+      levelNumber: completion.levelNumber,
+      firstCompletion,
+      reward: firstCompletion ? completion.reward : 0,
+      progress: cloneGameProgress(nextProgress),
+    };
+  }
+
   reset(): void {
     this.state = null;
 
@@ -101,12 +160,13 @@ export class ProgressStore {
       }
 
       const parsedState: unknown = JSON.parse(rawState);
-      if (!isAppState(parsedState)) {
+      const normalizedState = normalizeAppState(parsedState);
+      if (normalizedState === null) {
         this.markTemporary();
         return;
       }
 
-      this.state = parsedState;
+      this.state = normalizedState;
     } catch {
       this.markTemporary();
     }
@@ -150,6 +210,7 @@ export function createInitialGameProgress(): GameProgress {
   return {
     highestUnlockedLevel: 1,
     totalScore: 0,
+    completedLevels: [],
   };
 }
 
@@ -197,9 +258,9 @@ function formatUuid(bytes: Uint8Array): string {
   ].join("-");
 }
 
-function isAppState(value: unknown): value is AppState {
+function normalizeAppState(value: unknown): AppState | null {
   if (!isRecord(value)) {
-    return false;
+    return null;
   }
 
   if (
@@ -208,23 +269,66 @@ function isAppState(value: unknown): value is AppState {
     !isValidUserId(value.userId) ||
     !isRecord(value.games) ||
     !isRecord(value.settings) ||
-    typeof value.settings.soundEnabled !== "boolean" ||
-    !isGameProgress(value.games[GAME_ID])
+    typeof value.settings.soundEnabled !== "boolean"
   ) {
-    return false;
+    return null;
   }
 
-  return Object.values(value.games).every(isGameProgress);
+  const games: Record<string, GameProgress> = {};
+  for (const [gameId, rawProgress] of Object.entries(value.games)) {
+    const progress = normalizeGameProgress(rawProgress);
+    if (progress === null) {
+      return null;
+    }
+
+    games[gameId] = progress;
+  }
+
+  if (games[GAME_ID] === undefined) {
+    return null;
+  }
+
+  return {
+    schemaVersion: APP_STATE_VERSION,
+    userId: value.userId,
+    games,
+    settings: {
+      soundEnabled: value.settings.soundEnabled,
+    },
+  };
 }
 
-function isGameProgress(value: unknown): value is GameProgress {
-  return (
-    isRecord(value) &&
-    Number.isInteger(value.highestUnlockedLevel) &&
-    value.highestUnlockedLevel >= 1 &&
-    Number.isInteger(value.totalScore) &&
-    value.totalScore >= 0
-  );
+function normalizeGameProgress(value: unknown): GameProgress | null {
+  if (
+    !isRecord(value) ||
+    !Number.isInteger(value.highestUnlockedLevel) ||
+    value.highestUnlockedLevel < 1 ||
+    !Number.isInteger(value.totalScore) ||
+    value.totalScore < 0
+  ) {
+    return null;
+  }
+
+  const completedLevels =
+    value.completedLevels === undefined
+      ? inferCompletedLevels(value.highestUnlockedLevel)
+      : value.completedLevels;
+  if (
+    !Array.isArray(completedLevels) ||
+    !completedLevels.every(
+      (levelNumber) => Number.isInteger(levelNumber) && levelNumber >= 1,
+    )
+  ) {
+    return null;
+  }
+
+  return {
+    highestUnlockedLevel: value.highestUnlockedLevel,
+    totalScore: value.totalScore,
+    completedLevels: [...new Set(completedLevels)].sort(
+      (left, right) => left - right,
+    ),
+  };
 }
 
 function isRecord(value: unknown): value is Record<string, any> {
@@ -237,4 +341,32 @@ function isValidUserId(value: string): boolean {
 
 function cloneState(state: AppState | null): AppState | null {
   return state === null ? null : structuredClone(state);
+}
+
+function cloneGameProgress(progress: GameProgress): GameProgress {
+  return {
+    ...progress,
+    completedLevels: [...progress.completedLevels],
+  };
+}
+
+function inferCompletedLevels(highestUnlockedLevel: number): number[] {
+  return Array.from(
+    { length: Math.max(0, highestUnlockedLevel - 1) },
+    (_, index) => index + 1,
+  );
+}
+
+function assertCompletionInput(completion: LevelCompletion): void {
+  if (completion.gameId.trim() === "") {
+    throw new Error("Cannot record level completion without a game id");
+  }
+
+  if (!Number.isSafeInteger(completion.levelNumber) || completion.levelNumber < 1) {
+    throw new Error("Level completion requires a positive integer level number");
+  }
+
+  if (!Number.isSafeInteger(completion.reward) || completion.reward < 0) {
+    throw new Error("Level completion requires a non-negative integer reward");
+  }
 }

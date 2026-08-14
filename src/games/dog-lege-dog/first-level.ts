@@ -2,6 +2,7 @@ export const FIRST_LEVEL_NUMBER = 1 as const;
 export const FIRST_LEVEL_SEED = "dog-lege-dog:first-level:v1";
 export const FIRST_LEVEL_GENERATOR_VERSION = 1 as const;
 export const FIRST_LEVEL_MAX_LAYERS = 3 as const;
+export const FIRST_LEVEL_REWARD = 100 as const;
 export const BLOCK_WIDTH = 2 as const;
 export const BLOCK_HEIGHT = 2 as const;
 
@@ -37,6 +38,7 @@ export interface DogLegeDogLevel {
   readonly seed: string;
   readonly generatorVersion: 1;
   readonly maxLayers: 3;
+  readonly reward: number;
   readonly board: DogBoard;
   readonly patternTypes: readonly DogPatternType[];
   readonly blocks: readonly DogBlock[];
@@ -58,6 +60,7 @@ export const FIRST_LEVEL: DogLegeDogLevel = Object.freeze({
   seed: FIRST_LEVEL_SEED,
   generatorVersion: FIRST_LEVEL_GENERATOR_VERSION,
   maxLayers: FIRST_LEVEL_MAX_LAYERS,
+  reward: FIRST_LEVEL_REWARD,
   board: BOARD,
   patternTypes: FIRST_LEVEL_PATTERN_TYPES,
   blocks: Object.freeze(createFirstLevelBlocks()),

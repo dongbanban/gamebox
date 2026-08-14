@@ -1,7 +1,12 @@
-import { GAME_CATALOG, type GameLaunchHandle } from "./catalog";
+import {
+  GAME_CATALOG,
+  type GameLaunchHandle,
+  type GameResult,
+} from "./catalog";
 import {
   createInitialGameProgress,
   ProgressStore,
+  type LevelCompletionResult,
   type StoreSnapshot,
 } from "./progress-store";
 
@@ -56,6 +61,11 @@ export class GameboxApp {
     }
 
     if (action === "enter-game") {
+      this.renderGameEntry(actionElement?.dataset.gameId);
+      return;
+    }
+
+    if (action === "retry") {
       this.renderGameEntry(actionElement?.dataset.gameId);
       return;
     }
@@ -195,7 +205,70 @@ export class GameboxApp {
       return;
     }
 
-    this.activeGame = game.launch(gameMount);
+    this.activeGame = game.launch(gameMount, { onResult: this.handleGameResult });
+  }
+
+  private readonly handleGameResult = (result: GameResult): void => {
+    if (result.status === "won") {
+      const completion = this.store.recordLevelCompletion(result);
+      this.renderWinResult(result, completion);
+      return;
+    }
+
+    this.renderLossResult(result);
+  };
+
+  private renderWinResult(result: GameResult, completion: LevelCompletionResult): void {
+    const snapshot = this.store.snapshot();
+    const persistenceMessage =
+      snapshot.persistence === "persistent"
+        ? `第 ${result.levelNumber} 关完成，进度已保存。`
+        : `第 ${result.levelNumber} 关完成。当前为临时运行模式，刷新后进度可能丢失。`;
+    this.renderGameResult(result, "won", `
+          <p class="eyebrow">狗了个狗 · 关卡结果</p>
+          <h1 id="game-result-title">通关！</h1>
+          <p class="game-result-card__intro">${persistenceMessage}</p>
+          ${renderPersistenceNotice(snapshot.warning)}
+          <dl class="game-result-card__stats">
+            <div><dt>当前关卡</dt><dd>第 ${result.levelNumber} 关</dd></div>
+            <div><dt>通关奖励</dt><dd>${completion.reward}</dd></div>
+            <div><dt>累计积分</dt><dd>${completion.progress.totalScore}</dd></div>
+            <div><dt>下一关</dt><dd>第 ${result.levelNumber + 1} 关</dd></div>
+          </dl>
+          <button class="primary-button primary-button--wide" type="button" data-action="catalog">
+            返回游戏目录
+          </button>
+    `);
+  }
+
+  private renderLossResult(result: GameResult): void {
+    this.renderGameResult(result, "lost", `
+          <p class="eyebrow">狗了个狗 · 关卡结果</p>
+          <h1 id="game-result-title">失败</h1>
+          <p class="game-result-card__intro">第 ${result.levelNumber} 关暂存槽已满，进度未改变。</p>
+          ${renderPersistenceNotice(this.store.snapshot().warning)}
+          <div class="game-result-card__actions">
+            <button class="primary-button primary-button--wide" type="button" data-action="retry" data-game-id="${result.gameId}">
+              重新挑战
+            </button>
+            <button class="text-button" type="button" data-action="catalog">返回游戏目录</button>
+          </div>
+    `);
+  }
+
+  private renderGameResult(
+    result: GameResult,
+    status: "won" | "lost",
+    content: string,
+  ): void {
+    this.disposeActiveGame();
+    this.root.innerHTML = `
+      <main class="game-result-view" data-view="game-result" data-result="${status}" data-game-id="${result.gameId}">
+        <section class="game-result-card game-result-card--${status}" aria-labelledby="game-result-title">
+          ${content}
+        </section>
+      </main>
+    `;
   }
 
   private disposeActiveGame(): void {

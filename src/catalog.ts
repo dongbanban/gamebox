@@ -5,7 +5,21 @@ export interface GameLaunchHandle {
   destroy(): void;
 }
 
-export type GameLauncher = (root: HTMLElement) => GameLaunchHandle;
+export interface GameResult {
+  readonly gameId: string;
+  readonly levelNumber: number;
+  readonly status: "won" | "lost";
+  readonly reward: number;
+}
+
+export interface GameLaunchContext {
+  readonly onResult?: (result: GameResult) => void;
+}
+
+export type GameLauncher = (
+  root: HTMLElement,
+  context?: GameLaunchContext,
+) => GameLaunchHandle;
 
 export interface GameCatalogItem {
   id: string;

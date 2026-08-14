@@ -78,7 +78,74 @@ describe("ProgressStore", () => {
 
     expect(store.snapshot().state?.userId).toBe(userId);
     expect(store.snapshot().state?.games[GAME_ID].highestUnlockedLevel).toBe(4);
+    expect(store.snapshot().state?.games[GAME_ID].completedLevels).toEqual([1, 2, 3]);
     expect(store.snapshot().state?.settings.soundEnabled).toBe(false);
+  });
+
+  it("首次通关幂等、隔离多游戏并恢复游戏进度", () => {
+    const storage = new MemoryStorage();
+    const store = new ProgressStore({
+      storage,
+      userIdFactory: () => userId,
+    });
+    store.register();
+
+    const firstCompletion = store.recordLevelCompletion({
+      gameId: GAME_ID,
+      levelNumber: 3,
+      reward: 120,
+    });
+    const repeatedCompletion = store.recordLevelCompletion({
+      gameId: GAME_ID,
+      levelNumber: 3,
+      reward: 120,
+    });
+    const otherGameCompletion = store.recordLevelCompletion({
+      gameId: "other-game",
+      levelNumber: 2,
+      reward: 50,
+    });
+
+    expect(firstCompletion).toMatchObject({
+      firstCompletion: true,
+      reward: 120,
+      progress: {
+        highestUnlockedLevel: 4,
+        totalScore: 120,
+        completedLevels: [3],
+      },
+    });
+    expect(repeatedCompletion).toMatchObject({
+      firstCompletion: false,
+      reward: 0,
+      progress: {
+        highestUnlockedLevel: 4,
+        totalScore: 120,
+        completedLevels: [3],
+      },
+    });
+    expect(otherGameCompletion.progress).toMatchObject({
+      highestUnlockedLevel: 3,
+      totalScore: 50,
+      completedLevels: [2],
+    });
+    expect(store.snapshot().state?.games[GAME_ID]).toMatchObject({
+      highestUnlockedLevel: 4,
+      totalScore: 120,
+    });
+
+    const restoredStore = new ProgressStore({ storage });
+
+    expect(restoredStore.snapshot().state?.games[GAME_ID]).toMatchObject({
+      highestUnlockedLevel: 4,
+      totalScore: 120,
+      completedLevels: [3],
+    });
+    expect(restoredStore.snapshot().state?.games["other-game"]).toMatchObject({
+      highestUnlockedLevel: 3,
+      totalScore: 50,
+      completedLevels: [2],
+    });
   });
 
   it("falls back to temporary state when stored data is damaged", () => {

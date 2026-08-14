@@ -1,3 +1,4 @@
+import type { GameLaunchContext, GameResult } from "../../catalog";
 import { GAME_ID } from "../../progress-store";
 import {
   FIRST_LEVEL,
@@ -22,6 +23,7 @@ export {
   FIRST_LEVEL_MAX_LAYERS,
   FIRST_LEVEL_NUMBER,
   FIRST_LEVEL_PATTERN_TYPES,
+  FIRST_LEVEL_REWARD,
   FIRST_LEVEL_SEED,
 } from "./first-level";
 export type { DogBlock, DogBoard, DogLegeDogLevel, DogPatternType } from "./first-level";
@@ -39,6 +41,8 @@ export interface DogLegeDogGame {
   selectBlock(blockId: string): GameSessionSnapshot;
   destroy(): void;
 }
+
+export type DogLegeDogGameOptions = GameLaunchContext;
 
 interface PatternPresentation {
   readonly className: string;
@@ -69,11 +73,15 @@ const PATTERN_PRESENTATIONS: Record<DogPatternType, PatternPresentation> = {
   },
 };
 
-export function createDogLegeDogGame(root: HTMLElement): DogLegeDogGame {
+export function createDogLegeDogGame(
+  root: HTMLElement,
+  options: DogLegeDogGameOptions = {},
+): DogLegeDogGame {
   const session = new GameSession(FIRST_LEVEL);
   let started = false;
   let destroyed = false;
   let hasInteracted = false;
+  let resultReported = false;
 
   const selectBlock = (blockId: string): GameSessionSnapshot => {
     if (destroyed) {
@@ -90,8 +98,25 @@ export function createDogLegeDogGame(root: HTMLElement): DogLegeDogGame {
       renderGame(root, createGameState(session, hasInteracted));
     }
 
+    reportResult(nextState.status);
+
     return nextState;
   };
+
+  function reportResult(status: GameSessionSnapshot["status"]): void {
+    if (resultReported || (status !== "won" && status !== "lost")) {
+      return;
+    }
+
+    resultReported = true;
+    const result: GameResult = {
+      gameId: GAME_ID,
+      levelNumber: FIRST_LEVEL.number,
+      status,
+      reward: status === "won" ? FIRST_LEVEL.reward : 0,
+    };
+    options.onResult?.(result);
+  }
 
   const handleBlockClick = (event: Event): void => {
     const target = event.target;
@@ -142,8 +167,11 @@ export function createDogLegeDogGame(root: HTMLElement): DogLegeDogGame {
   };
 }
 
-export function startDogLegeDogGame(root: HTMLElement): DogLegeDogGame {
-  const game = createDogLegeDogGame(root);
+export function startDogLegeDogGame(
+  root: HTMLElement,
+  options: DogLegeDogGameOptions = {},
+): DogLegeDogGame {
+  const game = createDogLegeDogGame(root, options);
   game.start();
   return game;
 }
