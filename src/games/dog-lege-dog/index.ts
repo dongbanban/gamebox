@@ -2,10 +2,10 @@ import type { GameLaunchContext, GameResult } from "../../catalog";
 import { GAME_ID } from "../../progress-store";
 import {
   FIRST_LEVEL,
-  getDogLegeDogLevel,
   type DogLegeDogLevel,
   type DogPatternType,
 } from "./first-level";
+import { getDogLegeDogLevel } from "./level-provider";
 import {
   animateBlockFlight,
   type CancellableAnimation,
@@ -32,8 +32,8 @@ export {
   FIRST_LEVEL_PATTERN_TYPES,
   FIRST_LEVEL_REWARD,
   FIRST_LEVEL_SEED,
-  getDogLegeDogLevel,
 } from "./first-level";
+export { getDogLegeDogLevel } from "./level-provider";
 export type {
   DogBlock,
   DogBoard,

@@ -1,6 +1,8 @@
+import { DOG_GAME_ID } from "./games/dog-lege-dog/game-config";
+
 export const STORAGE_KEY = "gamebox.state";
 export const APP_STATE_VERSION = 1 as const;
-export const GAME_ID = "dog-lege-dog";
+export const GAME_ID = DOG_GAME_ID;
 
 const PERSISTENCE_WARNING = "本地数据无法持久化，当前为临时运行模式。";
 const UUID_PATTERN =

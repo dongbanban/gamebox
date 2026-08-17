@@ -92,6 +92,14 @@ export interface DogLevelGeneration {
   readonly failures: readonly DogLevelGenerationFailure[];
 }
 
+export interface DogLevelGeometry {
+  readonly number: number;
+  readonly maxLayers: number;
+  readonly board: DogBoard;
+  readonly patternTypes: readonly DogPatternType[];
+  readonly blocks: readonly DogBlock[];
+}
+
 export interface DogLegeDogLevel {
   readonly number: number;
   readonly seed: string;

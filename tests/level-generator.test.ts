@@ -12,9 +12,25 @@ import {
   getMaxLayers,
   getPatternTypeCount,
   getShapePool,
+  getDogLegeDogLevel,
+  DEFAULT_LEVEL_SEED,
 } from "../src/games/dog-lege-dog";
 
 describe("LevelGenerator", () => {
+  it("通过统一关卡提供器取得首关与后续关卡", () => {
+    const generator = new LevelGenerator();
+    const firstLevel = getDogLegeDogLevel(FIRST_LEVEL.number);
+    const secondLevel = generator.generate({
+      levelNumber: FIRST_LEVEL.number + 1,
+      seed: DEFAULT_LEVEL_SEED,
+      generatorVersion: LEVEL_GENERATOR_VERSION,
+    });
+
+    expect(firstLevel).toEqual(FIRST_LEVEL);
+    expect(getDogLegeDogLevel(FIRST_LEVEL.number)).toEqual(firstLevel);
+    expect(getDogLegeDogLevel(secondLevel.number)).toEqual(secondLevel);
+  });
+
   it("固定首关 replay 返回固定棋盘", () => {
     const generator = new LevelGenerator();
 
@@ -55,6 +71,29 @@ describe("LevelGenerator", () => {
     expect(first.number).toBe(request.levelNumber);
     expect(first.generatorVersion).toBe(request.generatorVersion);
     expect(first.seed).toContain(request.seed);
+  });
+
+  it("显式首关 seed/version 继续走生成器并可重放", () => {
+    const generator = new LevelGenerator();
+    const request = {
+      levelNumber: FIRST_LEVEL.number,
+      seed: "explicit-first-level-seed",
+      generatorVersion: LEVEL_GENERATOR_VERSION,
+    } as const;
+
+    const level = generator.generate(request);
+    const repeated = generator.generate(request);
+
+    expect(level).not.toEqual(FIRST_LEVEL);
+    expect(repeated).toEqual(level);
+    expect(level.seed).toContain(request.seed);
+    expect(level.generation.replay).toMatchObject({
+      levelNumber: request.levelNumber,
+      seed: request.seed,
+      generatorVersion: request.generatorVersion,
+      mode: "generated",
+    });
+    expect(generator.replay(level.generation.replay)).toEqual(level);
   });
 
   it("按关卡阶段递增方块数量、层数、形状池与图案池", () => {

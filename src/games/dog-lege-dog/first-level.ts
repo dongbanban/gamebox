@@ -4,15 +4,17 @@ import {
   type DogBlock,
   type DogBoard,
   type DogLegeDogLevel,
-  type DogPatternType,
 } from "./level-types";
 import {
-  calculateDifficultyMetrics,
-  DEFAULT_LEVEL_GENERATOR,
   DEFAULT_LEVEL_REWARD,
   DEFAULT_LEVEL_SEED,
-  LEVEL_GENERATOR_VERSION,
-} from "./level-generator";
+  FIRST_LEVEL_GENERATOR_VERSION,
+  FIRST_LEVEL_MAX_LAYERS,
+  FIRST_LEVEL_NUMBER,
+  FIRST_LEVEL_PATTERN_TYPES,
+  FIRST_LEVEL_SEED,
+} from "./game-config";
+import { calculateDifficultyMetrics } from "./level-difficulty";
 
 export {
   BLOCK_HEIGHT,
@@ -33,18 +35,15 @@ export {
   type DogLevelReplayMode,
 } from "./level-types";
 
-export const FIRST_LEVEL_NUMBER = 1 as const;
-export const FIRST_LEVEL_SEED = "dog-lege-dog:first-level:v2";
-export const FIRST_LEVEL_GENERATOR_VERSION = LEVEL_GENERATOR_VERSION;
-export const FIRST_LEVEL_MAX_LAYERS = 3 as const;
 export const FIRST_LEVEL_REWARD = DEFAULT_LEVEL_REWARD;
 
-export const FIRST_LEVEL_PATTERN_TYPES = [
-  "打工狗",
-  "单身狗",
-  "舔狗",
-  "看门狗",
-] as const;
+export {
+  FIRST_LEVEL_GENERATOR_VERSION,
+  FIRST_LEVEL_MAX_LAYERS,
+  FIRST_LEVEL_NUMBER,
+  FIRST_LEVEL_PATTERN_TYPES,
+  FIRST_LEVEL_SEED,
+} from "./game-config";
 
 const BOARD: DogBoard = Object.freeze({
   shape: "rectangle",
@@ -103,26 +102,6 @@ export const FIRST_LEVEL: DogLegeDogLevel = Object.freeze({
     failures: Object.freeze([]),
   }),
 });
-
-/**
- * Level 1 is fixed benchmark. Later levels use deterministic generator while
- * keeping level identity stable for navigation and progress tests.
- */
-export function getDogLegeDogLevel(levelNumber: number): DogLegeDogLevel {
-  if (!Number.isSafeInteger(levelNumber) || levelNumber < FIRST_LEVEL_NUMBER) {
-    throw new Error("狗了个狗 level number must be a positive integer");
-  }
-
-  if (levelNumber === FIRST_LEVEL_NUMBER) {
-    return FIRST_LEVEL;
-  }
-
-  return DEFAULT_LEVEL_GENERATOR.generate({
-    levelNumber,
-    seed: DEFAULT_LEVEL_SEED,
-    generatorVersion: LEVEL_GENERATOR_VERSION,
-  });
-}
 
 function createFirstLevelPlayableCells(): Array<{ x: number; y: number }> {
   const cells: Array<{ x: number; y: number }> = [];
