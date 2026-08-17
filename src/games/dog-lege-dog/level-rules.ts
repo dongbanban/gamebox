@@ -1,6 +1,6 @@
 import type { DogPatternType } from "./level-types";
 
-export { hasPositiveAreaOverlap } from "./level-graph";
+export { getPositiveOverlapArea, hasPositiveAreaOverlap } from "./level-graph";
 
 export interface DogRectangle {
   readonly x: number;

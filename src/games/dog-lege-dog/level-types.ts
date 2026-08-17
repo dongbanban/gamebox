@@ -16,7 +16,7 @@ export const DOG_PATTERN_TYPES = [
 
 export type DogPatternType = (typeof DOG_PATTERN_TYPES)[number];
 
-export type DogBoardShape = "rectangle" | "star" | "heart" | "irregular";
+export type DogBoardShape = "irregular";
 
 export interface DogBoardCell {
   readonly x: number;

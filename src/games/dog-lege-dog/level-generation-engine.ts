@@ -28,6 +28,7 @@ import {
   createSolvableBlocks,
   resolveRemovalPathPlan,
   selectPatternTypes,
+  validatePlacementGeometry,
   type PlacementFactory,
 } from "./level-placement";
 import {
@@ -284,7 +285,7 @@ export class GeneratedLevelGenerator {
       attempt,
       candidateRandomSeed,
       "generated",
-      (random) => templateOverride ?? selectShapeTemplate(request.levelNumber, random),
+      (random) => templateOverride ?? selectShapeTemplate(random),
       createSolvableBlockPlacements,
     );
   }
@@ -429,6 +430,10 @@ function createCandidateLevel(
     patternTypes,
     blocks,
   };
+  const geometryError = validatePlacementGeometry(board, blocks);
+  if (geometryError !== undefined) {
+    throw new Error(geometryError);
+  }
   const verification = verifyRemovalPath(geometry, solutionPath);
   if (!verification.solvable) {
     throw new Error(verification.reason ?? "LevelGenerator created an unsolvable level");
@@ -478,7 +483,7 @@ function createGenerationPlan(
 }
 
 function getFallbackTemplate(kind: "fallback" | "emergency"): DogShapeTemplate {
-  return getTemplateById("rectangle-classic-1", `LevelGenerator ${kind} template`);
+  return getTemplateById("irregular-notch-1", `LevelGenerator ${kind} template`);
 }
 
 function getFirstLevelTemplate(): DogShapeTemplate {

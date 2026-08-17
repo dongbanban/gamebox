@@ -53,7 +53,6 @@ export {
   getBlockCount,
   getMaxLayers,
   getPatternTypeCount,
-  getShapePool,
   isDifficultyWithinTarget,
   isLevelSolvable,
   type LevelCandidateFilter,

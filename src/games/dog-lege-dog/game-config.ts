@@ -2,7 +2,7 @@ import type { GameResultDisplayMetadata } from "../../catalog";
 import type { DogPatternType } from "./level-types";
 
 const GAME_ID = "dog-lege-dog" as const;
-const GENERATOR_VERSION = 3 as const;
+const GENERATOR_VERSION = 4 as const;
 const FIRST_LEVEL_PLACEMENT_CONFIG = Object.freeze({
   gridColumns: 6 as const,
   gridRows: 5 as const,

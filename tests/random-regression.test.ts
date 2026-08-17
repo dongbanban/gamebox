@@ -6,7 +6,6 @@ import {
   getBlockCount,
   getMaxLayers,
   getPatternTypeCount,
-  getShapePool,
   isDifficultyWithinTarget,
   isLevelSolvable,
   LEVEL_GENERATOR_VERSION,
@@ -130,7 +129,7 @@ function assertLevelInvariants(
   expect(level.patternTypes).toHaveLength(
     level.number === 1 ? 6 : getPatternTypeCount(level.number),
   );
-  expect(getShapePool(level.number)).toContain(board.shape);
+  expect(board.shape).toBe("irregular");
   expect(level.patternTypes.every((patternType) => DOG_PATTERN_TYPES.includes(patternType))).toBe(
     true,
   );
@@ -226,12 +225,14 @@ function assertLevelInvariants(
 }
 
 function assertStressLevel(level: DogLegeDogLevel): void {
+  const loadedSession = new GameSession(level);
+  expect(loadedSession.getState().remainingBlocks).toHaveLength(level.blocks.length);
   expect(level.blocks).toHaveLength(getBlockCount(level.number));
   expect(level.maxLayers).toBe(getMaxLayers(level.number));
   expect(level.patternTypes).toHaveLength(
     level.number === 1 ? 6 : getPatternTypeCount(level.number),
   );
-  expect(getShapePool(level.number)).toContain(level.board.shape);
+  expect(level.board.shape).toBe("irregular");
   expect(level.solutionPath).toHaveLength(level.blocks.length);
   expect(new Set(level.solutionPath)).toHaveLength(level.blocks.length);
   expect(isLevelSolvable(level)).toBe(true);

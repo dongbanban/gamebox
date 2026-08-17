@@ -24,7 +24,6 @@ import {
 } from "./level-progression";
 import {
   DOG_SHAPE_TEMPLATES,
-  getShapePool,
   type DogShapeTemplate,
 } from "./level-shapes";
 import type {
@@ -52,7 +51,6 @@ export {
   getDifficultyTarget,
   getMaxLayers,
   getPatternTypeCount,
-  getShapePool,
   isDifficultyWithinTarget,
   isLevelSolvable,
 };

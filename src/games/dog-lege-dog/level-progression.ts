@@ -37,7 +37,7 @@ export function getMaxLayers(levelNumber: number): number {
 }
 
 export function getPatternTypeCount(levelNumber: number): number {
-  return [4, 6, 8, 10][getProgressStage(levelNumber)];
+  return [6, 8, 10, 10][getProgressStage(levelNumber)];
 }
 
 export function getDifficultyTarget(levelNumber: number): DogDifficultyTarget {

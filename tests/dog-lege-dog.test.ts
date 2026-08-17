@@ -19,7 +19,7 @@ describe("狗了个狗首关", () => {
     expect(state.gameId).toBe("dog-lege-dog");
     expect(state.status).toBe("ready");
     expect(state.level.number).toBe(1);
-    expect(state.level.seed).toBe("dog-lege-dog:first-level:v3");
+    expect(state.level.seed).toBe("dog-lege-dog:first-level:v4");
     expect(state.level.board.shape).toBe("irregular");
     expect(state.level.board.logicalCellSize).toBe(4);
     expect(state.level.blocks).toHaveLength(90);

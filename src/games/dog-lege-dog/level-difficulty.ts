@@ -1,9 +1,4 @@
-import type {
-  DogBoardShape,
-  DogDifficultyTarget,
-  DogLevelDifficulty,
-  DogLevelGeometry,
-} from "./level-types";
+import type { DogDifficultyTarget, DogLevelDifficulty, DogLevelGeometry } from "./level-types";
 import { getDifficultyTarget } from "./level-progression";
 import {
   countSafeChoices,
@@ -12,13 +7,7 @@ import {
   type PathVerification,
 } from "./level-solvability";
 import { createBlockGraph } from "./level-graph";
-
-const SHAPE_COMPLEXITY: Readonly<Record<DogBoardShape, number>> = {
-  rectangle: 1,
-  star: 2,
-  heart: 3,
-  irregular: 4,
-};
+import { getPositiveOverlapArea } from "./level-rules";
 
 export function isDifficultyWithinTarget(
   difficulty: DogLevelDifficulty,
@@ -45,12 +34,13 @@ export function calculateDifficultyMetrics(
   const coveredBlocks = graph.higherBlockCounts.filter((count) => count > 0).length;
   const coverageRate = level.blocks.length === 0 ? 0 : coveredBlocks / level.blocks.length;
   const target = getDifficultyTarget(level.number);
-  const shapeComplexity = SHAPE_COMPLEXITY[level.board.shape];
+  const shapeComplexity = calculateShapeComplexity(level);
   const estimatedDurationMinutes = estimateDurationMinutes(
     level,
     coverageRate,
     safeChoiceCount,
     verification.trayPeakPressure,
+    shapeComplexity,
   );
   const difficulty = {
     blockCount: level.blocks.length,
@@ -134,8 +124,9 @@ function estimateDurationMinutes(
   coverageRate: number,
   safeChoiceCount: number,
   trayPeakPressure: number,
+  shapeComplexity: number,
 ): number {
-  const shapeScore = SHAPE_COMPLEXITY[level.board.shape] / 4;
+  const shapeScore = shapeComplexity / 4;
   const blockScore = level.blocks.length / 180;
   const layerScore = level.maxLayers / 6;
   const pressureScore = trayPeakPressure / 7;
@@ -149,4 +140,73 @@ function estimateDurationMinutes(
     0.4 * pressureScore +
     0.4 * safeChoiceScore;
   return Math.round(rawDuration * 10) / 10;
+}
+
+function calculateShapeComplexity(level: DogLevelGeometry): number {
+  const playableCells = new Set(level.board.playableCells.map((cell) => `${cell.x}:${cell.y}`));
+  let boundaryEdges = 0;
+  let concaveCells = 0;
+  for (const cell of level.board.playableCells) {
+    const missingNeighbors = [
+      `${cell.x - 1}:${cell.y}`,
+      `${cell.x + 1}:${cell.y}`,
+      `${cell.x}:${cell.y - 1}`,
+      `${cell.x}:${cell.y + 1}`,
+    ].filter((neighbor) => !playableCells.has(neighbor)).length;
+    boundaryEdges += missingNeighbors;
+    if (missingNeighbors >= 2) {
+      concaveCells += 1;
+    }
+  }
+
+  const contourScore = Math.min(
+    1,
+    (boundaryEdges / Math.max(1, level.board.playableCells.length)) * 2 +
+      concaveCells / Math.max(1, level.board.playableCells.length),
+  );
+  const overlapRatios = getCrossLayerOverlapRatios(level);
+  const partialOverlapRate = overlapRatios.length === 0
+    ? 0
+    : overlapRatios.filter((ratio) => ratio === 0.25 || ratio === 0.5).length /
+      overlapRatios.length;
+  const alignmentRate = overlapRatios.length === 0
+    ? 0
+    : overlapRatios.filter((ratio) => ratio === 1).length / overlapRatios.length;
+  const quarterRate = overlapRatios.length === 0
+    ? 0
+    : overlapRatios.filter((ratio) => ratio === 0.25).length / overlapRatios.length;
+  const halfRate = overlapRatios.length === 0
+    ? 0
+    : overlapRatios.filter((ratio) => ratio === 0.5).length / overlapRatios.length;
+  const overlapDistributionScore = Math.min(1, Math.min(quarterRate, halfRate) * 2);
+
+  return Math.round(
+    Math.min(
+      4,
+      1 +
+        contourScore * 1.5 +
+        partialOverlapRate * 1.5 +
+        overlapDistributionScore * 0.5 +
+        (1 - alignmentRate) * 0.5,
+    ) *
+      10,
+  ) / 10;
+}
+
+function getCrossLayerOverlapRatios(level: DogLevelGeometry): readonly number[] {
+  const ratios: number[] = [];
+  for (let firstIndex = 0; firstIndex < level.blocks.length; firstIndex += 1) {
+    const first = level.blocks[firstIndex];
+    for (const second of level.blocks.slice(firstIndex + 1)) {
+      if (first.z === second.z) {
+        continue;
+      }
+
+      const overlapArea = getPositiveOverlapArea(first, second);
+      if (overlapArea > 0) {
+        ratios.push(overlapArea / (first.width * first.height));
+      }
+    }
+  }
+  return ratios;
 }

@@ -2,6 +2,7 @@ import { FIRST_LEVEL_NUMBER, type DogLegeDogLevel } from "./first-level";
 import { getDogPatternClassName, renderDogPatternAsset } from "./game-assets";
 import type { GameSessionSnapshot } from "./game-session";
 import type { DogLegeDogGameState, DogVisualFeedback } from "./game-types";
+import type { DogBoard } from "./level-types";
 
 export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameState): void {
   const { board } = state.level;
@@ -10,6 +11,7 @@ export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameSta
   const blockSize = state.level.blocks[0];
   const boardColumns = board.width / blockSize.width;
   const boardRows = board.height / blockSize.height;
+  const boardClipPath = renderBoardClipPath(board);
 
   root.innerHTML = `
     <section
@@ -53,9 +55,9 @@ export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameSta
           data-template-id="${board.templateId}"
           data-logical-width="${board.width}"
           data-logical-height="${board.height}"
-          style="--board-columns: ${boardColumns}; --board-rows: ${boardRows};"
+          style="--board-columns: ${boardColumns}; --board-rows: ${boardRows}; clip-path: polygon(${boardClipPath});"
           role="img"
-          aria-label="第 ${state.level.number} 关${renderShapeLabel(board.shape)}棋盘，${blocks.length} 个层叠方块"
+          aria-label="第 ${state.level.number} 关不规则形棋盘，${blocks.length} 个层叠方块"
         >
           ${blocks
             .map((block) => renderBlock(block, boardColumns, boardRows, selectableBlockIds, state.inputLocked))
@@ -71,14 +73,68 @@ export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameSta
   `;
 }
 
-function renderShapeLabel(shape: DogLegeDogLevel["board"]["shape"]): string {
-  const labels: Record<DogLegeDogLevel["board"]["shape"], string> = {
-    rectangle: "长方形",
-    star: "五角星形",
-    heart: "爱心形",
-    irregular: "不规则形",
-  };
-  return labels[shape];
+interface BoardPoint {
+  readonly x: number;
+  readonly y: number;
+}
+
+function renderBoardClipPath(board: DogBoard): string {
+  const rowBounds = new Map<number, { minX: number; maxX: number }>();
+  for (const cell of board.playableCells) {
+    const current = rowBounds.get(cell.y);
+    if (current === undefined) {
+      rowBounds.set(cell.y, { minX: cell.x, maxX: cell.x });
+      continue;
+    }
+
+    current.minX = Math.min(current.minX, cell.x);
+    current.maxX = Math.max(current.maxX, cell.x);
+  }
+
+  const rows = [...rowBounds.entries()].sort(([firstY], [secondY]) => firstY - secondY);
+  const points: BoardPoint[] = [];
+  for (const [y, bounds] of rows) {
+    points.push({ x: bounds.maxX + 1, y });
+    points.push({ x: bounds.maxX + 1, y: y + 1 });
+  }
+  for (const [y, bounds] of [...rows].reverse()) {
+    points.push({ x: bounds.minX, y: y + 1 });
+    points.push({ x: bounds.minX, y });
+  }
+
+  return simplifyPolygon(points)
+    .map((point) => `${((point.x / board.width) * 100).toFixed(3)}% ${((point.y / board.height) * 100).toFixed(3)}%`)
+    .join(", ");
+}
+
+function simplifyPolygon(points: readonly BoardPoint[]): readonly BoardPoint[] {
+  const simplified: BoardPoint[] = [];
+  for (const point of points) {
+    const previous = simplified.at(-1);
+    if (previous?.x === point.x && previous.y === point.y) {
+      continue;
+    }
+    simplified.push(point);
+  }
+
+  let changed = true;
+  while (changed && simplified.length > 2) {
+    changed = false;
+    for (let index = 0; index < simplified.length; index += 1) {
+      const previous = simplified[(index - 1 + simplified.length) % simplified.length];
+      const current = simplified[index];
+      const next = simplified[(index + 1) % simplified.length];
+      if (
+        (previous.x === current.x && current.x === next.x) ||
+        (previous.y === current.y && current.y === next.y)
+      ) {
+        simplified.splice(index, 1);
+        changed = true;
+        break;
+      }
+    }
+  }
+  return simplified;
 }
 
 function renderBlock(

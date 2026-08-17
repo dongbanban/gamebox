@@ -3,10 +3,11 @@ import {
   BLOCK_WIDTH,
   DOG_PATTERN_TYPES,
   type DogBlock,
+  type DogBoard,
   type DogPatternType,
 } from "./level-types";
 import { FIRST_LEVEL_PLACEMENT } from "./game-config";
-import { hasPositiveAreaOverlap } from "./level-rules";
+import { getPositiveOverlapArea, hasPositiveAreaOverlap } from "./level-rules";
 import { getPatternTypeCount } from "./level-progression";
 import { createPlacementGraph } from "./level-graph";
 import { SeededRandom } from "./level-random";
@@ -15,9 +16,9 @@ import type { DogShapeTemplate } from "./level-shapes";
 const MAX_BLOCKS_PER_LOWER_BLOCK = 4;
 const LAYER_OFFSETS = [
   { x: 0, y: 0 },
+  { x: 2, y: 0 },
   { x: 2, y: 2 },
   { x: 0, y: 2 },
-  { x: 2, y: 0 },
 ] as const;
 
 export interface BlockPlacement {
@@ -29,6 +30,76 @@ export interface BlockPlacement {
 export interface RemovalPathPlan {
   readonly order: readonly number[];
   readonly layerByBlock: readonly number[];
+}
+
+export function validatePlacementGeometry(
+  board: DogBoard,
+  blocks: readonly DogBlock[],
+): string | undefined {
+  if (board.shape !== "irregular") {
+    return "LevelGenerator board shape must be irregular";
+  }
+
+  const playableCells = new Set(board.playableCells.map(cellKey));
+  const crossLayerOverlapRatios: number[] = [];
+  for (let firstIndex = 0; firstIndex < blocks.length; firstIndex += 1) {
+    const first = blocks[firstIndex];
+    if (
+      first.x < 0 ||
+      first.y < 0 ||
+      first.x + first.width > board.width ||
+      first.y + first.height > board.height
+    ) {
+      return `LevelGenerator block ${first.id} leaves board bounds`;
+    }
+    for (let y = first.y; y < first.y + first.height; y += 1) {
+      for (let x = first.x; x < first.x + first.width; x += 1) {
+        if (!playableCells.has(`${x}:${y}`)) {
+          return `LevelGenerator block ${first.id} leaves playable outline`;
+        }
+      }
+    }
+
+    for (let secondIndex = firstIndex + 1; secondIndex < blocks.length; secondIndex += 1) {
+      const second = blocks[secondIndex];
+      const area = overlapArea(first, second);
+      if (first.z === second.z) {
+        if (area > 0) {
+          return `LevelGenerator blocks ${first.id} and ${second.id} overlap on one layer`;
+        }
+        continue;
+      }
+
+      if (area > 0) {
+        crossLayerOverlapRatios.push(area / (first.width * first.height));
+      }
+    }
+  }
+
+  for (const lowerBlock of blocks) {
+    const higherOverlapCount = blocks.filter(
+      (higherBlock) => higherBlock.z > lowerBlock.z && overlapArea(lowerBlock, higherBlock) > 0,
+    ).length;
+    if (higherOverlapCount > MAX_BLOCKS_PER_LOWER_BLOCK) {
+      return `LevelGenerator block ${lowerBlock.id} exceeds overlap limit`;
+    }
+  }
+
+  if (crossLayerOverlapRatios.length === 0) {
+    return "LevelGenerator level has no cross-layer overlap";
+  }
+  const partialOverlapCount = crossLayerOverlapRatios.filter(
+    (ratio) => ratio === 0.25 || ratio === 0.5,
+  ).length;
+  const alignedOverlapCount = crossLayerOverlapRatios.filter((ratio) => ratio === 1).length;
+  if (partialOverlapCount / crossLayerOverlapRatios.length < 0.7) {
+    return "LevelGenerator partial overlap ratio is below 70%";
+  }
+  if (alignedOverlapCount / crossLayerOverlapRatios.length > 0.1) {
+    return "LevelGenerator aligned overlap ratio is above 10%";
+  }
+
+  return undefined;
 }
 
 export type PlacementFactory = (
@@ -108,26 +179,15 @@ export function createGuaranteedBlockPlacements(
   template: DogShapeTemplate,
   blockCount: number,
   maxLayers: number,
-  _random: SeededRandom,
+  random: SeededRandom,
   removalPlan: RemovalPathPlan,
 ): readonly BlockPlacement[] {
-  const layerCounts = distributeBlocks(blockCount, maxLayers);
-  const anchors = getCandidateAnchors(template, 0, 0);
-  const structuralPlacements: BlockPlacement[] = [];
-
-  for (let z = 0; z < maxLayers; z += 1) {
-    const desiredCount = layerCounts[z];
-    const start = z % 2 === 0 ? 0 : desiredCount;
-    const layerAnchors = anchors.slice(start, start + desiredCount);
-    if (layerAnchors.length !== desiredCount) {
-      throw new Error("LevelGenerator emergency template has too few safe anchors");
-    }
-
-    structuralPlacements.push(
-      ...layerAnchors.map((anchor) => ({ ...anchor, z })),
-    );
-  }
-
+  const structuralPlacements = createStructuralBlockPlacements(
+    template,
+    blockCount,
+    maxLayers,
+    random,
+  );
   return assignPlacementsToRemovalPlan(
     structuralPlacements,
     blockCount,
@@ -233,7 +293,7 @@ function createStructuralBlockPlacements(
     const desiredCount = layerCounts[z];
     let selected: BlockPlacement[] = [];
 
-    for (const offset of LAYER_OFFSETS) {
+    for (const offset of getLayerOffsetOrder(z)) {
       selected = selectStructuralLayerPlacements(
         template,
         z,
@@ -257,6 +317,14 @@ function createStructuralBlockPlacements(
   }
 
   return placements;
+}
+
+function getLayerOffsetOrder(z: number): readonly (typeof LAYER_OFFSETS)[number][] {
+  const preferredOffsetIndex = z % LAYER_OFFSETS.length;
+  return [
+    ...LAYER_OFFSETS.slice(preferredOffsetIndex),
+    ...LAYER_OFFSETS.slice(0, preferredOffsetIndex),
+  ];
 }
 
 function distributeBlocks(blockCount: number, maxLayers: number): readonly number[] {
@@ -362,6 +430,10 @@ function blocksOverlap(first: BlockPlacement, second: BlockPlacement): boolean {
       height: BLOCK_HEIGHT,
     },
   );
+}
+
+function overlapArea(first: DogBlock, second: DogBlock): number {
+  return getPositiveOverlapArea(first, second);
 }
 
 export function createSolvableBlocks(

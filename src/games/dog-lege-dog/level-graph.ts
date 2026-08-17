@@ -104,10 +104,17 @@ export function hasPositiveAreaOverlap(
   first: Rectangle,
   second: Rectangle,
 ): boolean {
-  return (
-    first.x < second.x + second.width &&
-    second.x < first.x + first.width &&
-    first.y < second.y + second.height &&
-    second.y < first.y + first.height
+  return getPositiveOverlapArea(first, second) > 0;
+}
+
+export function getPositiveOverlapArea(first: Rectangle, second: Rectangle): number {
+  const overlapWidth = Math.max(
+    0,
+    Math.min(first.x + first.width, second.x + second.width) - Math.max(first.x, second.x),
   );
+  const overlapHeight = Math.max(
+    0,
+    Math.min(first.y + first.height, second.y + second.height) - Math.max(first.y, second.y),
+  );
+  return overlapWidth * overlapHeight;
 }

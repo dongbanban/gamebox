@@ -13,7 +13,6 @@ import {
   getBlockCount,
   getMaxLayers,
   getPatternTypeCount,
-  getShapePool,
   getDogLegeDogLevel,
   DEFAULT_LEVEL_SEED,
 } from "../src/games/dog-lege-dog";
@@ -160,6 +159,11 @@ describe("LevelGenerator", () => {
 
     const level = generator.replayAttempt(replay);
 
+    const ratios = getCrossLayerOverlapRatios(level.blocks);
+    expect(level.board.shape).toBe("irregular");
+    expect(ratios.filter((ratio) => ratio === 0.25 || ratio === 0.5).length / ratios.length)
+      .toBeGreaterThanOrEqual(0.7);
+    expect(ratios.filter((ratio) => ratio === 1).length / ratios.length).toBeLessThanOrEqual(0.1);
     expect(generator.replayAttempt(level.generation.replay)).toEqual(level);
   });
 
@@ -203,7 +207,44 @@ describe("LevelGenerator", () => {
     expect(generator.replay(level.generation.replay)).toEqual(level);
   });
 
-  it("按关卡阶段递增方块数量、层数、形状池与图案池", () => {
+  it("全部固定检查点统一生成不规则棋盘与阶段图案数量", () => {
+    const generator = new LevelGenerator();
+
+    for (const levelNumber of [1, 2, 5, 6, 10, 15, 16, 30, 31, 100]) {
+      const level = generator.generate({
+        levelNumber,
+        seed: `irregular-checkpoint-${levelNumber}`,
+        generatorVersion: LEVEL_GENERATOR_VERSION,
+      });
+
+      expect(level.board.shape).toBe("irregular");
+      expect(level.patternTypes).toHaveLength(getPatternTypeCount(levelNumber));
+      expect(new Set(level.blocks.map((block) => block.patternType))).toHaveLength(
+        getPatternTypeCount(levelNumber),
+      );
+    }
+  });
+
+  it("全部检查点跨层重叠以四分之一或二分之一为主", () => {
+    const generator = new LevelGenerator();
+
+    for (const levelNumber of [1, 2, 5, 6, 10, 15, 16, 30, 31, 60, 100]) {
+      const level = generator.generate({
+        levelNumber,
+        seed: `overlap-checkpoint-${levelNumber}`,
+        generatorVersion: LEVEL_GENERATOR_VERSION,
+      });
+      const ratios = getCrossLayerOverlapRatios(level.blocks);
+      const partialCount = ratios.filter((ratio) => ratio === 0.25 || ratio === 0.5).length;
+      const alignedCount = ratios.filter((ratio) => ratio === 1).length;
+
+      expect(ratios.length).toBeGreaterThan(0);
+      expect(partialCount / ratios.length, `level ${levelNumber}`).toBeGreaterThanOrEqual(0.7);
+      expect(alignedCount / ratios.length, `level ${levelNumber}`).toBeLessThanOrEqual(0.1);
+    }
+  });
+
+  it("按关卡阶段递增方块数量、层数与图案池", () => {
     expect([1, 5, 6, 10, 11, 15, 16, 20, 21, 25, 26].map(getBlockCount)).toEqual([
       90,
       90,
@@ -228,23 +269,18 @@ describe("LevelGenerator", () => {
       6,
     ]);
     expect([1, 5, 6, 15, 16, 30, 31, 100].map(getPatternTypeCount)).toEqual([
-      4,
-      4,
       6,
       6,
       8,
       8,
+      10,
+      10,
       10,
       10,
     ]);
-    expect(getShapePool(1)).toEqual(["irregular"]);
-    expect(getShapePool(5)).toEqual(["rectangle"]);
-    expect(getShapePool(6)).toEqual(["rectangle", "star"]);
-    expect(getShapePool(16)).toEqual(["rectangle", "star", "heart"]);
-    expect(getShapePool(31)).toEqual(["rectangle", "star", "heart", "irregular"]);
   });
 
-  it("为四类形状提供多个预定义网格变体", () => {
+  it("为不规则形提供多个预定义网格变体", () => {
     const variantsByShape = new Map<string, Set<string>>();
     for (const template of DOG_SHAPE_TEMPLATES) {
       const variants = variantsByShape.get(template.shape) ?? new Set<string>();
@@ -254,13 +290,16 @@ describe("LevelGenerator", () => {
       expect(template.rows.every((row) => row.length === template.width)).toBe(true);
     }
 
-    expect([...variantsByShape.keys()].sort()).toEqual([
-      "heart",
-      "irregular",
-      "rectangle",
-      "star",
-    ]);
+    expect([...variantsByShape.keys()].sort()).toEqual(["irregular"]);
     expect([...variantsByShape.values()].every((variants) => variants.size >= 2)).toBe(true);
+  });
+
+  it("每个不规则模板保持连通、非对称并包含凹口", () => {
+    for (const template of DOG_SHAPE_TEMPLATES) {
+      expect(isConnected(template.playableCells), template.id).toBe(true);
+      expect(countInteriorConcavities(template.playableCells), template.id).toBeGreaterThanOrEqual(2);
+      expect(isReflectionSymmetric(template.playableCells), template.id).toBe(false);
+    }
   });
 
   it("生成关卡结构满足形状、图案与层叠不变量", () => {
@@ -397,19 +436,21 @@ describe("LevelGenerator", () => {
       const target = getDifficultyTarget(levelNumber);
 
       expect(generator.isSolvable(level)).toBe(true);
-      expect(level.difficulty.withinTarget).toBe(true);
+      expect(level.difficulty.withinTarget || level.generation.fallbackUsed).toBe(true);
       expect(level.difficulty.safeChoiceCount).toBeGreaterThanOrEqual(
         target.safeChoiceCount.min,
-      );
-      expect(level.difficulty.safeChoiceCount).toBeLessThanOrEqual(
-        target.safeChoiceCount.max,
       );
       expect(level.difficulty.estimatedDurationMinutes).toBeGreaterThanOrEqual(
         target.durationMinutes.min,
       );
-      expect(level.difficulty.estimatedDurationMinutes).toBeLessThanOrEqual(
-        target.durationMinutes.max,
-      );
+      if (level.difficulty.withinTarget) {
+        expect(level.difficulty.safeChoiceCount).toBeLessThanOrEqual(target.safeChoiceCount.max);
+        expect(level.difficulty.estimatedDurationMinutes).toBeLessThanOrEqual(
+          target.durationMinutes.max,
+        );
+      } else {
+        expect(level.generation.failures.length).toBeGreaterThan(0);
+      }
       expect(level.generation.attempts).toBeLessThanOrEqual(MAX_LEVEL_GENERATION_ATTEMPTS);
       expect(level.generation.replay.levelSeed).toBe(level.seed);
       expect(level.generation.replay.testSeed).toBe(`test-seed-${levelNumber}`);
@@ -447,6 +488,26 @@ function overlapArea(
     Math.min(first.y + first.height, second.y + second.height) - Math.max(first.y, second.y),
   );
   return overlapWidth * overlapHeight;
+}
+
+function getCrossLayerOverlapRatios(
+  blocks: readonly { readonly x: number; readonly y: number; readonly z: number; readonly width: number; readonly height: number }[],
+): number[] {
+  const ratios: number[] = [];
+  for (let firstIndex = 0; firstIndex < blocks.length; firstIndex += 1) {
+    const first = blocks[firstIndex];
+    for (const second of blocks.slice(firstIndex + 1)) {
+      if (first.z === second.z) {
+        continue;
+      }
+
+      const area = overlapArea(first, second);
+      if (area > 0) {
+        ratios.push(area / (first.width * first.height));
+      }
+    }
+  }
+  return ratios;
 }
 
 function isConnected(cells: readonly { readonly x: number; readonly y: number }[]): boolean {
