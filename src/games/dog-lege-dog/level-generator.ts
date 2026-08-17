@@ -13,8 +13,13 @@ import {
   isDifficultyWithinTarget,
 } from "./level-difficulty";
 import {
+  findSolvability,
   findSolvablePath,
   isLevelSolvable,
+} from "./level-solvability";
+import type {
+  SolvabilityResult,
+  SolvabilitySearchOptions,
 } from "./level-solvability";
 import {
   getBlockCount,
@@ -30,6 +35,7 @@ import type {
   DogLevelDifficulty,
   DogLevelGenerationFailure,
   DogLevelReplay,
+  DogLevelGeometry,
   DogLegeDogLevel,
 } from "./level-types";
 import type {
@@ -47,6 +53,7 @@ export {
   DOG_SHAPE_TEMPLATES,
   calculateDifficultyMetrics,
   findSolvablePath,
+  findSolvability,
   getBlockCount,
   getDifficultyTarget,
   getMaxLayers,
@@ -58,7 +65,13 @@ export {
 export type { DogShapeTemplate };
 
 export function getLevelDifficultyMetrics(level: DogLegeDogLevel): DogLevelDifficulty {
-  return calculateDifficultyMetrics(level, findSolvablePath(level) ?? undefined);
+  const solvability = findSolvability(level);
+  return calculateDifficultyMetrics(
+    level,
+    solvability.status === "solvable" ? solvability.path : undefined,
+    undefined,
+    solvability,
+  );
 }
 
 export type {
@@ -66,6 +79,10 @@ export type {
   LevelGeneratorOptions,
   LevelGeneratorRequest,
 };
+export type {
+  SolvabilityResult,
+  SolvabilitySearchOptions,
+} from "./level-solvability";
 
 export class LevelGenerator {
   private readonly provider: DogLevelProvider;
@@ -92,16 +109,26 @@ export class LevelGenerator {
     return this.provider.generate(requestOrLevelNumber);
   }
 
-  findSolvablePath(level: DogLegeDogLevel): readonly string[] | null {
+  findSolvablePath(level: DogLevelGeometry): readonly string[] | null {
     return this.provider.findSolvablePath(level);
   }
 
-  isSolvable(level: DogLegeDogLevel): boolean {
+  findSolvability(
+    level: DogLevelGeometry,
+    options?: SolvabilitySearchOptions,
+  ): SolvabilityResult {
+    return this.provider.findSolvability(level, options);
+  }
+
+  isSolvable(level: DogLevelGeometry): boolean {
     return this.provider.isSolvable(level);
   }
 
-  getDifficultyMetrics(level: DogLegeDogLevel): DogLevelDifficulty {
-    return this.provider.getDifficultyMetrics(level);
+  getDifficultyMetrics(
+    level: DogLevelGeometry,
+    options?: SolvabilitySearchOptions,
+  ): DogLevelDifficulty {
+    return this.provider.getDifficultyMetrics(level, options);
   }
 
   replay(replay: DogLevelReplay): DogLegeDogLevel {

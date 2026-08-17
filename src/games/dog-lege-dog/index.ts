@@ -27,13 +27,17 @@ export type {
   DogBoardShape,
   DogDifficultyRange,
   DogDifficultyTarget,
+  DogDifficultyCertainty,
   DogLevelDifficulty,
   DogLevelGeneration,
   DogLevelGenerationFailure,
+  DogLevelGeometry,
   DogLevelReplay,
   DogLevelReplayMode,
   DogLegeDogLevel,
   DogPatternType,
+  DogSafeChoiceSearchStatus,
+  DogSolvabilityStatus,
 } from "./first-level";
 
 export {
@@ -44,6 +48,7 @@ export {
   DOG_SHAPE_TEMPLATES,
   calculateDifficultyMetrics,
   findSolvablePath,
+  findSolvability,
   getDifficultyTarget,
   getLevelDifficultyMetrics,
   LEVEL_GENERATOR_VERSION,
@@ -61,6 +66,8 @@ export {
   type DogShapeTemplate,
   type LevelGeneratorOptions,
   type LevelGeneratorRequest,
+  type SolvabilityResult,
+  type SolvabilitySearchOptions,
 } from "./level-generator";
 
 export { createDogLegeDogGame, startDogLegeDogGame } from "./game-controller";

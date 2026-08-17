@@ -32,8 +32,11 @@ import {
   type PlacementFactory,
 } from "./level-placement";
 import {
+  findSolvability,
   findSolvablePath,
   verifyRemovalPath,
+  type SolvabilitySearchOptions,
+  type SolvabilityResult,
 } from "./level-solvability";
 import {
   calculateDifficultyMetrics,
@@ -70,6 +73,8 @@ import {
 } from "./level-replay";
 
 export const MAX_LEVEL_GENERATION_ATTEMPTS = 100 as const;
+// Default target search gets one relaxed-target window before using closest proven candidate.
+const MAX_DIFFICULTY_TARGET_ATTEMPTS = 32 as const;
 
 type TemplateFactory = (random: SeededRandom) => DogShapeTemplate;
 type PatternTypesFactory = (random: SeededRandom) => readonly DogPatternType[];
@@ -85,9 +90,11 @@ interface CandidateGenerationPlan {
 export class GeneratedLevelGenerator {
   private readonly gameId: string;
   private readonly candidateFilter: LevelCandidateFilter;
+  private readonly usesDefaultCandidateFilter: boolean;
 
   constructor(options: LevelGeneratorOptions = {}) {
     this.gameId = options.gameId ?? DOG_GAME_ID;
+    this.usesDefaultCandidateFilter = options.candidateFilter === undefined;
     this.candidateFilter =
       options.candidateFilter ??
       ((difficulty, target) => isDifficultyWithinTarget(difficulty, target));
@@ -111,8 +118,10 @@ export class GeneratedLevelGenerator {
     const testSeed = request.testSeed ?? request.seed;
     const failures: DogLevelGenerationFailure[] = [];
     let closestCandidate: GeneratedLevelCandidate | undefined;
+    let attempts = 0;
 
     for (let attempt = 1; attempt <= MAX_LEVEL_GENERATION_ATTEMPTS; attempt += 1) {
+      attempts = attempt;
       try {
         const candidate = this.createCandidate(
           request,
@@ -128,6 +137,8 @@ export class GeneratedLevelGenerator {
         }
 
         if (
+          candidate.difficulty.certainty === "certain" &&
+          candidate.difficulty.solvabilityStatus === "solvable" &&
           this.candidateFilter(
             candidate.difficulty,
             getRelaxedDifficultyTarget(request.levelNumber, attempt),
@@ -153,6 +164,13 @@ export class GeneratedLevelGenerator {
             getCandidateRandomSeed(this.gameId, levelSeed, testSeed, attempt),
           ),
         );
+
+        if (
+          this.usesDefaultCandidateFilter &&
+          attempt >= MAX_DIFFICULTY_TARGET_ATTEMPTS
+        ) {
+          break;
+        }
       } catch (error) {
         failures.push(
           createGenerationFailure(
@@ -210,19 +228,36 @@ export class GeneratedLevelGenerator {
       }
     }
 
-    return finalizeCandidate(fallback, MAX_LEVEL_GENERATION_ATTEMPTS, true, failures);
+    return finalizeCandidate(fallback, attempts, true, failures);
   }
 
   findSolvablePath(level: DogLevelGeometry): readonly string[] | null {
     return findSolvablePath(level);
   }
 
-  isSolvable(level: DogLevelGeometry): boolean {
-    return this.findSolvablePath(level) !== null;
+  findSolvability(
+    level: DogLevelGeometry,
+    options?: SolvabilitySearchOptions,
+  ): SolvabilityResult {
+    return findSolvability(level, options);
   }
 
-  getDifficultyMetrics(level: DogLevelGeometry): DogLevelDifficulty {
-    return calculateDifficultyMetrics(level, this.findSolvablePath(level) ?? undefined);
+  isSolvable(level: DogLevelGeometry): boolean {
+    return this.findSolvability(level).status === "solvable";
+  }
+
+  getDifficultyMetrics(
+    level: DogLevelGeometry,
+    options?: SolvabilitySearchOptions,
+  ): DogLevelDifficulty {
+    const solvability = this.findSolvability(level, options);
+    return calculateDifficultyMetrics(
+      level,
+      solvability.status === "solvable" ? solvability.path : undefined,
+      undefined,
+      solvability,
+      options,
+    );
   }
 
   replay(replay: DogLevelReplay): DogLegeDogLevel {

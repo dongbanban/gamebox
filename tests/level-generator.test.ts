@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   BLOCK_HEIGHT,
   BLOCK_WIDTH,
+  calculateDifficultyMetrics,
   DOG_PATTERN_TYPES,
   DOG_SHAPE_TEMPLATES,
   FIRST_LEVEL,
@@ -457,7 +458,353 @@ describe("LevelGenerator", () => {
       expect(generator.replay(level.generation.replay)).toEqual(level);
     }
   });
+
+  it("三态搜索允许超过 16 个剩余方块，并寻找替代通关路径", () => {
+    const generator = new LevelGenerator();
+    const level = createLongSearchFixture();
+
+    const solvability = generator.findSolvability(level);
+    const difficulty = generator.getDifficultyMetrics(level);
+    const descendingPath = [...level.blocks]
+      .sort((first, second) => second.z - first.z || first.id.localeCompare(second.id))
+      .map((block) => block.id);
+
+    expect(solvability.status).toBe("solvable");
+    expect(solvability.path).toHaveLength(level.blocks.length);
+    expect(solvability.path).not.toEqual(descendingPath);
+    expect(difficulty.solvabilityStatus).toBe("solvable");
+    expect(difficulty.safeChoiceSearchStatus).toBe("complete");
+    expect(difficulty.certainty).toBe("certain");
+    expect(difficulty.withinTarget).toBe(false);
+  });
+
+  it("搜索预算不足保留不确定状态，完整搜索才确认无通关路径", () => {
+    const generator = new LevelGenerator();
+    const level = createBudgetFixture();
+    const finiteBranchLevel = createFiniteBranchFixture();
+
+    expect(generator.findSolvability(level, { branchBudget: 0 }).status).toBe(
+      "budget-exhausted",
+    );
+    expect(generator.findSolvability(finiteBranchLevel, { branchBudget: 0 }).status).toBe(
+      "budget-exhausted",
+    );
+    expect(generator.findSolvability(finiteBranchLevel, { branchBudget: 100 }).status).toBe(
+      "unsolvable",
+    );
+
+    const difficulty = generator.getDifficultyMetrics(level);
+    const directDifficulty = calculateDifficultyMetrics(
+      level,
+      undefined,
+      undefined,
+      undefined,
+      { branchBudget: 0 },
+    );
+    expect(difficulty.solvabilityStatus).toBe("budget-exhausted");
+    expect(difficulty.safeChoiceSearchStatus).toBe("budget-exhausted");
+    expect(difficulty.certainty).toBe("uncertain");
+    expect(difficulty.withinTarget).toBe(false);
+    expect(directDifficulty.solvabilityStatus).toBe("budget-exhausted");
+    expect(directDifficulty.certainty).toBe("uncertain");
+  });
+
+  it("安全选择搜索预算不足时保留已证明通关路径并标记难度不确定", () => {
+    const generator = new LevelGenerator();
+    const level = createSafeChoiceBudgetFixture();
+
+    expect(generator.findSolvability(level).status).toBe("solvable");
+
+    const difficulty = generator.getDifficultyMetrics(level, { branchBudget: 0 });
+    expect(difficulty.solvabilityStatus).toBe("solvable");
+    expect(difficulty.safeChoiceSearchStatus).toBe("budget-exhausted");
+    expect(difficulty.certainty).toBe("uncertain");
+    expect(difficulty.withinTarget).toBe(false);
+  });
 });
+
+type SolvabilityFixture = Parameters<LevelGenerator["findSolvability"]>[0];
+type SolvabilityFixtureWithPath = SolvabilityFixture & {
+  readonly solutionPath: readonly string[];
+};
+
+function createLongSearchFixture(): SolvabilityFixture {
+  const preferredOrder = [
+    0, 3, 6, 9, 12, 15,
+    1, 4, 2, 5,
+    7, 8, 10, 11, 13, 14, 16, 17,
+  ];
+  const idByBlockIndex = new Map(
+    preferredOrder.map((blockIndex, order) => [
+      blockIndex,
+      `block-${String(order).padStart(2, "0")}`,
+    ]),
+  );
+  const blocks: SolvabilityFixture["blocks"] = Array.from(
+    { length: 18 },
+    (_, index) => ({
+      id: idByBlockIndex.get(index)!,
+      x: index * BLOCK_WIDTH,
+      y: 0,
+      z: 0,
+      width: BLOCK_WIDTH,
+      height: BLOCK_HEIGHT,
+      rotation: 0,
+      patternType: DOG_PATTERN_TYPES[Math.floor(index / 3)]!,
+    }),
+  );
+
+  return {
+    number: 1,
+    maxLayers: 3,
+    board: {
+      shape: "irregular",
+      templateId: "test-long-search",
+      width: blocks.length * BLOCK_WIDTH,
+      height: BLOCK_HEIGHT,
+      logicalCellSize: 4,
+      playableCells: [],
+    },
+    patternTypes: DOG_PATTERN_TYPES.slice(0, 6),
+    blocks,
+  };
+}
+
+function createBudgetFixture(): SolvabilityFixture {
+  const blocks: SolvabilityFixture["blocks"] = Array.from(
+    { length: 8 },
+    (_, index) => ({
+      id: `budget-block-${String(index).padStart(2, "0")}`,
+      x: index * BLOCK_WIDTH,
+      y: 0,
+      z: 0,
+      width: BLOCK_WIDTH,
+      height: BLOCK_HEIGHT,
+      rotation: 0,
+      patternType: DOG_PATTERN_TYPES[index]!,
+    }),
+  );
+
+  return {
+    number: 1,
+    maxLayers: 1,
+    board: {
+      shape: "irregular",
+      templateId: "test-budget",
+      width: blocks.length * BLOCK_WIDTH,
+      height: BLOCK_HEIGHT,
+      logicalCellSize: 4,
+      playableCells: [],
+    },
+    patternTypes: DOG_PATTERN_TYPES.slice(0, 8),
+    blocks,
+  };
+}
+
+function createFiniteBranchFixture(): SolvabilityFixture {
+  const blocks: SolvabilityFixture["blocks"] = Array.from(
+    { length: 8 },
+    (_, index) => ({
+      id: `finite-branch-${index}`,
+      x: index < 2 ? index * BLOCK_WIDTH * 2 : BLOCK_WIDTH * 2,
+      y: 0,
+      z: 2 - index,
+      width: BLOCK_WIDTH,
+      height: BLOCK_HEIGHT,
+      rotation: 0,
+      patternType: DOG_PATTERN_TYPES[index]!,
+    }),
+  );
+
+  return {
+    number: 1,
+    maxLayers: 3,
+    board: {
+      shape: "irregular",
+      templateId: "test-finite-branch",
+      width: blocks.length * BLOCK_WIDTH,
+      height: BLOCK_HEIGHT,
+      logicalCellSize: 4,
+      playableCells: [],
+    },
+    patternTypes: DOG_PATTERN_TYPES.slice(0, 8),
+    blocks,
+  };
+}
+
+function createSafeChoiceBudgetFixture(): SolvabilityFixtureWithPath {
+  const blocks: SolvabilityFixture["blocks"] = [
+    {
+      id: "a0",
+      x: 8,
+      y: 0,
+      z: 5,
+      width: BLOCK_WIDTH,
+      height: BLOCK_HEIGHT,
+      rotation: 0,
+      patternType: DOG_PATTERN_TYPES[0]!,
+    },
+    {
+      id: "b0",
+      x: 12,
+      y: 0,
+      z: 5,
+      width: BLOCK_WIDTH,
+      height: BLOCK_HEIGHT,
+      rotation: 0,
+      patternType: DOG_PATTERN_TYPES[1]!,
+    },
+    {
+      id: "c0",
+      x: 0,
+      y: 0,
+      z: 5,
+      width: BLOCK_WIDTH,
+      height: BLOCK_HEIGHT,
+      rotation: 0,
+      patternType: DOG_PATTERN_TYPES[2]!,
+    },
+    {
+      id: "d0",
+      x: 0,
+      y: 0,
+      z: 4,
+      width: BLOCK_WIDTH,
+      height: BLOCK_HEIGHT,
+      rotation: 0,
+      patternType: DOG_PATTERN_TYPES[3]!,
+    },
+    {
+      id: "e0",
+      x: 16,
+      y: 0,
+      z: 5,
+      width: BLOCK_WIDTH,
+      height: BLOCK_HEIGHT,
+      rotation: 0,
+      patternType: DOG_PATTERN_TYPES[4]!,
+    },
+    {
+      id: "a1",
+      x: 8,
+      y: 0,
+      z: 4,
+      width: BLOCK_WIDTH,
+      height: BLOCK_HEIGHT,
+      rotation: 0,
+      patternType: DOG_PATTERN_TYPES[0]!,
+    },
+    {
+      id: "b1",
+      x: 12,
+      y: 0,
+      z: 4,
+      width: BLOCK_WIDTH,
+      height: BLOCK_HEIGHT,
+      rotation: 0,
+      patternType: DOG_PATTERN_TYPES[1]!,
+    },
+    {
+      id: "c1",
+      x: 4,
+      y: 0,
+      z: 4,
+      width: BLOCK_WIDTH,
+      height: BLOCK_HEIGHT,
+      rotation: 0,
+      patternType: DOG_PATTERN_TYPES[2]!,
+    },
+    {
+      id: "a2",
+      x: 4,
+      y: 0,
+      z: 3,
+      width: BLOCK_WIDTH,
+      height: BLOCK_HEIGHT,
+      rotation: 0,
+      patternType: DOG_PATTERN_TYPES[0]!,
+    },
+    {
+      id: "b2",
+      x: 4,
+      y: 0,
+      z: 2,
+      width: BLOCK_WIDTH,
+      height: BLOCK_HEIGHT,
+      rotation: 0,
+      patternType: DOG_PATTERN_TYPES[1]!,
+    },
+    {
+      id: "c2",
+      x: 4,
+      y: 0,
+      z: 1,
+      width: BLOCK_WIDTH,
+      height: BLOCK_HEIGHT,
+      rotation: 0,
+      patternType: DOG_PATTERN_TYPES[2]!,
+    },
+    {
+      id: "d1",
+      x: 4,
+      y: 0,
+      z: 0,
+      width: BLOCK_WIDTH,
+      height: BLOCK_HEIGHT,
+      rotation: 0,
+      patternType: DOG_PATTERN_TYPES[3]!,
+    },
+    {
+      id: "d2",
+      x: 20,
+      y: 0,
+      z: 5,
+      width: BLOCK_WIDTH,
+      height: BLOCK_HEIGHT,
+      rotation: 0,
+      patternType: DOG_PATTERN_TYPES[3]!,
+    },
+    {
+      id: "e1",
+      x: 4,
+      y: 0,
+      z: -1,
+      width: BLOCK_WIDTH,
+      height: BLOCK_HEIGHT,
+      rotation: 0,
+      patternType: DOG_PATTERN_TYPES[4]!,
+    },
+    {
+      id: "e2",
+      x: 4,
+      y: 0,
+      z: -2,
+      width: BLOCK_WIDTH,
+      height: BLOCK_HEIGHT,
+      rotation: 0,
+      patternType: DOG_PATTERN_TYPES[4]!,
+    },
+  ];
+
+  return {
+    number: 1,
+    maxLayers: 6,
+    board: {
+      shape: "irregular",
+      templateId: "test-safe-choice-budget",
+      width: 24,
+      height: BLOCK_HEIGHT,
+      logicalCellSize: 4,
+      playableCells: [],
+    },
+    patternTypes: DOG_PATTERN_TYPES.slice(0, 5),
+    blocks,
+    solutionPath: [
+      "a0", "b0", "c0", "d0", "e0", "a1", "b1", "c1",
+      "a2", "b2", "c2", "d1", "d2", "e1", "e2",
+    ],
+  };
+}
 
 function hasPositiveAreaOverlap(
   first: { x: number; y: number; width: number; height: number },

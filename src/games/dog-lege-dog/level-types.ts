@@ -16,6 +16,15 @@ export const DOG_PATTERN_TYPES = [
 
 export type DogPatternType = (typeof DOG_PATTERN_TYPES)[number];
 
+export type DogSolvabilityStatus =
+  | "solvable"
+  | "unsolvable"
+  | "budget-exhausted";
+
+export type DogSafeChoiceSearchStatus = "complete" | "budget-exhausted";
+
+export type DogDifficultyCertainty = "certain" | "uncertain";
+
 export type DogBoardShape = "irregular";
 
 export interface DogBoardCell {
@@ -60,6 +69,9 @@ export interface DogLevelDifficulty {
   readonly initialSelectableCount: number;
   readonly rawSafeChoiceCount: number;
   readonly safeChoiceCount: number;
+  readonly solvabilityStatus: DogSolvabilityStatus;
+  readonly safeChoiceSearchStatus: DogSafeChoiceSearchStatus;
+  readonly certainty: DogDifficultyCertainty;
   readonly trayPeakPressure: number;
   readonly shapeComplexity: number;
   readonly patternTypeCount: number;

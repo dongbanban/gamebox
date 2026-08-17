@@ -21,6 +21,10 @@ import type {
   DogLevelReplay,
   DogLegeDogLevel,
 } from "./level-types";
+import type {
+  SolvabilityResult,
+  SolvabilitySearchOptions,
+} from "./level-solvability";
 
 /** One deterministic level source for every level. */
 export class DogLevelProvider {
@@ -82,12 +86,22 @@ export class DogLevelProvider {
     return this.generatedLevels.findSolvablePath(level);
   }
 
+  findSolvability(
+    level: DogLevelGeometry,
+    options?: SolvabilitySearchOptions,
+  ): SolvabilityResult {
+    return this.generatedLevels.findSolvability(level, options);
+  }
+
   isSolvable(level: DogLevelGeometry): boolean {
     return this.generatedLevels.isSolvable(level);
   }
 
-  getDifficultyMetrics(level: DogLevelGeometry): DogLevelDifficulty {
-    return this.generatedLevels.getDifficultyMetrics(level);
+  getDifficultyMetrics(
+    level: DogLevelGeometry,
+    options?: SolvabilitySearchOptions,
+  ): DogLevelDifficulty {
+    return this.generatedLevels.getDifficultyMetrics(level, options);
   }
 }
 

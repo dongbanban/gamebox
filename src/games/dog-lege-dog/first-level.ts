@@ -22,8 +22,12 @@ export {
   type DogLevelDifficulty,
   type DogLevelGeneration,
   type DogLevelGenerationFailure,
+  type DogLevelGeometry,
   type DogLevelReplay,
   type DogLevelReplayMode,
+  type DogDifficultyCertainty,
+  type DogSafeChoiceSearchStatus,
+  type DogSolvabilityStatus,
 } from "./level-types";
 
 export const FIRST_LEVEL_REWARD = DEFAULT_LEVEL_REWARD;

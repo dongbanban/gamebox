@@ -1,10 +1,17 @@
-import type { DogDifficultyTarget, DogLevelDifficulty, DogLevelGeometry } from "./level-types";
+import type {
+  DogDifficultyTarget,
+  DogLevelDifficulty,
+  DogLevelGeometry,
+  DogSafeChoiceSearchStatus,
+} from "./level-types";
 import { getDifficultyTarget } from "./level-progression";
 import {
-  countSafeChoices,
-  findSolvablePath,
+  countSafeChoiceMetrics,
+  findSolvability,
+  type SolvabilitySearchOptions,
   verifyRemovalPath,
   type PathVerification,
+  type SolvabilityResult,
 } from "./level-solvability";
 import { createBlockGraph } from "./level-graph";
 import { getPositiveOverlapArea } from "./level-rules";
@@ -14,6 +21,9 @@ export function isDifficultyWithinTarget(
   target: DogDifficultyTarget = difficulty.target,
 ): boolean {
   return (
+    difficulty.solvabilityStatus === "solvable" &&
+    difficulty.safeChoiceSearchStatus === "complete" &&
+    difficulty.certainty === "certain" &&
     isWithinRange(difficulty.safeChoiceCount, target.safeChoiceCount) &&
     isWithinRange(difficulty.estimatedDurationMinutes, target.durationMinutes)
   );
@@ -23,17 +33,40 @@ export function calculateDifficultyMetrics(
   level: DogLevelGeometry,
   solutionPath?: readonly string[],
   knownVerification?: PathVerification,
+  knownSolvability?: SolvabilityResult,
+  searchOptions: SolvabilitySearchOptions = {},
 ): DogLevelDifficulty {
-  const path = solutionPath ?? findSolvablePath(level) ?? [];
+  const discoveredSolvability =
+    knownSolvability ??
+    (solutionPath === undefined ? findSolvability(level, searchOptions) : undefined);
+  const path = solutionPath ??
+    (discoveredSolvability?.status === "solvable" ? discoveredSolvability.path : []);
   const verification =
-    knownVerification ?? verifyRemovalPath(level, path);
+    knownVerification ??
+    (discoveredSolvability === undefined
+      ? verifyRemovalPath(level, path)
+      : toPathVerification(discoveredSolvability));
   const graph = createBlockGraph(level.blocks);
   const initialSelectable = graph.higherBlockCounts.filter((count) => count === 0).length;
-  const rawSafeChoiceCount = countSafeChoices(level, path, graph);
-  const safeChoiceCount = rawSafeChoiceCount;
+  const target = getDifficultyTarget(level.number);
+  const solvabilityStatus =
+    discoveredSolvability?.status ?? verification.status;
+  const safeChoiceMetrics =
+    solvabilityStatus === "solvable" && path.length === level.blocks.length
+      ? countSafeChoiceMetrics(level, path, graph, searchOptions)
+      : {
+          safeChoiceCount: 0,
+          searchStatus: solvabilityStatus === "budget-exhausted"
+            ? "budget-exhausted"
+            : "complete",
+        } satisfies {
+          safeChoiceCount: number;
+          searchStatus: DogSafeChoiceSearchStatus;
+        };
+  const rawSafeChoiceCount = safeChoiceMetrics.safeChoiceCount;
+  const safeChoiceCount = safeChoiceMetrics.safeChoiceCount;
   const coveredBlocks = graph.higherBlockCounts.filter((count) => count > 0).length;
   const coverageRate = level.blocks.length === 0 ? 0 : coveredBlocks / level.blocks.length;
-  const target = getDifficultyTarget(level.number);
   const shapeComplexity = calculateShapeComplexity(level);
   const estimatedDurationMinutes = estimateDurationMinutes(
     level,
@@ -49,6 +82,9 @@ export function calculateDifficultyMetrics(
     initialSelectableCount: initialSelectable,
     rawSafeChoiceCount,
     safeChoiceCount,
+    solvabilityStatus,
+    safeChoiceSearchStatus: safeChoiceMetrics.searchStatus,
+    certainty: safeChoiceMetrics.searchStatus === "complete" ? "certain" : "uncertain",
     trayPeakPressure: verification.trayPeakPressure,
     shapeComplexity,
     patternTypeCount: level.patternTypes.length,
@@ -59,7 +95,7 @@ export function calculateDifficultyMetrics(
 
   return Object.freeze({
     ...difficulty,
-    withinTarget: verification.solvable && isDifficultyWithinTarget(difficulty, target),
+    withinTarget: isDifficultyWithinTarget(difficulty, target),
   });
 }
 
@@ -85,7 +121,25 @@ export function compareDifficultyDistance(
   first: DogLevelDifficulty,
   second: DogLevelDifficulty,
 ): number {
+  if (first.certainty !== second.certainty) {
+    return first.certainty === "certain" ? -1 : 1;
+  }
+
+  if (first.solvabilityStatus !== second.solvabilityStatus) {
+    return first.solvabilityStatus === "solvable" ? -1 : 1;
+  }
+
   return difficultyDistance(first) - difficultyDistance(second);
+}
+
+function toPathVerification(result: SolvabilityResult): PathVerification {
+  return {
+    status: result.status === "solvable" ? "solvable" : "unsolvable",
+    solvable: result.status === "solvable",
+    path: result.path,
+    trayPeakPressure: result.trayPeakPressure,
+    reason: result.reason,
+  };
 }
 
 function difficultyDistance(difficulty: DogLevelDifficulty): number {
