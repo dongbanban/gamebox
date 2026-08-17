@@ -1,16 +1,19 @@
 import type { DogBlock } from "./level-types";
 
-export interface LayeredRectangle {
+export interface Rectangle {
   readonly x: number;
   readonly y: number;
-  readonly z: number;
   readonly width: number;
   readonly height: number;
 }
 
+export interface LayeredRectangle extends Rectangle {
+  readonly z: number;
+}
+
 export interface OverlapGraph {
-  readonly higherBlockCounts: number[];
-  readonly lowerBlockIndicesByHigher: number[][];
+  readonly higherBlockCounts: readonly number[];
+  readonly lowerBlockIndicesByHigher: readonly (readonly number[])[];
 }
 
 export interface BlockGraph extends OverlapGraph {
@@ -23,16 +26,25 @@ export interface PlacementRectangle {
   readonly z: number;
 }
 
+const blockGraphCache = new WeakMap<readonly DogBlock[], BlockGraph>();
+
 export function createBlockGraph(blocks: readonly DogBlock[]): BlockGraph {
+  const cachedGraph = blockGraphCache.get(blocks);
+  if (cachedGraph !== undefined) {
+    return cachedGraph;
+  }
+
   const indexById = new Map<string, number>();
   for (let index = 0; index < blocks.length; index += 1) {
     indexById.set(blocks[index].id, index);
   }
 
-  return {
+  const graph = Object.freeze({
     indexById,
     ...createOverlapGraph(blocks),
-  };
+  });
+  blockGraphCache.set(blocks, graph);
+  return graph;
 }
 
 export function createPlacementGraph(
@@ -80,12 +92,17 @@ export function createOverlapGraph(
     }
   }
 
-  return { higherBlockCounts, lowerBlockIndicesByHigher };
+  return Object.freeze({
+    higherBlockCounts: Object.freeze(higherBlockCounts),
+    lowerBlockIndicesByHigher: Object.freeze(
+      lowerBlockIndicesByHigher.map((indices) => Object.freeze(indices)),
+    ),
+  });
 }
 
-function hasPositiveAreaOverlap(
-  first: LayeredRectangle,
-  second: LayeredRectangle,
+export function hasPositiveAreaOverlap(
+  first: Rectangle,
+  second: Rectangle,
 ): boolean {
   return (
     first.x < second.x + second.width &&

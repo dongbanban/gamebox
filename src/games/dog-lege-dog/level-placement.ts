@@ -349,8 +349,9 @@ function createRemovalOrder(
   preferredOrder?: readonly number[],
 ): readonly number[] {
   const graph = createPlacementGraph(placements, BLOCK_WIDTH, BLOCK_HEIGHT);
+  const higherBlockCounts = [...graph.higherBlockCounts];
   const remaining = new Set(placements.map((_, index) => index));
-  const ready = graph.higherBlockCounts
+  const ready = higherBlockCounts
     .map((count, index) => (count === 0 ? index : -1))
     .filter((index) => index >= 0);
   const newlyRevealed: number[] = [];
@@ -376,8 +377,8 @@ function createRemovalOrder(
     order.push(selectedIndex);
 
     for (const lowerIndex of graph.lowerBlockIndicesByHigher[selectedIndex]) {
-      graph.higherBlockCounts[lowerIndex] -= 1;
-      if (graph.higherBlockCounts[lowerIndex] === 0) {
+      higherBlockCounts[lowerIndex] -= 1;
+      if (higherBlockCounts[lowerIndex] === 0) {
         ready.push(lowerIndex);
         newlyRevealed.push(lowerIndex);
       }

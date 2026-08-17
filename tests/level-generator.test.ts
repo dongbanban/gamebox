@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   DOG_PATTERN_TYPES,
   DOG_SHAPE_TEMPLATES,
@@ -17,6 +17,33 @@ import {
 } from "../src/games/dog-lege-dog";
 
 describe("LevelGenerator", () => {
+  it("高难关单次选择复用一次公开状态快照并保持响应", () => {
+    const generator = new LevelGenerator();
+    const generationStartedAt = performance.now();
+    const level = generator.generate({
+      levelNumber: 31,
+      seed: "selection-performance-seed",
+      generatorVersion: LEVEL_GENERATOR_VERSION,
+    });
+    const generationMs = performance.now() - generationStartedAt;
+    const session = new GameSession(level);
+    const getState = vi.spyOn(session, "getState");
+    const selectionStartedAt = performance.now();
+    const selection = session.selectBlock(level.solutionPath[0]!);
+    const selectionMs = performance.now() - selectionStartedAt;
+
+    console.info(
+      `[性能回归] level=31 blocks=${level.blocks.length} generationMs=${generationMs.toFixed(1)} selectionMs=${selectionMs.toFixed(1)} stateReads=${getState.mock.calls.length}`,
+    );
+    expect(level.blocks).toHaveLength(180);
+    expect(selection.selected).toBe(true);
+    expect(selection.snapshot.level).toBe(level);
+    expect(selection.snapshot.remainingBlocks).toHaveLength(179);
+    expect(getState).toHaveBeenCalledTimes(1);
+    expect(generationMs).toBeLessThan(10_000);
+    expect(selectionMs).toBeLessThan(1_000);
+  });
+
   it("通过统一关卡提供器取得首关与后续关卡", () => {
     const generator = new LevelGenerator();
     const firstLevel = getDogLegeDogLevel(FIRST_LEVEL.number);

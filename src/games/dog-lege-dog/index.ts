@@ -17,6 +17,7 @@ export {
   GAME_SESSION_TRAY_CAPACITY,
   GameSession,
   type GameSessionOptions,
+  type GameSessionSelectionResult,
   type GameSessionSnapshot,
   type GameSessionStatus,
 } from "./game-session";
@@ -210,19 +211,18 @@ export function createDogLegeDogGame(
       soundEffects.initialize();
     }
 
-    const previousState = session.getState();
     const sourceElement = findBlockElement(root, blockId);
     const sourceRect = sourceElement?.getBoundingClientRect() ?? null;
     const patternMarkup = sourceElement?.querySelector<HTMLElement>(".dog-block__glyph")?.outerHTML ?? "";
     const patternType = sourceElement?.dataset.patternType;
-    const canSelect = session.canSelectBlock(blockId);
-    const nextState = session.selectBlock(blockId);
-    if (!canSelect) {
+    const selection = session.selectBlock(blockId);
+    const nextState = selection.snapshot;
+    if (!selection.selected) {
       return nextState;
     }
 
     hasInteracted = true;
-    const didMatch = nextState.tray.length < previousState.tray.length;
+    const didMatch = selection.removedCount > 0;
     const result = createResult(level, nextState.status);
     const selectionVersion = feedbackVersion + 1;
     feedbackVersion = selectionVersion;
@@ -236,7 +236,7 @@ export function createDogLegeDogGame(
       playFeedbackSounds(didMatch, result);
       feedback = "idle";
       inputLocked = false;
-      renderStartedGame();
+      renderStartedGame(nextState);
       if (result !== null) {
         presentResult(result);
       }
@@ -247,7 +247,7 @@ export function createDogLegeDogGame(
     feedback = didMatch ? "match" : result?.status ?? "idle";
     soundEffects.play("select");
     playFeedbackSounds(didMatch, result);
-    renderStartedGame();
+    renderStartedGame(nextState);
 
     const target = findTrayTarget(root, patternType);
     const flight = animateBlockFlight({
@@ -257,7 +257,14 @@ export function createDogLegeDogGame(
       target: target?.getBoundingClientRect() ?? null,
     });
     activeFlight = flight;
-    void finishAnimatedSelection(flight, feedback, result, didMatch, selectionVersion);
+    void finishAnimatedSelection(
+      flight,
+      feedback,
+      result,
+      didMatch,
+      selectionVersion,
+      nextState,
+    );
 
     return nextState;
   }
@@ -268,6 +275,7 @@ export function createDogLegeDogGame(
     result: GameResult | null,
     didMatch: boolean,
     selectionVersion: number,
+    snapshot: GameSessionSnapshot,
   ): Promise<void> {
     await flight.promise;
     if (destroyed || activeFlight !== flight) {
@@ -282,7 +290,7 @@ export function createDogLegeDogGame(
           return;
         }
         feedback = "won";
-        renderStartedGame();
+        renderStartedGame(snapshot);
       }
 
       await playParticleFeedback(result.status);
@@ -291,13 +299,13 @@ export function createDogLegeDogGame(
       }
       inputLocked = false;
       feedback = "idle";
-      renderStartedGame();
+      renderStartedGame(snapshot);
       presentResult(result);
       return;
     }
 
     inputLocked = false;
-    renderStartedGame();
+    renderStartedGame(snapshot);
     if (isParticleFeedback(selectionFeedback)) {
       void playParticleFeedback(selectionFeedback).then(() => {
         if (
@@ -307,7 +315,7 @@ export function createDogLegeDogGame(
           feedback === selectionFeedback
         ) {
           feedback = "idle";
-          renderStartedGame();
+          renderStartedGame(snapshot);
         }
       });
     }
@@ -338,7 +346,7 @@ export function createDogLegeDogGame(
     options.onResult?.(result);
   }
 
-  function renderStartedGame(): void {
+  function renderStartedGame(snapshot?: GameSessionSnapshot): void {
     if (started) {
       renderGame(
         root,
@@ -349,6 +357,7 @@ export function createDogLegeDogGame(
           feedback,
           soundEnabled,
           getElapsedMs(startedAt, endedAt),
+          snapshot,
         ),
       );
     }
@@ -661,8 +670,9 @@ function createGameState(
   feedback: DogVisualFeedback,
   soundEnabled: boolean,
   elapsedMs: number,
+  snapshot?: GameSessionSnapshot,
 ): DogLegeDogGameState {
-  const sessionState = session.getState();
+  const sessionState = snapshot ?? session.getState();
 
   return {
     gameId: GAME_ID,

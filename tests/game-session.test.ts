@@ -13,6 +13,51 @@ const LICKING_DOG: DogPatternType = "舔狗";
 const GUARD_DOG: DogPatternType = "看门狗";
 
 describe("GameSession", () => {
+  it("共享深度不可变关卡引用，并返回可渲染的选择结果", () => {
+    const level = createLevel([
+      createBlock("working-1", 0, 0, 0, WORKING_DOG),
+      createBlock("single", 2, 0, 0, SINGLE_DOG),
+    ]);
+    const session = new GameSession(level);
+
+    const initialState = session.getState();
+    expect(initialState.level).toBe(level);
+    expect(Object.isFrozen(level)).toBe(true);
+    expect(Object.isFrozen(level.blocks)).toBe(true);
+    expect(Object.isFrozen(level.blocks[0])).toBe(true);
+
+    const selected = session.selectBlock("working-1");
+
+    expect(selected.selected).toBe(true);
+    expect(selected.removedCount).toBe(0);
+    expect(selected.status).toBe("playing");
+    expect(selected.snapshot.level).toBe(level);
+    expect(selected.snapshot.tray).toEqual([WORKING_DOG]);
+
+    const rejected = session.selectBlock("missing");
+
+    expect(rejected.selected).toBe(false);
+    expect(rejected.removedCount).toBe(0);
+    expect(rejected.snapshot).toEqual(selected.snapshot);
+  });
+
+  it("移除多个上层方块后才解锁所有正面积遮挡的下层方块", () => {
+    const session = new GameSession(
+      createLevel([
+        createBlock("lower", 0, 0, 0, WORKING_DOG),
+        createBlock("higher-left", 0, 0, 1, SINGLE_DOG),
+        createBlock("higher-right", 1, 0, 2, LICKING_DOG),
+      ]),
+    );
+
+    expect(session.canSelectBlock("lower")).toBe(false);
+    session.selectBlock("higher-right");
+    expect(session.canSelectBlock("lower")).toBe(false);
+    session.selectBlock("higher-left");
+
+    expect(session.canSelectBlock("lower")).toBe(true);
+  });
+
   it("只允许没有更高层正面积遮挡的方块选择，边角接触不遮挡", () => {
     const session = new GameSession(
       createLevel([
@@ -74,6 +119,7 @@ describe("GameSession", () => {
     session.selectBlock("working-2");
     const state = session.selectBlock("working-3");
 
+    expect(state.removedCount).toBe(3);
     expect(state.tray).toEqual([]);
     expect(state.remainingBlocks.map((block) => block.id)).toEqual(["remaining"]);
     expect(state.status).toBe("playing");

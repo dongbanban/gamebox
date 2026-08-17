@@ -11,6 +11,7 @@ import type {
   DogLegeDogLevel,
 } from "./level-types";
 import type { LevelGeneratorRequest } from "./level-generator-contracts";
+import { freezeDogLegeDogLevel } from "./level-immutability";
 
 export interface GeneratedLevelCandidate {
   readonly attempt: number;
@@ -56,7 +57,7 @@ export function finalizeCandidate(
     ),
   });
 
-  return Object.freeze({
+  return freezeDogLegeDogLevel({
     ...level,
     generation,
   });

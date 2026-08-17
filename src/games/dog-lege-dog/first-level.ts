@@ -15,6 +15,7 @@ import {
   FIRST_LEVEL_SEED,
 } from "./game-config";
 import { calculateDifficultyMetrics } from "./level-difficulty";
+import { freezeDogLegeDogLevel } from "./level-immutability";
 
 export {
   BLOCK_HEIGHT,
@@ -75,7 +76,7 @@ const FIRST_LEVEL_DIFFICULTY = calculateDifficultyMetrics(
  * Fixed first level layout. Each layer is a separate rectangle of 2×2 cells;
  * upper layers overlap the center of lower layers to make the hierarchy visible.
  */
-export const FIRST_LEVEL: DogLegeDogLevel = Object.freeze({
+export const FIRST_LEVEL: DogLegeDogLevel = freezeDogLegeDogLevel({
   number: FIRST_LEVEL_NUMBER,
   seed: FIRST_LEVEL_SEED,
   generatorVersion: FIRST_LEVEL_GENERATOR_VERSION,
