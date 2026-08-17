@@ -101,8 +101,19 @@ export interface LevelGeneratorRequest {
   readonly generatorVersion: number;
 }
 
+/**
+ * Candidate acceptance seam for regression tests and generator diagnostics.
+ * The default accepts candidates inside the progressively relaxed target.
+ */
+export type LevelCandidateFilter = (
+  difficulty: DogLevelDifficulty,
+  target: DogDifficultyTarget,
+  attempt: number,
+) => boolean;
+
 export interface LevelGeneratorOptions {
   readonly gameId?: string;
+  readonly candidateFilter?: LevelCandidateFilter;
 }
 
 type LevelGeometry = Pick<
@@ -413,9 +424,13 @@ export const DOG_SHAPE_TEMPLATES: readonly DogShapeTemplate[] = Object.freeze(
 
 export class LevelGenerator {
   private readonly gameId: string;
+  private readonly candidateFilter: LevelCandidateFilter;
 
   constructor(options: LevelGeneratorOptions = {}) {
     this.gameId = options.gameId ?? DOG_GAME_ID;
+    this.candidateFilter =
+      options.candidateFilter ??
+      ((difficulty, target) => isDifficultyWithinTarget(difficulty, target));
   }
 
   generate(request: LevelGeneratorRequest): DogLegeDogLevel;
@@ -453,9 +468,10 @@ export class LevelGenerator {
         }
 
         if (
-          isDifficultyWithinTarget(
+          this.candidateFilter(
             candidate.difficulty,
             getRelaxedDifficultyTarget(request.levelNumber, attempt),
+            attempt,
           )
         ) {
           return finalizeCandidate(

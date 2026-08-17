@@ -70,6 +70,7 @@ export {
   getShapePool,
   isDifficultyWithinTarget,
   isLevelSolvable,
+  type LevelCandidateFilter,
   replayDogLegeDogLevel,
   replayDogLegeDogLevelAttempt,
   type DogShapeTemplate,

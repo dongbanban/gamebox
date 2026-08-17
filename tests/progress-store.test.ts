@@ -36,6 +36,26 @@ class UnavailableStorage implements StorageLike {
   }
 }
 
+class WriteFailureStorage implements StorageLike {
+  private readonly value: string;
+
+  constructor(value: string) {
+    this.value = value;
+  }
+
+  getItem(): string {
+    return this.value;
+  }
+
+  setItem(): void {
+    throw new Error("storage write failed");
+  }
+
+  removeItem(): void {
+    throw new Error("storage write failed");
+  }
+}
+
 const userId = "123e4567-e89b-12d3-a456-426614174000";
 
 describe("ProgressStore", () => {
@@ -206,6 +226,26 @@ describe("ProgressStore", () => {
     expect(store.snapshot().warning).toContain("无法持久化");
     expect(store.register().userId).toBe(userId);
     expect(store.snapshot().persistence).toBe("temporary");
+  });
+
+  it("降级处理已有状态的写入失败，并保留当前内存状态", () => {
+    const storage = new WriteFailureStorage(
+      JSON.stringify({
+        schemaVersion: APP_STATE_VERSION,
+        userId,
+        games: {
+          [GAME_ID]: { highestUnlockedLevel: 2, totalScore: 100, completedLevels: [1] },
+        },
+        settings: { soundEnabled: true },
+      }),
+    );
+    const store = new ProgressStore({ storage });
+
+    store.setSoundEnabled(false);
+
+    expect(store.snapshot().persistence).toBe("temporary");
+    expect(store.snapshot().warning).toContain("无法持久化");
+    expect(store.snapshot().state?.settings.soundEnabled).toBe(false);
   });
 
   it("resets user, progress, score, and settings", () => {

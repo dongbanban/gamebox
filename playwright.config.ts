@@ -1,5 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const crossBrowserEnabled = process.env.PLAYWRIGHT_CROSS_BROWSER === "1";
+
 export default defineConfig({
   testDir: "tests/e2e",
   fullyParallel: true,
@@ -18,5 +20,24 @@ export default defineConfig({
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
     },
+    ...(crossBrowserEnabled
+      ? [
+          {
+            name: "firefox",
+            testMatch: /cross-browser\.spec\.ts/,
+            use: { ...devices["Desktop Firefox"] },
+          },
+          {
+            name: "webkit",
+            testMatch: /cross-browser\.spec\.ts/,
+            use: { ...devices["Desktop Safari"] },
+          },
+          {
+            name: "mobile-chromium",
+            testMatch: /cross-browser\.spec\.ts/,
+            use: { ...devices["Pixel 5"] },
+          },
+        ]
+      : []),
   ],
 });
