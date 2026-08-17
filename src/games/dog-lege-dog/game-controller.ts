@@ -1,6 +1,12 @@
-import type { GameLaunchContext, GameResult } from "../../catalog";
+import type {
+  GameLaunchContext,
+  GameResult,
+  GameResultAction,
+  GameResultDisplay,
+} from "../../catalog";
 import { GAME_ID } from "../../progress-store";
 import { FIRST_LEVEL, type DogLegeDogLevel } from "./first-level";
+import { DOG_GAME_RESULT_DISPLAY } from "./game-config";
 import { getDogLegeDogLevel } from "./level-provider";
 import { animateBlockFlight, type CancellableAnimation } from "./animation-effects";
 import { GameSession, type GameSessionSnapshot } from "./game-session";
@@ -333,11 +339,19 @@ function createResult(
     return null;
   }
 
+  const resultDisplay: GameResultDisplay = {
+    ...DOG_GAME_RESULT_DISPLAY[status],
+  };
+  const actions: readonly GameResultAction[] =
+    status === "won" ? ["next-level", "catalog"] : ["retry", "catalog"];
+
   return {
     gameId: GAME_ID,
     levelNumber: level.number,
     status,
     reward: status === "won" ? level.reward : 0,
+    display: resultDisplay,
+    actions,
   };
 }
 

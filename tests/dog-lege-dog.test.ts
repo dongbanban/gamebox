@@ -1,7 +1,8 @@
 /** @vitest-environment jsdom */
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { startDogLegeDogGame } from "../src/games/dog-lege-dog";
+import type { GameResult } from "../src/catalog";
+import { FIRST_LEVEL, startDogLegeDogGame } from "../src/games/dog-lege-dog";
 
 afterEach(() => {
   vi.useRealTimers();
@@ -128,9 +129,9 @@ describe("狗了个狗固定首关", () => {
   it("Pointer Events 选择期间锁定输入，动画后解锁下层并出现通关结果", async () => {
     vi.useFakeTimers();
     const root = document.createElement("div");
-    const results: string[] = [];
+    const results: GameResult[] = [];
     const game = startDogLegeDogGame(root, {
-      onResult: (result) => results.push(result.status),
+      onResult: (result) => results.push(result),
     });
 
     for (const blockId of game.getState().level.solutionPath) {
@@ -150,7 +151,20 @@ describe("狗了个狗固定首关", () => {
     }
 
     expect(game.getState().status).toBe("won");
-    expect(results).toEqual(["won"]);
+    expect(results).toEqual([
+      expect.objectContaining({
+        gameId: "dog-lege-dog",
+        levelNumber: 1,
+        status: "won",
+        reward: FIRST_LEVEL.reward,
+        display: {
+          eyebrow: "狗了个狗 · 关卡结果",
+          title: "通关！",
+          description: "完成。",
+        },
+        actions: ["next-level", "catalog"],
+      }),
+    ]);
 
     game.destroy();
   });
@@ -190,9 +204,9 @@ describe("狗了个狗固定首关", () => {
   it("失败拥有独立反馈，并在反馈完成后报告失败结果", async () => {
     vi.useFakeTimers();
     const root = document.createElement("div");
-    const results: string[] = [];
+    const results: GameResult[] = [];
     const game = startDogLegeDogGame(root, {
-      onResult: (result) => results.push(result.status),
+      onResult: (result) => results.push(result),
     });
 
     for (const blockNumber of [73, 76, 79, 82, 74, 77]) {
@@ -218,7 +232,20 @@ describe("狗了个狗固定首关", () => {
     await vi.runAllTimersAsync();
 
     expect(game.getState().inputLocked).toBe(false);
-    expect(results).toEqual(["lost"]);
+    expect(results).toEqual([
+      expect.objectContaining({
+        gameId: "dog-lege-dog",
+        levelNumber: 1,
+        status: "lost",
+        reward: 0,
+        display: {
+          eyebrow: "狗了个狗 · 关卡结果",
+          title: "失败",
+          description: "暂存槽已满，进度未改变。",
+        },
+        actions: ["retry", "catalog"],
+      }),
+    ]);
     game.destroy();
   });
 });

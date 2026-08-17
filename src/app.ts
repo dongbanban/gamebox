@@ -1,7 +1,9 @@
 import {
   GAME_CATALOG,
+  type GameDefinition,
   type GameLaunchHandle,
   type GameResult,
+  type GameResultAction,
 } from "./catalog";
 import {
   createInitialGameProgress,
@@ -12,6 +14,7 @@ import {
 
 export interface MountAppOptions {
   store?: ProgressStore;
+  catalog?: readonly GameDefinition[];
 }
 
 interface ActiveLevel {
@@ -22,6 +25,7 @@ interface ActiveLevel {
 export class GameboxApp {
   private readonly root: HTMLElement;
   private readonly store: ProgressStore;
+  private readonly catalog: readonly GameDefinition[];
   private activeGame: GameLaunchHandle | null = null;
   private activeLevel: ActiveLevel | null = null;
   private pendingCompletion: LevelCompletionResult | null = null;
@@ -29,6 +33,7 @@ export class GameboxApp {
   constructor(root: HTMLElement, options: MountAppOptions = {}) {
     this.root = root;
     this.store = options.store ?? new ProgressStore();
+    this.catalog = options.catalog ?? GAME_CATALOG;
     replaceHistoryWithCatalog();
     this.root.addEventListener("click", this.handleClick);
     window.addEventListener("popstate", this.handlePopState);
@@ -77,6 +82,14 @@ export class GameboxApp {
 
     if (action === "retry") {
       this.renderGameEntry(
+        actionElement?.dataset.gameId,
+        parseLevelNumber(actionElement?.dataset.levelNumber),
+      );
+      return;
+    }
+
+    if (action === "next-level") {
+      this.renderNextLevel(
         actionElement?.dataset.gameId,
         parseLevelNumber(actionElement?.dataset.levelNumber),
       );
@@ -156,7 +169,7 @@ export class GameboxApp {
       return;
     }
 
-    const cards = GAME_CATALOG.map((game, index) => {
+    const cards = this.catalog.map((game, index) => {
       const progress = state.games[game.id] ?? createInitialGameProgress();
       return `
         <article class="catalog-item" data-game-id="${game.id}">
@@ -167,7 +180,7 @@ export class GameboxApp {
           <div class="catalog-item__content">
             <div class="catalog-item__heading">
               <div>
-                <p class="eyebrow">DOG · TRIPLE</p>
+                <p class="eyebrow">${game.category}</p>
                 <h2>${game.name}</h2>
               </div>
               <span class="status-dot" aria-label="${game.playable ? "可以游玩" : "即将开放"}"></span>
@@ -214,7 +227,7 @@ export class GameboxApp {
   }
 
   private renderGameEntry(gameId: string | undefined, requestedLevelNumber?: number): void {
-    const game = GAME_CATALOG.find((item) => item.id === gameId);
+    const game = this.catalog.find((item) => item.id === gameId);
     const snapshot = this.store.snapshot();
     const state = snapshot.state;
     if (game === undefined || !game.playable || state === null) {
@@ -311,12 +324,12 @@ export class GameboxApp {
     const snapshot = this.store.snapshot();
     const persistenceMessage =
       snapshot.persistence === "persistent"
-        ? `第 ${result.levelNumber} 关完成，进度已保存。`
-        : `第 ${result.levelNumber} 关完成。当前为临时运行模式，刷新后进度可能丢失。`;
+        ? "进度已保存。"
+        : "当前为临时运行模式，刷新后进度可能丢失。";
     this.renderGameResult(result, "won", `
-          <p class="eyebrow">狗了个狗 · 关卡结果</p>
-          <h1 id="game-result-title">通关！</h1>
-          <p class="game-result-card__intro">${persistenceMessage}</p>
+          <p class="eyebrow">${result.display.eyebrow}</p>
+          <h1 id="game-result-title">${result.display.title}</h1>
+          <p class="game-result-card__intro">第 ${result.levelNumber} 关${result.display.description}${persistenceMessage}</p>
           ${renderPersistenceNotice(snapshot.warning)}
           <dl class="game-result-card__stats">
             <div><dt>当前关卡</dt><dd>第 ${result.levelNumber} 关</dd></div>
@@ -324,25 +337,35 @@ export class GameboxApp {
             <div><dt>累计积分</dt><dd>${completion.progress.totalScore}</dd></div>
             <div><dt>下一关</dt><dd>第 ${result.levelNumber + 1} 关</dd></div>
           </dl>
-          <button class="primary-button primary-button--wide" type="button" data-action="catalog">
-            返回游戏目录
-          </button>
+          ${renderResultActions(result)}
     `);
   }
 
   private renderLossResult(result: GameResult): void {
     this.renderGameResult(result, "lost", `
-          <p class="eyebrow">狗了个狗 · 关卡结果</p>
-          <h1 id="game-result-title">失败</h1>
-          <p class="game-result-card__intro">第 ${result.levelNumber} 关暂存槽已满，进度未改变。</p>
+          <p class="eyebrow">${result.display.eyebrow}</p>
+          <h1 id="game-result-title">${result.display.title}</h1>
+          <p class="game-result-card__intro">第 ${result.levelNumber} 关${result.display.description}</p>
           ${renderPersistenceNotice(this.store.snapshot().warning)}
-          <div class="game-result-card__actions">
-            <button class="primary-button primary-button--wide" type="button" data-action="retry" data-game-id="${result.gameId}" data-level-number="${result.levelNumber}">
-              重新挑战
-            </button>
-            <button class="text-button" type="button" data-action="catalog">返回游戏目录</button>
-          </div>
+          ${renderResultActions(result)}
     `);
+  }
+
+  private renderNextLevel(gameId: string | undefined, levelNumber: number | undefined): void {
+    const state = this.store.snapshot().state;
+    const game = this.catalog.find((item) => item.id === gameId);
+    const progress = gameId === undefined ? undefined : state?.games[gameId];
+    if (game === undefined || !game.playable || levelNumber === undefined || progress === undefined) {
+      this.render();
+      return;
+    }
+
+    if (levelNumber > progress.highestUnlockedLevel) {
+      this.render();
+      return;
+    }
+
+    this.renderGameEntry(game.id, levelNumber);
   }
 
   private renderGameResult(
@@ -420,6 +443,35 @@ function renderLevelPicker(
       <div class="level-picker__list">${buttons}</div>
     </section>
   `;
+}
+
+function renderResultActions(result: GameResult): string {
+  const actions = result.actions.map((action) => renderResultAction(action, result)).filter(Boolean);
+  return `<div class="game-result-card__actions">${actions.join("")}</div>`;
+}
+
+function renderResultAction(action: GameResultAction, result: GameResult): string {
+  if (action === "next-level") {
+    return `
+      <button class="primary-button primary-button--wide" type="button" data-action="next-level" data-game-id="${result.gameId}" data-level-number="${result.levelNumber + 1}">
+        进入下一关
+      </button>
+    `;
+  }
+
+  if (action === "retry") {
+    return `
+      <button class="primary-button primary-button--wide" type="button" data-action="retry" data-game-id="${result.gameId}" data-level-number="${result.levelNumber}">
+        重新挑战
+      </button>
+    `;
+  }
+
+  if (action === "catalog") {
+    return '<button class="text-button" type="button" data-action="catalog">返回游戏目录</button>';
+  }
+
+  return "";
 }
 
 function parseLevelNumber(value: string | undefined): number | undefined {

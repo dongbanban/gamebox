@@ -1,15 +1,35 @@
-import { GAME_ID } from "./progress-store";
+import {
+  DOG_GAME_ID,
+  DOG_GAME_RESULT_DISPLAY,
+} from "./games/dog-lege-dog/game-config";
 import { startDogLegeDogGame } from "./games/dog-lege-dog";
 
 export interface GameLaunchHandle {
   destroy(): void;
 }
 
+export type GameResultStatus = "won" | "lost";
+
+export type GameResultAction = "next-level" | "retry" | "catalog";
+
+export interface GameResultDisplay {
+  readonly eyebrow: string;
+  readonly title: string;
+  readonly description: string;
+}
+
+export interface GameResultDisplayMetadata {
+  readonly won: GameResultDisplay;
+  readonly lost: GameResultDisplay;
+}
+
 export interface GameResult {
   readonly gameId: string;
   readonly levelNumber: number;
-  readonly status: "won" | "lost";
+  readonly status: GameResultStatus;
   readonly reward: number;
+  readonly display: GameResultDisplay;
+  readonly actions: readonly GameResultAction[];
 }
 
 export interface GameLaunchContext {
@@ -25,25 +45,33 @@ export type GameLauncher = (
   context?: GameLaunchContext,
 ) => GameLaunchHandle;
 
-export interface GameCatalogItem {
-  id: string;
-  name: string;
-  description: string;
-  cover: string;
-  playable: boolean;
-  launch: GameLauncher;
+export interface GameDefinition {
+  readonly id: string;
+  readonly name: string;
+  readonly category: string;
+  readonly description: string;
+  readonly cover: string;
+  readonly playable: boolean;
+  readonly launch: GameLauncher;
+  readonly resultDisplay: GameResultDisplayMetadata;
 }
 
-export const GAME_CATALOG: readonly GameCatalogItem[] = [
-  {
-    id: GAME_ID,
-    name: "狗了个狗",
-    description: "看清层叠关系，找出相同图案，完成一场轻松的三消挑战。",
-    cover: createDogCover(),
-    playable: true,
-    launch: startDogLegeDogGame,
-  },
-];
+export type GameCatalogItem = GameDefinition;
+
+export const DOG_GAME_DEFINITION: GameDefinition = Object.freeze({
+  id: DOG_GAME_ID,
+  name: "狗了个狗",
+  category: "DOG · TRIPLE",
+  description: "看清层叠关系，找出相同图案，完成一场轻松的三消挑战。",
+  cover: createDogCover(),
+  playable: true,
+  launch: startDogLegeDogGame,
+  resultDisplay: DOG_GAME_RESULT_DISPLAY,
+});
+
+export const GAME_CATALOG: readonly GameDefinition[] = Object.freeze([
+  DOG_GAME_DEFINITION,
+]);
 
 function createDogCover(): string {
   const svg = `

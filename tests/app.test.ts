@@ -2,6 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { mountApp } from "../src/app";
+import type { GameDefinition, GameLaunchContext } from "../src/catalog";
 import { FIRST_LEVEL } from "../src/games/dog-lege-dog";
 import { GAME_ID, ProgressStore, type StorageLike } from "../src/progress-store";
 
@@ -38,6 +39,97 @@ class MemoryStorage implements StorageLike {
 afterEach(() => {
   vi.restoreAllMocks();
   vi.useRealTimers();
+});
+
+describe("通用游戏定义与结果契约", () => {
+  it("使用测试游戏定义渲染分类与游戏侧结果文案，不依赖实际游戏规则", () => {
+    const root = document.createElement("div");
+    const resultDisplay = {
+      won: {
+        eyebrow: "测试游戏 · 结果",
+        title: "测试通关",
+        description: "测试游戏已完成。",
+      },
+      lost: {
+        eyebrow: "测试游戏 · 结果",
+        title: "测试未完成",
+        description: "测试游戏返回自定义失败说明。",
+      },
+    } as const;
+    let launchContext: GameLaunchContext | undefined;
+    const launchedLevels: number[] = [];
+    const testGame: GameDefinition = {
+      id: "test-game",
+      name: "测试游戏",
+      category: "测试类别",
+      description: "用于验证公共层契约。",
+      cover: "test-cover.svg",
+      playable: true,
+      resultDisplay,
+      launch: (_mount, context) => {
+        launchContext = context;
+        launchedLevels.push(context?.levelNumber ?? -1);
+        return { destroy: vi.fn() };
+      },
+    };
+    const store = new ProgressStore({
+      storage: new MemoryStorage(),
+      userIdFactory: () => "123e4567-e89b-12d3-a456-426614174000",
+    });
+
+    const app = mountApp(root, { store, catalog: [testGame] });
+    root.querySelector<HTMLButtonElement>('[data-action="register"]')?.click();
+
+    expect(root.querySelector(".catalog-item__heading")?.textContent).toContain("测试类别");
+    expect(root.querySelector(".catalog-item__heading")?.textContent).toContain("测试游戏");
+
+    root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
+    launchContext?.onResult?.({
+      gameId: testGame.id,
+      levelNumber: 1,
+      status: "lost",
+      reward: 0,
+      display: resultDisplay.lost,
+      actions: ["retry", "catalog"],
+    });
+
+    expect(root.querySelector('[data-result="lost"]')).not.toBeNull();
+    expect(root.textContent).toContain("测试游戏 · 结果");
+    expect(root.textContent).toContain("测试未完成");
+    expect(root.textContent).toContain("测试游戏返回自定义失败说明。");
+    expect(root.textContent).toContain("第 1 关");
+    expect(root.textContent).not.toContain("暂存槽已满");
+    expect(root.querySelector('[data-action="retry"]')).not.toBeNull();
+    expect(root.querySelector('[data-action="catalog"]')).not.toBeNull();
+
+    root.querySelector<HTMLButtonElement>('[data-action="retry"]')?.click();
+    launchContext?.onResultConfirmed?.({
+      gameId: testGame.id,
+      levelNumber: 1,
+      status: "won",
+      reward: 25,
+      display: resultDisplay.won,
+      actions: ["next-level", "catalog"],
+    });
+    launchContext?.onResult?.({
+      gameId: testGame.id,
+      levelNumber: 1,
+      status: "won",
+      reward: 25,
+      display: resultDisplay.won,
+      actions: ["next-level", "catalog"],
+    });
+
+    expect(root.textContent).toContain("测试通关");
+    expect(root.textContent).toContain("通关奖励");
+    expect(root.querySelector('[data-action="next-level"]')).not.toBeNull();
+
+    root.querySelector<HTMLButtonElement>('[data-action="next-level"]')?.click();
+    expect(launchedLevels).toEqual([1, 1, 2]);
+    expect(root.querySelector('[data-view="game-entry"]')).not.toBeNull();
+
+    app.destroy();
+  });
 });
 
 describe("注册与游戏目录 UI", () => {
@@ -218,6 +310,40 @@ describe("注册与游戏目录 UI", () => {
 
     expect(root.querySelector('[data-view="catalog"]')).not.toBeNull();
     expect(root.querySelector('[data-view="game-entry"]')).toBeNull();
+
+    app.destroy();
+  });
+
+  it("真实狗了个狗通关后通过通用动作进入刚解锁的下一关", () => {
+    const root = document.createElement("div");
+    const app = mountApp(root, {
+      store: new ProgressStore({
+        storage: new MemoryStorage(),
+        userIdFactory: () => "123e4567-e89b-12d3-a456-426614174000",
+      }),
+    });
+
+    root.querySelector<HTMLButtonElement>('[data-action="register"]')?.click();
+    root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
+
+    for (const blockId of FIRST_LEVEL.solutionPath) {
+      root
+        .querySelector<HTMLButtonElement>(
+          `[data-testid="dog-block"][data-block-id="${blockId}"]`,
+        )
+        ?.click();
+    }
+
+    expect(root.querySelector('[data-result="won"]')).not.toBeNull();
+    expect(root.querySelector('[data-action="next-level"]')).not.toBeNull();
+
+    root.querySelector<HTMLButtonElement>('[data-action="next-level"]')?.click();
+
+    expect(root.querySelector('[data-view="game-entry"]')).not.toBeNull();
+    expect(root.querySelector('[data-view="game-entry"]')?.getAttribute("data-level-number")).toBe(
+      "2",
+    );
+    expect(root.querySelector('[data-testid="dog-game"] h2')?.textContent).toContain("第 2 关");
 
     app.destroy();
   });

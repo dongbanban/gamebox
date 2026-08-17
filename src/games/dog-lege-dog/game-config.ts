@@ -1,7 +1,21 @@
+import type { GameResultDisplayMetadata } from "../../catalog";
 import type { DogPatternType } from "./level-types";
 
 const GAME_ID = "dog-lege-dog" as const;
 const GENERATOR_VERSION = 2 as const;
+
+export const DOG_GAME_RESULT_DISPLAY: GameResultDisplayMetadata = Object.freeze({
+  won: Object.freeze({
+    eyebrow: "狗了个狗 · 关卡结果",
+    title: "通关！",
+    description: "完成。",
+  }),
+  lost: Object.freeze({
+    eyebrow: "狗了个狗 · 关卡结果",
+    title: "失败",
+    description: "暂存槽已满，进度未改变。",
+  }),
+});
 
 /** Stable identity/config for all dog-lege-dog level consumers. */
 export const DOG_LEGE_DOG_CONFIG = Object.freeze({
