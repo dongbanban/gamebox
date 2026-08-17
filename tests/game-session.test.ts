@@ -61,12 +61,12 @@ describe("GameSession", () => {
   it("只允许没有更高层正面积遮挡的方块选择，边角接触不遮挡", () => {
     const session = new GameSession(
       createLevel([
-        createBlock("blocked", 0, 4, 0, WORKING_DOG),
+        createBlock("blocked", 0, 8, 0, WORKING_DOG),
         createBlock("edge", 4, 0, 0, SINGLE_DOG),
         createBlock("corner", 4, 4, 0, LICKING_DOG),
-        createBlock("overlap", 1, 4, 1, GUARD_DOG),
-        createBlock("edge-cover", 2, 0, 1, WORKING_DOG),
-        createBlock("corner-cover", 2, 2, 1, SINGLE_DOG),
+        createBlock("overlap", 1, 8, 1, GUARD_DOG),
+        createBlock("edge-cover", 0, 0, 1, WORKING_DOG),
+        createBlock("corner-cover", 0, 0, 1, SINGLE_DOG),
       ]),
     );
 
@@ -248,8 +248,8 @@ function createBlock(
     x,
     y,
     z,
-    width: 2,
-    height: 2,
+    width: 4,
+    height: 4,
     rotation: 0,
     patternType,
   };

@@ -40,7 +40,7 @@ test.describe("注册与游戏目录", () => {
   test("浏览器后退在活动关卡中确认，取消后继续并确认后返回目录", async ({ page }) => {
     await page.getByRole("button", { name: "匿名注册" }).click();
     await page.getByRole("button", { name: "进入游戏" }).click();
-    await page.locator('[data-testid="dog-block"][data-block-id="first-level-block-73"]').click();
+    await page.locator('[data-testid="dog-block"]:not([disabled])').first().click();
     const savedState = await page.evaluate(() => window.localStorage.getItem("gamebox.state"));
 
     const cancelledDialog = page.waitForEvent("dialog");
@@ -66,7 +66,7 @@ test.describe("注册与游戏目录", () => {
   test("刷新活动关卡返回目录且不保存半局", async ({ page }) => {
     await page.getByRole("button", { name: "匿名注册" }).click();
     await page.getByRole("button", { name: "进入游戏" }).click();
-    await page.locator('[data-testid="dog-block"][data-block-id="first-level-block-73"]').click();
+    await page.locator('[data-testid="dog-block"]:not([disabled])').first().click();
     const savedState = await page.evaluate(() => window.localStorage.getItem("gamebox.state"));
 
     await page.reload();
@@ -81,7 +81,7 @@ test.describe("注册与游戏目录", () => {
   test("关闭活动关卡后重新打开不恢复半局", async ({ page }) => {
     await page.getByRole("button", { name: "匿名注册" }).click();
     await page.getByRole("button", { name: "进入游戏" }).click();
-    await page.locator('[data-testid="dog-block"][data-block-id="first-level-block-73"]').click();
+    await page.locator('[data-testid="dog-block"]:not([disabled])').first().click();
     const savedState = await page.evaluate(() => window.localStorage.getItem("gamebox.state"));
 
     await page.close();

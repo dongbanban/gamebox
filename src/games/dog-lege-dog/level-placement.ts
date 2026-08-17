@@ -5,6 +5,7 @@ import {
   type DogBlock,
   type DogPatternType,
 } from "./level-types";
+import { FIRST_LEVEL_PLACEMENT } from "./game-config";
 import { hasPositiveAreaOverlap } from "./level-rules";
 import { getPatternTypeCount } from "./level-progression";
 import { createPlacementGraph } from "./level-graph";
@@ -14,9 +15,9 @@ import type { DogShapeTemplate } from "./level-shapes";
 const MAX_BLOCKS_PER_LOWER_BLOCK = 4;
 const LAYER_OFFSETS = [
   { x: 0, y: 0 },
-  { x: 1, y: 1 },
-  { x: 0, y: 1 },
-  { x: 1, y: 0 },
+  { x: 2, y: 2 },
+  { x: 0, y: 2 },
+  { x: 2, y: 0 },
 ] as const;
 
 export interface BlockPlacement {
@@ -59,6 +60,48 @@ export function createSolvableBlockPlacements(
     random,
   );
   return assignPlacementsToRemovalPlan(structuralPlacements, blockCount, maxLayers, removalPlan);
+}
+
+export function createFirstLevelBlockPlacements(
+  template: DogShapeTemplate,
+  blockCount: number,
+  maxLayers: number,
+  _random: SeededRandom,
+  removalPlan: RemovalPathPlan,
+): readonly BlockPlacement[] {
+  if (
+    blockCount !== FIRST_LEVEL_PLACEMENT.gridColumns * FIRST_LEVEL_PLACEMENT.gridRows * maxLayers ||
+    maxLayers !== FIRST_LEVEL_PLACEMENT.layerOffsets.length
+  ) {
+    throw new Error("LevelGenerator first-level placement config is invalid");
+  }
+
+  const structuralPlacements: BlockPlacement[] = [];
+  const playableCells = new Set(template.playableCells.map(cellKey));
+  for (let z = 0; z < maxLayers; z += 1) {
+    const offset = FIRST_LEVEL_PLACEMENT.layerOffsets[z];
+    if (offset === undefined) {
+      throw new Error(`LevelGenerator first-level placement has no offset for layer ${z}`);
+    }
+
+    for (let row = 0; row < FIRST_LEVEL_PLACEMENT.gridRows; row += 1) {
+      for (let column = 0; column < FIRST_LEVEL_PLACEMENT.gridColumns; column += 1) {
+        const x = FIRST_LEVEL_PLACEMENT.originX + column * BLOCK_WIDTH + offset.x;
+        const y = FIRST_LEVEL_PLACEMENT.originY + row * BLOCK_HEIGHT + offset.y;
+        if (!isPlayablePlacement(x, y, playableCells)) {
+          throw new Error(`LevelGenerator first-level placement leaves board at ${x}:${y}`);
+        }
+        structuralPlacements.push({ x, y, z });
+      }
+    }
+  }
+
+  return assignPlacementsToRemovalPlan(
+    structuralPlacements,
+    blockCount,
+    maxLayers,
+    removalPlan,
+  );
 }
 
 export function createGuaranteedBlockPlacements(
@@ -268,20 +311,31 @@ function getCandidateAnchors(
   const playable = new Set(template.playableCells.map(cellKey));
   const candidates: Omit<BlockPlacement, "z">[] = [];
 
-  for (let y = offsetY; y <= template.height - BLOCK_HEIGHT; y += 2) {
-    for (let x = offsetX; x <= template.width - BLOCK_WIDTH; x += 2) {
-      if (
-        playable.has(cellKey({ x, y })) &&
-        playable.has(cellKey({ x: x + 1, y })) &&
-        playable.has(cellKey({ x, y: y + 1 })) &&
-        playable.has(cellKey({ x: x + 1, y: y + 1 }))
-      ) {
+  for (let y = offsetY; y <= template.height - BLOCK_HEIGHT; y += BLOCK_HEIGHT) {
+    for (let x = offsetX; x <= template.width - BLOCK_WIDTH; x += BLOCK_WIDTH) {
+      if (isPlayablePlacement(x, y, playable)) {
         candidates.push({ x, y });
       }
     }
   }
 
   return candidates;
+}
+
+function isPlayablePlacement(
+  x: number,
+  y: number,
+  playableCells: ReadonlySet<string>,
+): boolean {
+  for (let currentY = y; currentY < y + BLOCK_HEIGHT; currentY += 1) {
+    for (let currentX = x; currentX < x + BLOCK_WIDTH; currentX += 1) {
+      if (!playableCells.has(`${currentX}:${currentY}`)) {
+        return false;
+      }
+    }
+  }
+
+  return true;
 }
 
 function countHigherOverlaps(

@@ -53,9 +53,7 @@ test.describe("狗了个狗完整浏览器闭环", () => {
     await page.getByRole("button", { name: "匿名注册" }).click();
     await enterGame(page);
 
-    for (const blockNumber of [73, 76, 79, 82, 74, 77, 80]) {
-      await clickBlock(page, `first-level-block-${blockNumber}`);
-    }
+    await loseCurrentLevel(page);
 
     await expect(page.locator('[data-view="game-result"]')).toHaveAttribute(
       "data-result",
@@ -65,7 +63,7 @@ test.describe("狗了个狗完整浏览器闭环", () => {
     await page.getByRole("button", { name: "重新挑战" }).click();
     await expect(page.getByTestId("dog-board")).toBeVisible();
 
-    await clickBlock(page, "first-level-block-73");
+    await page.locator('[data-testid="dog-block"]:not([disabled])').first().click();
     const cancelledDialog = page.waitForEvent("dialog");
     const cancelledNavigation = page.goBack();
     const firstDialog = await cancelledDialog;
@@ -128,22 +126,64 @@ async function clickBlock(page: Page, blockId: string): Promise<void> {
   });
 }
 
+async function loseCurrentLevel(page: Page): Promise<void> {
+  const selectedPatterns: string[] = [];
+  for (let selectionNumber = 0; selectionNumber < 7; selectionNumber += 1) {
+    const blockId = await page
+      .locator('[data-testid="dog-block"]:not([disabled])')
+      .evaluateAll((blocks, patterns) => {
+        const counts = new Map<string, number>();
+        for (const pattern of patterns) {
+          counts.set(pattern, (counts.get(pattern) ?? 0) + 1);
+        }
+        return blocks.find((block) => {
+          const pattern = block.dataset.patternType;
+          return pattern !== undefined && (counts.get(pattern) ?? 0) < 2;
+        })?.dataset.blockId ?? null;
+      }, selectedPatterns);
+    expect(blockId).not.toBeNull();
+    const pattern = await page
+      .locator(`[data-testid="dog-block"][data-block-id="${blockId}"]`)
+      .getAttribute("data-pattern-type");
+    expect(pattern).not.toBeNull();
+    selectedPatterns.push(pattern ?? "");
+    await clickBlock(page, blockId ?? "");
+  }
+}
+
 async function winCurrentLevel(page: Page): Promise<void> {
   for (let attempt = 0; attempt < 100; attempt += 1) {
     if (await page.locator('[data-result="won"]').isVisible().catch(() => false)) {
       return;
     }
 
-    const highestSelectableLayer = await page
+    const blockId = await page
       .locator('[data-testid="dog-block"]:not([disabled])')
-      .evaluateAll((blocks) =>
-        Math.max(...blocks.map((block) => Number((block as HTMLElement).dataset.z ?? 0))),
-      );
-    const block = page
-      .locator(
-        `[data-testid="dog-block"][data-z="${highestSelectableLayer}"]:not([disabled])`,
-      )
-      .first();
+      .evaluateAll((blocks) => {
+        const trayPatterns = [...document.querySelectorAll<HTMLElement>(
+          '[data-testid="dog-tray-slot"][data-pattern-type]',
+        )].map((slot) => slot.dataset.patternType);
+        const trayCounts = new Map<string, number>();
+        for (const pattern of trayPatterns) {
+          if (pattern !== undefined) {
+            trayCounts.set(pattern, (trayCounts.get(pattern) ?? 0) + 1);
+          }
+        }
+
+        return [...blocks]
+          .sort((first, second) => {
+            const firstPattern = first.dataset.patternType ?? "";
+            const secondPattern = second.dataset.patternType ?? "";
+            return (
+              (trayCounts.get(secondPattern) ?? 0) - (trayCounts.get(firstPattern) ?? 0) ||
+              Number(second.dataset.z ?? 0) - Number(first.dataset.z ?? 0)
+            );
+          })
+          .at(0)?.dataset.blockId ?? null;
+      });
+    const block = page.locator(
+      `[data-testid="dog-block"][data-block-id="${blockId}"]`,
+    );
     await expect(block).toBeVisible();
     await block.click();
     await page.waitForFunction(() => {

@@ -1,10 +1,14 @@
 import type { DogBoard, DogBoardCell, DogBoardShape } from "./level-types";
 import { BLOCK_WIDTH } from "./level-types";
+import { FIRST_LEVEL_NUMBER, FIRST_LEVEL_TEMPLATE_ID } from "./game-config";
 import { getProgressStage } from "./level-progression";
 import { SeededRandom, weightedPick } from "./level-random";
 
-const TEMPLATE_WIDTH = 24;
-const TEMPLATE_HEIGHT = 20;
+const BASE_TEMPLATE_WIDTH = 24;
+const BASE_TEMPLATE_HEIGHT = 20;
+const TEMPLATE_SCALE = 2;
+const TEMPLATE_WIDTH = BASE_TEMPLATE_WIDTH * TEMPLATE_SCALE;
+const TEMPLATE_HEIGHT = BASE_TEMPLATE_HEIGHT * TEMPLATE_SCALE;
 
 type Span = readonly [number, number];
 type SpanRow = readonly Span[];
@@ -34,6 +38,17 @@ const SHAPE_WEIGHTS: readonly (readonly number[])[] = [
 
 export const DOG_SHAPE_TEMPLATES: readonly DogShapeTemplate[] = Object.freeze(
   [
+    createShapeTemplate(
+      FIRST_LEVEL_TEMPLATE_ID,
+      "irregular",
+      createRows(row([0, 23]), [
+        [0, row([2, 21])],
+        [3, row([0, 5], [8, 23])],
+        [17, row([0, 3], [6, 23])],
+        [18, row([2, 21])],
+        [19, row([7, 16])],
+      ]),
+    ),
     createShapeTemplate("rectangle-classic-1", "rectangle", createRows(row([0, 23]), [])),
     createShapeTemplate(
       "rectangle-rounded-2",
@@ -315,19 +330,22 @@ function createRows(
   defaultRow: SpanRow,
   overrides: readonly (readonly [number, SpanRow])[],
 ): readonly string[] {
-  const rows = Array.from({ length: TEMPLATE_HEIGHT }, () => defaultRow);
+  const rows = Array.from({ length: BASE_TEMPLATE_HEIGHT }, () => defaultRow);
   for (const [rowIndex, spans] of overrides) {
     rows[rowIndex] = spans;
   }
 
-  return rows.map((spans) => {
-    const cells = Array.from({ length: TEMPLATE_WIDTH }, () => ".");
+  return rows.flatMap((spans) => {
+    const cells = Array.from({ length: BASE_TEMPLATE_WIDTH }, () => ".");
     for (const [start, end] of spans) {
       for (let x = start; x <= end; x += 1) {
         cells[x] = "#";
       }
     }
-    return cells.join("");
+    const scaledRow = cells
+      .flatMap((value) => Array.from({ length: TEMPLATE_SCALE }, () => value))
+      .join("");
+    return Array.from({ length: TEMPLATE_SCALE }, () => scaledRow);
   });
 }
 
@@ -341,6 +359,10 @@ function cellKey(cell: DogBoardCell): string {
 
 
 export function getShapePool(levelNumber: number): readonly DogBoardShape[] {
+  if (levelNumber === FIRST_LEVEL_NUMBER) {
+    return ["irregular"];
+  }
+
   return SHAPE_POOLS[getProgressStage(levelNumber)];
 }
 

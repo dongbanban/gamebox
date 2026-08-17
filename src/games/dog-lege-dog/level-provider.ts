@@ -1,14 +1,11 @@
 import {
   DEFAULT_LEVEL_SEED,
-  FIRST_LEVEL_NUMBER,
   LEVEL_GENERATOR_VERSION,
 } from "./game-config";
-import { FIRST_LEVEL } from "./first-level";
 import {
   GeneratedLevelGenerator,
 } from "./level-generation-engine";
 import {
-  isFirstLevelReplay,
   normalizeRequest,
   validateReplay,
   validateRequest,
@@ -25,7 +22,7 @@ import type {
   DogLegeDogLevel,
 } from "./level-types";
 
-/** One level source for fixed first level and deterministic generated levels. */
+/** One deterministic level source for every level. */
 export class DogLevelProvider {
   private readonly generatedLevels: GeneratedLevelGenerator;
 
@@ -46,14 +43,6 @@ export class DogLevelProvider {
   ): DogLegeDogLevel {
     const request = normalizeRequest(requestOrLevelNumber, seed, generatorVersion);
     validateRequest(request);
-    if (
-      request.levelNumber === FIRST_LEVEL_NUMBER &&
-      request.seed === DEFAULT_LEVEL_SEED &&
-      request.generatorVersion === LEVEL_GENERATOR_VERSION
-    ) {
-      return FIRST_LEVEL;
-    }
-
     return this.generatedLevels.generate(request);
   }
 
@@ -77,19 +66,11 @@ export class DogLevelProvider {
 
   replay(replay: DogLevelReplay): DogLegeDogLevel {
     validateReplay(replay);
-    if (isFirstLevelReplay(replay)) {
-      return FIRST_LEVEL;
-    }
-
     return this.generatedLevels.replay(replay);
   }
 
   replayAttempt(replay: DogLevelReplay): DogLegeDogLevel {
     validateReplay(replay);
-    if (isFirstLevelReplay(replay)) {
-      return FIRST_LEVEL;
-    }
-
     return this.generatedLevels.replayAttempt(replay);
   }
 

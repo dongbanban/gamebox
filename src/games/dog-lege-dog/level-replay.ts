@@ -1,7 +1,3 @@
-import {
-  FIRST_LEVEL_NUMBER,
-  FIRST_LEVEL_SEED,
-} from "./game-config";
 import type {
   DogLevelDifficulty,
   DogLevelGeneration,
@@ -137,14 +133,6 @@ export function validateReplay(replay: DogLevelReplay): void {
   if (replay.randomSeed.length === 0) {
     throw new Error("LevelGenerator replay random seed must be non-empty");
   }
-}
-
-export function isFirstLevelReplay(replay: DogLevelReplay): boolean {
-  return (
-    replay.mode === "fixed" &&
-    replay.levelNumber === FIRST_LEVEL_NUMBER &&
-    replay.levelSeed === FIRST_LEVEL_SEED
-  );
 }
 
 function validateLevelNumber(levelNumber: number): void {

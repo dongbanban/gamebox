@@ -207,10 +207,10 @@ describe("注册与游戏目录 UI", () => {
       )
       ?.click();
 
-    for (const block of [...FIRST_LEVEL.blocks].reverse()) {
+    for (const blockId of FIRST_LEVEL.solutionPath) {
       root
         .querySelector<HTMLButtonElement>(
-          `[data-testid="dog-block"][data-block-id="${block.id}"]`,
+          `[data-testid="dog-block"][data-block-id="${blockId}"]`,
         )
         ?.click();
     }
@@ -238,11 +238,7 @@ describe("注册与游戏目录 UI", () => {
 
     root.querySelector<HTMLButtonElement>('[data-action="register"]')?.click();
     root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
-    root
-      .querySelector<HTMLButtonElement>(
-        '[data-testid="dog-block"][data-block-id="first-level-block-73"]',
-      )
-      ?.click();
+    root.querySelector<HTMLButtonElement>('[data-testid="dog-block"]:not([disabled])')?.click();
     const savedBeforeLeaving = storage.getItem("gamebox.state");
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
 
@@ -479,12 +475,21 @@ describe("注册与游戏目录 UI", () => {
     root.querySelector<HTMLButtonElement>('[data-action="register"]')?.click();
     root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
 
-    for (const blockNumber of [73, 76, 79, 82, 74, 77, 80]) {
-      root
-        .querySelector<HTMLButtonElement>(
-          `[data-testid="dog-block"][data-block-id="first-level-block-${blockNumber}"]`,
-        )
-        ?.click();
+    const selectedPatterns: string[] = [];
+    for (let selectionNumber = 0; selectionNumber < 7; selectionNumber += 1) {
+      const candidate = [...root.querySelectorAll<HTMLButtonElement>(
+        '[data-testid="dog-block"]:not([disabled])',
+      )].find((block) => {
+        const patternType = block.dataset.patternType;
+        return patternType !== undefined &&
+          selectedPatterns.filter((selected) => selected === patternType).length < 2;
+      });
+      expect(candidate).toBeDefined();
+      const patternType = candidate?.dataset.patternType;
+      if (patternType !== undefined) {
+        selectedPatterns.push(patternType);
+      }
+      candidate?.click();
     }
 
     expect(root.querySelector('[data-view="game-result"]')).not.toBeNull();
@@ -512,10 +517,10 @@ describe("注册与游戏目录 UI", () => {
     root.querySelector<HTMLButtonElement>('[data-action="register"]')?.click();
     root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
 
-    for (const block of [...FIRST_LEVEL.blocks].reverse()) {
+    for (const blockId of FIRST_LEVEL.solutionPath) {
       root
         .querySelector<HTMLButtonElement>(
-          `[data-testid="dog-block"][data-block-id="${block.id}"]`,
+          `[data-testid="dog-block"][data-block-id="${blockId}"]`,
         )
         ?.click();
     }
@@ -567,10 +572,10 @@ describe("注册与游戏目录 UI", () => {
     root.querySelector<HTMLButtonElement>('[data-action="register"]')?.click();
     root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
 
-    for (const block of [...FIRST_LEVEL.blocks].reverse()) {
+    for (const blockId of FIRST_LEVEL.solutionPath) {
       root
         .querySelector<HTMLButtonElement>(
-          `[data-testid="dog-block"][data-block-id="${block.id}"]`,
+          `[data-testid="dog-block"][data-block-id="${blockId}"]`,
         )
         ?.click();
     }

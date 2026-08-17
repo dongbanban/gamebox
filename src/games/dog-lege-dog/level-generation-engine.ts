@@ -2,6 +2,12 @@ import {
   DEFAULT_LEVEL_REWARD,
   DEFAULT_LEVEL_SEED,
   DOG_GAME_ID,
+  FIRST_LEVEL_BLOCK_COUNT,
+  FIRST_LEVEL_MAX_LAYERS,
+  FIRST_LEVEL_NUMBER,
+  FIRST_LEVEL_PATTERN_TYPES,
+  FIRST_LEVEL_SEED,
+  FIRST_LEVEL_TEMPLATE_ID,
   LEVEL_GENERATOR_VERSION,
 } from "./game-config";
 import {
@@ -15,6 +21,7 @@ import {
   type DogShapeTemplate,
 } from "./level-shapes";
 import {
+  createFirstLevelBlockPlacements,
   createGuaranteedBlockPlacements,
   createRemovalPathPlan,
   createSolvableBlockPlacements,
@@ -45,6 +52,7 @@ import type {
   DogLevelReplay,
   DogLevelReplayMode,
   DogLegeDogLevel,
+  DogPatternType,
 } from "./level-types";
 import type {
   LevelCandidateFilter,
@@ -63,6 +71,15 @@ import {
 export const MAX_LEVEL_GENERATION_ATTEMPTS = 100 as const;
 
 type TemplateFactory = (random: SeededRandom) => DogShapeTemplate;
+type PatternTypesFactory = (random: SeededRandom) => readonly DogPatternType[];
+
+interface CandidateGenerationPlan {
+  readonly blockCount: number;
+  readonly maxLayers: number;
+  readonly templateFactory: TemplateFactory;
+  readonly placementFactory: PlacementFactory;
+  readonly patternTypesFactory: PatternTypesFactory;
+}
 
 export class GeneratedLevelGenerator {
   private readonly gameId: string;
@@ -89,7 +106,7 @@ export class GeneratedLevelGenerator {
     const request = normalizeRequest(requestOrLevelNumber, seed, generatorVersion);
     validateRequest(request);
 
-    const levelSeed = `${request.seed}:v${request.generatorVersion}:level-${request.levelNumber}`;
+    const levelSeed = getLevelSeed(request);
     const testSeed = request.testSeed ?? request.seed;
     const failures: DogLevelGenerationFailure[] = [];
     let closestCandidate: GeneratedLevelCandidate | undefined;
@@ -225,7 +242,7 @@ export class GeneratedLevelGenerator {
       testSeed: replay.testSeed,
       generatorVersion: replay.generatorVersion,
     };
-    const levelSeed = `${request.seed}:v${request.generatorVersion}:level-${request.levelNumber}`;
+    const levelSeed = getLevelSeed(request);
     const candidate = replay.mode === "guaranteed"
       ? this.createGuaranteedCandidate(
           request,
@@ -283,18 +300,22 @@ export class GeneratedLevelGenerator {
     placementFactory: PlacementFactory,
   ): GeneratedLevelCandidate {
     const random = new SeededRandom(randomSeed);
-    const blockCount = getBlockCount(request.levelNumber);
-    const maxLayers = getMaxLayers(request.levelNumber);
+    const plan = createGenerationPlan(
+      request,
+      templateFactory,
+      placementFactory,
+    );
+    const { blockCount, maxLayers } = plan;
     const plannedRemovalPlan = createRemovalPathPlan(blockCount, maxLayers, random);
-    const shape = templateFactory(random);
-    const placements = placementFactory(
+    const shape = plan.templateFactory(random);
+    const placements = plan.placementFactory(
       shape,
       blockCount,
       maxLayers,
       random,
       plannedRemovalPlan,
     );
-    const patternTypes = selectPatternTypes(request.levelNumber, random);
+    const patternTypes = plan.patternTypesFactory(random);
     const removalPlan = resolveRemovalPathPlan(
       placements,
       random,
@@ -432,15 +453,57 @@ function createCandidateLevel(
   };
 }
 
+function createGenerationPlan(
+  request: LevelGeneratorRequest,
+  templateFactory: TemplateFactory,
+  placementFactory: PlacementFactory,
+): CandidateGenerationPlan {
+  if (request.levelNumber === FIRST_LEVEL_NUMBER) {
+    return {
+      blockCount: FIRST_LEVEL_BLOCK_COUNT,
+      maxLayers: FIRST_LEVEL_MAX_LAYERS,
+      templateFactory: () => getFirstLevelTemplate(),
+      placementFactory: createFirstLevelBlockPlacements,
+      patternTypesFactory: () => FIRST_LEVEL_PATTERN_TYPES,
+    };
+  }
+
+  return {
+    blockCount: getBlockCount(request.levelNumber),
+    maxLayers: getMaxLayers(request.levelNumber),
+    templateFactory,
+    placementFactory,
+    patternTypesFactory: (random) => selectPatternTypes(request.levelNumber, random),
+  };
+}
+
 function getFallbackTemplate(kind: "fallback" | "emergency"): DogShapeTemplate {
-  const template = DOG_SHAPE_TEMPLATES.find(
-    (candidate) => candidate.id === "rectangle-classic-1",
-  );
+  return getTemplateById("rectangle-classic-1", `LevelGenerator ${kind} template`);
+}
+
+function getFirstLevelTemplate(): DogShapeTemplate {
+  return getTemplateById(FIRST_LEVEL_TEMPLATE_ID, "LevelGenerator first-level template");
+}
+
+function getTemplateById(templateId: string, label: string): DogShapeTemplate {
+  const template = DOG_SHAPE_TEMPLATES.find((candidate) => candidate.id === templateId);
   if (template === undefined) {
-    throw new Error(`LevelGenerator ${kind} template is unavailable`);
+    throw new Error(`${label} is unavailable`);
   }
 
   return template;
+}
+
+function getLevelSeed(request: LevelGeneratorRequest): string {
+  if (
+    request.levelNumber === FIRST_LEVEL_NUMBER &&
+    request.seed === DEFAULT_LEVEL_SEED &&
+    request.generatorVersion === LEVEL_GENERATOR_VERSION
+  ) {
+    return FIRST_LEVEL_SEED;
+  }
+
+  return `${request.seed}:v${request.generatorVersion}:level-${request.levelNumber}`;
 }
 
 export const DEFAULT_GENERATED_LEVEL_GENERATOR = new GeneratedLevelGenerator();

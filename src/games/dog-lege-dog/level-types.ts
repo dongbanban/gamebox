@@ -1,5 +1,5 @@
-export const BLOCK_WIDTH = 2 as const;
-export const BLOCK_HEIGHT = 2 as const;
+export const BLOCK_WIDTH = 4 as const;
+export const BLOCK_HEIGHT = 4 as const;
 
 export const DOG_PATTERN_TYPES = [
   "打工狗",
@@ -28,7 +28,7 @@ export interface DogBoard {
   readonly templateId: string;
   readonly width: number;
   readonly height: number;
-  readonly logicalCellSize: 2;
+  readonly logicalCellSize: 4;
   readonly playableCells: readonly DogBoardCell[];
 }
 
@@ -37,8 +37,8 @@ export interface DogBlock {
   readonly x: number;
   readonly y: number;
   readonly z: number;
-  readonly width: 2;
-  readonly height: 2;
+  readonly width: 4;
+  readonly height: 4;
   readonly rotation: 0;
   readonly patternType: DogPatternType;
 }

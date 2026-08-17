@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   DOG_GAME_ID,
   DOG_PATTERN_TYPES,
-  FIRST_LEVEL,
   GameSession,
   getBlockCount,
   getMaxLayers,
@@ -95,10 +94,6 @@ function createLevel(
   levelNumber: number,
   testSeed = RANDOM_TEST_SEED,
 ): DogLegeDogLevel {
-  if (levelNumber === FIRST_LEVEL.number) {
-    return FIRST_LEVEL;
-  }
-
   return generator.generate({
     levelNumber,
     seed: GENERATOR_SEED,
@@ -115,9 +110,7 @@ function createPendingCase(
     testSeed,
     levelNumber,
     levelSeed:
-      levelNumber === FIRST_LEVEL.number
-        ? FIRST_LEVEL.seed
-        : `${GENERATOR_SEED}:v${LEVEL_GENERATOR_VERSION}:level-${levelNumber}`,
+      `${GENERATOR_SEED}:v${LEVEL_GENERATOR_VERSION}:level-${levelNumber}`,
     generatorVersion: LEVEL_GENERATOR_VERSION,
   };
 }
@@ -134,7 +127,9 @@ function assertLevelInvariants(
   expect(level.number).toBeGreaterThanOrEqual(1);
   expect(blocks).toHaveLength(getBlockCount(level.number));
   expect(level.maxLayers).toBe(getMaxLayers(level.number));
-  expect(level.patternTypes).toHaveLength(getPatternTypeCount(level.number));
+  expect(level.patternTypes).toHaveLength(
+    level.number === 1 ? 6 : getPatternTypeCount(level.number),
+  );
   expect(getShapePool(level.number)).toContain(board.shape);
   expect(level.patternTypes.every((patternType) => DOG_PATTERN_TYPES.includes(patternType))).toBe(
     true,
@@ -148,8 +143,8 @@ function assertLevelInvariants(
 
   for (const block of blocks) {
     expect(block.patternType).toBeDefined();
-    expect(block.width).toBe(2);
-    expect(block.height).toBe(2);
+    expect(block.width).toBe(4);
+    expect(block.height).toBe(4);
     expect(block.rotation).toBe(0);
     expect(Number.isInteger(block.x)).toBe(true);
     expect(Number.isInteger(block.y)).toBe(true);
@@ -205,10 +200,8 @@ function assertLevelInvariants(
   }
 
   assertReplayMetadata(level);
-  if (level.number > FIRST_LEVEL.number) {
-    expect(generation.replay.testSeed).toBe(regressionCase.testSeed);
-    expect(generator.replay(generation.replay)).toEqual(level);
-  }
+  expect(generation.replay.testSeed).toBe(regressionCase.testSeed);
+  expect(generator.replay(generation.replay)).toEqual(level);
 
   for (const failure of generation.failures.slice(0, 1)) {
     expect(failure.levelNumber).toBe(level.number);
@@ -235,7 +228,9 @@ function assertLevelInvariants(
 function assertStressLevel(level: DogLegeDogLevel): void {
   expect(level.blocks).toHaveLength(getBlockCount(level.number));
   expect(level.maxLayers).toBe(getMaxLayers(level.number));
-  expect(level.patternTypes).toHaveLength(getPatternTypeCount(level.number));
+  expect(level.patternTypes).toHaveLength(
+    level.number === 1 ? 6 : getPatternTypeCount(level.number),
+  );
   expect(getShapePool(level.number)).toContain(level.board.shape);
   expect(level.solutionPath).toHaveLength(level.blocks.length);
   expect(new Set(level.solutionPath)).toHaveLength(level.blocks.length);

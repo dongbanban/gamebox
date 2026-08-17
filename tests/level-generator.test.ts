@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  BLOCK_HEIGHT,
+  BLOCK_WIDTH,
   DOG_PATTERN_TYPES,
   DOG_SHAPE_TEMPLATES,
   FIRST_LEVEL,
@@ -44,9 +46,14 @@ describe("LevelGenerator", () => {
     expect(selectionMs).toBeLessThan(1_000);
   });
 
-  it("通过统一关卡提供器取得首关与后续关卡", () => {
+  it("首关与后续关卡都通过同一个生成器 seam 提供", () => {
     const generator = new LevelGenerator();
     const firstLevel = getDogLegeDogLevel(FIRST_LEVEL.number);
+    const generatedFirstLevel = generator.generate({
+      levelNumber: FIRST_LEVEL.number,
+      seed: DEFAULT_LEVEL_SEED,
+      generatorVersion: LEVEL_GENERATOR_VERSION,
+    });
     const secondLevel = generator.generate({
       levelNumber: FIRST_LEVEL.number + 1,
       seed: DEFAULT_LEVEL_SEED,
@@ -54,15 +61,88 @@ describe("LevelGenerator", () => {
     });
 
     expect(firstLevel).toEqual(FIRST_LEVEL);
+    expect(firstLevel).toEqual(generatedFirstLevel);
+    expect(firstLevel.generation.replay.mode).toBe("generated");
     expect(getDogLegeDogLevel(FIRST_LEVEL.number)).toEqual(firstLevel);
     expect(getDogLegeDogLevel(secondLevel.number)).toEqual(secondLevel);
   });
 
-  it("固定首关 replay 返回固定棋盘", () => {
+  it("首关 replay 返回相同的不规则棋盘", () => {
     const generator = new LevelGenerator();
 
     expect(generator.replay(FIRST_LEVEL.generation.replay)).toEqual(FIRST_LEVEL);
     expect(generator.replayAttempt(FIRST_LEVEL.generation.replay)).toEqual(FIRST_LEVEL);
+  });
+
+  it("首关满足不规则轮廓、四分之一精度与部分重叠硬约束", () => {
+    const level = FIRST_LEVEL;
+    const playableCells = new Set(level.board.playableCells.map(cellKey));
+    const crossLayerOverlaps = level.blocks.flatMap((block, index) =>
+      level.blocks.slice(index + 1).flatMap((other) => {
+        if (block.z === other.z) {
+          return [];
+        }
+
+        const area = overlapArea(block, other);
+        return area > 0 ? [{ ratio: area / (BLOCK_WIDTH * BLOCK_HEIGHT) }] : [];
+      }),
+    );
+    const quarterOrHalfCount = crossLayerOverlaps.filter(
+      ({ ratio }) => ratio === 0.25 || ratio === 0.5,
+    ).length;
+    const quarterCount = crossLayerOverlaps.filter(({ ratio }) => ratio === 0.25).length;
+    const halfCount = crossLayerOverlaps.filter(({ ratio }) => ratio === 0.5).length;
+    const alignedCount = crossLayerOverlaps.filter(({ ratio }) => ratio === 1).length;
+
+    expect(level.board.shape).toBe("irregular");
+    expect(level.board.logicalCellSize).toBe(4);
+    expect(level.blocks).toHaveLength(90);
+    expect(new Set(level.blocks.map((block) => block.z))).toHaveLength(3);
+    expect(level.blocks.every((block) =>
+      block.width === 4 &&
+      block.height === 4 &&
+      block.rotation === 0 &&
+      Number.isInteger(block.x) &&
+      Number.isInteger(block.y) &&
+      Number.isInteger(block.z),
+    )).toBe(true);
+    expect(level.patternTypes).toHaveLength(6);
+    expect(new Set(level.blocks.map((block) => block.patternType))).toHaveLength(6);
+    expect(level.patternTypes.every((patternType) =>
+      level.blocks.filter((block) => block.patternType === patternType).length % 3 === 0,
+    )).toBe(true);
+    expect(isConnected(level.board.playableCells)).toBe(true);
+    expect(countInteriorConcavities(level.board.playableCells)).toBeGreaterThanOrEqual(2);
+    expect(isReflectionSymmetric(level.board.playableCells)).toBe(false);
+
+    for (const block of level.blocks) {
+      for (let y = block.y; y < block.y + block.height; y += 1) {
+        for (let x = block.x; x < block.x + block.width; x += 1) {
+          expect(playableCells.has(`${x}:${y}`)).toBe(true);
+        }
+      }
+    }
+
+    for (let index = 0; index < level.blocks.length; index += 1) {
+      const block = level.blocks[index];
+      for (const other of level.blocks.slice(index + 1)) {
+        if (block.z === other.z) {
+          expect(overlapArea(block, other)).toBe(0);
+        }
+      }
+
+      const coveredByHigherBlocks = level.blocks.filter(
+        (other) => other.z > block.z && overlapArea(block, other) > 0,
+      );
+      expect(coveredByHigherBlocks.length).toBeLessThanOrEqual(4);
+    }
+
+    expect(crossLayerOverlaps.length).toBeGreaterThan(0);
+    expect(quarterOrHalfCount / crossLayerOverlaps.length).toBeGreaterThanOrEqual(0.7);
+    expect(quarterCount / crossLayerOverlaps.length).toBeGreaterThanOrEqual(0.2);
+    expect(halfCount / crossLayerOverlaps.length).toBeGreaterThanOrEqual(0.2);
+    expect(alignedCount / crossLayerOverlaps.length).toBeLessThanOrEqual(0.1);
+    expect(new GameSession(level).selectBlock(level.solutionPath[0]!).selected).toBe(true);
   });
 
   it("guaranteed fallback replay 保持相同候选", () => {
@@ -157,6 +237,7 @@ describe("LevelGenerator", () => {
       10,
       10,
     ]);
+    expect(getShapePool(1)).toEqual(["irregular"]);
     expect(getShapePool(5)).toEqual(["rectangle"]);
     expect(getShapePool(6)).toEqual(["rectangle", "star"]);
     expect(getShapePool(16)).toEqual(["rectangle", "star", "heart"]);
@@ -347,4 +428,94 @@ function hasPositiveAreaOverlap(
     first.y < second.y + second.height &&
     second.y < first.y + first.height
   );
+}
+
+function cellKey(cell: { readonly x: number; readonly y: number }): string {
+  return `${cell.x}:${cell.y}`;
+}
+
+function overlapArea(
+  first: { readonly x: number; readonly y: number; readonly width: number; readonly height: number },
+  second: { readonly x: number; readonly y: number; readonly width: number; readonly height: number },
+): number {
+  const overlapWidth = Math.max(
+    0,
+    Math.min(first.x + first.width, second.x + second.width) - Math.max(first.x, second.x),
+  );
+  const overlapHeight = Math.max(
+    0,
+    Math.min(first.y + first.height, second.y + second.height) - Math.max(first.y, second.y),
+  );
+  return overlapWidth * overlapHeight;
+}
+
+function isConnected(cells: readonly { readonly x: number; readonly y: number }[]): boolean {
+  if (cells.length === 0) {
+    return false;
+  }
+
+  const all = new Set(cells.map(cellKey));
+  const visited = new Set<string>();
+  const queue = [cells[0]!];
+  while (queue.length > 0) {
+    const cell = queue.shift()!;
+    const key = cellKey(cell);
+    if (visited.has(key)) {
+      continue;
+    }
+
+    visited.add(key);
+    for (const neighbor of [
+      { x: cell.x - 1, y: cell.y },
+      { x: cell.x + 1, y: cell.y },
+      { x: cell.x, y: cell.y - 1 },
+      { x: cell.x, y: cell.y + 1 },
+    ]) {
+      if (all.has(cellKey(neighbor)) && !visited.has(cellKey(neighbor))) {
+        queue.push(neighbor);
+      }
+    }
+  }
+
+  return visited.size === all.size;
+}
+
+function countInteriorConcavities(
+  cells: readonly { readonly x: number; readonly y: number }[],
+): number {
+  const all = new Set(cells.map(cellKey));
+  const minX = Math.min(...cells.map((cell) => cell.x));
+  const maxX = Math.max(...cells.map((cell) => cell.x));
+  const minY = Math.min(...cells.map((cell) => cell.y));
+  const maxY = Math.max(...cells.map((cell) => cell.y));
+  let concavities = 0;
+  for (let y = minY + 1; y < maxY; y += 1) {
+    for (let x = minX + 1; x < maxX; x += 1) {
+      if (all.has(`${x}:${y}`)) {
+        continue;
+      }
+
+      const neighbors = [
+        `${x - 1}:${y}`,
+        `${x + 1}:${y}`,
+        `${x}:${y - 1}`,
+        `${x}:${y + 1}`,
+      ].filter((neighbor) => all.has(neighbor)).length;
+      if (neighbors >= 2) {
+        concavities += 1;
+      }
+    }
+  }
+  return concavities;
+}
+
+function isReflectionSymmetric(
+  cells: readonly { readonly x: number; readonly y: number }[],
+): boolean {
+  const all = new Set(cells.map(cellKey));
+  const maxX = Math.max(...cells.map((cell) => cell.x));
+  const maxY = Math.max(...cells.map((cell) => cell.y));
+  const horizontal = cells.every((cell) => all.has(`${maxX - cell.x}:${cell.y}`));
+  const vertical = cells.every((cell) => all.has(`${cell.x}:${maxY - cell.y}`));
+  return horizontal || vertical;
 }

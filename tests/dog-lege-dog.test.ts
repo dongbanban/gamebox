@@ -8,8 +8,8 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe("狗了个狗固定首关", () => {
-  it("通过公共启动与状态 seam 暴露稳定的矩形棋盘", () => {
+describe("狗了个狗首关", () => {
+  it("通过公共启动与状态 seam 暴露稳定的不规则棋盘", () => {
     const firstRoot = document.createElement("div");
     const secondRoot = document.createElement("div");
     const firstGame = startDogLegeDogGame(firstRoot);
@@ -19,15 +19,15 @@ describe("狗了个狗固定首关", () => {
     expect(state.gameId).toBe("dog-lege-dog");
     expect(state.status).toBe("ready");
     expect(state.level.number).toBe(1);
-    expect(state.level.seed).toBe("dog-lege-dog:first-level:v2");
-    expect(state.level.board.shape).toBe("rectangle");
-    expect(state.level.board.logicalCellSize).toBe(2);
+    expect(state.level.seed).toBe("dog-lege-dog:first-level:v3");
+    expect(state.level.board.shape).toBe("irregular");
+    expect(state.level.board.logicalCellSize).toBe(4);
     expect(state.level.blocks).toHaveLength(90);
     expect(new Set(state.level.blocks.map((block) => block.patternType))).toEqual(
-      new Set(["打工狗", "单身狗", "舔狗", "看门狗"]),
+      new Set(["打工狗", "单身狗", "舔狗", "看门狗", "疯狗", "拆家狗"]),
     );
     expect(new Set(state.level.blocks.map((block) => block.z))).toEqual(new Set([0, 1, 2]));
-    expect(state.level.blocks.every((block) => block.width === 2 && block.height === 2)).toBe(true);
+    expect(state.level.blocks.every((block) => block.width === 4 && block.height === 4)).toBe(true);
     expect(
       [...new Set(state.level.blocks.map((block) => block.patternType))].every(
         (patternType) =>
@@ -38,7 +38,7 @@ describe("狗了个狗固定首关", () => {
     expect(state).toEqual(secondGame.getState());
   });
 
-  it("保持方块在棋盘形状内，且同层没有正面积重叠", () => {
+  it("保持方块在不规则棋盘内，且同层没有正面积重叠", () => {
     const root = document.createElement("div");
     const game = startDogLegeDogGame(root);
     const { board, blocks } = game.getState().level;
@@ -91,36 +91,38 @@ describe("狗了个狗固定首关", () => {
   it("只让可点击方块进入暂存槽，并在三消后移除", () => {
     const root = document.createElement("div");
     const game = startDogLegeDogGame(root);
+    const level = game.getState().level;
+    const blockedBlockId = level.blocks.find(
+      (block) => !game.getState().session.selectableBlockIds.includes(block.id),
+    )?.id;
     const blockedBlock = root.querySelector<HTMLButtonElement>(
-      '[data-testid="dog-block"][data-block-id="first-level-block-16"]',
-    );
-    const firstTriple = [73, 74, 75].map((blockNumber) =>
-      root.querySelector<HTMLButtonElement>(
-        `[data-testid="dog-block"][data-block-id="first-level-block-${blockNumber}"]`,
-      ),
+      `[data-testid="dog-block"][data-block-id="${blockedBlockId}"]`,
     );
 
     expect(blockedBlock?.disabled).toBe(true);
-    expect(firstTriple.every((block) => block?.disabled === false)).toBe(true);
+    let matched = false;
+    for (const blockId of level.solutionPath) {
+      const beforeTrayLength = game.getState().session.tray.length;
+      clickBlock(blockId);
+      const afterTrayLength = game.getState().session.tray.length;
+      if (afterTrayLength < beforeTrayLength + 1) {
+        matched = true;
+        break;
+      }
+    }
 
-    clickBlock(73);
-    clickBlock(74);
-
-    expect(game.getState().session.tray).toEqual(["打工狗", "打工狗"]);
-    expect(root.querySelectorAll('[data-testid="dog-tray-slot"][data-pattern-type]')).toHaveLength(2);
-
-    clickBlock(75);
-
-    expect(game.getState().session.tray).toEqual([]);
-    expect(root.querySelectorAll('[data-testid="dog-tray-slot"][data-pattern-type]')).toHaveLength(0);
+    expect(matched).toBe(true);
+    expect(root.querySelectorAll('[data-testid="dog-tray-slot"][data-pattern-type]')).toHaveLength(
+      game.getState().session.tray.length,
+    );
     expect(root.querySelector('[data-testid="dog-status"]')?.textContent).toContain("选择没有遮挡");
 
     game.destroy();
 
-    function clickBlock(blockNumber: number): void {
+    function clickBlock(blockId: string): void {
       root
         .querySelector<HTMLButtonElement>(
-          `[data-testid="dog-block"][data-block-id="first-level-block-${blockNumber}"]`,
+          `[data-testid="dog-block"][data-block-id="${blockId}"]`,
         )
         ?.click();
     }
@@ -174,25 +176,27 @@ describe("狗了个狗固定首关", () => {
     const root = document.createElement("div");
     const game = startDogLegeDogGame(root);
 
-    for (const blockNumber of [73, 74]) {
+    let matched = false;
+    for (const blockId of game.getState().level.solutionPath) {
+      const beforeTrayLength = game.getState().session.tray.length;
       root
         .querySelector<HTMLButtonElement>(
-          `[data-testid="dog-block"][data-block-id="first-level-block-${blockNumber}"]`,
+          `[data-testid="dog-block"][data-block-id="${blockId}"]`,
         )
         ?.dispatchEvent(new Event("pointerup", { bubbles: true, cancelable: true }));
+      const afterTrayLength = game.getState().session.tray.length;
+      if (afterTrayLength < beforeTrayLength + 1) {
+        matched = true;
+        break;
+      }
       await vi.runAllTimersAsync();
     }
 
-    root
-      .querySelector<HTMLButtonElement>(
-        '[data-testid="dog-block"][data-block-id="first-level-block-75"]',
-      )
-      ?.dispatchEvent(new Event("pointerup", { bubbles: true, cancelable: true }));
-
+    expect(matched).toBe(true);
     expect(game.getState().feedback).toBe("match");
     expect(game.getState().inputLocked).toBe(true);
     expect(root.querySelector('[data-testid="dog-feedback"]')?.textContent).toContain("三消");
-    expect(game.getState().session.tray).toEqual([]);
+    expect(game.getState().session.tray.length).toBeLessThan(7);
 
     await vi.runAllTimersAsync();
 
@@ -209,20 +213,28 @@ describe("狗了个狗固定首关", () => {
       onResult: (result) => results.push(result),
     });
 
-    for (const blockNumber of [73, 76, 79, 82, 74, 77]) {
+    const level = game.getState().level;
+    const selectedPatterns: string[] = [];
+    for (let selectionNumber = 0; selectionNumber < 7; selectionNumber += 1) {
+      const candidateId = game.getState().session.selectableBlockIds.find((blockId) => {
+        const patternType = level.blocks.find((block) => block.id === blockId)?.patternType;
+        return patternType !== undefined &&
+          selectedPatterns.filter((selected) => selected === patternType).length < 2;
+      });
+      expect(candidateId).toBeDefined();
+      const patternType = level.blocks.find((block) => block.id === candidateId)?.patternType;
+      if (patternType !== undefined) {
+        selectedPatterns.push(patternType);
+      }
       root
         .querySelector<HTMLButtonElement>(
-          `[data-testid="dog-block"][data-block-id="first-level-block-${blockNumber}"]`,
+          `[data-testid="dog-block"][data-block-id="${candidateId}"]`,
         )
         ?.dispatchEvent(new Event("pointerup", { bubbles: true, cancelable: true }));
-      await vi.runAllTimersAsync();
+      if (selectionNumber < 6) {
+        await vi.runAllTimersAsync();
+      }
     }
-
-    root
-      .querySelector<HTMLButtonElement>(
-        '[data-testid="dog-block"][data-block-id="first-level-block-80"]',
-      )
-      ?.dispatchEvent(new Event("pointerup", { bubbles: true, cancelable: true }));
 
     expect(game.getState().status).toBe("lost");
     expect(game.getState().feedback).toBe("lost");
