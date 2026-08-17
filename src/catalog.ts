@@ -14,6 +14,9 @@ export interface GameResult {
 
 export interface GameLaunchContext {
   readonly onResult?: (result: GameResult) => void;
+  readonly onResultConfirmed?: (result: GameResult) => void;
+  readonly onSoundToggle?: (soundEnabled: boolean) => void;
+  readonly soundEnabled?: boolean;
   readonly levelNumber?: number;
 }
 

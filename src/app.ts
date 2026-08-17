@@ -24,6 +24,7 @@ export class GameboxApp {
   private readonly store: ProgressStore;
   private activeGame: GameLaunchHandle | null = null;
   private activeLevel: ActiveLevel | null = null;
+  private pendingCompletion: LevelCompletionResult | null = null;
 
   constructor(root: HTMLElement, options: MountAppOptions = {}) {
     this.root = root;
@@ -267,6 +268,9 @@ export class GameboxApp {
     this.activeLevel = { gameId: game.id, levelNumber };
     this.activeGame = game.launch(gameMount, {
       onResult: this.handleGameResult,
+      onResultConfirmed: this.handleGameResultConfirmed,
+      onSoundToggle: (soundEnabled) => this.store.setSoundEnabled(soundEnabled),
+      soundEnabled: state.settings.soundEnabled,
       levelNumber,
     });
   }
@@ -285,9 +289,17 @@ export class GameboxApp {
     return window.confirm("当前关卡不会保存，确认离开？");
   }
 
+  private readonly handleGameResultConfirmed = (result: GameResult): void => {
+    if (result.status === "won") {
+      this.pendingCompletion = this.store.recordLevelCompletion(result);
+    }
+  };
+
   private readonly handleGameResult = (result: GameResult): void => {
     if (result.status === "won") {
-      const completion = this.store.recordLevelCompletion(result);
+      const completion =
+        this.pendingCompletion ?? this.store.recordLevelCompletion(result);
+      this.pendingCompletion = null;
       this.renderWinResult(result, completion);
       return;
     }
@@ -352,6 +364,7 @@ export class GameboxApp {
     this.activeGame?.destroy();
     this.activeGame = null;
     this.activeLevel = null;
+    this.pendingCompletion = null;
   }
 }
 

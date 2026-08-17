@@ -148,6 +148,20 @@ describe("ProgressStore", () => {
     });
   });
 
+  it("切换音效设置后持久化，并在新 store 中恢复", () => {
+    const storage = new MemoryStorage();
+    const store = new ProgressStore({
+      storage,
+      userIdFactory: () => userId,
+    });
+    store.register();
+
+    store.setSoundEnabled(false);
+
+    expect(store.snapshot().state?.settings.soundEnabled).toBe(false);
+    expect(new ProgressStore({ storage }).snapshot().state?.settings.soundEnabled).toBe(false);
+  });
+
   it("falls back to temporary state when stored data is damaged", () => {
     const storage = new MemoryStorage();
     storage.setItem("gamebox.state", "not-json");

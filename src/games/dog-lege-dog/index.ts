@@ -6,7 +6,13 @@ import {
   type DogLegeDogLevel,
   type DogPatternType,
 } from "./first-level";
+import {
+  animateBlockFlight,
+  type CancellableAnimation,
+} from "./animation-effects";
 import { GameSession, type GameSessionSnapshot } from "./game-session";
+import { createParticleEffects, type ParticleEffect } from "./particle-effects";
+import { createSoundEffects } from "./sound-effects";
 export {
   GAME_SESSION_TRAY_CAPACITY,
   GameSession,
@@ -76,7 +82,15 @@ export interface DogLegeDogGameState {
   readonly status: "ready" | GameSessionSnapshot["status"];
   readonly level: DogLegeDogLevel;
   readonly session: GameSessionSnapshot;
+  readonly inputLocked: boolean;
+  readonly feedback: DogVisualFeedback;
+  readonly soundEnabled: boolean;
+  readonly debug: {
+    readonly elapsedMs: number;
+  };
 }
+
+export type DogVisualFeedback = "idle" | "match" | "won" | "lost";
 
 export interface DogLegeDogGame {
   start(): DogLegeDogGameState;
@@ -91,6 +105,11 @@ interface PatternPresentation {
   readonly className: string;
   readonly accent: string;
   readonly marker: string;
+}
+
+interface BlockSelectionOptions {
+  readonly animate: boolean;
+  readonly initializeAudio: boolean;
 }
 
 const PATTERN_PRESENTATIONS: Record<DogPatternType, PatternPresentation> = {
@@ -155,57 +174,239 @@ export function createDogLegeDogGame(
   let started = false;
   let destroyed = false;
   let hasInteracted = false;
-  let resultReported = false;
+  let inputLocked = false;
+  let feedback: DogVisualFeedback = "idle";
+  let soundEnabled = options.soundEnabled ?? true;
+  let resultConfirmed = false;
+  let resultPresented = false;
+  let startedAt: number | null = null;
+  let endedAt: number | null = null;
+  let activeFlight: CancellableAnimation | null = null;
+  let feedbackVersion = 0;
+  const soundEffects = createSoundEffects(soundEnabled);
+  const particleEffects = createParticleEffects(root);
 
   const selectBlock = (blockId: string): GameSessionSnapshot => {
     if (destroyed) {
       throw new Error("Cannot select a block in a destroyed 狗了个狗 game");
     }
 
-    const canSelect = session.canSelectBlock(blockId);
-    const nextState = session.selectBlock(blockId);
-    if (canSelect) {
-      hasInteracted = true;
-    }
-
-    if (started) {
-      renderGame(root, createGameState(session, hasInteracted));
-    }
-
-    reportResult(nextState.status);
-
-    return nextState;
+    return commitBlockSelection(blockId, {
+      animate: true,
+      initializeAudio: true,
+    });
   };
 
-  function reportResult(status: GameSessionSnapshot["status"]): void {
-    if (resultReported || (status !== "won" && status !== "lost")) {
+  function commitBlockSelection(
+    blockId: string,
+    selectionOptions: BlockSelectionOptions,
+  ): GameSessionSnapshot {
+    if (inputLocked) {
+      return session.getState();
+    }
+
+    if (selectionOptions.initializeAudio) {
+      soundEffects.initialize();
+    }
+
+    const previousState = session.getState();
+    const sourceElement = findBlockElement(root, blockId);
+    const sourceRect = sourceElement?.getBoundingClientRect() ?? null;
+    const patternMarkup = sourceElement?.querySelector<HTMLElement>(".dog-block__glyph")?.outerHTML ?? "";
+    const patternType = sourceElement?.dataset.patternType;
+    const canSelect = session.canSelectBlock(blockId);
+    const nextState = session.selectBlock(blockId);
+    if (!canSelect) {
+      return nextState;
+    }
+
+    hasInteracted = true;
+    const didMatch = nextState.tray.length < previousState.tray.length;
+    const result = createResult(level, nextState.status);
+    const selectionVersion = feedbackVersion + 1;
+    feedbackVersion = selectionVersion;
+    if (result !== null) {
+      endedAt = Date.now();
+      confirmResult(result, !selectionOptions.animate || !started);
+    }
+
+    if (!selectionOptions.animate || !started) {
+      soundEffects.play("select");
+      playFeedbackSounds(didMatch, result);
+      feedback = "idle";
+      inputLocked = false;
+      renderStartedGame();
+      if (result !== null) {
+        presentResult(result);
+      }
+      return nextState;
+    }
+
+    inputLocked = true;
+    feedback = didMatch ? "match" : result?.status ?? "idle";
+    soundEffects.play("select");
+    playFeedbackSounds(didMatch, result);
+    renderStartedGame();
+
+    const target = findTrayTarget(root, patternType);
+    const flight = animateBlockFlight({
+      root,
+      patternMarkup,
+      source: sourceRect,
+      target: target?.getBoundingClientRect() ?? null,
+    });
+    activeFlight = flight;
+    void finishAnimatedSelection(flight, feedback, result, didMatch, selectionVersion);
+
+    return nextState;
+  }
+
+  async function finishAnimatedSelection(
+    flight: CancellableAnimation,
+    selectionFeedback: DogVisualFeedback,
+    result: GameResult | null,
+    didMatch: boolean,
+    selectionVersion: number,
+  ): Promise<void> {
+    await flight.promise;
+    if (destroyed || activeFlight !== flight) {
       return;
     }
 
-    resultReported = true;
-    const result: GameResult = {
-      gameId: GAME_ID,
-      levelNumber: level.number,
-      status,
-      reward: status === "won" ? level.reward : 0,
-    };
+    activeFlight = null;
+    if (result !== null) {
+      if (didMatch) {
+        await playParticleFeedback("match");
+        if (destroyed) {
+          return;
+        }
+        feedback = "won";
+        renderStartedGame();
+      }
+
+      await playParticleFeedback(result.status);
+      if (destroyed) {
+        return;
+      }
+      inputLocked = false;
+      feedback = "idle";
+      renderStartedGame();
+      presentResult(result);
+      return;
+    }
+
+    inputLocked = false;
+    renderStartedGame();
+    if (isParticleFeedback(selectionFeedback)) {
+      void playParticleFeedback(selectionFeedback).then(() => {
+        if (
+          !destroyed &&
+          feedbackVersion === selectionVersion &&
+          activeFlight === null &&
+          feedback === selectionFeedback
+        ) {
+          feedback = "idle";
+          renderStartedGame();
+        }
+      });
+    }
+  }
+
+  async function playParticleFeedback(effect: ParticleEffect): Promise<void> {
+    await particleEffects.play(effect);
+  }
+
+  function confirmResult(result: GameResult, presentImmediately: boolean): void {
+    if (resultConfirmed) {
+      return;
+    }
+
+    resultConfirmed = true;
+    options.onResultConfirmed?.(result);
+    if (options.onResultConfirmed === undefined && presentImmediately) {
+      presentResult(result);
+    }
+  }
+
+  function presentResult(result: GameResult): void {
+    if (resultPresented) {
+      return;
+    }
+
+    resultPresented = true;
     options.onResult?.(result);
   }
 
-  const handleBlockClick = (event: Event): void => {
+  function renderStartedGame(): void {
+    if (started) {
+      renderGame(
+        root,
+        createGameState(
+          session,
+          hasInteracted,
+          inputLocked,
+          feedback,
+          soundEnabled,
+          getElapsedMs(startedAt, endedAt),
+        ),
+      );
+    }
+  }
+
+  function playFeedbackSounds(didMatch: boolean, result: GameResult | null): void {
+    if (didMatch) {
+      soundEffects.play("match");
+    }
+    if (result !== null) {
+      soundEffects.play(result.status);
+    }
+  }
+
+  const handlePointerUp = (event: Event): void => {
+    const blockId = getBlockId(event);
+    if (blockId === undefined) {
+      return;
+    }
+
+    event.preventDefault();
+    commitBlockSelection(blockId, {
+      animate: true,
+      initializeAudio: true,
+    });
+  };
+
+  const handleClick = (event: Event): void => {
     const target = event.target;
     if (!(target instanceof Element)) {
       return;
     }
 
-    const block = target.closest<HTMLElement>('[data-testid="dog-block"]');
-    const blockId = block?.dataset.blockId;
+    const actionElement = target.closest<HTMLElement>("[data-action]");
+    if (actionElement?.dataset.action === "toggle-sound") {
+      soundEffects.initialize();
+      soundEnabled = !soundEnabled;
+      soundEffects.setEnabled(soundEnabled);
+      options.onSoundToggle?.(soundEnabled);
+      renderStartedGame();
+      return;
+    }
+
+    const eventDetail = "detail" in event && typeof event.detail === "number" ? event.detail : 0;
+    if (eventDetail > 0) {
+      return;
+    }
+
+    const blockId = getBlockId(event);
     if (blockId !== undefined) {
-      selectBlock(blockId);
+      commitBlockSelection(blockId, {
+        animate: false,
+        initializeAudio: true,
+      });
     }
   };
 
-  root.addEventListener("click", handleBlockClick);
+  root.addEventListener("pointerup", handlePointerUp);
+  root.addEventListener("click", handleClick);
 
   return {
     start(): DogLegeDogGameState {
@@ -214,15 +415,40 @@ export function createDogLegeDogGame(
       }
 
       if (!started) {
-        renderGame(root, createGameState(session, hasInteracted));
+        startedAt = Date.now();
+        renderGame(
+          root,
+          createGameState(
+            session,
+            hasInteracted,
+            inputLocked,
+            feedback,
+            soundEnabled,
+            getElapsedMs(startedAt, endedAt),
+          ),
+        );
         started = true;
       }
 
-      return createGameState(session, hasInteracted);
+      return createGameState(
+        session,
+        hasInteracted,
+        inputLocked,
+        feedback,
+        soundEnabled,
+        getElapsedMs(startedAt, endedAt),
+      );
     },
 
     getState(): DogLegeDogGameState {
-      return createGameState(session, hasInteracted);
+      return createGameState(
+        session,
+        hasInteracted,
+        inputLocked,
+        feedback,
+        soundEnabled,
+        getElapsedMs(startedAt, endedAt),
+      );
     },
 
     selectBlock(blockId: string): GameSessionSnapshot {
@@ -234,9 +460,14 @@ export function createDogLegeDogGame(
         return;
       }
 
-      root.removeEventListener("click", handleBlockClick);
-      root.replaceChildren();
       destroyed = true;
+      activeFlight?.cancel();
+      activeFlight = null;
+      particleEffects.destroy();
+      soundEffects.destroy();
+      root.removeEventListener("pointerup", handlePointerUp);
+      root.removeEventListener("click", handleClick);
+      root.replaceChildren();
     },
   };
 }
@@ -259,21 +490,39 @@ function renderGame(root: HTMLElement, state: DogLegeDogGameState): void {
   const boardRows = board.height / blockSize.height;
 
   root.innerHTML = `
-    <section class="dog-game" data-testid="dog-game" data-game-id="${state.gameId}">
+    <section
+      class="dog-game"
+      data-testid="dog-game"
+      data-game-id="${state.gameId}"
+      data-input-locked="${state.inputLocked}"
+      data-feedback="${state.feedback}"
+    >
       <header class="dog-game__header">
         <div>
-            <p class="eyebrow">${state.level.number === FIRST_LEVEL.number ? "固定首关" : "稳定关卡"} · ${state.level.seed}</p>
+          <p class="eyebrow">${state.level.number === FIRST_LEVEL.number ? "固定首关" : "稳定关卡"} · ${state.level.seed}</p>
           <h2>第 ${state.level.number} 关</h2>
         </div>
-        <dl class="dog-game__stats">
-          <div><dt>剩余方块</dt><dd>${blocks.length}</dd></div>
-          <div><dt>图案</dt><dd>${state.level.patternTypes.length} 种</dd></div>
-          <div><dt>层数</dt><dd>${state.level.maxLayers} 层</dd></div>
-        </dl>
+        <div class="dog-game__tools">
+          <button
+            class="sound-button"
+            type="button"
+            data-action="toggle-sound"
+            data-sound-enabled="${state.soundEnabled}"
+          >
+            <span>${state.soundEnabled ? "♫" : "∅"}</span>
+            ${state.soundEnabled ? "音效开启" : "音效关闭"}
+          </button>
+          <dl class="dog-game__stats">
+            <div><dt>剩余方块</dt><dd>${blocks.length}</dd></div>
+            <div><dt>图案</dt><dd>${state.level.patternTypes.length} 种</dd></div>
+            <div><dt>层数</dt><dd>${state.level.maxLayers} 层</dd></div>
+          </dl>
+        </div>
       </header>
       <p class="dog-game__status dog-game__status--${state.session.status}" data-testid="dog-status" role="status">
         ${renderStatusMessage(state.session.status)}
       </p>
+      ${renderFeedback(state.feedback)}
       <div class="dog-board-frame">
         <div
           class="dog-board"
@@ -286,10 +535,16 @@ function renderGame(root: HTMLElement, state: DogLegeDogGameState): void {
           role="img"
           aria-label="第 ${state.level.number} 关${renderShapeLabel(board.shape)}棋盘，${blocks.length} 个层叠方块"
         >
-          ${blocks.map((block) => renderBlock(block, boardColumns, boardRows, selectableBlockIds)).join("")}
+          ${blocks
+            .map((block) => renderBlock(block, boardColumns, boardRows, selectableBlockIds, state.inputLocked))
+            .join("")}
         </div>
       </div>
       ${renderTray(state.session)}
+      <div class="dog-effects-layer" data-testid="dog-effects-layer">
+        <canvas class="dog-effects-canvas" data-testid="dog-effects-canvas"></canvas>
+      </div>
+      <div class="dog-animation-layer" data-testid="dog-animation-layer"></div>
     </section>
   `;
 }
@@ -309,13 +564,14 @@ function renderBlock(
   boardColumns: number,
   boardRows: number,
   selectableBlockIds: readonly string[],
+  inputLocked: boolean,
 ): string {
   const presentation = PATTERN_PRESENTATIONS[block.patternType];
   const gridX = block.x / block.width;
   const gridY = block.y / block.height;
   const blockWidth = 100 / boardColumns;
   const blockHeight = 100 / boardRows;
-  const selectable = selectableBlockIds.includes(block.id);
+  const selectable = !inputLocked && selectableBlockIds.includes(block.id);
 
   return `
     <button
@@ -372,6 +628,19 @@ function renderStatusMessage(status: GameSessionSnapshot["status"]): string {
   return "选择没有遮挡的方块，凑齐三个相同图案。";
 }
 
+function renderFeedback(feedback: DogVisualFeedback): string {
+  if (feedback === "idle") {
+    return "";
+  }
+
+  const messages: Record<Exclude<DogVisualFeedback, "idle">, string> = {
+    match: "三消！",
+    won: "通关反馈",
+    lost: "失败反馈",
+  };
+  return `<p class="dog-feedback dog-feedback--${feedback}" data-testid="dog-feedback">${messages[feedback]}</p>`;
+}
+
 function renderPatternAsset(presentation: PatternPresentation): string {
   return `
     <svg viewBox="0 0 48 48" width="100%" height="100%" aria-hidden="true" focusable="false">
@@ -384,7 +653,14 @@ function renderPatternAsset(presentation: PatternPresentation): string {
   `;
 }
 
-function createGameState(session: GameSession, hasInteracted: boolean): DogLegeDogGameState {
+function createGameState(
+  session: GameSession,
+  hasInteracted: boolean,
+  inputLocked: boolean,
+  feedback: DogVisualFeedback,
+  soundEnabled: boolean,
+  elapsedMs: number,
+): DogLegeDogGameState {
   const sessionState = session.getState();
 
   return {
@@ -392,5 +668,62 @@ function createGameState(session: GameSession, hasInteracted: boolean): DogLegeD
     status: sessionState.status === "playing" && !hasInteracted ? "ready" : sessionState.status,
     level: sessionState.level,
     session: sessionState,
+    inputLocked,
+    feedback,
+    soundEnabled,
+    debug: { elapsedMs },
   };
+}
+
+function createResult(
+  level: DogLegeDogLevel,
+  status: GameSessionSnapshot["status"],
+): GameResult | null {
+  if (status !== "won" && status !== "lost") {
+    return null;
+  }
+
+  return {
+    gameId: GAME_ID,
+    levelNumber: level.number,
+    status,
+    reward: status === "won" ? level.reward : 0,
+  };
+}
+
+function isParticleFeedback(feedback: DogVisualFeedback): feedback is ParticleEffect {
+  return feedback !== "idle";
+}
+
+function findBlockElement(root: HTMLElement, blockId: string): HTMLElement | null {
+  return [...root.querySelectorAll<HTMLElement>('[data-testid="dog-block"]')].find(
+    (block) => block.dataset.blockId === blockId,
+  ) ?? null;
+}
+
+function findTrayTarget(root: HTMLElement, patternType: string | undefined): HTMLElement | null {
+  const slots = [...root.querySelectorAll<HTMLElement>('[data-testid="dog-tray-slot"]')];
+  return (
+    slots.find((slot) => patternType !== undefined && slot.dataset.patternType === patternType) ??
+    slots.find((slot) => slot.dataset.patternType === undefined) ??
+    slots[0] ??
+    null
+  );
+}
+
+function getBlockId(event: Event): string | undefined {
+  const target = event.target;
+  if (!(target instanceof Element)) {
+    return undefined;
+  }
+
+  return target.closest<HTMLElement>('[data-testid="dog-block"]')?.dataset.blockId;
+}
+
+function getElapsedMs(startedAt: number | null, endedAt: number | null): number {
+  if (startedAt === null || endedAt === null) {
+    return 0;
+  }
+
+  return Math.max(0, endedAt - startedAt);
 }

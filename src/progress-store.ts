@@ -130,6 +130,21 @@ export class ProgressStore {
     };
   }
 
+  setSoundEnabled(soundEnabled: boolean): void {
+    if (this.state === null || this.state.settings.soundEnabled === soundEnabled) {
+      return;
+    }
+
+    this.state = {
+      ...this.state,
+      settings: {
+        ...this.state.settings,
+        soundEnabled,
+      },
+    };
+    this.persist();
+  }
+
   reset(): void {
     this.state = null;
 

@@ -19,6 +19,11 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  overflow-x: hidden;
+}
+
 body {
   min-width: 320px;
   min-height: 100vh;
@@ -534,6 +539,8 @@ h2 {
 }
 
 .dog-game {
+  position: relative;
+  isolation: isolate;
   padding: clamp(20px, 4vw, 38px);
   border: 1px solid rgba(255, 255, 255, 0.9);
   border-radius: 26px;
@@ -551,6 +558,32 @@ h2 {
 
 .dog-game__header h2 {
   margin-bottom: 0;
+}
+
+.dog-game__tools {
+  display: grid;
+  justify-items: end;
+  gap: 12px;
+}
+
+.sound-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.86);
+  color: var(--ink-muted);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.sound-button:hover {
+  border-color: var(--coral);
+  color: var(--coral-dark);
 }
 
 .dog-game__stats {
@@ -597,17 +630,52 @@ h2 {
   font-weight: 800;
 }
 
+.dog-feedback {
+  width: fit-content;
+  margin: -8px auto 16px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+  text-align: center;
+}
+
+.dog-feedback--match {
+  background: rgba(255, 201, 102, 0.28);
+  color: #9a6817;
+  animation: dog-match-pop 300ms ease both;
+}
+
+.dog-feedback--won {
+  background: rgba(99, 184, 138, 0.2);
+  color: #39825c;
+  animation: dog-result-pop 560ms ease both;
+}
+
+.dog-feedback--lost {
+  background: rgba(238, 128, 105, 0.18);
+  color: var(--coral-dark);
+  animation: dog-result-shake 380ms ease both;
+}
+
 .dog-board-frame {
   display: flex;
   justify-content: center;
+  max-width: 100%;
+  overflow: hidden;
   padding: clamp(12px, 3vw, 28px);
   border-radius: 22px;
   background: #e7d5b8;
+  overscroll-behavior: contain;
+  touch-action: none;
 }
 
 .dog-board {
   position: relative;
   width: min(100%, 720px);
+  max-width: 720px;
   aspect-ratio: var(--board-columns) / var(--board-rows);
   overflow: hidden;
   border: 10px solid #b6875a;
@@ -618,6 +686,9 @@ h2 {
     #c79e6b;
   background-size: calc(100% / var(--board-columns)) calc(100% / var(--board-rows));
   box-shadow: inset 0 0 0 2px rgba(24, 59, 72, 0.12), 0 16px 28px rgba(24, 59, 72, 0.14);
+  overscroll-behavior: contain;
+  touch-action: none;
+  user-select: none;
 }
 
 .dog-board[data-shape="star"] {
@@ -652,6 +723,8 @@ h2 {
   transform: translate(0, calc(var(--block-z) * -4px));
   z-index: calc(10 + var(--block-z));
   box-shadow: 3px 4px 0 rgba(24, 59, 72, 0.18), inset 0 0 0 1px rgba(24, 59, 72, 0.1);
+  touch-action: none;
+  user-select: none;
 }
 
 .dog-block:not(:disabled):hover {
@@ -762,6 +835,94 @@ h2 {
   height: 78%;
 }
 
+.dog-effects-layer,
+.dog-animation-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.dog-effects-layer {
+  z-index: 20;
+}
+
+.dog-effects-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.dog-animation-layer {
+  z-index: 30;
+}
+
+.dog-flying-block {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: #fffdf8;
+  box-shadow: 3px 4px 0 rgba(24, 59, 72, 0.18), 0 10px 24px rgba(24, 59, 72, 0.18);
+  will-change: transform, opacity;
+}
+
+.dog-flying-block .dog-block__glyph {
+  display: block;
+  width: 82%;
+  height: 82%;
+}
+
+@keyframes dog-match-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(6px) scale(0.8);
+  }
+
+  55% {
+    opacity: 1;
+    transform: translateY(0) scale(1.08);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes dog-result-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.75);
+  }
+
+  60% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes dog-result-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-6px);
+  }
+
+  75% {
+    transform: translateX(6px);
+  }
+}
+
 @media (max-width: 700px) {
   .register-view,
   .catalog-view {
@@ -826,8 +987,17 @@ h2 {
     display: block;
   }
 
-  .dog-game__stats {
+  .dog-game__tools {
+    justify-items: stretch;
     margin-top: 18px;
+  }
+
+  .sound-button {
+    justify-content: center;
+  }
+
+  .dog-game__stats {
+    margin-top: 0;
   }
 }
 

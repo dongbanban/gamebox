@@ -37,6 +37,7 @@ class MemoryStorage implements StorageLike {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.useRealTimers();
 });
 
 describe("注册与游戏目录 UI", () => {
@@ -219,6 +220,125 @@ describe("注册与游戏目录 UI", () => {
     expect(root.querySelector('[data-view="game-entry"]')).toBeNull();
 
     app.destroy();
+  });
+
+  it("切换音效后保留设置，并在重新进入游戏时恢复", () => {
+    const storage = new MemoryStorage();
+    const root = document.createElement("div");
+    const app = mountApp(root, {
+      store: new ProgressStore({
+        storage,
+        userIdFactory: () => "123e4567-e89b-12d3-a456-426614174000",
+      }),
+    });
+
+    root.querySelector<HTMLButtonElement>('[data-action="register"]')?.click();
+    root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
+
+    const soundButton = root.querySelector<HTMLButtonElement>('[data-action="toggle-sound"]');
+    expect(soundButton?.dataset.soundEnabled).toBe("true");
+    soundButton?.click();
+
+    expect(root.querySelector<HTMLButtonElement>('[data-action="toggle-sound"]')?.dataset.soundEnabled).toBe(
+      "false",
+    );
+    expect(JSON.parse(storage.getItem("gamebox.state") ?? "null").settings.soundEnabled).toBe(false);
+
+    app.destroy();
+    const refreshedRoot = document.createElement("div");
+    const refreshedApp = mountApp(refreshedRoot, { store: new ProgressStore({ storage }) });
+    refreshedRoot.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
+
+    expect(
+      refreshedRoot
+        .querySelector<HTMLButtonElement>('[data-action="toggle-sound"]')
+        ?.dataset.soundEnabled,
+    ).toBe("false");
+
+    refreshedApp.destroy();
+  });
+
+  it("Pointer 动画期间先持久化通关结果，动画完成后再显示结果页", async () => {
+    vi.useFakeTimers();
+    const storage = new MemoryStorage();
+    const root = document.createElement("div");
+    const app = mountApp(root, {
+      store: new ProgressStore({
+        storage,
+        userIdFactory: () => "123e4567-e89b-12d3-a456-426614174000",
+      }),
+    });
+
+    root.querySelector<HTMLButtonElement>('[data-action="register"]')?.click();
+    root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
+
+    for (const blockId of FIRST_LEVEL.solutionPath.slice(0, -1)) {
+      const block = [...root.querySelectorAll<HTMLButtonElement>('[data-testid="dog-block"]')].find(
+        (candidate) => candidate.dataset.blockId === blockId,
+      );
+      block?.dispatchEvent(new Event("pointerup", { bubbles: true, cancelable: true }));
+      await vi.runAllTimersAsync();
+    }
+
+    const finalBlockId = FIRST_LEVEL.solutionPath.at(-1);
+    const finalBlock = [...root.querySelectorAll<HTMLButtonElement>('[data-testid="dog-block"]')].find(
+      (candidate) => candidate.dataset.blockId === finalBlockId,
+    );
+    finalBlock?.dispatchEvent(new Event("pointerup", { bubbles: true, cancelable: true }));
+
+    expect(JSON.parse(storage.getItem("gamebox.state") ?? "null").games[GAME_ID]).toMatchObject({
+      highestUnlockedLevel: 2,
+      completedLevels: [1],
+    });
+    expect(root.querySelector('[data-view="game-result"]')).toBeNull();
+    expect(root.querySelector('[data-testid="dog-game"]')?.getAttribute("data-input-locked")).toBe(
+      "true",
+    );
+
+    await vi.runAllTimersAsync();
+
+    expect(root.querySelector('[data-result="won"]')).not.toBeNull();
+    app.destroy();
+  });
+
+  it("通关动画被销毁后仍保留已确认的游戏进度", async () => {
+    vi.useFakeTimers();
+    const storage = new MemoryStorage();
+    const root = document.createElement("div");
+    const app = mountApp(root, {
+      store: new ProgressStore({
+        storage,
+        userIdFactory: () => "123e4567-e89b-12d3-a456-426614174000",
+      }),
+    });
+
+    root.querySelector<HTMLButtonElement>('[data-action="register"]')?.click();
+    root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
+
+    for (const blockId of FIRST_LEVEL.solutionPath.slice(0, -1)) {
+      const block = [...root.querySelectorAll<HTMLButtonElement>('[data-testid="dog-block"]')].find(
+        (candidate) => candidate.dataset.blockId === blockId,
+      );
+      block?.dispatchEvent(new Event("pointerup", { bubbles: true, cancelable: true }));
+      await vi.runAllTimersAsync();
+    }
+
+    const finalBlockId = FIRST_LEVEL.solutionPath.at(-1);
+    [...root.querySelectorAll<HTMLButtonElement>('[data-testid="dog-block"]')]
+      .find((candidate) => candidate.dataset.blockId === finalBlockId)
+      ?.dispatchEvent(new Event("pointerup", { bubbles: true, cancelable: true }));
+    expect(JSON.parse(storage.getItem("gamebox.state") ?? "null").games[GAME_ID]).toMatchObject({
+      highestUnlockedLevel: 2,
+      completedLevels: [1],
+    });
+
+    app.destroy();
+    await vi.runAllTimersAsync();
+
+    expect(JSON.parse(storage.getItem("gamebox.state") ?? "null").games[GAME_ID]).toMatchObject({
+      highestUnlockedLevel: 2,
+      completedLevels: [1],
+    });
   });
 
   it("显示失败结果并提供重新挑战与游戏目录操作", () => {

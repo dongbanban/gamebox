@@ -95,4 +95,43 @@ test.describe("注册与游戏目录", () => {
     ).resolves.toBe(savedState);
     await reopenedPage.close();
   });
+
+  test("移动端竖屏棋盘自动缩放且不产生横向滚动", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.getByRole("button", { name: "匿名注册" }).click();
+    await page.getByRole("button", { name: "进入游戏" }).click();
+
+    const layout = await page.evaluate(() => {
+      const board = document.querySelector<HTMLElement>('[data-testid="dog-board"]');
+      const rect = board?.getBoundingClientRect();
+      return {
+        viewportWidth: window.innerWidth,
+        scrollWidth: document.documentElement.scrollWidth,
+        boardLeft: rect?.left ?? 0,
+        boardRight: rect?.right ?? 0,
+        boardWidth: rect?.width ?? 0,
+      };
+    });
+
+    expect(layout.scrollWidth).toBeLessThanOrEqual(layout.viewportWidth);
+    expect(layout.boardLeft).toBeGreaterThanOrEqual(0);
+    expect(layout.boardRight).toBeLessThanOrEqual(layout.viewportWidth);
+    expect(layout.boardWidth).toBeGreaterThan(0);
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    const desktopLayout = await page.evaluate(() => {
+      const board = document.querySelector<HTMLElement>('[data-testid="dog-board"]');
+      const frame = document.querySelector<HTMLElement>('.dog-board-frame');
+      const boardRect = board?.getBoundingClientRect();
+      const frameRect = frame?.getBoundingClientRect();
+      return {
+        boardWidth: boardRect?.width ?? 0,
+        boardCenter: boardRect === undefined ? 0 : boardRect.left + boardRect.width / 2,
+        frameCenter: frameRect === undefined ? 0 : frameRect.left + frameRect.width / 2,
+      };
+    });
+
+    expect(desktopLayout.boardWidth).toBeLessThanOrEqual(720);
+    expect(Math.abs(desktopLayout.boardCenter - desktopLayout.frameCenter)).toBeLessThanOrEqual(1);
+  });
 });
