@@ -1,90 +1,84 @@
+/** @vitest-environment jsdom */
+
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createSoundEffects } from "../src/games/dog-lege-dog/sound-effects";
+import { mountApp } from "../src/app";
+import { FIRST_LEVEL } from "../src/games/dog-lege-dog";
+import { ProgressStore, type StorageLike } from "../src/progress-store";
 
-interface FakeAudioContext {
-  readonly state: "suspended" | "running" | "closed";
-  readonly createOscillator: ReturnType<typeof vi.fn>;
-  readonly createGain: ReturnType<typeof vi.fn>;
-  readonly resume: ReturnType<typeof vi.fn>;
-  readonly close: ReturnType<typeof vi.fn>;
-}
+class MemoryStorage implements StorageLike {
+  private readonly values = new Map<string, string>();
 
-const originalAudioContext = (globalThis as typeof globalThis & {
-  AudioContext?: unknown;
-}).AudioContext;
-
-afterEach(() => {
-  Object.defineProperty(globalThis, "AudioContext", {
-    configurable: true,
-    value: originalAudioContext,
-  });
-});
-
-describe("SoundEffects", () => {
-  it("首次播放前不创建 AudioContext，初始化后支持点击、三消、通关与失败音效", () => {
-    const contexts: FakeAudioContext[] = [];
-    installFakeAudioContext(contexts);
-    const effects = createSoundEffects(true);
-
-    effects.play("select");
-    expect(contexts).toHaveLength(0);
-
-    effects.initialize();
-    expect(contexts).toHaveLength(1);
-    effects.play("select");
-    effects.play("match");
-    effects.play("won");
-    effects.play("lost");
-
-    expect(contexts[0].createOscillator).toHaveBeenCalledTimes(4);
-    effects.destroy();
-  });
-
-  it("静音后不再创建新的音效节点", () => {
-    const contexts: FakeAudioContext[] = [];
-    installFakeAudioContext(contexts);
-    const effects = createSoundEffects(true);
-    effects.initialize();
-    effects.setEnabled(false);
-
-    effects.play("select");
-
-    expect(contexts[0].createOscillator).not.toHaveBeenCalled();
-    effects.destroy();
-  });
-});
-
-function installFakeAudioContext(contexts: FakeAudioContext[]): void {
-  class FakeAudioContextConstructor {
-    readonly state = "suspended" as const;
-    readonly currentTime = 0;
-    readonly destination = {};
-    readonly createOscillator = vi.fn(() => ({
-      type: "sine",
-      frequency: {
-        setValueAtTime: vi.fn(),
-      },
-      connect: vi.fn(),
-      start: vi.fn(),
-      stop: vi.fn(),
-    }));
-    readonly createGain = vi.fn(() => ({
-      gain: {
-        setValueAtTime: vi.fn(),
-        exponentialRampToValueAtTime: vi.fn(),
-      },
-      connect: vi.fn(),
-    }));
-    readonly resume = vi.fn(async () => undefined);
-    readonly close = vi.fn(async () => undefined);
-
-    constructor() {
-      contexts.push(this as unknown as FakeAudioContext);
-    }
+  getItem(key: string): string | null {
+    return this.values.get(key) ?? null;
   }
 
-  Object.defineProperty(globalThis, "AudioContext", {
-    configurable: true,
-    value: FakeAudioContextConstructor,
-  });
+  setItem(key: string, value: string): void {
+    this.values.set(key, value);
+  }
+
+  removeItem(key: string): void {
+    this.values.delete(key);
+  }
 }
+
+afterEach(() => {
+  vi.useRealTimers();
+});
+
+describe("游戏公开音效行为", () => {
+  it("首次交互后可静音，静音切换立即更新且不阻塞方块选择", () => {
+    const root = document.createElement("div");
+    const app = mountApp(root, {
+      store: new ProgressStore({
+        storage: new MemoryStorage(),
+        userIdFactory: () => "123e4567-e89b-12d3-a456-426614174000",
+      }),
+    });
+
+    root.querySelector<HTMLButtonElement>('[data-action="register"]')?.click();
+    root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
+    const soundButton = root.querySelector<HTMLButtonElement>('[data-action="toggle-sound"]');
+    expect(soundButton?.dataset.soundEnabled).toBe("true");
+
+    soundButton?.click();
+    expect(root.querySelector<HTMLButtonElement>('[data-action="toggle-sound"]')?.dataset.soundEnabled).toBe(
+      "false",
+    );
+    expect(root.querySelector('[data-testid="dog-game"]')?.getAttribute("data-input-locked")).toBe(
+      "false",
+    );
+
+    root.querySelector<HTMLButtonElement>('[data-testid="dog-block"]:not([disabled])')?.click();
+    expect(root.querySelectorAll('[data-testid="dog-tray-slot"][data-pattern-type]')).toHaveLength(1);
+
+    app.destroy();
+  });
+
+  it("关闭音效后，公开反馈状态仍可完成通关流程", async () => {
+    vi.useFakeTimers();
+    const root = document.createElement("div");
+    const app = mountApp(root, {
+      store: new ProgressStore({
+        storage: new MemoryStorage(),
+        userIdFactory: () => "123e4567-e89b-12d3-a456-426614174000",
+      }),
+    });
+
+    root.querySelector<HTMLButtonElement>('[data-action="register"]')?.click();
+    root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
+    root.querySelector<HTMLButtonElement>('[data-action="toggle-sound"]')?.click();
+
+    for (const blockId of FIRST_LEVEL.solutionPath) {
+      root
+        .querySelector<HTMLButtonElement>(
+          `[data-testid="dog-block"][data-block-id="${blockId}"]`,
+        )
+        ?.click();
+      await vi.runAllTimersAsync();
+    }
+
+    expect(root.querySelector('[data-result="won"]')).not.toBeNull();
+    expect(root.querySelector('[data-action="toggle-sound"]')).toBeNull();
+    app.destroy();
+  });
+});

@@ -91,7 +91,6 @@ function createDogCover(): string {
       <circle cx="282" cy="217" r="13" fill="#193b4b"/><circle cx="410" cy="217" r="13" fill="#193b4b"/>
       <path d="M315 275c18 17 43 17 61 0" fill="none" stroke="#193b4b" stroke-width="10" stroke-linecap="round"/>
       <path d="M306 268h78l-39 34Z" fill="#193b4b"/>
-      <text x="42" y="70" font-family="sans-serif" font-size="28" font-weight="700" fill="#193b4b">GAMEBOX · 01</text>
     </svg>`;
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }

@@ -1,4 +1,4 @@
-import { FIRST_LEVEL_NUMBER, type DogLegeDogLevel } from "./first-level";
+import type { DogLegeDogLevel } from "./first-level";
 import { getDogPatternClassName, renderDogPatternAsset } from "./game-assets";
 import type { GameSessionSnapshot } from "./game-session";
 import type { DogLegeDogGameState, DogVisualFeedback } from "./game-types";
@@ -8,12 +8,13 @@ export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameSta
   const { board } = state.level;
   const { remainingBlocks, selectableBlockIds } = state.session;
   const blocks = remainingBlocks;
+  const gameRoot = root.querySelector<HTMLElement>("[data-game-content]") ?? root;
   const blockSize = state.level.blocks[0];
   const boardColumns = board.width / blockSize.width;
   const boardRows = board.height / blockSize.height;
   const boardClipPath = renderBoardClipPath(board);
 
-  root.innerHTML = `
+  gameRoot.innerHTML = `
     <section
       class="dog-game"
       data-testid="dog-game"
@@ -22,26 +23,15 @@ export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameSta
       data-feedback="${state.feedback}"
     >
       <header class="dog-game__header">
-        <div>
-          <p class="eyebrow">${state.level.number === FIRST_LEVEL_NUMBER ? "固定首关" : "稳定关卡"} · ${state.level.seed}</p>
-          <h2>第 ${state.level.number} 关</h2>
+        <div class="dog-game__level-mark" data-testid="dog-active-level" aria-label="当前关卡 ${state.level.number}">
+          <span>关卡</span>
+          <strong>${state.level.number}</strong>
         </div>
-        <div class="dog-game__tools">
-          <button
-            class="sound-button"
-            type="button"
-            data-action="toggle-sound"
-            data-sound-enabled="${state.soundEnabled}"
-          >
-            <span>${state.soundEnabled ? "♫" : "∅"}</span>
-            ${state.soundEnabled ? "音效开启" : "音效关闭"}
-          </button>
-          <dl class="dog-game__stats">
-            <div><dt>剩余方块</dt><dd>${blocks.length}</dd></div>
-            <div><dt>图案</dt><dd>${state.level.patternTypes.length} 种</dd></div>
-            <div><dt>层数</dt><dd>${state.level.maxLayers} 层</dd></div>
-          </dl>
-        </div>
+        <dl class="dog-game__stats">
+          <div><dt>剩余方块</dt><dd>${blocks.length}</dd></div>
+          <div><dt>图案</dt><dd>${state.level.patternTypes.length} 种</dd></div>
+          <div><dt>层数</dt><dd>${state.level.maxLayers} 层</dd></div>
+        </dl>
       </header>
       <p class="dog-game__status dog-game__status--${state.session.status}" data-testid="dog-status" role="status">
         ${renderStatusMessage(state.session.status)}
@@ -202,7 +192,7 @@ function renderStatusMessage(status: GameSessionSnapshot["status"]): string {
     return "失败！暂存槽已满。";
   }
 
-  return "选择没有遮挡的方块，凑齐三个相同图案。";
+  return "";
 }
 
 function renderFeedback(feedback: DogVisualFeedback): string {

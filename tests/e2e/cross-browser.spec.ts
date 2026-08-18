@@ -9,5 +9,5 @@ test("跨浏览器核心 smoke：注册、目录与首关入口可用", async ({
   await expect(page.getByRole("heading", { name: "游戏目录" })).toBeVisible();
   await page.getByRole("button", { name: "进入游戏" }).click();
   await expect(page.getByTestId("dog-board")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "第 1 关" })).toBeVisible();
+  await expect(page.getByTestId("dog-active-level")).toContainText("1");
 });

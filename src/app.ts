@@ -171,13 +171,12 @@ export class GameboxApp {
       return;
     }
 
-    const cards = this.catalog.map((game, index) => {
+    const cards = this.catalog.map((game) => {
       const progress = state.games[game.id] ?? createInitialGameProgress();
       return `
         <article class="catalog-item" data-game-id="${game.id}">
           <div class="catalog-item__cover-wrap">
             <img class="catalog-item__cover" src="${game.cover}" alt="${game.name}封面" />
-            <span class="catalog-item__badge">${index === 0 ? "首个游戏" : "游戏"}</span>
           </div>
           <div class="catalog-item__content">
             <div class="catalog-item__heading">
@@ -214,7 +213,6 @@ export class GameboxApp {
               <span class="brand-lockup__mark" aria-hidden="true">🐶</span>
               <span class="brand-lockup__name">GAMEBOX</span>
             </div>
-            <p class="eyebrow">你的游戏合集</p>
             <h1>游戏目录</h1>
           </div>
           <button class="text-button" type="button" data-action="reset">重置本地数据</button>
@@ -223,7 +221,6 @@ export class GameboxApp {
         <section class="game-directory" aria-label="游戏目录">
           ${cards}
         </section>
-        <p class="catalog-footer">更多游戏正在路上 · 当前浏览器身份：${state.userId.slice(0, 8)}…</p>
       </main>
     `;
   }
@@ -265,13 +262,14 @@ export class GameboxApp {
               <span class="brand-lockup__mark" aria-hidden="true">🐶</span>
               <span class="brand-lockup__name">GAMEBOX</span>
             </div>
-            <p class="eyebrow">游戏入口已打开</p>
             <h1 id="game-entry-title">${game.name}</h1>
           </div>
-          <button class="text-button" type="button" data-action="catalog">返回游戏目录</button>
+          ${renderCatalogIconButton()}
         </header>
-        ${renderLevelPicker(game.id, levelNumber, progress.highestUnlockedLevel)}
-        <div class="game-entry-view__game" data-game-mount></div>
+        <div class="game-entry-view__game" data-game-mount>
+          ${renderLevelPicker(game.id, levelNumber, progress.highestUnlockedLevel, state.settings.soundEnabled)}
+          <div data-game-content></div>
+        </div>
       </main>
     `;
 
@@ -285,7 +283,10 @@ export class GameboxApp {
       this.activeGame = game.launch(gameMount, {
         onResult: this.handleGameResult,
         onResultConfirmed: this.handleGameResultConfirmed,
-        onSoundToggle: (soundEnabled) => this.store.setSoundEnabled(soundEnabled),
+        onSoundToggle: (soundEnabled) => {
+          this.store.setSoundEnabled(soundEnabled);
+          updateSoundButton(this.root, soundEnabled);
+        },
         soundEnabled: state.settings.soundEnabled,
         levelNumber,
       });
@@ -321,7 +322,6 @@ export class GameboxApp {
     }
 
     event.preventDefault();
-    event.returnValue = "";
   };
 
   private readonly handleGameResultConfirmed = (result: GameResult): void => {
@@ -471,6 +471,7 @@ function renderLevelPicker(
   gameId: string,
   selectedLevelNumber: number,
   highestUnlockedLevel: number,
+  soundEnabled: boolean,
 ): string {
   const visibleLevelCount = Math.max(5, highestUnlockedLevel + 1);
   const buttons = Array.from({ length: visibleLevelCount }, (_, index) => {
@@ -487,19 +488,72 @@ function renderLevelPicker(
         aria-current="${selected ? "true" : "false"}"
         aria-label="第 ${levelNumber} 关${unlocked ? "" : "，已锁定"}"
         ${unlocked ? "" : "disabled"}
-      >${unlocked ? `第 ${levelNumber} 关` : `锁定 · 第 ${levelNumber} 关`}</button>
+      >${levelNumber}</button>
     `;
   }).join("");
 
   return `
     <section class="level-picker" data-testid="level-picker" aria-label="关卡选择">
       <div class="level-picker__heading">
-        <h2>关卡选择</h2>
-        <span>已解锁至第 ${highestUnlockedLevel} 关</span>
+        <div class="level-picker__heading-meta">
+          <h2>关卡选择</h2>
+          <span>已解锁至第 ${highestUnlockedLevel} 关</span>
+        </div>
+        ${renderSoundButton(soundEnabled)}
       </div>
       <div class="level-picker__list">${buttons}</div>
     </section>
   `;
+}
+
+function renderCatalogIconButton(className = "icon-button"): string {
+  return `
+    <button
+      class="${className}"
+      type="button"
+      data-action="catalog"
+      aria-label="返回游戏目录"
+      title="返回游戏目录"
+    >
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+        <path d="M19 12H5m6-6-6 6 6 6" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+      </svg>
+    </button>
+  `;
+}
+
+function renderSoundButton(soundEnabled: boolean): string {
+  return `
+    <button
+      class="sound-button"
+      type="button"
+      data-action="toggle-sound"
+      data-sound-enabled="${soundEnabled}"
+      aria-label="${soundEnabled ? "音效开启" : "音效关闭"}"
+      aria-pressed="${soundEnabled}"
+    >
+      ${renderSoundButtonContent(soundEnabled)}
+    </button>
+  `;
+}
+
+function renderSoundButtonContent(soundEnabled: boolean): string {
+  return `
+    <span aria-hidden="true">${soundEnabled ? "♫" : "∅"}</span>
+    ${soundEnabled ? "音效开启" : "音效关闭"}
+  `;
+}
+
+function updateSoundButton(root: HTMLElement, soundEnabled: boolean): void {
+  const button = root.querySelector<HTMLButtonElement>('[data-action="toggle-sound"]');
+  if (button === null) {
+    return;
+  }
+
+  button.dataset.soundEnabled = String(soundEnabled);
+  button.setAttribute("aria-label", soundEnabled ? "音效开启" : "音效关闭");
+  button.setAttribute("aria-pressed", String(soundEnabled));
+  button.innerHTML = renderSoundButtonContent(soundEnabled);
 }
 
 function renderResultActions(result: GameResult): string {
@@ -525,7 +579,7 @@ function renderResultAction(action: GameResultAction, result: GameResult): strin
   }
 
   if (action === "catalog") {
-    return '<button class="text-button" type="button" data-action="catalog">返回游戏目录</button>';
+    return renderCatalogIconButton("text-button icon-button");
   }
 
   return "";

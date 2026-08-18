@@ -286,6 +286,51 @@ describe("活动关卡离开保护", () => {
 });
 
 describe("注册与游戏目录 UI", () => {
+  it("精简目录与游戏控制区，同时保留当前关卡和局内信息", () => {
+    const root = document.createElement("div");
+    const app = mountApp(root, {
+      store: new ProgressStore({
+        storage: new MemoryStorage(),
+        userIdFactory: () => "123e4567-e89b-12d3-a456-426614174000",
+      }),
+    });
+
+    root.querySelector<HTMLButtonElement>('[data-action="register"]')?.click();
+
+    const catalogText = root.querySelector('[data-view="catalog"]')?.textContent ?? "";
+    expect(catalogText).toContain("GAMEBOX");
+    expect(catalogText).toContain("游戏目录");
+    expect(catalogText).toContain("重置本地数据");
+    expect(catalogText).not.toContain("你的游戏合集");
+    expect(catalogText).not.toContain("首个游戏");
+    expect(catalogText).not.toContain("更多游戏正在路上");
+    expect(catalogText).not.toContain("当前浏览器身份");
+    const coverSource = root.querySelector<HTMLImageElement>(".catalog-item__cover")?.src ?? "";
+    expect(decodeURIComponent(coverSource)).not.toContain("GAMEBOX · 01");
+
+    root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
+
+    const catalogButton = root.querySelector<HTMLButtonElement>('[data-action="catalog"]');
+    expect(catalogButton?.getAttribute("aria-label")).toBe("返回游戏目录");
+    expect(catalogButton?.textContent?.trim()).toBe("");
+    expect(catalogButton?.querySelector("svg")).not.toBeNull();
+    expect(root.querySelector('[data-testid="level-picker"] [data-action="toggle-sound"]')).not.toBeNull();
+    expect(root.querySelector('[data-testid="level-picker"] [data-action="toggle-sound"]')?.getAttribute("aria-pressed")).toBe("true");
+    expect(root.querySelector('[data-testid="dog-active-level"]')?.textContent).toContain("1");
+    expect(root.querySelector('[data-testid="dog-game"] h2')).toBeNull();
+    expect(root.textContent).not.toContain("游戏入口已打开");
+    expect(root.textContent).not.toContain("固定首关");
+    expect(root.textContent).not.toContain("稳定关卡");
+    expect(root.textContent).not.toContain("dog-lege-dog:first-level:v4");
+    expect(root.textContent).not.toContain("选择没有遮挡的方块，凑齐三个相同图案。");
+    expect(root.textContent).toContain("剩余方块");
+    expect(root.textContent).toContain("图案");
+    expect(root.textContent).toContain("层数");
+    expect(root.querySelector('[data-testid="dog-tray"]')).not.toBeNull();
+
+    app.destroy();
+  });
+
   it("默认打开最高解锁关卡，并区分已解锁与锁定关卡", () => {
     const storage = new MemoryStorage();
     const store = new ProgressStore({
@@ -300,9 +345,7 @@ describe("注册与游戏目录 UI", () => {
 
     root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
 
-    expect(root.querySelector('[data-testid="dog-game"] h2')?.textContent).toContain(
-      "第 2 关",
-    );
+    expect(root.querySelector('[data-testid="dog-active-level"]')?.textContent).toContain("2");
     expect(
       root.querySelector<HTMLButtonElement>(
         '[data-action="select-level"][data-level-number="1"]',
@@ -333,9 +376,7 @@ describe("注册与游戏目录 UI", () => {
       )
       ?.click();
 
-    expect(root.querySelector('[data-testid="dog-game"] h2')?.textContent).toContain(
-      "第 1 关",
-    );
+    expect(root.querySelector('[data-testid="dog-active-level"]')?.textContent).toContain("1");
 
     app.destroy();
   });
@@ -480,7 +521,7 @@ describe("注册与游戏目录 UI", () => {
     expect(root.querySelector('[data-view="game-entry"]')?.getAttribute("data-level-number")).toBe(
       "2",
     );
-    expect(root.querySelector('[data-testid="dog-game"] h2')?.textContent).toContain("第 2 关");
+    expect(root.querySelector('[data-testid="dog-active-level"]')?.textContent).toContain("2");
 
     app.destroy();
   });
@@ -533,7 +574,7 @@ describe("注册与游戏目录 UI", () => {
     expect(root.querySelector('[data-view="game-entry"]')?.getAttribute("data-level-number")).toBe(
       "2",
     );
-    expect(root.querySelector('[data-testid="dog-game"] h2')?.textContent).toContain("第 2 关");
+    expect(root.querySelector('[data-testid="dog-active-level"]')?.textContent).toContain("2");
 
     app.destroy();
   });

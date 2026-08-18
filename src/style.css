@@ -275,6 +275,26 @@ h2 {
   color: var(--coral-dark);
 }
 
+.icon-button {
+  display: inline-grid;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 253, 248, 0.86);
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: color 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.icon-button:hover {
+  border-color: var(--coral);
+  background: var(--paper);
+  color: var(--coral-dark);
+}
+
 .catalog-view > .persistence-notice {
   margin: 0 0 20px;
 }
@@ -307,18 +327,6 @@ h2 {
   height: 100%;
   min-height: 320px;
   object-fit: cover;
-}
-
-.catalog-item__badge {
-  position: absolute;
-  top: 18px;
-  left: 18px;
-  padding: 7px 10px;
-  border-radius: 99px;
-  background: rgba(255, 253, 248, 0.88);
-  color: var(--ink);
-  font-size: 11px;
-  font-weight: 800;
 }
 
 .catalog-item__content {
@@ -383,13 +391,6 @@ h2 {
   align-self: flex-start;
 }
 
-.catalog-footer {
-  margin: 28px 0 0;
-  color: var(--ink-muted);
-  font-size: 12px;
-  text-align: center;
-}
-
 .game-entry-view {
   width: min(100%, 1080px);
   min-height: 100vh;
@@ -415,8 +416,8 @@ h2 {
 }
 
 .level-picker {
-  margin-bottom: 24px;
-  padding: 18px 20px;
+  margin-bottom: 18px;
+  padding: 14px 16px;
   border: 1px solid rgba(255, 255, 255, 0.9);
   border-radius: 18px;
   background: rgba(255, 253, 248, 0.72);
@@ -424,34 +425,44 @@ h2 {
 }
 
 .level-picker__heading {
-  display: flex;
-  align-items: baseline;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 14px;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
-.level-picker__heading h2 {
+.level-picker__heading-meta {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.level-picker__heading-meta h2 {
   margin: 0;
   color: var(--ink);
   font-size: 18px;
   letter-spacing: -0.02em;
 }
 
-.level-picker__heading span {
+.level-picker__heading-meta span {
   color: var(--ink-muted);
   font-size: 12px;
+  white-space: nowrap;
 }
 
 .level-picker__list {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .level-button {
-  min-height: 38px;
-  padding: 8px 12px;
+  width: 36px;
+  min-height: 36px;
+  padding: 6px;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--paper);
@@ -541,7 +552,7 @@ h2 {
 .dog-game {
   position: relative;
   isolation: isolate;
-  padding: clamp(20px, 4vw, 38px);
+  padding: clamp(16px, 3vw, 30px);
   border: 1px solid rgba(255, 255, 255, 0.9);
   border-radius: 26px;
   background: rgba(255, 253, 248, 0.9);
@@ -550,20 +561,30 @@ h2 {
 
 .dog-game__header {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
-  gap: 24px;
-  margin-bottom: 28px;
+  gap: 16px;
+  margin-bottom: 18px;
 }
 
-.dog-game__header h2 {
-  margin-bottom: 0;
+.dog-game__level-mark {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  min-height: 38px;
+  padding: 6px 11px;
+  border-radius: 11px;
+  background: #f6f0e5;
+  color: var(--ink-muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
 }
 
-.dog-game__tools {
-  display: grid;
-  justify-items: end;
-  gap: 12px;
+.dog-game__level-mark strong {
+  color: var(--ink);
+  font-size: 22px;
+  letter-spacing: -0.04em;
 }
 
 .sound-button {
@@ -579,6 +600,7 @@ h2 {
   cursor: pointer;
   font-size: 11px;
   font-weight: 800;
+  white-space: nowrap;
 }
 
 .sound-button:hover {
@@ -966,18 +988,20 @@ h2 {
   }
 
   .level-picker__heading {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 4px;
+    align-items: start;
   }
 
-  .dog-game__header {
+  .level-picker__heading-meta {
     display: block;
   }
 
-  .dog-game__tools {
-    justify-items: stretch;
-    margin-top: 18px;
+  .level-picker__heading-meta span {
+    display: block;
+    margin-top: 4px;
+  }
+
+  .dog-game__header {
+    gap: 10px;
   }
 
   .sound-button {
@@ -985,7 +1009,7 @@ h2 {
   }
 
   .dog-game__stats {
-    margin-top: 0;
+    gap: 6px;
   }
 }
 
@@ -1004,6 +1028,10 @@ h2 {
 
   .game-entry-view__header .text-button {
     margin-top: 18px;
+  }
+
+  .game-entry-view__header .icon-button {
+    margin-top: 14px;
   }
 
   .dog-game__stats > div {

@@ -115,7 +115,7 @@ describe("狗了个狗首关", () => {
     expect(root.querySelectorAll('[data-testid="dog-tray-slot"][data-pattern-type]')).toHaveLength(
       game.getState().session.tray.length,
     );
-    expect(root.querySelector('[data-testid="dog-status"]')?.textContent).toContain("选择没有遮挡");
+    expect(root.querySelector('[data-testid="dog-status"]')?.textContent).not.toContain("选择没有遮挡");
 
     game.destroy();
 

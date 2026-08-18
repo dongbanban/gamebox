@@ -45,7 +45,7 @@ test.describe("狗了个狗完整浏览器闭环", () => {
     await page.reload();
     await expect(page.getByRole("heading", { name: "游戏目录" })).toBeVisible();
     await enterGame(page);
-    await expect(page.getByRole("heading", { name: "第 2 关" })).toBeVisible();
+    await expect(page.getByTestId("dog-active-level")).toContainText("2");
 
     await leaveActiveGame(page, false);
     await expect(page.getByTestId("dog-board")).toBeVisible();
@@ -92,7 +92,7 @@ test.describe("狗了个狗完整浏览器闭环", () => {
     await page.getByRole("button", { name: "进入下一关" }).click();
 
     await expect(page.getByTestId("dog-game")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "第 2 关" })).toBeVisible();
+    await expect(page.getByTestId("dog-active-level")).toContainText("2");
     await expect(page.getByTestId("dog-board")).toBeVisible();
     await expect(page.locator('[data-testid="dog-block"]')).toHaveCount(90);
     await expect(page.locator('[data-testid="dog-tray-slot"][data-pattern-type]')).toHaveCount(0);

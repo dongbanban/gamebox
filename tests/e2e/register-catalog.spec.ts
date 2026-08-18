@@ -28,9 +28,27 @@ test.describe("注册与游戏目录", () => {
     await expect(page.getByText("累计积分")).toBeVisible();
     await expect(page.getByRole("button", { name: "进入游戏" })).toBeVisible();
 
+    const catalogText = await page.locator('[data-view="catalog"]').textContent();
+    expect(catalogText).not.toContain("你的游戏合集");
+    expect(catalogText).not.toContain("首个游戏");
+    expect(catalogText).not.toContain("更多游戏正在路上");
+    expect(catalogText).not.toContain("当前浏览器身份");
+    const coverSource = await page.locator(".catalog-item__cover").getAttribute("src");
+    expect(decodeURIComponent(coverSource ?? "")).not.toContain("GAMEBOX · 01");
+
     await page.getByRole("button", { name: "进入游戏" }).click();
     await expect(page.getByRole("heading", { name: "狗了个狗" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "返回游戏目录" })).toBeVisible();
+    const catalogButton = page.locator('[data-view="game-entry"] [data-action="catalog"]');
+    await expect(catalogButton).toHaveAttribute("aria-label", "返回游戏目录");
+    await expect(catalogButton).toHaveText("");
+    await expect(catalogButton.locator("svg")).toBeVisible();
+    await expect(page.locator('[data-testid="level-picker"] [data-action="toggle-sound"]')).toBeVisible();
+    await expect(page.getByTestId("dog-active-level")).toContainText("1");
+    await expect(page.locator('[data-testid="dog-game"] h2')).toHaveCount(0);
+    await expect(page.getByText("游戏入口已打开")).toHaveCount(0);
+    await expect(page.getByText("固定首关")).toHaveCount(0);
+    await expect(page.getByText("稳定关卡")).toHaveCount(0);
+    await expect(page.getByText("选择没有遮挡的方块，凑齐三个相同图案。")).toHaveCount(0);
   });
 
   test("回访跳过注册，确认重置后返回注册页", async ({ page }) => {
