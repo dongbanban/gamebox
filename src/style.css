@@ -975,20 +975,72 @@ h2 {
   }
 
   .game-entry-view {
-    padding: 20px 16px 40px;
+    display: flex;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 12px 12px 16px;
   }
 
   .game-entry-view__header {
-    align-items: flex-start;
-    padding-bottom: 22px;
+    flex: 0 0 auto;
+    align-items: center;
+    padding-bottom: 10px;
+  }
+
+  .game-entry-view__header > div {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .game-entry-view__header .brand-lockup--compact {
+    flex: 0 0 auto;
+    margin-bottom: 0;
+  }
+
+  .game-entry-view__header .brand-lockup__mark {
+    width: 28px;
+    height: 28px;
+    border-radius: 9px;
+    font-size: 16px;
   }
 
   .game-entry-view__header h1 {
-    font-size: 52px;
+    min-width: 0;
+    margin-bottom: 0;
+    overflow: hidden;
+    font-size: clamp(24px, 7vw, 34px);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .game-entry-view__header .icon-button {
+    flex: 0 0 auto;
+    margin: 0;
+  }
+
+  .game-entry-view__game {
+    display: flex;
+    min-height: 0;
+    flex: 1 1 auto;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .level-picker {
+    flex: 0 0 auto;
+    margin-bottom: 8px;
+    padding: 8px 10px;
   }
 
   .level-picker__heading {
     align-items: start;
+    margin-bottom: 8px;
   }
 
   .level-picker__heading-meta {
@@ -1000,16 +1052,68 @@ h2 {
     margin-top: 4px;
   }
 
-  .dog-game__header {
-    gap: 10px;
-  }
-
   .sound-button {
     justify-content: center;
   }
 
   .dog-game__stats {
     gap: 6px;
+  }
+
+  [data-game-content] {
+    display: flex;
+    min-height: 0;
+    flex: 1 1 auto;
+  }
+
+  .dog-game {
+    display: flex;
+    min-height: 0;
+    height: 100%;
+    flex: 1 1 auto;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 8px;
+    border-radius: 18px;
+  }
+
+  .dog-game__header {
+    gap: 10px;
+    flex: 0 0 auto;
+    margin-bottom: 8px;
+  }
+
+  .dog-game__status {
+    flex: 0 0 auto;
+    margin: -4px 0 8px;
+  }
+
+  .dog-board-frame {
+    min-height: 0;
+    flex: 1 1 0;
+    align-items: center;
+    padding: 8px;
+  }
+
+  .dog-board {
+    width: auto;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+  }
+
+  .dog-tray {
+    flex: 0 0 auto;
+    margin-top: 8px;
+    padding: 8px;
+  }
+
+  .dog-tray__heading {
+    margin-bottom: 6px;
+  }
+
+  .dog-tray__slots {
+    gap: 4px;
   }
 }
 
@@ -1023,7 +1127,7 @@ h2 {
   }
 
   .game-entry-view__header {
-    display: block;
+    display: flex;
   }
 
   .game-entry-view__header .text-button {
@@ -1031,7 +1135,7 @@ h2 {
   }
 
   .game-entry-view__header .icon-button {
-    margin-top: 14px;
+    margin-top: 0;
   }
 
   .dog-game__stats > div {

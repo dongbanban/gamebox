@@ -124,27 +124,139 @@ test.describe("注册与游戏目录", () => {
     await reopenedPage.close();
   });
 
-  test("移动端竖屏棋盘自动缩放且不产生横向滚动", async ({ page }) => {
+  test("移动端竖屏活动游戏将棋盘、暂存槽与控制压入无滚动视口", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.getByRole("button", { name: "匿名注册" }).click();
     await page.getByRole("button", { name: "进入游戏" }).click();
 
     const layout = await page.evaluate(() => {
+      const serializeRect = (element: Element) => {
+        const rect = element.getBoundingClientRect();
+        return {
+          top: rect.top,
+          right: rect.right,
+          bottom: rect.bottom,
+          left: rect.left,
+          width: rect.width,
+          height: rect.height,
+        };
+      };
+      const getRect = (selector: string) => {
+        const element = document.querySelector<HTMLElement>(selector);
+        return element === null ? null : serializeRect(element);
+      };
+      const board = document.querySelector<HTMLElement>('[data-testid="dog-board"]');
+      const rect = board?.getBoundingClientRect();
+      const traySlots = [
+        ...document.querySelectorAll<HTMLElement>('[data-testid="dog-tray-slot"]'),
+      ];
+      const selectableBlock = document.querySelector<HTMLElement>(
+        '[data-testid="dog-block"]:not([disabled])',
+      );
+      return {
+        viewportWidth: window.innerWidth,
+        viewportHeight: window.innerHeight,
+        scrollWidth: document.documentElement.scrollWidth,
+        scrollHeight: document.documentElement.scrollHeight,
+        bodyScrollWidth: document.body.scrollWidth,
+        bodyScrollHeight: document.body.scrollHeight,
+        boardLeft: rect?.left ?? 0,
+        boardRight: rect?.right ?? 0,
+        boardTop: rect?.top ?? 0,
+        boardBottom: rect?.bottom ?? 0,
+        boardWidth: rect?.width ?? 0,
+        tray: getRect('[data-testid="dog-tray"]'),
+        traySlots: traySlots.map(serializeRect),
+        levelPicker: getRect('[data-testid="level-picker"]'),
+        soundButton: getRect('[data-testid="level-picker"] [data-action="toggle-sound"]'),
+        selectableBlock:
+          selectableBlock === null
+            ? null
+            : getRect('[data-testid="dog-block"]:not([disabled])'),
+      };
+    });
+    expect(layout.scrollWidth).toBeLessThanOrEqual(layout.viewportWidth);
+    expect(layout.scrollHeight).toBeLessThanOrEqual(layout.viewportHeight);
+    expect(layout.bodyScrollWidth).toBeLessThanOrEqual(layout.viewportWidth);
+    expect(layout.bodyScrollHeight).toBeLessThanOrEqual(layout.viewportHeight);
+    expect(layout.boardLeft).toBeGreaterThanOrEqual(0);
+    expect(layout.boardRight).toBeLessThanOrEqual(layout.viewportWidth);
+    expect(layout.boardTop).toBeGreaterThanOrEqual(0);
+    expect(layout.boardBottom).toBeLessThanOrEqual(layout.viewportHeight);
+    expect(layout.boardWidth).toBeGreaterThan(0);
+    expect(layout.tray).not.toBeNull();
+    expect(layout.tray?.top).toBeGreaterThanOrEqual(0);
+    expect(layout.tray?.bottom).toBeLessThanOrEqual(layout.viewportHeight);
+    expect(layout.traySlots).toHaveLength(7);
+    expect(layout.traySlots.every((slot) => slot.width > 0 && slot.height > 0)).toBe(true);
+    expect(
+      layout.traySlots.every(
+        (slot) => slot.top >= 0 && slot.bottom <= layout.viewportHeight,
+      ),
+    ).toBe(true);
+    expect(layout.levelPicker).not.toBeNull();
+    expect(layout.soundButton).not.toBeNull();
+    expect(layout.levelPicker?.top).toBeGreaterThanOrEqual(0);
+    expect(layout.levelPicker?.bottom).toBeLessThanOrEqual(layout.boardTop);
+    expect(layout.soundButton?.top).toBeGreaterThanOrEqual(layout.levelPicker?.top ?? 0);
+    expect(layout.soundButton?.bottom).toBeLessThanOrEqual(layout.levelPicker?.bottom ?? 0);
+    expect(layout.selectableBlock).not.toBeNull();
+
+    const selectableBlock = page.locator('[data-testid="dog-block"]:not([disabled])').first();
+    await selectableBlock.click();
+    await expect(page.locator('[data-testid="dog-tray-slot"][data-pattern-type]')).toHaveCount(1);
+    await page.getByRole("button", { name: "音效开启" }).click();
+    await expect(page.getByRole("button", { name: "音效关闭" })).toBeVisible();
+    await page.getByRole("button", { name: "音效关闭" }).click();
+    await expect(page.getByRole("button", { name: "音效开启" })).toBeVisible();
+    await page.getByRole("button", { name: "第 1 关" }).click();
+    await expect(page.getByTestId("dog-active-level")).toContainText("1");
+
+    await page.setViewportSize({ width: 390, height: 667 });
+    const compactLayout = await page.evaluate(() => {
+      const boardRect = document
+        .querySelector<HTMLElement>('[data-testid="dog-board"]')
+        ?.getBoundingClientRect();
+      const trayRect = document
+        .querySelector<HTMLElement>('[data-testid="dog-tray"]')
+        ?.getBoundingClientRect();
+      return {
+        scrollHeight: document.documentElement.scrollHeight,
+        bodyScrollHeight: document.body.scrollHeight,
+        boardWidth: boardRect?.width ?? 0,
+        boardBottom: boardRect?.bottom ?? 0,
+        trayBottom: trayRect?.bottom ?? 0,
+      };
+    });
+    expect(compactLayout.scrollHeight).toBeLessThanOrEqual(667);
+    expect(compactLayout.bodyScrollHeight).toBeLessThanOrEqual(667);
+    expect(compactLayout.boardWidth).toBeLessThanOrEqual(layout.boardWidth);
+    expect(compactLayout.boardBottom).toBeLessThanOrEqual(667);
+    expect(compactLayout.trayBottom).toBeLessThanOrEqual(667);
+
+    await page.setViewportSize({ width: 320, height: 568 });
+    const tinyLayout = await page.evaluate(() => {
       const board = document.querySelector<HTMLElement>('[data-testid="dog-board"]');
       const rect = board?.getBoundingClientRect();
       return {
-        viewportWidth: window.innerWidth,
-        scrollWidth: document.documentElement.scrollWidth,
-        boardLeft: rect?.left ?? 0,
-        boardRight: rect?.right ?? 0,
-        boardWidth: rect?.width ?? 0,
+        scrollHeight: document.documentElement.scrollHeight,
+        bodyScrollHeight: document.body.scrollHeight,
+        visualAspectRatio: rect === undefined ? 0 : rect.width / rect.height,
+        logicalAspectRatio:
+          Number(board?.dataset.logicalWidth ?? 0) / Number(board?.dataset.logicalHeight ?? 1),
+        boardBottom: rect?.bottom ?? 0,
+        trayBottom:
+          document.querySelector<HTMLElement>('[data-testid="dog-tray"]')?.getBoundingClientRect()
+            .bottom ?? 0,
       };
     });
-
-    expect(layout.scrollWidth).toBeLessThanOrEqual(layout.viewportWidth);
-    expect(layout.boardLeft).toBeGreaterThanOrEqual(0);
-    expect(layout.boardRight).toBeLessThanOrEqual(layout.viewportWidth);
-    expect(layout.boardWidth).toBeGreaterThan(0);
+    expect(tinyLayout.scrollHeight).toBeLessThanOrEqual(568);
+    expect(tinyLayout.bodyScrollHeight).toBeLessThanOrEqual(568);
+    expect(Math.abs(tinyLayout.visualAspectRatio - tinyLayout.logicalAspectRatio)).toBeLessThanOrEqual(
+      0.01,
+    );
+    expect(tinyLayout.boardBottom).toBeLessThanOrEqual(568);
+    expect(tinyLayout.trayBottom).toBeLessThanOrEqual(568);
 
     await page.setViewportSize({ width: 1440, height: 900 });
     const desktopLayout = await page.evaluate(() => {
