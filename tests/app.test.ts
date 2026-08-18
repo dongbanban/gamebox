@@ -131,7 +131,88 @@ describe("通用游戏定义与结果契约", () => {
 
     app.destroy();
   });
+
+  it("下一关生成或启动失败时安全返回游戏目录", () => {
+    const root = document.createElement("div");
+    const resultDisplay = {
+      won: {
+        eyebrow: "测试游戏 · 结果",
+        title: "测试通关",
+        description: "完成。",
+      },
+      lost: {
+        eyebrow: "测试游戏 · 结果",
+        title: "测试失败",
+        description: "失败。",
+      },
+    } as const;
+    const launchedLevels: number[] = [];
+    const launchContexts: GameLaunchContext[] = [];
+    const testGame: GameDefinition = {
+      id: GAME_ID,
+      name: "测试游戏",
+      category: "测试类别",
+      description: "用于验证启动失败降级。",
+      cover: "test-cover.svg",
+      playable: true,
+      resultDisplay,
+      launch: (_mount, context) => {
+        const launchContext = context ?? {};
+        const levelNumber = launchContext.levelNumber ?? -1;
+        launchedLevels.push(levelNumber);
+        launchContexts.push(launchContext);
+        if (levelNumber === 2) {
+          throw new Error("level generation failed");
+        }
+
+        return { destroy: vi.fn() };
+      },
+    };
+    const store = new ProgressStore({
+      storage: new MemoryStorage(),
+      userIdFactory: () => "123e4567-e89b-12d3-a456-426614174000",
+    });
+    const app = mountApp(root, { store, catalog: [testGame] });
+
+    root.querySelector<HTMLButtonElement>('[data-action="register"]')?.click();
+    root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
+    launchContexts[0]?.onResultConfirmed?.({
+      gameId: GAME_ID,
+      levelNumber: 1,
+      status: "won",
+      reward: 25,
+      display: resultDisplay.won,
+      actions: ["next-level", "catalog"],
+    });
+    launchContexts[0]?.onResult?.({
+      gameId: GAME_ID,
+      levelNumber: 1,
+      status: "won",
+      reward: 25,
+      display: resultDisplay.won,
+      actions: ["next-level", "catalog"],
+    });
+
+    root.querySelector<HTMLButtonElement>('[data-action="next-level"]')?.click();
+
+    expect(launchedLevels).toEqual([1, 2]);
+    expect(root.querySelector('[data-view="catalog"]')).not.toBeNull();
+    expect(root.querySelector('[data-view="game-entry"]')).toBeNull();
+    expect(root.textContent).toContain("测试游戏");
+
+    app.destroy();
+  });
 });
+
+function completeFirstLevel(root: HTMLElement): void {
+  for (const blockId of FIRST_LEVEL.solutionPath) {
+    root
+      .querySelector<HTMLButtonElement>(
+        `[data-testid="dog-block"][data-block-id="${blockId}"]`,
+      )
+      ?.click();
+  }
+}
 
 describe("注册与游戏目录 UI", () => {
   it("默认打开最高解锁关卡，并区分已解锁与锁定关卡", () => {
@@ -208,13 +289,7 @@ describe("注册与游戏目录 UI", () => {
       )
       ?.click();
 
-    for (const blockId of FIRST_LEVEL.solutionPath) {
-      root
-        .querySelector<HTMLButtonElement>(
-          `[data-testid="dog-block"][data-block-id="${blockId}"]`,
-        )
-        ?.click();
-    }
+    completeFirstLevel(root);
 
     expect(root.querySelector('[data-result="won"]')).not.toBeNull();
     const savedState = JSON.parse(storage.getItem("gamebox.state") ?? "null");
@@ -323,13 +398,7 @@ describe("注册与游戏目录 UI", () => {
     root.querySelector<HTMLButtonElement>('[data-action="register"]')?.click();
     root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
 
-    for (const blockId of FIRST_LEVEL.solutionPath) {
-      root
-        .querySelector<HTMLButtonElement>(
-          `[data-testid="dog-block"][data-block-id="${blockId}"]`,
-        )
-        ?.click();
-    }
+    completeFirstLevel(root);
 
     expect(root.querySelector('[data-result="won"]')).not.toBeNull();
     expect(root.querySelector('[data-action="next-level"]')).not.toBeNull();
@@ -337,6 +406,59 @@ describe("注册与游戏目录 UI", () => {
     root.querySelector<HTMLButtonElement>('[data-action="next-level"]')?.click();
 
     expect(root.querySelector('[data-view="game-entry"]')).not.toBeNull();
+    expect(root.querySelector('[data-view="game-entry"]')?.getAttribute("data-level-number")).toBe(
+      "2",
+    );
+    expect(root.querySelector('[data-testid="dog-game"] h2')?.textContent).toContain("第 2 关");
+
+    app.destroy();
+  });
+
+  it("下一关动作拒绝结果页之外的已解锁关卡", () => {
+    const root = document.createElement("div");
+    const app = mountApp(root, {
+      store: new ProgressStore({
+        storage: new MemoryStorage(),
+        userIdFactory: () => "123e4567-e89b-12d3-a456-426614174000",
+      }),
+    });
+
+    root.querySelector<HTMLButtonElement>('[data-action="register"]')?.click();
+    root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
+    completeFirstLevel(root);
+
+    const nextLevelAction = root.querySelector<HTMLButtonElement>('[data-action="next-level"]');
+    expect(nextLevelAction?.dataset.levelNumber).toBe("2");
+    nextLevelAction?.setAttribute("data-level-number", "1");
+    nextLevelAction?.click();
+
+    expect(root.querySelector('[data-view="catalog"]')).not.toBeNull();
+    expect(root.querySelector('[data-view="game-entry"]')).toBeNull();
+
+    app.destroy();
+  });
+
+  it("重玩旧关通关后进入该关的下一关且不越过解锁进度", () => {
+    const storage = new MemoryStorage();
+    const store = new ProgressStore({
+      storage,
+      userIdFactory: () => "123e4567-e89b-12d3-a456-426614174000",
+    });
+    store.register();
+    store.recordLevelCompletion({ gameId: GAME_ID, levelNumber: 1, reward: 100 });
+
+    const root = document.createElement("div");
+    const app = mountApp(root, { store });
+    root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    root
+      .querySelector<HTMLButtonElement>('[data-action="select-level"][data-level-number="1"]')
+      ?.click();
+
+    completeFirstLevel(root);
+
+    root.querySelector<HTMLButtonElement>('[data-action="next-level"]')?.click();
+
     expect(root.querySelector('[data-view="game-entry"]')?.getAttribute("data-level-number")).toBe(
       "2",
     );
@@ -518,13 +640,7 @@ describe("注册与游戏目录 UI", () => {
     root.querySelector<HTMLButtonElement>('[data-action="register"]')?.click();
     root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
 
-    for (const blockId of FIRST_LEVEL.solutionPath) {
-      root
-        .querySelector<HTMLButtonElement>(
-          `[data-testid="dog-block"][data-block-id="${blockId}"]`,
-        )
-        ?.click();
-    }
+    completeFirstLevel(root);
 
     expect(root.querySelector('[data-view="game-result"]')).not.toBeNull();
     expect(root.querySelector('[data-result="won"]')).not.toBeNull();
@@ -574,13 +690,7 @@ describe("注册与游戏目录 UI", () => {
     root.querySelector<HTMLButtonElement>('[data-action="register"]')?.click();
     root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
 
-    for (const blockId of FIRST_LEVEL.solutionPath) {
-      root
-        .querySelector<HTMLButtonElement>(
-          `[data-testid="dog-block"][data-block-id="${blockId}"]`,
-        )
-        ?.click();
-    }
+    completeFirstLevel(root);
 
     expect(root.querySelector('[data-result="won"]')).not.toBeNull();
     expect(root.querySelector('[data-testid="persistence-warning"]')?.textContent).toContain(

@@ -76,6 +76,23 @@ test.describe("狗了个狗完整浏览器闭环", () => {
     await expect(page.getByRole("heading", { name: "游戏目录" })).toBeVisible();
   });
 
+  test("通关后直接进入下一关并创建空的新局内状态", async ({ page }) => {
+    await page.getByRole("button", { name: "匿名注册" }).click();
+    await enterGame(page);
+    const firstLevelBlockIds = await getBlockIds(page);
+
+    await winCurrentLevel(page);
+    await page.getByRole("button", { name: "进入下一关" }).click();
+
+    await expect(page.getByTestId("dog-game")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "第 2 关" })).toBeVisible();
+    await expect(page.getByTestId("dog-board")).toBeVisible();
+    await expect(page.locator('[data-testid="dog-block"]')).toHaveCount(90);
+    await expect(page.locator('[data-testid="dog-tray-slot"][data-pattern-type]')).toHaveCount(0);
+    const nextLevelBlockIds = await getBlockIds(page);
+    expect(nextLevelBlockIds).not.toEqual(firstLevelBlockIds);
+  });
+
   test("损坏存储显示降级提示", async ({ page }) => {
     await page.evaluate(() => {
       window.localStorage.setItem("gamebox.state", "{damaged");
@@ -116,6 +133,12 @@ test.describe("狗了个狗完整浏览器闭环", () => {
 async function enterGame(page: Page): Promise<void> {
   await page.getByRole("button", { name: "进入游戏" }).click();
   await expect(page.getByTestId("dog-game")).toBeVisible();
+}
+
+async function getBlockIds(page: Page): Promise<(string | null)[]> {
+  return page
+    .locator('[data-testid="dog-block"]')
+    .evaluateAll((blocks) => blocks.map((block) => block.getAttribute("data-block-id")));
 }
 
 async function clickBlock(page: Page, blockId: string): Promise<void> {

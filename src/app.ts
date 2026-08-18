@@ -28,6 +28,7 @@ export class GameboxApp {
   private readonly catalog: readonly GameDefinition[];
   private activeGame: GameLaunchHandle | null = null;
   private activeLevel: ActiveLevel | null = null;
+  private nextLevelTarget: ActiveLevel | null = null;
   private pendingCompletion: LevelCompletionResult | null = null;
 
   constructor(root: HTMLElement, options: MountAppOptions = {}) {
@@ -279,13 +280,19 @@ export class GameboxApp {
     }
 
     this.activeLevel = { gameId: game.id, levelNumber };
-    this.activeGame = game.launch(gameMount, {
-      onResult: this.handleGameResult,
-      onResultConfirmed: this.handleGameResultConfirmed,
-      onSoundToggle: (soundEnabled) => this.store.setSoundEnabled(soundEnabled),
-      soundEnabled: state.settings.soundEnabled,
-      levelNumber,
-    });
+    try {
+      this.activeGame = game.launch(gameMount, {
+        onResult: this.handleGameResult,
+        onResultConfirmed: this.handleGameResultConfirmed,
+        onSoundToggle: (soundEnabled) => this.store.setSoundEnabled(soundEnabled),
+        soundEnabled: state.settings.soundEnabled,
+        levelNumber,
+      });
+    } catch {
+      this.disposeActiveGame();
+      replaceHistoryWithCatalog();
+      this.render();
+    }
   }
 
   private leaveToCatalog(): void {
@@ -339,6 +346,10 @@ export class GameboxApp {
           </dl>
           ${renderResultActions(result)}
     `);
+    this.nextLevelTarget = {
+      gameId: result.gameId,
+      levelNumber: result.levelNumber + 1,
+    };
   }
 
   private renderLossResult(result: GameResult): void {
@@ -349,13 +360,23 @@ export class GameboxApp {
           ${renderPersistenceNotice(this.store.snapshot().warning)}
           ${renderResultActions(result)}
     `);
+    this.nextLevelTarget = null;
   }
 
   private renderNextLevel(gameId: string | undefined, levelNumber: number | undefined): void {
     const state = this.store.snapshot().state;
     const game = this.catalog.find((item) => item.id === gameId);
     const progress = gameId === undefined ? undefined : state?.games[gameId];
-    if (game === undefined || !game.playable || levelNumber === undefined || progress === undefined) {
+    const nextLevelTarget = this.nextLevelTarget;
+    if (
+      game === undefined ||
+      !game.playable ||
+      levelNumber === undefined ||
+      progress === undefined ||
+      nextLevelTarget === null ||
+      nextLevelTarget.gameId !== gameId ||
+      nextLevelTarget.levelNumber !== levelNumber
+    ) {
       this.render();
       return;
     }
@@ -387,6 +408,7 @@ export class GameboxApp {
     this.activeGame?.destroy();
     this.activeGame = null;
     this.activeLevel = null;
+    this.nextLevelTarget = null;
     this.pendingCompletion = null;
   }
 }
