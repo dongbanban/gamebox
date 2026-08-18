@@ -32,7 +32,6 @@ import {
 } from "./level-placement";
 import {
   findSolvability,
-  findSolvablePath,
   verifyRemovalPath,
   type SolvabilitySearchOptions,
   type SolvabilityResult,
@@ -235,7 +234,8 @@ export class GeneratedLevelGenerator {
   }
 
   findSolvablePath(level: DogLevelGeometry): readonly string[] | null {
-    return findSolvablePath(level);
+    const result = findSolvability(level);
+    return result.status === "solvable" ? [...result.path] : null;
   }
 
   findSolvability(

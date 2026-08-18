@@ -28,3 +28,33 @@ Used by `/wayfinder`. The **map** is a file with one **child** file per ticket.
 - **Frontier**: scan `.scratch/<effort>/issues/` for files that are open, unblocked, and unclaimed; first by number wins.
 - **Claim**: set `Status: claimed` and save before any work.
 - **Resolve**: append the answer under an `## Answer` heading, set `Status: resolved`, then append a context pointer (gist + link) to the map's Decisions-so-far in `map.md`.
+
+## Ticket 验收
+
+普通实现 ticket 完成前运行：
+
+```bash
+pnpm test:affected
+```
+
+该命令读取当前 Git 改动与未跟踪文件，按 Vitest import graph 运行受影响核心测试；按源码、样式与 E2E 文件范围选择 Chromium 流程；始终运行 `pnpm typecheck` 与 `pnpm build`。
+
+以下范围必须追加全量测试：
+
+- 跨模块公共契约、进度、导航或游戏启动流程
+- 关卡生成器、可解性搜索、难度筛选或随机回归
+- 合并前、发布前或无法确认影响范围
+
+全量命令：
+
+```bash
+pnpm test:qa
+```
+
+响应式或浏览器兼容改动追加：
+
+```bash
+pnpm test:e2e:cross-browser
+```
+
+ticket 结尾记录实际运行命令与结果。仅文档改动可标记“未运行测试”；代码、测试、配置、样式或资源改动不得省略验证说明。

@@ -88,22 +88,6 @@ export function findSolvability(
   return normalizeSolvabilityResult(level, searchResult);
 }
 
-/** @deprecated Use findSolvability to distinguish unsolvable from budget-exhausted. */
-export function findSolvablePath(
-  level: DogLevelGeometry & { readonly solutionPath?: readonly string[] },
-  options: SolvabilitySearchOptions = {},
-): readonly string[] | null {
-  // Legacy path-only seam; use findSolvability when budget-exhausted must be distinguished.
-  const result = findSolvability(level, options);
-  return result.status === "solvable" ? [...result.path] : null;
-}
-
-/** @deprecated Use findSolvability to distinguish unsolvable from budget-exhausted. */
-export function isLevelSolvable(level: DogLevelGeometry): boolean {
-  // Boolean compatibility seam reports only a proven solvable result.
-  return findSolvability(level).status === "solvable";
-}
-
 export function verifyRemovalPath(
   level: DogLevelGeometry,
   path: readonly string[],

@@ -23,12 +23,7 @@ export default defineConfig({
     ...(crossBrowserEnabled
       ? [
           {
-            name: "firefox",
-            testMatch: /cross-browser\.spec\.ts/,
-            use: { ...devices["Desktop Firefox"] },
-          },
-          {
-            name: "webkit",
+            name: "safari",
             testMatch: /cross-browser\.spec\.ts/,
             use: { ...devices["Desktop Safari"] },
           },

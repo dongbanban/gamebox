@@ -6,8 +6,8 @@ import {
   getBlockCount,
   getMaxLayers,
   getPatternTypeCount,
+  findSolvability,
   isDifficultyWithinTarget,
-  isLevelSolvable,
   LEVEL_GENERATOR_VERSION,
   LevelGenerator,
   type DogLegeDogLevel,
@@ -170,8 +170,9 @@ function assertLevelInvariants(
     ).toBeLessThanOrEqual(4);
   }
 
-  expect(isLevelSolvable(level)).toBe(true);
-  expect(generator.findSolvablePath(level)).toEqual(level.solutionPath);
+  const solvability = generator.findSolvability(level);
+  expect(solvability.status).toBe("solvable");
+  expect(solvability.path).toEqual(level.solutionPath);
   expect(difficulty.blockCount).toBe(blocks.length);
   expect(difficulty.maxLayers).toBe(level.maxLayers);
   expect(difficulty.patternTypeCount).toBe(level.patternTypes.length);
@@ -235,7 +236,7 @@ function assertStressLevel(level: DogLegeDogLevel): void {
   expect(level.board.shape).toBe("irregular");
   expect(level.solutionPath).toHaveLength(level.blocks.length);
   expect(new Set(level.solutionPath)).toHaveLength(level.blocks.length);
-  expect(isLevelSolvable(level)).toBe(true);
+  expect(findSolvability(level).status).toBe("solvable");
   expect(level.generation.attempts).toBeGreaterThanOrEqual(1);
   expect(level.generation.attempts).toBeLessThanOrEqual(100);
 }

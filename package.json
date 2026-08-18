@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "pnpm test:core",
+    "test:affected": "node scripts/test-affected.mjs",
     "test:core": "vitest run --exclude tests/random-regression.test.ts",
     "test:random": "vitest run tests/random-regression.test.ts",
     "test:watch": "vitest",

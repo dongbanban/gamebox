@@ -1,0 +1,131 @@
+import { execFileSync, spawnSync } from "node:child_process";
+
+const root = process.cwd();
+const changedFiles = collectChangedFiles();
+let hasFailure = false;
+
+if (changedFiles.length === 0) {
+  console.log("没有检测到改动，跳过受影响测试。");
+  process.exit(0);
+}
+
+console.log("受影响文件：");
+for (const file of changedFiles) {
+  console.log(`  ${file}`);
+}
+
+const vitestTargets = changedFiles.filter(
+  (file) =>
+    /^src\/.*\.ts$/.test(file) ||
+    /^tests\/[^/]+\.test\.ts$/.test(file),
+);
+
+if (vitestTargets.length > 0) {
+  run("pnpm", [
+    "exec",
+    "vitest",
+    "related",
+    ...vitestTargets,
+    "--run",
+    "--passWithNoTests",
+    "--exclude",
+    "tests/random-regression.test.ts",
+  ]);
+} else {
+  console.log("没有受影响的核心 Vitest 文件，跳过核心 Vitest。");
+}
+
+if (requiresRandomRegression(changedFiles)) {
+  run("pnpm", ["test:random"]);
+} else {
+  console.log("未触发关卡生成/随机回归范围，跳过随机回归。");
+}
+
+const e2eTargets = getE2ETargets(changedFiles);
+if (e2eTargets.length > 0) {
+  run("pnpm", ["exec", "playwright", "test", ...e2eTargets]);
+} else {
+  console.log("未触发浏览器流程范围，跳过 Chromium E2E。");
+}
+
+run("pnpm", ["typecheck"]);
+run("pnpm", ["build"]);
+
+if (hasFailure) {
+  console.error("受影响验证失败。");
+  process.exit(1);
+}
+
+function collectChangedFiles() {
+  const tracked = readGit(["diff", "--name-only", "HEAD", "--"]);
+  const untracked = readGit(["ls-files", "--others", "--exclude-standard"]);
+  return [...new Set([...tracked, ...untracked])].sort();
+}
+
+function readGit(args) {
+  try {
+    const output = execFileSync("git", args, {
+      cwd: root,
+      encoding: "utf8",
+    });
+    return output.split(/\r?\n/).filter(Boolean);
+  } catch (error) {
+    console.error(`读取 Git 改动失败：${error instanceof Error ? error.message : error}`);
+    process.exit(1);
+  }
+}
+
+function requiresRandomRegression(files) {
+  return files.some(
+    (file) =>
+      /^src\/games\/dog-lege-dog\/(?:level-|first-level\.ts|game-config\.ts)/.test(file) ||
+      /^tests\/(?:level-generator|generation-failure|random-regression)\.test\.ts$/.test(file),
+  );
+}
+
+function getE2ETargets(files) {
+  const targets = new Set(
+    files.filter((file) => /^tests\/e2e\/[^/]+\.spec\.ts$/.test(file)),
+  );
+
+  if (files.some((file) => file === "src/style.css")) {
+    targets.add("tests/e2e/register-catalog.spec.ts");
+  }
+
+  if (
+    files.some(
+      (file) =>
+        file === "src/app.ts" ||
+        file === "src/catalog.ts" ||
+        file === "src/main.ts" ||
+        file === "src/progress-store.ts" ||
+        file.startsWith("src/games/dog-lege-dog/") ||
+        file.startsWith("public/"),
+    )
+  ) {
+    targets.add("tests/e2e/register-catalog.spec.ts");
+    targets.add("tests/e2e/full-flow.spec.ts");
+    targets.add("tests/e2e/cross-browser.spec.ts");
+  }
+
+  return [...targets].sort();
+}
+
+function run(command, args) {
+  console.log(`\n$ ${command} ${args.join(" ")}`);
+  const result = spawnSync(command, args, {
+    cwd: root,
+    env: process.env,
+    stdio: "inherit",
+  });
+
+  if (result.error) {
+    console.error(`命令启动失败：${result.error.message}`);
+    hasFailure = true;
+    return;
+  }
+
+  if (result.status !== 0) {
+    hasFailure = true;
+  }
+}

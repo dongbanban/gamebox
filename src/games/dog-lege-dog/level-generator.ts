@@ -14,8 +14,6 @@ import {
 } from "./level-difficulty";
 import {
   findSolvability,
-  findSolvablePath,
-  isLevelSolvable,
 } from "./level-solvability";
 import type {
   SolvabilityResult,
@@ -58,14 +56,12 @@ export {
   MAX_LEVEL_GENERATION_ATTEMPTS,
   DOG_SHAPE_TEMPLATES,
   calculateDifficultyMetrics,
-  findSolvablePath,
   findSolvability,
   getBlockCount,
   getDifficultyTarget,
   getMaxLayers,
   getPatternTypeCount,
   isDifficultyWithinTarget,
-  isLevelSolvable,
   calculateDogLevelReward,
   DOG_LEVEL_REWARD_CONFIG,
   DOG_REWARD_CONFIG_VERSION,
@@ -73,6 +69,20 @@ export {
 
 export type { DogShapeTemplate };
 export type { DogLevelRewardConfig };
+
+/** Compatibility path-only seam. Prefer findSolvability for tri-state results. */
+export function findSolvablePath(
+  level: DogLevelGeometry & { readonly solutionPath?: readonly string[] },
+  options: SolvabilitySearchOptions = {},
+): readonly string[] | null {
+  const result = findSolvability(level, options);
+  return result.status === "solvable" ? [...result.path] : null;
+}
+
+/** Compatibility boolean seam. Prefer findSolvability for tri-state results. */
+export function isLevelSolvable(level: DogLevelGeometry): boolean {
+  return findSolvability(level).status === "solvable";
+}
 
 export function getLevelDifficultyMetrics(level: DogLegeDogLevel): DogLevelDifficulty {
   const solvability = findSolvability(level);
