@@ -8,7 +8,7 @@ import {
   FIRST_LEVEL_SEED,
   FIRST_LEVEL_TEMPLATE_ID,
   LEVEL_GENERATOR_VERSION,
-} from "./game-config";
+} from "../game/game-config";
 import {
   getBlockCount,
   getMaxLayers,
@@ -28,6 +28,7 @@ import {
   resolveRemovalPathPlan,
   selectPatternTypes,
   validatePlacementGeometry,
+  validateSpatialDistribution,
   type PlacementFactory,
 } from "./level-placement";
 import {
@@ -80,6 +81,7 @@ const MAX_DIFFICULTY_TARGET_ATTEMPTS = 32 as const;
 
 type TemplateFactory = (random: SeededRandom) => DogShapeTemplate;
 type PatternTypesFactory = (random: SeededRandom) => readonly DogPatternType[];
+type SpatialValidationPolicy = "enforce" | "replay";
 
 interface CandidateGenerationPlan {
   readonly blockCount: number;
@@ -289,6 +291,7 @@ export class GeneratedLevelGenerator {
           replay.testSeed,
           getFallbackTemplate("emergency"),
           replay.randomSeed,
+          "replay",
         )
       : this.createCandidate(
           request,
@@ -297,6 +300,7 @@ export class GeneratedLevelGenerator {
           replay.attempt,
           undefined,
           replay.randomSeed,
+          "replay",
         );
     return finalizeCandidate(
       candidate,
@@ -313,6 +317,7 @@ export class GeneratedLevelGenerator {
     attempt: number,
     templateOverride?: DogShapeTemplate,
     randomSeed?: string,
+    spatialValidation: SpatialValidationPolicy = "enforce",
   ): GeneratedLevelCandidate {
     const candidateRandomSeed =
       randomSeed ?? getCandidateRandomSeed(this.gameId, levelSeed, testSeed, attempt);
@@ -325,6 +330,7 @@ export class GeneratedLevelGenerator {
       "generated",
       (random) => templateOverride ?? selectShapeTemplate(random),
       createSolvableBlockPlacements,
+      spatialValidation,
     );
   }
 
@@ -337,6 +343,7 @@ export class GeneratedLevelGenerator {
     replayMode: DogLevelReplayMode,
     templateFactory: TemplateFactory,
     placementFactory: PlacementFactory,
+    spatialValidation: SpatialValidationPolicy = "enforce",
   ): GeneratedLevelCandidate {
     const random = new SeededRandom(randomSeed);
     const plan = createGenerationPlan(
@@ -379,6 +386,7 @@ export class GeneratedLevelGenerator {
       solutionPath,
       replayMode,
       randomSeed,
+      spatialValidation,
     );
   }
 
@@ -431,6 +439,7 @@ export class GeneratedLevelGenerator {
     testSeed: string,
     template: DogShapeTemplate | undefined,
     randomSeed = getGuaranteedRandomSeed(this.gameId, levelSeed),
+    spatialValidation: SpatialValidationPolicy = "enforce",
   ): GeneratedLevelCandidate {
     if (template === undefined) {
       throw new Error("LevelGenerator has no emergency template");
@@ -444,6 +453,7 @@ export class GeneratedLevelGenerator {
       "guaranteed",
       () => template,
       createGuaranteedBlockPlacements,
+      spatialValidation,
     );
   }
 }
@@ -460,6 +470,7 @@ function createCandidateLevel(
   solutionPath: readonly string[],
   replayMode: DogLevelReplayMode,
   randomSeed: string,
+  spatialValidation: SpatialValidationPolicy,
 ): GeneratedLevelCandidate {
   const geometry: DogLevelGeometry = {
     number: request.levelNumber,
@@ -471,6 +482,12 @@ function createCandidateLevel(
   const geometryError = validatePlacementGeometry(board, blocks);
   if (geometryError !== undefined) {
     throw new Error(geometryError);
+  }
+  if (spatialValidation === "enforce") {
+    const spatialError = validateSpatialDistribution(board, blocks);
+    if (spatialError !== undefined) {
+      throw new Error(spatialError);
+    }
   }
   const verification = verifyRemovalPath(geometry, solutionPath);
   if (!verification.solvable) {

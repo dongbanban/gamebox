@@ -1,4 +1,4 @@
-import { DEFAULT_LEVEL_REWARD } from "./game-config";
+import { DEFAULT_LEVEL_REWARD } from "../game/game-config";
 import type { DogLevelDifficulty } from "./level-types";
 
 export const DOG_REWARD_CONFIG_VERSION = 1 as const;

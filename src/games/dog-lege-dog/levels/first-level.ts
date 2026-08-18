@@ -3,7 +3,7 @@ import {
   DEFAULT_LEVEL_REWARD,
   FIRST_LEVEL_GENERATOR_VERSION,
   FIRST_LEVEL_NUMBER,
-} from "./game-config";
+} from "../game/game-config";
 import { GeneratedLevelGenerator } from "./level-generation-engine";
 import type { DogLegeDogLevel } from "./level-types";
 
@@ -38,7 +38,7 @@ export {
   FIRST_LEVEL_NUMBER,
   FIRST_LEVEL_PATTERN_TYPES,
   FIRST_LEVEL_SEED,
-} from "./game-config";
+} from "../game/game-config";
 
 /** Public first-level value generated through same provider pipeline as every level. */
 export const FIRST_LEVEL: DogLegeDogLevel = new GeneratedLevelGenerator().generate({

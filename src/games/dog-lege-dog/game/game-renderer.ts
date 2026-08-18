@@ -1,8 +1,8 @@
-import type { DogLegeDogLevel } from "./first-level";
-import { getDogPatternClassName, renderDogPatternAsset } from "./game-assets";
+import type { DogLegeDogLevel } from "../levels/first-level";
+import { getDogPatternClassName, renderDogPatternAsset } from "../assets/game-assets";
 import type { GameSessionSnapshot } from "./game-session";
 import type { DogLegeDogGameState, DogVisualFeedback } from "./game-types";
-import type { DogBoard } from "./level-types";
+import type { DogBoard } from "../levels/level-types";
 
 export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameState): void {
   const { board } = state.level;
@@ -27,11 +27,13 @@ export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameSta
           <span>关卡</span>
           <strong>${state.level.number}</strong>
         </div>
-        <dl class="dog-game__stats">
-          <div><dt>剩余方块</dt><dd>${blocks.length}</dd></div>
-          <div><dt>图案</dt><dd>${state.level.patternTypes.length} 种</dd></div>
-          <div><dt>层数</dt><dd>${state.level.maxLayers} 层</dd></div>
-        </dl>
+        ${state.level.number === 1 ? "" : `
+          <dl class="dog-game__stats">
+            <div><dt>剩余方块</dt><dd>${blocks.length}</dd></div>
+            <div><dt>图案</dt><dd>${state.level.patternTypes.length} 种</dd></div>
+            <div><dt>层数</dt><dd>${state.level.maxLayers} 层</dd></div>
+          </dl>
+        `}
       </header>
       <p class="dog-game__status dog-game__status--${state.session.status}" data-testid="dog-status" role="status">
         ${renderStatusMessage(state.session.status)}
@@ -166,7 +168,7 @@ function renderTray(session: GameSessionSnapshot): string {
     }
 
     return `
-      <li class="dog-tray__slot dog-tray__slot--filled" data-testid="dog-tray-slot" data-pattern-type="${patternType}" aria-label="${patternType}">
+      <li class="dog-tray__slot dog-tray__slot--filled dog-block--${getDogPatternClassName(patternType)}" data-testid="dog-tray-slot" data-pattern-type="${patternType}" aria-label="${patternType}">
         <span class="dog-block__glyph">${renderDogPatternAsset(patternType)}</span>
       </li>
     `;

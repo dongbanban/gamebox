@@ -19,7 +19,7 @@ describe("狗了个狗首关", () => {
     expect(state.gameId).toBe("dog-lege-dog");
     expect(state.status).toBe("ready");
     expect(state.level.number).toBe(1);
-    expect(state.level.seed).toBe("dog-lege-dog:first-level:v4");
+    expect(state.level.seed).toBe("dog-lege-dog:first-level:v5");
     expect(state.level.board.shape).toBe("irregular");
     expect(state.level.board.logicalCellSize).toBe(4);
     expect(state.level.blocks).toHaveLength(90);
@@ -115,6 +115,11 @@ describe("狗了个狗首关", () => {
     expect(root.querySelectorAll('[data-testid="dog-tray-slot"][data-pattern-type]')).toHaveLength(
       game.getState().session.tray.length,
     );
+    expect(
+      [...root.querySelectorAll<HTMLElement>('[data-testid="dog-tray-slot"][data-pattern-type]')].every(
+        (slot) => slot.className.includes("dog-block--") && slot.querySelector("svg") !== null,
+      ),
+    ).toBe(true);
     expect(root.querySelector('[data-testid="dog-status"]')?.textContent).not.toContain("选择没有遮挡");
 
     game.destroy();

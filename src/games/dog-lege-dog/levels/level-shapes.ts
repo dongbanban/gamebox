@@ -1,6 +1,6 @@
 import type { DogBoard, DogBoardCell, DogBoardShape } from "./level-types";
 import { BLOCK_WIDTH } from "./level-types";
-import { FIRST_LEVEL_TEMPLATE_ID } from "./game-config";
+import { FIRST_LEVEL_TEMPLATE_ID } from "../game/game-config";
 import { SeededRandom } from "./level-random";
 
 const BASE_TEMPLATE_WIDTH = 24;
@@ -33,8 +33,8 @@ export const DOG_SHAPE_TEMPLATES: readonly DogShapeTemplate[] = Object.freeze(
         [0, row([2, 21])],
         [3, row([0, 5], [8, 23])],
         [17, row([0, 3], [6, 23])],
-        [18, row([2, 21])],
-        [19, row([7, 16])],
+        [18, row([0, 23])],
+        [19, row([0, 5], [8, 23])],
       ]),
     ),
     createShapeTemplate(

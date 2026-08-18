@@ -4,7 +4,7 @@
 
 **Blocked by:** 11 — 精简游戏目录与游戏页控制区；12 — 完成移动端无滚动游戏布局
 
-**Status:** ready-for-agent
+**Status:** in-progress
 
 本 ticket 的视觉决策覆盖 ticket 11 中“音效开关位于关卡选择区域”和“关卡号、剩余方块、图案数量、层数继续显示”的旧展示约束；ticket 12 只提供移动端视口布局基础，关卡选择与音效位置以本 ticket 为准。
 

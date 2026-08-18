@@ -37,18 +37,23 @@ test.describe("注册与游戏目录", () => {
     expect(decodeURIComponent(coverSource ?? "")).not.toContain("GAMEBOX · 01");
 
     await page.getByRole("button", { name: "进入游戏" }).click();
-    await expect(page.getByRole("heading", { name: "狗了个狗" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "狗了个狗" })).toHaveCount(0);
     const catalogButton = page.locator('[data-view="game-entry"] [data-action="catalog"]');
     await expect(catalogButton).toHaveAttribute("aria-label", "返回游戏目录");
     await expect(catalogButton).toHaveText("");
     await expect(catalogButton.locator("svg")).toBeVisible();
-    await expect(page.locator('[data-testid="level-picker"] [data-action="toggle-sound"]')).toBeVisible();
+    await expect(page.locator('[data-testid="level-picker"]')).toHaveCount(0);
+    await expect(page.locator('[data-view="game-entry"] [data-action="select-level"]')).toHaveCount(0);
+    await expect(page.locator('[data-view="game-entry"] [data-action="toggle-sound"]')).toBeVisible();
     await expect(page.getByTestId("dog-active-level")).toContainText("1");
     await expect(page.locator('[data-testid="dog-game"] h2')).toHaveCount(0);
     await expect(page.getByText("游戏入口已打开")).toHaveCount(0);
     await expect(page.getByText("固定首关")).toHaveCount(0);
     await expect(page.getByText("稳定关卡")).toHaveCount(0);
     await expect(page.getByText("选择没有遮挡的方块，凑齐三个相同图案。")).toHaveCount(0);
+    await expect(page.getByText("剩余方块")).toHaveCount(0);
+    await expect(page.getByText("图案")).toHaveCount(0);
+    await expect(page.getByText("层数")).toHaveCount(0);
   });
 
   test("回访跳过注册，确认重置后返回注册页", async ({ page }) => {
@@ -165,10 +170,13 @@ test.describe("注册与游戏目录", () => {
         boardTop: rect?.top ?? 0,
         boardBottom: rect?.bottom ?? 0,
         boardWidth: rect?.width ?? 0,
+        boardBackgroundImage: board === null ? "" : getComputedStyle(board).backgroundImage,
         tray: getRect('[data-testid="dog-tray"]'),
         traySlots: traySlots.map(serializeRect),
         levelPicker: getRect('[data-testid="level-picker"]'),
-        soundButton: getRect('[data-testid="level-picker"] [data-action="toggle-sound"]'),
+        soundButton: getRect('[data-view="game-entry"] [data-action="toggle-sound"]'),
+        catalogButton: getRect('[data-view="game-entry"] [data-action="catalog"]'),
+        brandLogo: getRect('[data-view="game-entry"] .brand-lockup'),
         selectableBlock:
           selectableBlock === null
             ? null
@@ -184,6 +192,8 @@ test.describe("注册与游戏目录", () => {
     expect(layout.boardTop).toBeGreaterThanOrEqual(0);
     expect(layout.boardBottom).toBeLessThanOrEqual(layout.viewportHeight);
     expect(layout.boardWidth).toBeGreaterThan(0);
+    expect(layout.boardWidth).toBeGreaterThan(300);
+    expect(layout.boardBackgroundImage).toBe("none");
     expect(layout.tray).not.toBeNull();
     expect(layout.tray?.top).toBeGreaterThanOrEqual(0);
     expect(layout.tray?.bottom).toBeLessThanOrEqual(layout.viewportHeight);
@@ -194,13 +204,14 @@ test.describe("注册与游戏目录", () => {
         (slot) => slot.top >= 0 && slot.bottom <= layout.viewportHeight,
       ),
     ).toBe(true);
-    expect(layout.levelPicker).not.toBeNull();
+    expect(layout.levelPicker).toBeNull();
     expect(layout.soundButton).not.toBeNull();
-    expect(layout.levelPicker?.top).toBeGreaterThanOrEqual(0);
-    expect(layout.levelPicker?.bottom).toBeLessThanOrEqual(layout.boardTop);
-    expect(layout.soundButton?.top).toBeGreaterThanOrEqual(layout.levelPicker?.top ?? 0);
-    expect(layout.soundButton?.bottom).toBeLessThanOrEqual(layout.levelPicker?.bottom ?? 0);
+    expect(layout.soundButton?.top).toBeGreaterThanOrEqual(0);
+    expect(layout.soundButton?.bottom).toBeLessThanOrEqual(layout.boardTop);
     expect(layout.selectableBlock).not.toBeNull();
+    expect(layout.selectableBlock?.width).toBeGreaterThan(18);
+    expect(layout.selectableBlock?.height).toBeGreaterThan(18);
+    expect(layout.catalogButton?.left).toBeLessThan(layout.brandLogo?.left ?? Number.POSITIVE_INFINITY);
 
     const selectableBlock = page.locator('[data-testid="dog-block"]:not([disabled])').first();
     await selectableBlock.click();
@@ -209,7 +220,6 @@ test.describe("注册与游戏目录", () => {
     await expect(page.getByRole("button", { name: "音效关闭" })).toBeVisible();
     await page.getByRole("button", { name: "音效关闭" }).click();
     await expect(page.getByRole("button", { name: "音效开启" })).toBeVisible();
-    await page.getByRole("button", { name: "第 1 关" }).click();
     await expect(page.getByTestId("dog-active-level")).toContainText("1");
 
     await page.setViewportSize({ width: 390, height: 667 });
@@ -271,7 +281,7 @@ test.describe("注册与游戏目录", () => {
       };
     });
 
-    expect(desktopLayout.boardWidth).toBeLessThanOrEqual(720);
+    expect(desktopLayout.boardWidth).toBeLessThanOrEqual(860);
     expect(Math.abs(desktopLayout.boardCenter - desktopLayout.frameCenter)).toBeLessThanOrEqual(1);
   });
 });

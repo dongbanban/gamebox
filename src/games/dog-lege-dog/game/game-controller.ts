@@ -3,15 +3,14 @@ import type {
   GameResult,
   GameResultAction,
   GameResultDisplay,
-} from "../../catalog";
-import { GAME_ID } from "../../progress-store";
-import { FIRST_LEVEL, type DogLegeDogLevel } from "./first-level";
-import { DOG_GAME_RESULT_DISPLAY } from "./game-config";
-import { getDogLegeDogLevel } from "./level-provider";
-import { animateBlockFlight, type CancellableAnimation } from "./animation-effects";
+} from "../../../catalog";
+import { FIRST_LEVEL, type DogLegeDogLevel } from "../levels/first-level";
+import { DOG_GAME_ID, DOG_GAME_RESULT_DISPLAY } from "./game-config";
+import { getDogLegeDogLevel } from "../levels/level-provider";
+import { animateBlockFlight, type CancellableAnimation } from "../assets/animation-effects";
 import { GameSession, type GameSessionSnapshot } from "./game-session";
-import { createParticleEffects, type ParticleEffect } from "./particle-effects";
-import { createSoundEffects } from "./sound-effects";
+import { createParticleEffects, type ParticleEffect } from "../assets/particle-effects";
+import { createSoundEffects } from "../assets/sound-effects";
 import { renderDogLegeDogGame } from "./game-renderer";
 import type {
   DogLegeDogGame,
@@ -56,6 +55,8 @@ export function createDogLegeDogGame(
     activeFlight: null,
     feedbackVersion: 0,
   };
+  const gameContentRoot =
+    root.querySelector<HTMLElement>("[data-game-content]") ?? root;
   const soundEffects = createSoundEffects(runtime.soundEnabled);
   const particleEffects = createParticleEffects(root);
 
@@ -298,7 +299,7 @@ export function createDogLegeDogGame(
       soundEffects.destroy();
       root.removeEventListener("pointerup", handlePointerUp);
       root.removeEventListener("click", handleClick);
-      root.replaceChildren();
+      gameContentRoot.replaceChildren();
     },
   };
 }
@@ -319,7 +320,7 @@ function createGameState(
   const sessionState = snapshot ?? runtime.session.getState();
 
   return {
-    gameId: GAME_ID,
+    gameId: DOG_GAME_ID,
     status:
       sessionState.status === "playing" && !runtime.hasInteracted ? "ready" : sessionState.status,
     level: sessionState.level,
@@ -346,7 +347,7 @@ function createResult(
     status === "won" ? ["next-level", "catalog"] : ["retry", "catalog"];
 
   return {
-    gameId: GAME_ID,
+    gameId: DOG_GAME_ID,
     levelNumber: level.number,
     status,
     reward: status === "won" ? level.reward : 0,

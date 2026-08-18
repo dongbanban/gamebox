@@ -1,10 +1,10 @@
-import type { GameLaunchContext } from "../../catalog";
-import type { DogLegeDogLevel } from "./first-level";
+import type { GameLaunchContext } from "../../../catalog";
+import type { DogLegeDogLevel } from "../levels/first-level";
 import type { GameSessionSnapshot } from "./game-session";
-import type { GAME_ID } from "../../progress-store";
+import type { DOG_GAME_ID } from "./game-config";
 
 export interface DogLegeDogGameState {
-  readonly gameId: typeof GAME_ID;
+  readonly gameId: typeof DOG_GAME_ID;
   readonly status: "ready" | GameSessionSnapshot["status"];
   readonly level: DogLegeDogLevel;
   readonly session: GameSessionSnapshot;

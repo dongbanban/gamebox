@@ -256,24 +256,24 @@ export class GameboxApp {
     setGameHistory(game.id, levelNumber);
     this.root.innerHTML = `
       <main class="game-entry-view" data-view="game-entry" data-game-id="${game.id}" data-level-number="${levelNumber}">
+        <h1 class="sr-only">活动游戏</h1>
         <header class="game-entry-view__header">
-          <div>
+          <div class="game-entry-view__brand">
+            ${renderCatalogIconButton("icon-button game-entry-view__catalog-button")}
             <div class="brand-lockup brand-lockup--compact">
               <span class="brand-lockup__mark" aria-hidden="true">🐶</span>
               <span class="brand-lockup__name">GAMEBOX</span>
             </div>
-            <h1 id="game-entry-title">${game.name}</h1>
           </div>
-          ${renderCatalogIconButton()}
+          ${renderSoundButton(state.settings.soundEnabled)}
         </header>
-        <div class="game-entry-view__game" data-game-mount>
-          ${renderLevelPicker(game.id, levelNumber, progress.highestUnlockedLevel, state.settings.soundEnabled)}
+        <div class="game-entry-view__game">
           <div data-game-content></div>
         </div>
       </main>
     `;
 
-    const gameMount = this.root.querySelector<HTMLElement>("[data-game-mount]");
+    const gameMount = this.root.querySelector<HTMLElement>('[data-view="game-entry"]');
     if (gameMount === null) {
       return;
     }
@@ -467,45 +467,6 @@ function renderPersistenceNotice(warning: string | null): string {
   `;
 }
 
-function renderLevelPicker(
-  gameId: string,
-  selectedLevelNumber: number,
-  highestUnlockedLevel: number,
-  soundEnabled: boolean,
-): string {
-  const visibleLevelCount = Math.max(5, highestUnlockedLevel + 1);
-  const buttons = Array.from({ length: visibleLevelCount }, (_, index) => {
-    const levelNumber = index + 1;
-    const unlocked = levelNumber <= highestUnlockedLevel;
-    const selected = levelNumber === selectedLevelNumber;
-    return `
-      <button
-        class="level-button${selected ? " level-button--selected" : ""}"
-        type="button"
-        data-action="select-level"
-        data-game-id="${gameId}"
-        data-level-number="${levelNumber}"
-        aria-current="${selected ? "true" : "false"}"
-        aria-label="第 ${levelNumber} 关${unlocked ? "" : "，已锁定"}"
-        ${unlocked ? "" : "disabled"}
-      >${levelNumber}</button>
-    `;
-  }).join("");
-
-  return `
-    <section class="level-picker" data-testid="level-picker" aria-label="关卡选择">
-      <div class="level-picker__heading">
-        <div class="level-picker__heading-meta">
-          <h2>关卡选择</h2>
-          <span>已解锁至第 ${highestUnlockedLevel} 关</span>
-        </div>
-        ${renderSoundButton(soundEnabled)}
-      </div>
-      <div class="level-picker__list">${buttons}</div>
-    </section>
-  `;
-}
-
 function renderCatalogIconButton(className = "icon-button"): string {
   return `
     <button
@@ -539,8 +500,7 @@ function renderSoundButton(soundEnabled: boolean): string {
 
 function renderSoundButtonContent(soundEnabled: boolean): string {
   return `
-    <span aria-hidden="true">${soundEnabled ? "♫" : "∅"}</span>
-    ${soundEnabled ? "音效开启" : "音效关闭"}
+    <span class="sound-button__icon" aria-hidden="true">${soundEnabled ? "♫" : "♩̸"}</span>
   `;
 }
 

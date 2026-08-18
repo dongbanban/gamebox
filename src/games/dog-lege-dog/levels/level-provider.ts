@@ -1,7 +1,7 @@
 import {
   DEFAULT_LEVEL_SEED,
   LEVEL_GENERATOR_VERSION,
-} from "./game-config";
+} from "../game/game-config";
 import {
   GeneratedLevelGenerator,
 } from "./level-generation-engine";

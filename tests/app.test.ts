@@ -228,6 +228,15 @@ function completeFirstLevel(root: HTMLElement): void {
   }
 }
 
+function requestLevelThroughNavigationSeam(root: HTMLElement, levelNumber: number): void {
+  const request = document.createElement("button");
+  request.dataset.action = "select-level";
+  request.dataset.gameId = GAME_ID;
+  request.dataset.levelNumber = String(levelNumber);
+  root.append(request);
+  request.click();
+}
+
 function dispatchBeforeUnload(): BeforeUnloadEvent {
   const event = new Event("beforeunload", { cancelable: true }) as BeforeUnloadEvent;
   window.dispatchEvent(event);
@@ -314,18 +323,23 @@ describe("注册与游戏目录 UI", () => {
     expect(catalogButton?.getAttribute("aria-label")).toBe("返回游戏目录");
     expect(catalogButton?.textContent?.trim()).toBe("");
     expect(catalogButton?.querySelector("svg")).not.toBeNull();
-    expect(root.querySelector('[data-testid="level-picker"] [data-action="toggle-sound"]')).not.toBeNull();
-    expect(root.querySelector('[data-testid="level-picker"] [data-action="toggle-sound"]')?.getAttribute("aria-pressed")).toBe("true");
+    expect(root.querySelector('[data-testid="level-picker"]')).toBeNull();
+    expect(root.querySelectorAll('[data-action="select-level"]')).toHaveLength(0);
+    expect(root.querySelector('[data-action="toggle-sound"]')?.getAttribute("aria-pressed")).toBe("true");
+    expect(root.querySelector('[data-action="toggle-sound"]')?.textContent).not.toContain("音效");
+    expect(root.querySelector('.game-entry-view > h1.sr-only')?.textContent).toBe("活动游戏");
     expect(root.querySelector('[data-testid="dog-active-level"]')?.textContent).toContain("1");
+    expect(root.textContent).not.toContain("狗了个狗");
+    expect(root.querySelector('.game-entry-view__brand [data-action="catalog"]')).not.toBeNull();
     expect(root.querySelector('[data-testid="dog-game"] h2')).toBeNull();
     expect(root.textContent).not.toContain("游戏入口已打开");
     expect(root.textContent).not.toContain("固定首关");
     expect(root.textContent).not.toContain("稳定关卡");
-    expect(root.textContent).not.toContain("dog-lege-dog:first-level:v4");
+    expect(root.textContent).not.toContain("dog-lege-dog:first-level:v5");
     expect(root.textContent).not.toContain("选择没有遮挡的方块，凑齐三个相同图案。");
-    expect(root.textContent).toContain("剩余方块");
-    expect(root.textContent).toContain("图案");
-    expect(root.textContent).toContain("层数");
+    expect(root.textContent).not.toContain("剩余方块");
+    expect(root.textContent).not.toContain("图案");
+    expect(root.textContent).not.toContain("层数");
     expect(root.querySelector('[data-testid="dog-tray"]')).not.toBeNull();
 
     app.destroy();
@@ -346,36 +360,18 @@ describe("注册与游戏目录 UI", () => {
     root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
 
     expect(root.querySelector('[data-testid="dog-active-level"]')?.textContent).toContain("2");
-    expect(
-      root.querySelector<HTMLButtonElement>(
-        '[data-action="select-level"][data-level-number="1"]',
-      )?.disabled,
-    ).toBe(false);
-    expect(
-      root.querySelector<HTMLButtonElement>(
-        '[data-action="select-level"][data-level-number="2"]',
-      )?.disabled,
-    ).toBe(false);
-    expect(
-      root.querySelector<HTMLButtonElement>(
-        '[data-action="select-level"][data-level-number="3"]',
-      )?.disabled,
-    ).toBe(true);
+    expect(root.querySelector('[data-testid="level-picker"]')).toBeNull();
+    expect(root.querySelectorAll('[data-action="select-level"]')).toHaveLength(0);
 
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
-    root
-      .querySelector<HTMLButtonElement>(
-        '[data-action="select-level"][data-level-number="2"]',
-      )
-      ?.click();
+    requestLevelThroughNavigationSeam(root, 2);
     expect(confirm).not.toHaveBeenCalled();
 
-    root
-      .querySelector<HTMLButtonElement>(
-        '[data-action="select-level"][data-level-number="1"]',
-      )
-      ?.click();
+    requestLevelThroughNavigationSeam(root, 1);
 
+    expect(root.querySelector('[data-testid="dog-active-level"]')?.textContent).toContain("1");
+
+    requestLevelThroughNavigationSeam(root, 3);
     expect(root.querySelector('[data-testid="dog-active-level"]')?.textContent).toContain("1");
 
     app.destroy();
@@ -395,11 +391,7 @@ describe("注册与游戏目录 UI", () => {
     root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
 
     vi.spyOn(window, "confirm").mockReturnValue(true);
-    root
-      .querySelector<HTMLButtonElement>(
-        '[data-action="select-level"][data-level-number="1"]',
-      )
-      ?.click();
+    requestLevelThroughNavigationSeam(root, 1);
 
     completeFirstLevel(root);
 
@@ -468,7 +460,7 @@ describe("注册与游戏目录 UI", () => {
     root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
 
     expect(root.querySelector('[data-view="game-entry"]')).not.toBeNull();
-    expect(root.textContent).toContain("狗了个狗");
+    expect(root.textContent).not.toContain("狗了个狗");
 
     app.destroy();
   });
@@ -563,9 +555,7 @@ describe("注册与游戏目录 UI", () => {
     const app = mountApp(root, { store });
     root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
     vi.spyOn(window, "confirm").mockReturnValue(true);
-    root
-      .querySelector<HTMLButtonElement>('[data-action="select-level"][data-level-number="1"]')
-      ?.click();
+    requestLevelThroughNavigationSeam(root, 1);
 
     completeFirstLevel(root);
 

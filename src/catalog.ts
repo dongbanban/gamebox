@@ -1,7 +1,7 @@
 import {
   DOG_GAME_ID,
   DOG_GAME_RESULT_DISPLAY,
-} from "./games/dog-lege-dog/game-config";
+} from "./games/dog-lege-dog/game/game-config";
 import { startDogLegeDogGame } from "./games/dog-lege-dog";
 
 export interface GameLaunchHandle {

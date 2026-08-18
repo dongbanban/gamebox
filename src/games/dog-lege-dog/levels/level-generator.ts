@@ -3,7 +3,7 @@ import {
   DEFAULT_LEVEL_SEED,
   DOG_GAME_ID,
   LEVEL_GENERATOR_VERSION,
-} from "./game-config";
+} from "../game/game-config";
 import { MAX_LEVEL_GENERATION_ATTEMPTS } from "./level-generation-engine";
 import {
   DogLevelProvider,

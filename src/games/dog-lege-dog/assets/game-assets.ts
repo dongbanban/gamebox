@@ -1,4 +1,4 @@
-import type { DogPatternType } from "./first-level";
+import type { DogPatternType } from "../levels/level-types";
 
 export interface DogPatternPresentation {
   readonly className: string;

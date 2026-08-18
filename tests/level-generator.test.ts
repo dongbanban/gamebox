@@ -402,6 +402,31 @@ describe("LevelGenerator", () => {
     }
   });
 
+  it("按关卡与 seed 稳定生成中心多数、四角非空且互相连通的空间分布", () => {
+    const generator = new LevelGenerator();
+
+    for (const levelNumber of [1, 5, 10, 15, 30, 100]) {
+      const request = {
+        levelNumber,
+        seed: `spatial-${levelNumber}`,
+        generatorVersion: LEVEL_GENERATOR_VERSION,
+      } as const;
+      const level = generator.generate(request);
+      const replayed = generator.generate(request);
+      const regions = level.blocks.map((block) => classifySpatialRegion(block, level.board));
+      const centerCount = regions.filter((region) => region === "center").length;
+
+      expect(level.generatorVersion).toBe(LEVEL_GENERATOR_VERSION);
+      expect(level).toEqual(replayed);
+      expect(centerCount).toBeGreaterThan(level.blocks.length / 2);
+      for (const region of ["top-left", "top-right", "bottom-left", "bottom-right"] as const) {
+        expect(regions.filter((candidate) => candidate === region).length).toBeGreaterThan(0);
+        expect(hasRegionalCrossLayerOverlap(level.blocks, level.board, region)).toBe(true);
+      }
+      expect(hasCrossRegionOverlap(level.blocks, level.board), `level ${levelNumber}`).toBe(true);
+    }
+  });
+
   it("可稳定加载第 2–100 关，不因模板选择抛错", () => {
     const generator = new LevelGenerator();
 
@@ -851,6 +876,66 @@ function createSafeChoiceBudgetFixture(): SolvabilityFixtureWithPath {
       "a2", "b2", "c2", "d1", "d2", "e1", "e2",
     ],
   };
+}
+
+type SpatialRegion =
+  | "center"
+  | "top-left"
+  | "top-right"
+  | "bottom-left"
+  | "bottom-right"
+  | "edge";
+
+function classifySpatialRegion(
+  block: { readonly x: number; readonly y: number },
+  board: { readonly width: number; readonly height: number },
+): SpatialRegion {
+  const centerX = (block.x + BLOCK_WIDTH / 2) / board.width;
+  const centerY = (block.y + BLOCK_HEIGHT / 2) / board.height;
+  const horizontal = centerX < 0.2 ? "left" : centerX > 0.8 ? "right" : "center";
+  const vertical = centerY < 0.2 ? "top" : centerY > 0.8 ? "bottom" : "center";
+  if (horizontal === "center" && vertical === "center") {
+    return "center";
+  }
+  if (horizontal !== "center" && vertical !== "center") {
+    return `${vertical}-${horizontal}` as Exclude<SpatialRegion, "center" | "edge">;
+  }
+  return "edge";
+}
+
+function hasRegionalCrossLayerOverlap(
+  blocks: readonly { readonly x: number; readonly y: number; readonly z: number; readonly width: number; readonly height: number }[],
+  board: { readonly width: number; readonly height: number },
+  region: SpatialRegion,
+): boolean {
+  const regionBlocks = blocks.filter((block) => classifySpatialRegion(block, board) === region);
+  for (let firstIndex = 0; firstIndex < regionBlocks.length; firstIndex += 1) {
+    for (const second of regionBlocks.slice(firstIndex + 1)) {
+      if (regionBlocks[firstIndex].z !== second.z && overlapArea(regionBlocks[firstIndex], second) > 0) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function hasCrossRegionOverlap(
+  blocks: readonly { readonly x: number; readonly y: number; readonly z: number; readonly width: number; readonly height: number }[],
+  board: { readonly width: number; readonly height: number },
+): boolean {
+  for (let firstIndex = 0; firstIndex < blocks.length; firstIndex += 1) {
+    const first = blocks[firstIndex];
+    for (const second of blocks.slice(firstIndex + 1)) {
+      if (
+        first.z !== second.z &&
+        classifySpatialRegion(first, board) !== classifySpatialRegion(second, board) &&
+        overlapArea(first, second) > 0
+      ) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 function hasPositiveAreaOverlap(

@@ -1,21 +1,9 @@
-import type { GameResultDisplayMetadata } from "../../catalog";
-import type { DogPatternType } from "./level-types";
+import type { DogPatternType } from "../levels/level-types";
 
 const GAME_ID = "dog-lege-dog" as const;
-const GENERATOR_VERSION = 4 as const;
-const FIRST_LEVEL_PLACEMENT_CONFIG = Object.freeze({
-  gridColumns: 6 as const,
-  gridRows: 5 as const,
-  originX: 8 as const,
-  originY: 8 as const,
-  layerOffsets: Object.freeze([
-    Object.freeze({ x: 0, y: 0 }),
-    Object.freeze({ x: 2, y: 0 }),
-    Object.freeze({ x: 4, y: 2 }),
-  ]),
-});
+const GENERATOR_VERSION = 5 as const;
 
-export const DOG_GAME_RESULT_DISPLAY: GameResultDisplayMetadata = Object.freeze({
+export const DOG_GAME_RESULT_DISPLAY = Object.freeze({
   won: Object.freeze({
     eyebrow: "狗了个狗 · 关卡结果",
     title: "通关！",
@@ -47,7 +35,6 @@ export const DOG_LEGE_DOG_CONFIG = Object.freeze({
     "拆家狗",
   ] as readonly DogPatternType[]),
   firstLevelTemplateId: "irregular-first-level-v1" as const,
-  firstLevelPlacement: FIRST_LEVEL_PLACEMENT_CONFIG,
 });
 
 export const DOG_GAME_ID = DOG_LEGE_DOG_CONFIG.id;
@@ -61,4 +48,3 @@ export const FIRST_LEVEL_BLOCK_COUNT = DOG_LEGE_DOG_CONFIG.firstLevelBlockCount;
 export const FIRST_LEVEL_MAX_LAYERS = DOG_LEGE_DOG_CONFIG.firstLevelMaxLayers;
 export const FIRST_LEVEL_PATTERN_TYPES = DOG_LEGE_DOG_CONFIG.firstLevelPatternTypes;
 export const FIRST_LEVEL_TEMPLATE_ID = DOG_LEGE_DOG_CONFIG.firstLevelTemplateId;
-export const FIRST_LEVEL_PLACEMENT = DOG_LEGE_DOG_CONFIG.firstLevelPlacement;

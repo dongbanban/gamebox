@@ -6,7 +6,10 @@ import {
   type DogBoard,
   type DogPatternType,
 } from "./level-types";
-import { FIRST_LEVEL_PLACEMENT } from "./game-config";
+import {
+  FIRST_LEVEL_BLOCK_COUNT,
+  FIRST_LEVEL_MAX_LAYERS,
+} from "../game/game-config";
 import { getPositiveOverlapArea, hasPositiveAreaOverlap } from "./level-rules";
 import { getPatternTypeCount } from "./level-progression";
 import { createPlacementGraph } from "./level-graph";
@@ -21,6 +24,15 @@ const LAYER_OFFSETS = [
   { x: 0, y: 2 },
 ] as const;
 
+const CORNER_REGIONS = [
+  "top-left",
+  "top-right",
+  "bottom-left",
+  "bottom-right",
+] as const;
+
+type PlacementRegion = "center" | (typeof CORNER_REGIONS)[number] | "edge";
+
 export interface BlockPlacement {
   readonly x: number;
   readonly y: number;
@@ -30,6 +42,46 @@ export interface BlockPlacement {
 export interface RemovalPathPlan {
   readonly order: readonly number[];
   readonly layerByBlock: readonly number[];
+}
+
+export function validateSpatialDistribution(
+  board: DogBoard,
+  blocks: readonly DogBlock[],
+): string | undefined {
+  const counts = new Map<PlacementRegion, number>();
+  for (const block of blocks) {
+    const region = getPlacementRegion(block, board.width, board.height);
+    counts.set(region, (counts.get(region) ?? 0) + 1);
+  }
+
+  const centerCount = counts.get("center") ?? 0;
+  if (centerCount <= blocks.length / 2) {
+    return "LevelGenerator center region must contain most blocks";
+  }
+
+  for (const region of CORNER_REGIONS) {
+    if ((counts.get(region) ?? 0) === 0) {
+      return `LevelGenerator ${region} region is empty`;
+    }
+  }
+
+  for (const region of ["center", ...CORNER_REGIONS] as const) {
+    const regionBlocks = blocks.filter(
+      (block) => getPlacementRegion(block, board.width, board.height) === region,
+    );
+    if (
+      regionBlocks.length > 0 &&
+      !hasCrossLayerOverlap(regionBlocks)
+    ) {
+      return `LevelGenerator ${region} region has no cross-layer overlap`;
+    }
+  }
+
+  if (!hasCrossRegionOverlap(blocks, board.width, board.height)) {
+    return "LevelGenerator level has no cross-region overlap";
+  }
+
+  return undefined;
 }
 
 export function validatePlacementGeometry(
@@ -137,36 +189,22 @@ export function createFirstLevelBlockPlacements(
   template: DogShapeTemplate,
   blockCount: number,
   maxLayers: number,
-  _random: SeededRandom,
+  random: SeededRandom,
   removalPlan: RemovalPathPlan,
 ): readonly BlockPlacement[] {
   if (
-    blockCount !== FIRST_LEVEL_PLACEMENT.gridColumns * FIRST_LEVEL_PLACEMENT.gridRows * maxLayers ||
-    maxLayers !== FIRST_LEVEL_PLACEMENT.layerOffsets.length
+    blockCount !== FIRST_LEVEL_BLOCK_COUNT ||
+    maxLayers !== FIRST_LEVEL_MAX_LAYERS
   ) {
     throw new Error("LevelGenerator first-level placement config is invalid");
   }
 
-  const structuralPlacements: BlockPlacement[] = [];
-  const playableCells = new Set(template.playableCells.map(cellKey));
-  for (let z = 0; z < maxLayers; z += 1) {
-    const offset = FIRST_LEVEL_PLACEMENT.layerOffsets[z];
-    if (offset === undefined) {
-      throw new Error(`LevelGenerator first-level placement has no offset for layer ${z}`);
-    }
-
-    for (let row = 0; row < FIRST_LEVEL_PLACEMENT.gridRows; row += 1) {
-      for (let column = 0; column < FIRST_LEVEL_PLACEMENT.gridColumns; column += 1) {
-        const x = FIRST_LEVEL_PLACEMENT.originX + column * BLOCK_WIDTH + offset.x;
-        const y = FIRST_LEVEL_PLACEMENT.originY + row * BLOCK_HEIGHT + offset.y;
-        if (!isPlayablePlacement(x, y, playableCells)) {
-          throw new Error(`LevelGenerator first-level placement leaves board at ${x}:${y}`);
-        }
-        structuralPlacements.push({ x, y, z });
-      }
-    }
-  }
-
+  const structuralPlacements = createStructuralBlockPlacements(
+    template,
+    blockCount,
+    maxLayers,
+    random,
+  );
   return assignPlacementsToRemovalPlan(
     structuralPlacements,
     blockCount,
@@ -344,24 +382,49 @@ function selectStructuralLayerPlacements(
   const candidates = random.shuffle([...getCandidateAnchors(template, offset.x, offset.y)]);
   const selected: BlockPlacement[] = [];
 
-  while (selected.length < desiredCount && candidates.length > 0) {
-    const candidate = candidates.shift();
+  for (const region of CORNER_REGIONS) {
+    const candidate = takeRegionCandidate(
+      candidates,
+      region,
+      template.width,
+      template.height,
+      z,
+      selected,
+      previousPlacements,
+    );
+    if (candidate !== undefined) {
+      selected.push({ ...candidate, z });
+      removeCandidate(candidates, candidate);
+    }
+  }
+
+  const crossRegionCandidate = takeCrossRegionCandidate(
+    candidates,
+    template.width,
+    template.height,
+    z,
+    selected,
+    previousPlacements,
+  );
+  if (crossRegionCandidate !== undefined) {
+    selected.push({ ...crossRegionCandidate, z });
+    removeCandidate(candidates, crossRegionCandidate);
+  }
+
+  const prioritizedCandidates = random.shuffle([...candidates]).sort(
+    (first, second) =>
+      Number(getPlacementRegion(second, template.width, template.height) === "center") -
+      Number(getPlacementRegion(first, template.width, template.height) === "center"),
+  );
+
+  while (selected.length < desiredCount && prioritizedCandidates.length > 0) {
+    const candidate = prioritizedCandidates.shift();
     if (candidate === undefined) {
       break;
     }
 
     const placement = { ...candidate, z };
-    if (selected.some((other) => blocksOverlap(placement, other))) {
-      continue;
-    }
-
-    const wouldExceedCoverLimit = previousPlacements.some(
-      (lowerBlock) =>
-        blocksOverlap(placement, lowerBlock) &&
-        countHigherOverlaps(lowerBlock, [...previousPlacements, ...selected, placement]) >=
-          MAX_BLOCKS_PER_LOWER_BLOCK,
-    );
-    if (wouldExceedCoverLimit) {
+    if (!canAddPlacement(placement, selected, previousPlacements)) {
       continue;
     }
 
@@ -369,6 +432,129 @@ function selectStructuralLayerPlacements(
   }
 
   return selected;
+}
+
+function takeCrossRegionCandidate(
+  candidates: readonly Omit<BlockPlacement, "z">[],
+  boardWidth: number,
+  boardHeight: number,
+  z: number,
+  selected: readonly BlockPlacement[],
+  previousPlacements: readonly BlockPlacement[],
+): Omit<BlockPlacement, "z"> | undefined {
+  return candidates
+    .map((candidate) => ({
+      candidate,
+      placement: { ...candidate, z },
+    }))
+    .filter(({ placement }) => canAddPlacement(placement, selected, previousPlacements))
+    .map(({ candidate, placement }) => ({
+      candidate,
+      placement,
+      score: getCrossRegionOverlapScore(
+        placement,
+        previousPlacements,
+        boardWidth,
+        boardHeight,
+      ),
+    }))
+    .filter(({ score }) => score > 0)
+    .sort((first, second) => second.score - first.score)[0]?.candidate;
+}
+
+function takeRegionCandidate(
+  candidates: readonly Omit<BlockPlacement, "z">[],
+  region: (typeof CORNER_REGIONS)[number],
+  boardWidth: number,
+  boardHeight: number,
+  z: number,
+  selected: readonly BlockPlacement[],
+  previousPlacements: readonly BlockPlacement[],
+): Omit<BlockPlacement, "z"> | undefined {
+  return candidates
+    .filter((candidate) => getPlacementRegion(candidate, boardWidth, boardHeight) === region)
+    .map((candidate) => ({
+      candidate,
+      placement: { ...candidate, z },
+    }))
+    .filter(({ placement }) => canAddPlacement(placement, selected, previousPlacements))
+    .sort(
+      (first, second) =>
+        getRegionalOverlapScore(second.placement, region, previousPlacements, boardWidth, boardHeight) -
+          getRegionalOverlapScore(first.placement, region, previousPlacements, boardWidth, boardHeight) ||
+        getRegionDistance(first.candidate, region, boardWidth, boardHeight) -
+          getRegionDistance(second.candidate, region, boardWidth, boardHeight),
+    )[0]?.candidate;
+}
+
+function getRegionalOverlapScore(
+  placement: BlockPlacement,
+  region: PlacementRegion,
+  previousPlacements: readonly BlockPlacement[],
+  boardWidth: number,
+  boardHeight: number,
+): number {
+  return previousPlacements.filter(
+    (previous) =>
+      getPlacementRegion(previous, boardWidth, boardHeight) === region &&
+      blocksOverlap(placement, previous),
+  ).length;
+}
+
+function getCrossRegionOverlapScore(
+  placement: BlockPlacement,
+  previousPlacements: readonly BlockPlacement[],
+  boardWidth: number,
+  boardHeight: number,
+): number {
+  const placementRegion = getPlacementRegion(placement, boardWidth, boardHeight);
+  return previousPlacements.filter(
+    (previous) =>
+      getPlacementRegion(previous, boardWidth, boardHeight) !== placementRegion &&
+      blocksOverlap(placement, previous),
+  ).length;
+}
+
+function getRegionDistance(
+  placement: Omit<BlockPlacement, "z">,
+  region: (typeof CORNER_REGIONS)[number],
+  boardWidth: number,
+  boardHeight: number,
+): number {
+  const targetX = region.endsWith("left") ? boardWidth * 0.18 : boardWidth * 0.82;
+  const targetY = region.startsWith("top") ? boardHeight * 0.18 : boardHeight * 0.82;
+  const centerX = placement.x + BLOCK_WIDTH / 2;
+  const centerY = placement.y + BLOCK_HEIGHT / 2;
+  return Math.abs(centerX - targetX) + Math.abs(centerY - targetY);
+}
+
+function removeCandidate(
+  candidates: Omit<BlockPlacement, "z">[],
+  candidate: Omit<BlockPlacement, "z">,
+): void {
+  const index = candidates.findIndex(
+    (current) => current.x === candidate.x && current.y === candidate.y,
+  );
+  if (index >= 0) {
+    candidates.splice(index, 1);
+  }
+}
+
+function canAddPlacement(
+  placement: BlockPlacement,
+  selected: readonly BlockPlacement[],
+  previousPlacements: readonly BlockPlacement[],
+): boolean {
+  if (selected.some((other) => blocksOverlap(placement, other))) {
+    return false;
+  }
+
+  return !previousPlacements.some(
+    (lowerBlock) =>
+      blocksOverlap(placement, lowerBlock) &&
+      countHigherOverlaps(lowerBlock, [...previousPlacements, ...selected, placement]) >=
+        MAX_BLOCKS_PER_LOWER_BLOCK,
+  );
 }
 
 function getCandidateAnchors(
@@ -434,6 +620,57 @@ function blocksOverlap(first: BlockPlacement, second: BlockPlacement): boolean {
 
 function overlapArea(first: DogBlock, second: DogBlock): number {
   return getPositiveOverlapArea(first, second);
+}
+
+function getPlacementRegion(
+  placement: Pick<BlockPlacement, "x" | "y"> | Pick<DogBlock, "x" | "y">,
+  boardWidth: number,
+  boardHeight: number,
+): PlacementRegion {
+  const centerX = (placement.x + BLOCK_WIDTH / 2) / boardWidth;
+  const centerY = (placement.y + BLOCK_HEIGHT / 2) / boardHeight;
+  const horizontal = centerX < 0.2 ? "left" : centerX > 0.8 ? "right" : "center";
+  const vertical = centerY < 0.2 ? "top" : centerY > 0.8 ? "bottom" : "center";
+
+  if (horizontal === "center" && vertical === "center") {
+    return "center";
+  }
+  if (horizontal !== "center" && vertical !== "center") {
+    return `${vertical}-${horizontal}` as (typeof CORNER_REGIONS)[number];
+  }
+  return "edge";
+}
+
+function hasCrossLayerOverlap(blocks: readonly DogBlock[]): boolean {
+  for (let firstIndex = 0; firstIndex < blocks.length; firstIndex += 1) {
+    for (const second of blocks.slice(firstIndex + 1)) {
+      if (blocks[firstIndex].z !== second.z && overlapArea(blocks[firstIndex], second) > 0) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function hasCrossRegionOverlap(
+  blocks: readonly DogBlock[],
+  boardWidth: number,
+  boardHeight: number,
+): boolean {
+  for (let firstIndex = 0; firstIndex < blocks.length; firstIndex += 1) {
+    const first = blocks[firstIndex];
+    const firstRegion = getPlacementRegion(first, boardWidth, boardHeight);
+    for (const second of blocks.slice(firstIndex + 1)) {
+      if (
+        first.z !== second.z &&
+        firstRegion !== getPlacementRegion(second, boardWidth, boardHeight) &&
+        overlapArea(first, second) > 0
+      ) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 export function createSolvableBlocks(
