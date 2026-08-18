@@ -62,6 +62,24 @@ class WriteFailureStorage implements StorageLike {
 
 const userId = "123e4567-e89b-12d3-a456-426614174000";
 
+function createStoredState(games: Record<string, unknown>): string {
+  return JSON.stringify({
+    schemaVersion: APP_STATE_VERSION,
+    userId,
+    games,
+    settings: { soundEnabled: true },
+  });
+}
+
+function loadGameProgress(progress: unknown): ReturnType<ProgressStore["snapshot"]> {
+  const storage = new MemoryStorage();
+  storage.setItem(
+    "gamebox.state",
+    createStoredState({ [GAME_ID]: progress }),
+  );
+  return new ProgressStore({ storage }).snapshot();
+}
+
 describe("ProgressStore", () => {
   it("registers an anonymous user with versioned default state", () => {
     const storage = new MemoryStorage();
@@ -102,6 +120,7 @@ describe("ProgressStore", () => {
 
     expect(store.snapshot().state?.userId).toBe(userId);
     expect(store.snapshot().state?.games[GAME_ID].highestUnlockedLevel).toBe(4);
+    expect(store.snapshot().state?.games[GAME_ID].totalScore).toBe(120);
     expect(store.snapshot().state?.games[GAME_ID].completedLevels).toEqual([1, 2, 3]);
     expect(store.snapshot().state?.settings.soundEnabled).toBe(false);
   });
@@ -114,6 +133,16 @@ describe("ProgressStore", () => {
     });
     store.register();
 
+    store.recordLevelCompletion({
+      gameId: GAME_ID,
+      levelNumber: 1,
+      reward: 0,
+    });
+    store.recordLevelCompletion({
+      gameId: GAME_ID,
+      levelNumber: 2,
+      reward: 0,
+    });
     const firstCompletion = store.recordLevelCompletion({
       gameId: GAME_ID,
       levelNumber: 3,
@@ -126,7 +155,7 @@ describe("ProgressStore", () => {
     });
     const otherGameCompletion = store.recordLevelCompletion({
       gameId: "other-game",
-      levelNumber: 2,
+      levelNumber: 1,
       reward: 50,
     });
 
@@ -136,7 +165,7 @@ describe("ProgressStore", () => {
       progress: {
         highestUnlockedLevel: 4,
         totalScore: 120,
-        completedLevels: [3],
+        completedLevels: [1, 2, 3],
       },
     });
     expect(repeatedCompletion).toMatchObject({
@@ -145,13 +174,13 @@ describe("ProgressStore", () => {
       progress: {
         highestUnlockedLevel: 4,
         totalScore: 120,
-        completedLevels: [3],
+        completedLevels: [1, 2, 3],
       },
     });
     expect(otherGameCompletion.progress).toMatchObject({
-      highestUnlockedLevel: 3,
+      highestUnlockedLevel: 2,
       totalScore: 50,
-      completedLevels: [2],
+      completedLevels: [1],
     });
     expect(store.snapshot().state?.games[GAME_ID]).toMatchObject({
       highestUnlockedLevel: 4,
@@ -163,12 +192,12 @@ describe("ProgressStore", () => {
     expect(restoredStore.snapshot().state?.games[GAME_ID]).toMatchObject({
       highestUnlockedLevel: 4,
       totalScore: 120,
-      completedLevels: [3],
+      completedLevels: [1, 2, 3],
     });
     expect(restoredStore.snapshot().state?.games["other-game"]).toMatchObject({
-      highestUnlockedLevel: 3,
+      highestUnlockedLevel: 2,
       totalScore: 50,
-      completedLevels: [2],
+      completedLevels: [1],
     });
   });
 
@@ -184,6 +213,14 @@ describe("ProgressStore", () => {
     });
     store.register();
 
+    for (const levelNumber of [1, 2, 3, 4, 5]) {
+      store.recordLevelCompletion({
+        gameId: GAME_ID,
+        levelNumber,
+        reward: 0,
+      });
+    }
+
     const firstCompletion = store.recordLevelCompletion({
       gameId: GAME_ID,
       levelNumber: level.number,
@@ -201,7 +238,7 @@ describe("ProgressStore", () => {
       progress: {
         highestUnlockedLevel: level.number + 1,
         totalScore: level.reward,
-        completedLevels: [level.number],
+        completedLevels: [1, 2, 3, 4, 5, level.number],
       },
     });
     expect(repeatedCompletion).toMatchObject({
@@ -210,8 +247,57 @@ describe("ProgressStore", () => {
       progress: {
         highestUnlockedLevel: level.number + 1,
         totalScore: level.reward,
-        completedLevels: [level.number],
+        completedLevels: [1, 2, 3, 4, 5, level.number],
       },
+    });
+  });
+
+  it("rejects recording a locked level without inferring skipped history", () => {
+    const store = new ProgressStore({
+      storage: new MemoryStorage(),
+      userIdFactory: () => userId,
+    });
+    store.register();
+
+    expect(() =>
+      store.recordLevelCompletion({
+        gameId: GAME_ID,
+        levelNumber: 3,
+        reward: 120,
+      }),
+    ).toThrow("Cannot record a locked level completion");
+    expect(store.snapshot().state?.games[GAME_ID]).toMatchObject({
+      highestUnlockedLevel: 1,
+      totalScore: 0,
+      completedLevels: [],
+    });
+  });
+
+  it("rejects a completion that would make cumulative score unsafe", () => {
+    const storage = new MemoryStorage();
+    storage.setItem(
+      "gamebox.state",
+      createStoredState({
+        [GAME_ID]: {
+          highestUnlockedLevel: 2,
+          totalScore: Number.MAX_SAFE_INTEGER,
+          completedLevels: [1],
+        },
+      }),
+    );
+    const store = new ProgressStore({ storage });
+
+    expect(() =>
+      store.recordLevelCompletion({
+        gameId: GAME_ID,
+        levelNumber: 2,
+        reward: 1,
+      }),
+    ).toThrow("Cumulative score must be a safe integer");
+    expect(store.snapshot().state?.games[GAME_ID]).toMatchObject({
+      highestUnlockedLevel: 2,
+      totalScore: Number.MAX_SAFE_INTEGER,
+      completedLevels: [1],
     });
   });
 
@@ -227,6 +313,95 @@ describe("ProgressStore", () => {
 
     expect(store.snapshot().state?.settings.soundEnabled).toBe(false);
     expect(new ProgressStore({ storage }).snapshot().state?.settings.soundEnabled).toBe(false);
+  });
+
+  it.each([
+    ["最高解锁关卡为零", { highestUnlockedLevel: 0, totalScore: 0, completedLevels: [] }],
+    ["最高解锁关卡为小数", { highestUnlockedLevel: 1.5, totalScore: 0, completedLevels: [] }],
+    ["累计积分为负数", { highestUnlockedLevel: 1, totalScore: -1, completedLevels: [] }],
+    ["累计积分为小数", { highestUnlockedLevel: 1, totalScore: 0.5, completedLevels: [] }],
+    ["完成关卡包含非正整数", { highestUnlockedLevel: 2, totalScore: 0, completedLevels: [0] }],
+    ["完成关卡包含小数", { highestUnlockedLevel: 2, totalScore: 0, completedLevels: [1.5] }],
+  ])("rejects progress when %s", (_reason, progress) => {
+    const snapshot = loadGameProgress(progress);
+
+    expect(snapshot.state).toBeNull();
+    expect(snapshot.persistence).toBe("temporary");
+    expect(snapshot.warning).toContain("无法持久化");
+  });
+
+  it.each([
+    ["重复", [1, 1]],
+    ["乱序", [2, 1]],
+    ["不连续", [1, 3]],
+    ["包含当前最高解锁关卡", [1, 2, 3]],
+    ["高于当前最高解锁关卡", [1, 2, 4]],
+  ])("rejects %s completion history instead of normalizing it", (_reason, completedLevels) => {
+    const snapshot = loadGameProgress({
+      highestUnlockedLevel: 3,
+      totalScore: 120,
+      completedLevels,
+    });
+
+    expect(snapshot.state).toBeNull();
+    expect(snapshot.persistence).toBe("temporary");
+    expect(snapshot.warning).toContain("无法持久化");
+  });
+
+  it("rejects a progress state with a completion gap", () => {
+    const storage = new MemoryStorage();
+    storage.setItem(
+      "gamebox.state",
+      createStoredState({
+        [GAME_ID]: {
+          highestUnlockedLevel: 4,
+          totalScore: 120,
+          completedLevels: [1, 3],
+        },
+      }),
+    );
+
+    const store = new ProgressStore({ storage });
+
+    expect(store.snapshot().state).toBeNull();
+    expect(store.snapshot().persistence).toBe("temporary");
+    expect(store.snapshot().warning).toContain("无法持久化");
+  });
+
+  it("enters temporary play when legacy history is too large to infer safely", () => {
+    const storage = new MemoryStorage();
+    storage.setItem(
+      "gamebox.state",
+      createStoredState({
+        [GAME_ID]: {
+          highestUnlockedLevel: 1_000_002,
+          totalScore: 120,
+        },
+      }),
+    );
+    const store = new ProgressStore({
+      storage,
+      userIdFactory: () => userId,
+    });
+
+    expect(store.snapshot().state).toBeNull();
+    expect(store.snapshot().persistence).toBe("temporary");
+    expect(store.snapshot().warning).toContain("无法持久化");
+
+    const state = store.register();
+    const completion = store.recordLevelCompletion({
+      gameId: GAME_ID,
+      levelNumber: 1,
+      reward: 10,
+    });
+
+    expect(state.games[GAME_ID].completedLevels).toEqual([]);
+    expect(completion.progress).toMatchObject({
+      highestUnlockedLevel: 2,
+      totalScore: 10,
+      completedLevels: [1],
+    });
+    expect(store.snapshot().persistence).toBe("temporary");
   });
 
   it("falls back to temporary state when stored data is damaged", () => {
@@ -308,5 +483,42 @@ describe("ProgressStore", () => {
     expect(store.snapshot().state).toBeNull();
     expect(storage.getItem("gamebox.state")).toBeNull();
     expect(store.snapshot().persistence).toBe("persistent");
+  });
+
+  it("resets corrupted progress and permits persistent registration again", () => {
+    const storage = new MemoryStorage();
+    storage.setItem(
+      "gamebox.state",
+      createStoredState({
+        [GAME_ID]: {
+          highestUnlockedLevel: 3,
+          totalScore: 120,
+          completedLevels: [1, 3],
+        },
+      }),
+    );
+    const store = new ProgressStore({
+      storage,
+      userIdFactory: () => userId,
+    });
+
+    expect(store.snapshot().state).toBeNull();
+    expect(store.snapshot().persistence).toBe("temporary");
+
+    store.reset();
+    expect(storage.getItem("gamebox.state")).toBeNull();
+    expect(store.snapshot()).toMatchObject({
+      state: null,
+      persistence: "persistent",
+      warning: null,
+    });
+
+    const registeredState = store.register();
+    expect(store.snapshot()).toMatchObject({
+      state: registeredState,
+      persistence: "persistent",
+      warning: null,
+    });
+    expect(new ProgressStore({ storage }).snapshot().state).toEqual(registeredState);
   });
 });

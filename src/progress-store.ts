@@ -5,6 +5,7 @@ export const APP_STATE_VERSION = 1 as const;
 export const GAME_ID = DOG_GAME_ID;
 
 const PERSISTENCE_WARNING = "本地数据无法持久化，当前为临时运行模式。";
+const MAX_LEGACY_COMPLETED_LEVELS = 100_000;
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -100,13 +101,28 @@ export class ProgressStore {
     const firstCompletion = !currentProgress.completedLevels.includes(
       completion.levelNumber,
     );
+    if (
+      firstCompletion &&
+      completion.levelNumber !== currentProgress.highestUnlockedLevel
+    ) {
+      throw new Error("Cannot record a locked level completion");
+    }
+
+    const nextHighestUnlockedLevel = firstCompletion
+      ? currentProgress.highestUnlockedLevel + 1
+      : currentProgress.highestUnlockedLevel;
+    const nextTotalScore =
+      currentProgress.totalScore + (firstCompletion ? completion.reward : 0);
+    if (!Number.isSafeInteger(nextHighestUnlockedLevel)) {
+      throw new Error("Highest unlocked level must be a safe integer");
+    }
+    if (!Number.isSafeInteger(nextTotalScore)) {
+      throw new Error("Cumulative score must be a safe integer");
+    }
+
     const nextProgress: GameProgress = {
-      highestUnlockedLevel: Math.max(
-        currentProgress.highestUnlockedLevel,
-        completion.levelNumber + 1,
-      ),
-      totalScore:
-        currentProgress.totalScore + (firstCompletion ? completion.reward : 0),
+      highestUnlockedLevel: nextHighestUnlockedLevel,
+      totalScore: nextTotalScore,
       completedLevels: firstCompletion
         ? [...currentProgress.completedLevels, completion.levelNumber].sort(
             (left, right) => left - right,
@@ -318,22 +334,33 @@ function normalizeAppState(value: unknown): AppState | null {
 function normalizeGameProgress(value: unknown): GameProgress | null {
   if (
     !isRecord(value) ||
-    !Number.isInteger(value.highestUnlockedLevel) ||
+    !Number.isSafeInteger(value.highestUnlockedLevel) ||
     value.highestUnlockedLevel < 1 ||
-    !Number.isInteger(value.totalScore) ||
+    !Number.isSafeInteger(value.totalScore) ||
     value.totalScore < 0
   ) {
     return null;
   }
 
+  const hasCompletedLevels = value.completedLevels !== undefined;
   const completedLevels =
-    value.completedLevels === undefined
+    !hasCompletedLevels
       ? inferCompletedLevels(value.highestUnlockedLevel)
       : value.completedLevels;
   if (
+    completedLevels === null ||
     !Array.isArray(completedLevels) ||
     !completedLevels.every(
-      (levelNumber) => Number.isInteger(levelNumber) && levelNumber >= 1,
+      (levelNumber) => Number.isSafeInteger(levelNumber) && levelNumber >= 1,
+    )
+  ) {
+    return null;
+  }
+
+  if (
+    completedLevels.length !== value.highestUnlockedLevel - 1 ||
+    !completedLevels.every(
+      (levelNumber, index) => levelNumber === index + 1,
     )
   ) {
     return null;
@@ -342,9 +369,7 @@ function normalizeGameProgress(value: unknown): GameProgress | null {
   return {
     highestUnlockedLevel: value.highestUnlockedLevel,
     totalScore: value.totalScore,
-    completedLevels: [...new Set(completedLevels)].sort(
-      (left, right) => left - right,
-    ),
+    completedLevels: [...completedLevels],
   };
 }
 
@@ -367,9 +392,14 @@ function cloneGameProgress(progress: GameProgress): GameProgress {
   };
 }
 
-function inferCompletedLevels(highestUnlockedLevel: number): number[] {
+function inferCompletedLevels(highestUnlockedLevel: number): number[] | null {
+  const completedLevelCount = highestUnlockedLevel - 1;
+  if (completedLevelCount > MAX_LEGACY_COMPLETED_LEVELS) {
+    return null;
+  }
+
   return Array.from(
-    { length: Math.max(0, highestUnlockedLevel - 1) },
+    { length: completedLevelCount },
     (_, index) => index + 1,
   );
 }
