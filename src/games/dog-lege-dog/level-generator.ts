@@ -38,6 +38,12 @@ import type {
   DogLevelGeometry,
   DogLegeDogLevel,
 } from "./level-types";
+import {
+  calculateDogLevelReward,
+  DOG_LEVEL_REWARD_CONFIG,
+  DOG_REWARD_CONFIG_VERSION,
+} from "./level-reward";
+import type { DogLevelRewardConfig } from "./level-reward";
 import type {
   LevelCandidateFilter,
   LevelGeneratorOptions,
@@ -60,9 +66,13 @@ export {
   getPatternTypeCount,
   isDifficultyWithinTarget,
   isLevelSolvable,
+  calculateDogLevelReward,
+  DOG_LEVEL_REWARD_CONFIG,
+  DOG_REWARD_CONFIG_VERSION,
 };
 
 export type { DogShapeTemplate };
+export type { DogLevelRewardConfig };
 
 export function getLevelDifficultyMetrics(level: DogLegeDogLevel): DogLevelDifficulty {
   const solvability = findSolvability(level);

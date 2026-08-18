@@ -1,5 +1,4 @@
 import {
-  DEFAULT_LEVEL_REWARD,
   DEFAULT_LEVEL_SEED,
   DOG_GAME_ID,
   FIRST_LEVEL_BLOCK_COUNT,
@@ -44,6 +43,10 @@ import {
   getRelaxedDifficultyTarget,
   isDifficultyWithinTarget,
 } from "./level-difficulty";
+import {
+  calculateDogLevelReward,
+  DOG_REWARD_CONFIG_VERSION,
+} from "./level-reward";
 import {
   getCandidateRandomSeed,
   getGuaranteedRandomSeed,
@@ -473,19 +476,21 @@ function createCandidateLevel(
   if (!verification.solvable) {
     throw new Error(verification.reason ?? "LevelGenerator created an unsolvable level");
   }
+  const difficulty = calculateDifficultyMetrics(geometry, solutionPath, verification);
 
   return {
     attempt,
     number: request.levelNumber,
     seed: levelSeed,
     generatorVersion: request.generatorVersion,
+    rewardConfigVersion: DOG_REWARD_CONFIG_VERSION,
     maxLayers,
-    reward: DEFAULT_LEVEL_REWARD,
+    reward: calculateDogLevelReward(difficulty),
     board,
     patternTypes: Object.freeze([...patternTypes]),
     blocks: Object.freeze([...blocks]),
     solutionPath: Object.freeze([...solutionPath]),
-    difficulty: calculateDifficultyMetrics(geometry, solutionPath, verification),
+    difficulty,
     baseSeed: request.seed,
     testSeed,
     replayMode,

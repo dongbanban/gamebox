@@ -16,9 +16,55 @@ import {
   getPatternTypeCount,
   getDogLegeDogLevel,
   DEFAULT_LEVEL_SEED,
+  DOG_REWARD_CONFIG_VERSION,
 } from "../src/games/dog-lege-dog";
 
 describe("LevelGenerator", () => {
+  it("按公开难度计算稳定、非负且随阶段变化的通关奖励", () => {
+    const generator = new LevelGenerator();
+    const levels = [1, 6, 31].map((levelNumber) =>
+      generator.generate({
+        levelNumber,
+        seed: "reward-seed",
+        generatorVersion: LEVEL_GENERATOR_VERSION,
+      }),
+    );
+
+    expect(levels[0]?.reward).toBe(100);
+    expect(new Set(levels.map((level) => level.reward)).size).toBeGreaterThan(1);
+
+    for (const level of levels) {
+      expect(Number.isSafeInteger(level.reward)).toBe(true);
+      expect(level.reward).toBeGreaterThanOrEqual(0);
+      expect(level.rewardConfigVersion).toBe(DOG_REWARD_CONFIG_VERSION);
+      expect(level.generation.replay.rewardConfigVersion).toBe(DOG_REWARD_CONFIG_VERSION);
+      expect(generator.replay(level.generation.replay).reward).toBe(level.reward);
+    }
+  });
+
+  it("奖励不依赖用户或本局用时", () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(0);
+      const generator = new LevelGenerator();
+      const earlyLevel = generator.generate({
+        levelNumber: 16,
+        seed: "reward-time-seed",
+        generatorVersion: LEVEL_GENERATOR_VERSION,
+      });
+      vi.setSystemTime(86_400_000);
+      const lateLevel = generator.generate({
+        levelNumber: 16,
+        seed: "reward-time-seed",
+        generatorVersion: LEVEL_GENERATOR_VERSION,
+      });
+
+      expect(lateLevel.reward).toBe(earlyLevel.reward);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("高难关单次选择复用一次公开状态快照并保持响应", () => {
     const generator = new LevelGenerator();
     const generationStartedAt = performance.now();
@@ -154,6 +200,7 @@ describe("LevelGenerator", () => {
       levelSeed: "fallback-seed:v2:level-31",
       testSeed: "fallback-test-seed",
       generatorVersion: LEVEL_GENERATOR_VERSION,
+      rewardConfigVersion: DOG_REWARD_CONFIG_VERSION,
       mode: "guaranteed" as const,
       randomSeed: "fallback-random-seed",
     };

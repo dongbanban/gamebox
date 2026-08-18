@@ -8,12 +8,14 @@ import type {
 } from "./level-types";
 import type { LevelGeneratorRequest } from "./level-generator-contracts";
 import { freezeDogLegeDogLevel } from "./level-immutability";
+import { DOG_REWARD_CONFIG_VERSION } from "./level-reward";
 
 export interface GeneratedLevelCandidate {
   readonly attempt: number;
   readonly number: number;
   readonly seed: string;
   readonly generatorVersion: number;
+  readonly rewardConfigVersion: number;
   readonly maxLayers: number;
   readonly reward: number;
   readonly board: DogLegeDogLevel["board"];
@@ -41,6 +43,7 @@ export function finalizeCandidate(
     levelSeed: candidate.seed,
     testSeed,
     generatorVersion: candidate.generatorVersion,
+    rewardConfigVersion: candidate.rewardConfigVersion,
     mode: candidate.replayMode,
     randomSeed: candidate.randomSeed,
   });
@@ -75,6 +78,7 @@ export function createGenerationFailure(
     levelSeed,
     testSeed,
     generatorVersion: request.generatorVersion,
+    rewardConfigVersion: DOG_REWARD_CONFIG_VERSION,
     mode,
     randomSeed,
     reason,
@@ -129,6 +133,9 @@ export function validateReplay(replay: DogLevelReplay): void {
     replay.mode !== "guaranteed"
   ) {
     throw new Error("LevelGenerator replay mode is invalid");
+  }
+  if (replay.rewardConfigVersion !== DOG_REWARD_CONFIG_VERSION) {
+    throw new Error("LevelGenerator replay reward config version is unsupported");
   }
   if (replay.randomSeed.length === 0) {
     throw new Error("LevelGenerator replay random seed must be non-empty");

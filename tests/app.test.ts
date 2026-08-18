@@ -122,6 +122,7 @@ describe("通用游戏定义与结果契约", () => {
 
     expect(root.textContent).toContain("测试通关");
     expect(root.textContent).toContain("通关奖励");
+    expect(root.textContent).toContain("25");
     expect(root.querySelector('[data-action="next-level"]')).not.toBeNull();
 
     root.querySelector<HTMLButtonElement>('[data-action="next-level"]')?.click();
@@ -530,6 +531,7 @@ describe("注册与游戏目录 UI", () => {
     expect(root.textContent).toContain("当前关卡");
     expect(root.textContent).toContain("通关奖励");
     expect(root.textContent).toContain("累计积分");
+    expect(root.querySelector(".game-result-card__stats")?.textContent).toContain("100");
     expect(root.textContent).toContain("下一关");
 
     const savedState = JSON.parse(storage.getItem("gamebox.state") ?? "null");

@@ -47,6 +47,9 @@ export {
   DOG_GAME_ID,
   DOG_SHAPE_TEMPLATES,
   calculateDifficultyMetrics,
+  calculateDogLevelReward,
+  DOG_LEVEL_REWARD_CONFIG,
+  DOG_REWARD_CONFIG_VERSION,
   findSolvablePath,
   findSolvability,
   getDifficultyTarget,
@@ -66,6 +69,7 @@ export {
   type DogShapeTemplate,
   type LevelGeneratorOptions,
   type LevelGeneratorRequest,
+  type DogLevelRewardConfig,
   type SolvabilityResult,
   type SolvabilitySearchOptions,
 } from "./level-generator";

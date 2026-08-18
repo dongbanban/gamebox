@@ -5,6 +5,10 @@ import {
   ProgressStore,
   type StorageLike,
 } from "../src/progress-store";
+import {
+  LEVEL_GENERATOR_VERSION,
+  LevelGenerator,
+} from "../src/games/dog-lege-dog";
 
 class MemoryStorage implements StorageLike {
   private readonly values = new Map<string, string>();
@@ -165,6 +169,49 @@ describe("ProgressStore", () => {
       highestUnlockedLevel: 3,
       totalScore: 50,
       completedLevels: [2],
+    });
+  });
+
+  it("首次完成公开关卡时记录实际奖励、完成历史与下一关解锁", () => {
+    const level = new LevelGenerator().generate({
+      levelNumber: 6,
+      seed: "completion-reward-seed",
+      generatorVersion: LEVEL_GENERATOR_VERSION,
+    });
+    const store = new ProgressStore({
+      storage: new MemoryStorage(),
+      userIdFactory: () => userId,
+    });
+    store.register();
+
+    const firstCompletion = store.recordLevelCompletion({
+      gameId: GAME_ID,
+      levelNumber: level.number,
+      reward: level.reward,
+    });
+    const repeatedCompletion = store.recordLevelCompletion({
+      gameId: GAME_ID,
+      levelNumber: level.number,
+      reward: level.reward,
+    });
+
+    expect(firstCompletion).toMatchObject({
+      firstCompletion: true,
+      reward: level.reward,
+      progress: {
+        highestUnlockedLevel: level.number + 1,
+        totalScore: level.reward,
+        completedLevels: [level.number],
+      },
+    });
+    expect(repeatedCompletion).toMatchObject({
+      firstCompletion: false,
+      reward: 0,
+      progress: {
+        highestUnlockedLevel: level.number + 1,
+        totalScore: level.reward,
+        completedLevels: [level.number],
+      },
     });
   });
 
