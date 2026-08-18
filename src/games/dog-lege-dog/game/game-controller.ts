@@ -3,7 +3,7 @@ import type {
   GameResult,
   GameResultAction,
   GameResultDisplay,
-} from "../../../catalog";
+} from "../../../game-contracts";
 import { FIRST_LEVEL, type DogLegeDogLevel } from "../levels/first-level";
 import { DOG_GAME_ID, DOG_GAME_RESULT_DISPLAY } from "./game-config";
 import { getDogLegeDogLevel } from "../levels/level-provider";
@@ -281,6 +281,15 @@ export function createDogLegeDogGame(
 
     getState(): DogLegeDogGameState {
       return createGameState(runtime);
+    },
+
+    setSoundEnabled(soundEnabled: boolean): void {
+      if (runtime.destroyed) {
+        return;
+      }
+
+      runtime.soundEnabled = soundEnabled;
+      soundEffects.setEnabled(soundEnabled);
     },
 
     selectBlock(blockId: string): GameSessionSnapshot {

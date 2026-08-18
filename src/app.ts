@@ -77,6 +77,19 @@ export class GameboxApp {
       return;
     }
 
+    if (action === "toggle-sound") {
+      const state = this.store.snapshot().state;
+      if (state === null) {
+        return;
+      }
+
+      const soundEnabled = !state.settings.soundEnabled;
+      this.store.setSoundEnabled(soundEnabled);
+      this.activeGame?.setSoundEnabled?.(soundEnabled);
+      updateSoundButton(this.root, soundEnabled);
+      return;
+    }
+
     if (action === "enter-game") {
       this.renderGameEntry(actionElement?.dataset.gameId);
       return;
@@ -273,7 +286,7 @@ export class GameboxApp {
       </main>
     `;
 
-    const gameMount = this.root.querySelector<HTMLElement>('[data-view="game-entry"]');
+    const gameMount = this.root.querySelector<HTMLElement>("[data-game-content]");
     if (gameMount === null) {
       return;
     }
@@ -283,10 +296,6 @@ export class GameboxApp {
       this.activeGame = game.launch(gameMount, {
         onResult: this.handleGameResult,
         onResultConfirmed: this.handleGameResultConfirmed,
-        onSoundToggle: (soundEnabled) => {
-          this.store.setSoundEnabled(soundEnabled);
-          updateSoundButton(this.root, soundEnabled);
-        },
         soundEnabled: state.settings.soundEnabled,
         levelNumber,
       });

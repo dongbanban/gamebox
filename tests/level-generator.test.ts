@@ -419,7 +419,13 @@ describe("LevelGenerator", () => {
       expect(level.generatorVersion).toBe(LEVEL_GENERATOR_VERSION);
       expect(level).toEqual(replayed);
       expect(centerCount).toBeGreaterThan(level.blocks.length / 2);
-      for (const region of ["top-left", "top-right", "bottom-left", "bottom-right"] as const) {
+      for (const region of [
+        "top-left",
+        "top-right",
+        "bottom-left",
+        "bottom-right",
+        "edge",
+      ] as const) {
         expect(regions.filter((candidate) => candidate === region).length).toBeGreaterThan(0);
         expect(hasRegionalCrossLayerOverlap(level.blocks, level.board, region)).toBe(true);
       }

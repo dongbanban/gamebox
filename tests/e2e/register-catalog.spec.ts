@@ -216,6 +216,27 @@ test.describe("注册与游戏目录", () => {
     const selectableBlock = page.locator('[data-testid="dog-block"]:not([disabled])').first();
     await selectableBlock.click();
     await expect(page.locator('[data-testid="dog-tray-slot"][data-pattern-type]')).toHaveCount(1);
+    const visualSemantics = await page.evaluate(() => {
+      const filledSlot = document.querySelector<HTMLElement>(
+        '[data-testid="dog-tray-slot"][data-pattern-type]',
+      );
+      const matchingBlock = [...document.querySelectorAll<HTMLElement>('[data-testid="dog-block"]')].find(
+        (block) => block.dataset.patternType === filledSlot?.dataset.patternType,
+      );
+      const slotStyle = filledSlot === null ? null : getComputedStyle(filledSlot);
+      const blockStyle = matchingBlock === undefined ? null : getComputedStyle(matchingBlock);
+      return {
+        slotBackground: slotStyle?.backgroundColor ?? "",
+        blockBackground: blockStyle?.backgroundColor ?? "",
+        slotBorder: slotStyle?.border ?? "",
+        blockBorder: blockStyle?.border ?? "",
+        slotShadow: slotStyle?.boxShadow ?? "",
+        blockShadow: blockStyle?.boxShadow ?? "",
+      };
+    });
+    expect(visualSemantics.slotBackground).toBe(visualSemantics.blockBackground);
+    expect(visualSemantics.slotBorder).toBe(visualSemantics.blockBorder);
+    expect(visualSemantics.slotShadow).toBe(visualSemantics.blockShadow);
     await page.getByRole("button", { name: "音效开启" }).click();
     await expect(page.getByRole("button", { name: "音效关闭" })).toBeVisible();
     await page.getByRole("button", { name: "音效关闭" }).click();
@@ -255,6 +276,12 @@ test.describe("注册与游戏目录", () => {
         logicalAspectRatio:
           Number(board?.dataset.logicalWidth ?? 0) / Number(board?.dataset.logicalHeight ?? 1),
         boardBottom: rect?.bottom ?? 0,
+        selectableBlockWidth:
+          document.querySelector<HTMLElement>('[data-testid="dog-block"]')
+            ?.getBoundingClientRect().width ?? 0,
+        selectableBlockHeight:
+          document.querySelector<HTMLElement>('[data-testid="dog-block"]')
+            ?.getBoundingClientRect().height ?? 0,
         trayBottom:
           document.querySelector<HTMLElement>('[data-testid="dog-tray"]')?.getBoundingClientRect()
             .bottom ?? 0,
@@ -265,6 +292,8 @@ test.describe("注册与游戏目录", () => {
     expect(Math.abs(tinyLayout.visualAspectRatio - tinyLayout.logicalAspectRatio)).toBeLessThanOrEqual(
       0.01,
     );
+    expect(tinyLayout.selectableBlockWidth).toBeGreaterThan(14);
+    expect(tinyLayout.selectableBlockHeight).toBeGreaterThan(14);
     expect(tinyLayout.boardBottom).toBeLessThanOrEqual(568);
     expect(tinyLayout.trayBottom).toBeLessThanOrEqual(568);
 

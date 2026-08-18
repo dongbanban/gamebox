@@ -81,7 +81,8 @@ const MAX_DIFFICULTY_TARGET_ATTEMPTS = 32 as const;
 
 type TemplateFactory = (random: SeededRandom) => DogShapeTemplate;
 type PatternTypesFactory = (random: SeededRandom) => readonly DogPatternType[];
-type SpatialValidationPolicy = "enforce" | "replay";
+// Failed-candidate replay preserves diagnostic geometry; normal generation stays strict.
+type SpatialValidationPolicy = "enforce" | "diagnostic";
 
 interface CandidateGenerationPlan {
   readonly blockCount: number;
@@ -284,6 +285,7 @@ export class GeneratedLevelGenerator {
       generatorVersion: replay.generatorVersion,
     };
     const levelSeed = getLevelSeed(request);
+    // Failed candidates may lack spatial invariants; replayAttempt exists to inspect them.
     const candidate = replay.mode === "guaranteed"
       ? this.createGuaranteedCandidate(
           request,
@@ -291,7 +293,7 @@ export class GeneratedLevelGenerator {
           replay.testSeed,
           getFallbackTemplate("emergency"),
           replay.randomSeed,
-          "replay",
+          "diagnostic",
         )
       : this.createCandidate(
           request,
@@ -300,7 +302,7 @@ export class GeneratedLevelGenerator {
           replay.attempt,
           undefined,
           replay.randomSeed,
-          "replay",
+          "diagnostic",
         );
     return finalizeCandidate(
       candidate,

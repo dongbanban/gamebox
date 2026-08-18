@@ -65,7 +65,7 @@ export function validateSpatialDistribution(
     }
   }
 
-  for (const region of ["center", ...CORNER_REGIONS] as const) {
+  for (const region of ["center", ...CORNER_REGIONS, "edge"] as const) {
     const regionBlocks = blocks.filter(
       (block) => getPlacementRegion(block, board.width, board.height) === region,
     );
@@ -411,6 +411,20 @@ function selectStructuralLayerPlacements(
     removeCandidate(candidates, crossRegionCandidate);
   }
 
+  const edgeCandidate = takeEdgeCandidate(
+    candidates,
+    template.width,
+    template.height,
+    z,
+    selected,
+    previousPlacements,
+    z > 0,
+  );
+  if (edgeCandidate !== undefined) {
+    selected.push({ ...edgeCandidate, z });
+    removeCandidate(candidates, edgeCandidate);
+  }
+
   const prioritizedCandidates = random.shuffle([...candidates]).sort(
     (first, second) =>
       Number(getPlacementRegion(second, template.width, template.height) === "center") -
@@ -459,6 +473,37 @@ function takeCrossRegionCandidate(
       ),
     }))
     .filter(({ score }) => score > 0)
+    .sort((first, second) => second.score - first.score)[0]?.candidate;
+}
+
+function takeEdgeCandidate(
+  candidates: readonly Omit<BlockPlacement, "z">[],
+  boardWidth: number,
+  boardHeight: number,
+  z: number,
+  selected: readonly BlockPlacement[],
+  previousPlacements: readonly BlockPlacement[],
+  requireOverlap: boolean,
+): Omit<BlockPlacement, "z"> | undefined {
+  return candidates
+    .filter((candidate) => getPlacementRegion(candidate, boardWidth, boardHeight) === "edge")
+    .map((candidate) => ({
+      candidate,
+      placement: { ...candidate, z },
+    }))
+    .filter(({ placement }) => canAddPlacement(placement, selected, previousPlacements))
+    .map(({ candidate, placement }) => ({
+      candidate,
+      placement,
+      score: getRegionalOverlapScore(
+        placement,
+        "edge",
+        previousPlacements,
+        boardWidth,
+        boardHeight,
+      ),
+    }))
+    .filter(({ score }) => !requireOverlap || score > 0)
     .sort((first, second) => second.score - first.score)[0]?.candidate;
 }
 

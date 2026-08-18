@@ -48,7 +48,7 @@ export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameSta
           data-logical-width="${board.width}"
           data-logical-height="${board.height}"
           style="--board-columns: ${boardColumns}; --board-rows: ${boardRows}; clip-path: polygon(${boardClipPath});"
-          role="img"
+          role="group"
           aria-label="第 ${state.level.number} 关不规则形棋盘，${blocks.length} 个层叠方块"
         >
           ${blocks

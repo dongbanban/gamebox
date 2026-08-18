@@ -1,4 +1,4 @@
-import type { GameLaunchContext } from "../../../catalog";
+import type { GameLaunchContext } from "../../../game-contracts";
 import type { DogLegeDogLevel } from "../levels/first-level";
 import type { GameSessionSnapshot } from "./game-session";
 import type { DOG_GAME_ID } from "./game-config";
@@ -21,6 +21,7 @@ export type DogVisualFeedback = "idle" | "match" | "won" | "lost";
 export interface DogLegeDogGame {
   start(): DogLegeDogGameState;
   getState(): DogLegeDogGameState;
+  setSoundEnabled(soundEnabled: boolean): void;
   selectBlock(blockId: string): GameSessionSnapshot;
   destroy(): void;
 }
