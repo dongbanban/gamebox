@@ -84,6 +84,16 @@ describe("通用游戏定义与结果契约", () => {
     expect(root.querySelector(".catalog-item__heading")?.textContent).toContain("测试游戏");
 
     root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
+    expect(dispatchBeforeUnload().defaultPrevented).toBe(true);
+    launchContext?.onResultConfirmed?.({
+      gameId: testGame.id,
+      levelNumber: 1,
+      status: "lost",
+      reward: 0,
+      display: resultDisplay.lost,
+      actions: ["retry", "catalog"],
+    });
+    expect(dispatchBeforeUnload().defaultPrevented).toBe(false);
     launchContext?.onResult?.({
       gameId: testGame.id,
       levelNumber: 1,
@@ -101,8 +111,10 @@ describe("通用游戏定义与结果契约", () => {
     expect(root.textContent).not.toContain("暂存槽已满");
     expect(root.querySelector('[data-action="retry"]')).not.toBeNull();
     expect(root.querySelector('[data-action="catalog"]')).not.toBeNull();
+    expect(dispatchBeforeUnload().defaultPrevented).toBe(false);
 
     root.querySelector<HTMLButtonElement>('[data-action="retry"]')?.click();
+    expect(dispatchBeforeUnload().defaultPrevented).toBe(true);
     launchContext?.onResultConfirmed?.({
       gameId: testGame.id,
       levelNumber: 1,
@@ -111,6 +123,7 @@ describe("通用游戏定义与结果契约", () => {
       display: resultDisplay.won,
       actions: ["next-level", "catalog"],
     });
+    expect(dispatchBeforeUnload().defaultPrevented).toBe(false);
     launchContext?.onResult?.({
       gameId: testGame.id,
       levelNumber: 1,
@@ -124,6 +137,7 @@ describe("通用游戏定义与结果契约", () => {
     expect(root.textContent).toContain("通关奖励");
     expect(root.textContent).toContain("25");
     expect(root.querySelector('[data-action="next-level"]')).not.toBeNull();
+    expect(dispatchBeforeUnload().defaultPrevented).toBe(false);
 
     root.querySelector<HTMLButtonElement>('[data-action="next-level"]')?.click();
     expect(launchedLevels).toEqual([1, 1, 2]);
@@ -213,6 +227,63 @@ function completeFirstLevel(root: HTMLElement): void {
       ?.click();
   }
 }
+
+function dispatchBeforeUnload(): BeforeUnloadEvent {
+  const event = new Event("beforeunload", { cancelable: true }) as BeforeUnloadEvent;
+  window.dispatchEvent(event);
+  return event;
+}
+
+function readActiveGameSnapshot(root: HTMLElement): {
+  readonly blockIds: readonly (string | undefined)[];
+  readonly trayPatterns: readonly (string | undefined)[];
+  readonly inputLocked: string | undefined;
+} {
+  return {
+    blockIds: [...root.querySelectorAll<HTMLElement>('[data-testid="dog-block"]')].map(
+      (block) => block.dataset.blockId,
+    ),
+    trayPatterns: [
+      ...root.querySelectorAll<HTMLElement>('[data-testid="dog-tray-slot"]'),
+    ].map((slot) => slot.dataset.patternType),
+    inputLocked: root.querySelector<HTMLElement>('[data-testid="dog-game"]')?.dataset.inputLocked,
+  };
+}
+
+describe("活动关卡离开保护", () => {
+  it("取消应用返回后保留当前棋盘、暂存槽与输入状态，且只在活动关卡拦截浏览器离开", () => {
+    const storage = new MemoryStorage();
+    const root = document.createElement("div");
+    const app = mountApp(root, {
+      store: new ProgressStore({
+        storage,
+        userIdFactory: () => "123e4567-e89b-12d3-a456-426614174000",
+      }),
+    });
+
+    expect(dispatchBeforeUnload().defaultPrevented).toBe(false);
+    root.querySelector<HTMLButtonElement>('[data-action="register"]')?.click();
+    root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
+    root.querySelector<HTMLButtonElement>('[data-testid="dog-block"]:not([disabled])')?.click();
+    const stateBeforeCancelledLeave = readActiveGameSnapshot(root);
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+
+    root.querySelector<HTMLButtonElement>('[data-action="catalog"]')?.click();
+
+    expect(confirm).toHaveBeenCalledWith("当前关卡不会保存，确认离开？");
+    expect(readActiveGameSnapshot(root)).toEqual(stateBeforeCancelledLeave);
+    expect(dispatchBeforeUnload().defaultPrevented).toBe(true);
+
+    confirm.mockReturnValue(true);
+    root.querySelector<HTMLButtonElement>('[data-action="catalog"]')?.click();
+
+    expect(root.querySelector('[data-view="catalog"]')).not.toBeNull();
+    expect(dispatchBeforeUnload().defaultPrevented).toBe(false);
+
+    app.destroy();
+    expect(dispatchBeforeUnload().defaultPrevented).toBe(false);
+  });
+});
 
 describe("注册与游戏目录 UI", () => {
   it("默认打开最高解锁关卡，并区分已解锁与锁定关卡", () => {

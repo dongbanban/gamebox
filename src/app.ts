@@ -30,6 +30,7 @@ export class GameboxApp {
   private activeLevel: ActiveLevel | null = null;
   private nextLevelTarget: ActiveLevel | null = null;
   private pendingCompletion: LevelCompletionResult | null = null;
+  private leaveProtectionEnabled = false;
 
   constructor(root: HTMLElement, options: MountAppOptions = {}) {
     this.root = root;
@@ -288,6 +289,7 @@ export class GameboxApp {
         soundEnabled: state.settings.soundEnabled,
         levelNumber,
       });
+      this.enableLeaveProtection();
     } catch {
       this.disposeActiveGame();
       replaceHistoryWithCatalog();
@@ -306,10 +308,24 @@ export class GameboxApp {
   }
 
   private confirmLeave(): boolean {
+    if (!this.leaveProtectionEnabled) {
+      return true;
+    }
+
     return window.confirm("当前关卡不会保存，确认离开？");
   }
 
+  private readonly handleBeforeUnload = (event: BeforeUnloadEvent): void => {
+    if (this.activeGame === null) {
+      return;
+    }
+
+    event.preventDefault();
+    event.returnValue = "";
+  };
+
   private readonly handleGameResultConfirmed = (result: GameResult): void => {
+    this.disableLeaveProtection();
     if (result.status === "won") {
       this.pendingCompletion = this.store.recordLevelCompletion(result);
     }
@@ -405,11 +421,30 @@ export class GameboxApp {
   }
 
   private disposeActiveGame(): void {
+    this.disableLeaveProtection();
     this.activeGame?.destroy();
     this.activeGame = null;
     this.activeLevel = null;
     this.nextLevelTarget = null;
     this.pendingCompletion = null;
+  }
+
+  private enableLeaveProtection(): void {
+    if (this.leaveProtectionEnabled) {
+      return;
+    }
+
+    window.addEventListener("beforeunload", this.handleBeforeUnload);
+    this.leaveProtectionEnabled = true;
+  }
+
+  private disableLeaveProtection(): void {
+    if (!this.leaveProtectionEnabled) {
+      return;
+    }
+
+    window.removeEventListener("beforeunload", this.handleBeforeUnload);
+    this.leaveProtectionEnabled = false;
   }
 }
 

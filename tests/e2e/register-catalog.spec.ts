@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 test.describe("注册与游戏目录", () => {
   test.beforeEach(async ({ page }) => {
@@ -9,10 +9,20 @@ test.describe("注册与游戏目录", () => {
 
   test("首次访问注册后进入目录并看到首个游戏", async ({ page }) => {
     await expect(page.getByRole("heading", { name: "开始你的第一局" })).toBeVisible();
+    expect(
+      await page.evaluate(() =>
+        window.dispatchEvent(new Event("beforeunload", { cancelable: true })),
+      ),
+    ).toBe(true);
 
     await page.getByRole("button", { name: "匿名注册" }).click();
 
     await expect(page.getByRole("heading", { name: "游戏目录" })).toBeVisible();
+    expect(
+      await page.evaluate(() =>
+        window.dispatchEvent(new Event("beforeunload", { cancelable: true })),
+      ),
+    ).toBe(true);
     await expect(page.getByRole("heading", { name: "狗了个狗" })).toBeVisible();
     await expect(page.getByText("最高解锁关卡")).toBeVisible();
     await expect(page.getByText("累计积分")).toBeVisible();
@@ -69,7 +79,7 @@ test.describe("注册与游戏目录", () => {
     await page.locator('[data-testid="dog-block"]:not([disabled])').first().click();
     const savedState = await page.evaluate(() => window.localStorage.getItem("gamebox.state"));
 
-    await page.reload();
+    await acceptBeforeUnload(page, () => page.reload());
 
     await expect(page.getByRole("heading", { name: "游戏目录" })).toBeVisible();
     await expect(page.getByTestId("dog-board")).toHaveCount(0);
@@ -84,7 +94,7 @@ test.describe("注册与游戏目录", () => {
     await page.locator('[data-testid="dog-block"]:not([disabled])').first().click();
     const savedState = await page.evaluate(() => window.localStorage.getItem("gamebox.state"));
 
-    await page.close();
+    await acceptBeforeUnload(page, () => page.close({ runBeforeUnload: true }));
     const reopenedPage = await page.context().newPage();
     await reopenedPage.goto("/");
 
@@ -135,3 +145,12 @@ test.describe("注册与游戏目录", () => {
     expect(Math.abs(desktopLayout.boardCenter - desktopLayout.frameCenter)).toBeLessThanOrEqual(1);
   });
 });
+
+async function acceptBeforeUnload<T>(page: Page, action: () => Promise<T>): Promise<T> {
+  const dialogPromise = page.waitForEvent("dialog");
+  const actionPromise = action();
+  const dialog = await dialogPromise;
+  expect(dialog.type()).toBe("beforeunload");
+  await dialog.accept();
+  return actionPromise;
+}

@@ -32,6 +32,11 @@ test.describe("狗了个狗完整浏览器闭环", () => {
     );
     await expect(page.getByText("通关奖励")).toBeVisible();
     await expect(page.getByText("累计积分")).toBeVisible();
+    expect(
+      await page.evaluate(() =>
+        window.dispatchEvent(new Event("beforeunload", { cancelable: true })),
+      ),
+    ).toBe(true);
 
     await page.getByRole("button", { name: "返回游戏目录" }).click();
     await expect(page.getByRole("heading", { name: "游戏目录" })).toBeVisible();
@@ -42,6 +47,8 @@ test.describe("狗了个狗完整浏览器闭环", () => {
     await enterGame(page);
     await expect(page.getByRole("heading", { name: "第 2 关" })).toBeVisible();
 
+    await leaveActiveGame(page, false);
+    await expect(page.getByTestId("dog-board")).toBeVisible();
     await leaveActiveGame(page, true);
     await expect(page.getByRole("heading", { name: "游戏目录" })).toBeVisible();
     await reset(page);
