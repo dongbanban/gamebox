@@ -3,17 +3,20 @@ import { getDogPatternClassName, renderDogPatternAsset } from "../assets/game-as
 import type { GameSessionSnapshot } from "./game-session";
 import type { DogLegeDogGameState, DogVisualFeedback } from "./game-types";
 
-const BLOCK_AREA_SCALE = 1.875;
-const BLOCK_SIDE_SCALE = Math.sqrt(BLOCK_AREA_SCALE);
-
 export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameState): void {
   const { board } = state.level;
   const { remainingBlocks, selectableBlockIds } = state.session;
   const blocks = remainingBlocks;
   const gameRoot = root.querySelector<HTMLElement>("[data-game-content]") ?? root;
+  const existingGame = gameRoot.querySelector<HTMLElement>('[data-testid="dog-game"]');
   const blockSize = state.level.blocks[0];
   const boardColumns = board.width / blockSize.width;
   const boardRows = board.height / blockSize.height;
+
+  if (existingGame !== null) {
+    updateDogLegeDogGame(existingGame, state, boardColumns, boardRows);
+    return;
+  }
 
   gameRoot.innerHTML = `
     <section
@@ -51,13 +54,73 @@ export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameSta
         </div>
         ${renderFeedback(state.feedback)}
       </div>
-      ${renderTray(state.session)}
-      <div class="dog-effects-layer" data-testid="dog-effects-layer">
-        <canvas class="dog-effects-canvas" data-testid="dog-effects-canvas"></canvas>
-      </div>
+      ${renderTray(state.session, state.feedback)}
       <div class="dog-animation-layer" data-testid="dog-animation-layer"></div>
     </section>
   `;
+}
+
+function updateDogLegeDogGame(
+  gameRoot: HTMLElement,
+  state: DogLegeDogGameState,
+  boardColumns: number,
+  boardRows: number,
+): void {
+  const { board } = state.level;
+  const { remainingBlocks, selectableBlockIds } = state.session;
+  const boardElement = gameRoot.querySelector<HTMLElement>('[data-testid="dog-board"]');
+  const statusElement = gameRoot.querySelector<HTMLElement>('[data-testid="dog-status"]');
+  const boardFrame = gameRoot.querySelector<HTMLElement>('.dog-board-frame');
+  const tray = gameRoot.querySelector<HTMLElement>('[data-testid="dog-tray-region"]');
+  const traySlots = tray?.querySelector<HTMLOListElement>('[data-testid="dog-tray"]');
+
+  gameRoot.dataset.inputLocked = String(state.inputLocked);
+  gameRoot.dataset.feedback = state.feedback;
+
+  if (statusElement !== null) {
+    statusElement.className = `dog-game__status dog-game__status--${state.session.status}`;
+    statusElement.innerHTML = renderStatusMessage(state.session.status);
+  }
+
+  if (boardElement !== null) {
+    boardElement.dataset.shape = board.shape;
+    boardElement.dataset.surfaceShape = "rectangle";
+    boardElement.dataset.templateId = board.templateId;
+    boardElement.dataset.logicalWidth = String(board.width);
+    boardElement.dataset.logicalHeight = String(board.height);
+    boardElement.style.setProperty("--board-columns", String(boardColumns));
+    boardElement.style.setProperty("--board-rows", String(boardRows));
+    boardElement.setAttribute(
+      "aria-label",
+      `第 ${state.level.number} 关矩形棋盘，${remainingBlocks.length} 个层叠方块`,
+    );
+    boardElement.innerHTML = remainingBlocks
+      .map((block) => renderBlock(block, boardColumns, boardRows, selectableBlockIds, state.inputLocked))
+      .join("");
+  }
+
+  boardFrame?.querySelector<HTMLElement>('[data-testid="dog-feedback"]')?.remove();
+  const boardFeedback = renderFeedback(state.feedback);
+  if (boardFrame !== null && boardFeedback !== "") {
+    boardFrame.insertAdjacentHTML("beforeend", boardFeedback);
+  }
+
+  const trayCount = tray?.querySelector<HTMLElement>('.dog-tray__heading span');
+  if (trayCount !== null && trayCount !== undefined) {
+    trayCount.textContent = `${state.session.tray.length}/${state.session.trayCapacity}`;
+  }
+  if (traySlots !== null && traySlots !== undefined) {
+    traySlots.innerHTML = renderTraySlots(state.session);
+  }
+
+  const matchEffect = tray?.querySelector<HTMLElement>('[data-testid="dog-match-effect"]');
+  if (state.feedback === "match") {
+    if (matchEffect === null && tray !== null && tray !== undefined) {
+      tray.insertAdjacentHTML("afterbegin", renderMatchFeedback(state.feedback));
+    }
+  } else {
+    matchEffect?.remove();
+  }
 }
 
 function renderBlock(
@@ -72,8 +135,8 @@ function renderBlock(
   const gridY = block.y / block.height;
   const baseBlockWidth = 100 / boardColumns;
   const baseBlockHeight = 100 / boardRows;
-  const blockWidth = baseBlockWidth * BLOCK_SIDE_SCALE;
-  const blockHeight = baseBlockHeight * BLOCK_SIDE_SCALE;
+  const blockWidth = baseBlockWidth;
+  const blockHeight = baseBlockHeight;
   const left = clampVisualBlockPosition(
     gridX * baseBlockWidth - (blockWidth - baseBlockWidth) / 2,
     100 - blockWidth,
@@ -105,8 +168,24 @@ function clampVisualBlockPosition(position: number, maxPosition: number): number
   return Math.min(Math.max(position, 0), maxPosition);
 }
 
-function renderTray(session: GameSessionSnapshot): string {
-  const slots = Array.from({ length: session.trayCapacity }, (_, index) => {
+function renderTray(session: GameSessionSnapshot, feedback: DogVisualFeedback): string {
+  return `
+    <section class="dog-tray" data-testid="dog-tray-region" aria-label="暂存槽">
+      <div class="dog-tray__heading">
+        <h3>暂存槽</h3>
+        <span>${session.tray.length}/${session.trayCapacity}</span>
+      </div>
+      ${renderMatchFeedback(feedback)}
+      <ol class="dog-tray__slots" data-testid="dog-tray">${renderTraySlots(session)}</ol>
+      <div class="dog-effects-layer" data-testid="dog-effects-layer">
+        <canvas class="dog-effects-canvas" data-testid="dog-effects-canvas"></canvas>
+      </div>
+    </section>
+  `;
+}
+
+function renderTraySlots(session: GameSessionSnapshot): string {
+  return Array.from({ length: session.trayCapacity }, (_, index) => {
     const patternType = session.tray[index];
     if (patternType === undefined) {
       return '<li class="dog-tray__slot" data-testid="dog-tray-slot" aria-label="空暂存槽"></li>';
@@ -118,16 +197,6 @@ function renderTray(session: GameSessionSnapshot): string {
       </li>
     `;
   }).join("");
-
-  return `
-    <section class="dog-tray" aria-label="暂存槽">
-      <div class="dog-tray__heading">
-        <h3>暂存槽</h3>
-        <span>${session.tray.length}/${session.trayCapacity}</span>
-      </div>
-      <ol class="dog-tray__slots" data-testid="dog-tray">${slots}</ol>
-    </section>
-  `;
 }
 
 function renderStatusMessage(status: GameSessionSnapshot["status"]): string {
@@ -143,17 +212,8 @@ function renderStatusMessage(status: GameSessionSnapshot["status"]): string {
 }
 
 function renderFeedback(feedback: DogVisualFeedback): string {
-  if (feedback === "idle") {
+  if (feedback === "idle" || feedback === "match") {
     return "";
-  }
-
-  if (feedback === "match") {
-    return `
-      <div class="dog-match-effect" data-testid="dog-match-effect" role="status" aria-label="三消成功">
-        <span class="dog-match-effect__ring"></span>
-        ${Array.from({ length: 8 }, (_, index) => `<span class="dog-match-effect__spark dog-match-effect__spark--${index + 1}"></span>`).join("")}
-      </div>
-    `;
   }
 
   const messages: Record<Exclude<DogVisualFeedback, "idle" | "match">, string> = {
@@ -161,4 +221,17 @@ function renderFeedback(feedback: DogVisualFeedback): string {
     lost: "失败反馈",
   };
   return `<p class="dog-feedback dog-feedback--${feedback}" data-testid="dog-feedback" role="status">${messages[feedback]}</p>`;
+}
+
+function renderMatchFeedback(feedback: DogVisualFeedback): string {
+  if (feedback !== "match") {
+    return "";
+  }
+
+  return `
+    <div class="dog-match-effect" data-testid="dog-match-effect" role="status" aria-label="三消成功">
+      <span class="dog-match-effect__ring"></span>
+      ${Array.from({ length: 8 }, (_, index) => `<span class="dog-match-effect__spark dog-match-effect__spark--${index + 1}"></span>`).join("")}
+    </div>
+  `;
 }

@@ -2,9 +2,11 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { GameResult } from "../src/catalog";
+import { BLOCK_FLIGHT_DURATION_MS } from "../src/games/dog-lege-dog/assets/animation-effects";
 import {
   DOG_PATTERN_TYPES,
   FIRST_LEVEL,
+  FIRST_LEVEL_SEED,
   startDogLegeDogGame,
 } from "../src/games/dog-lege-dog";
 import { renderDogPatternAsset } from "../src/games/dog-lege-dog/assets/game-assets";
@@ -44,7 +46,7 @@ describe("狗了个狗首关", () => {
     expect(state.gameId).toBe("dog-lege-dog");
     expect(state.status).toBe("ready");
     expect(state.level.number).toBe(1);
-    expect(state.level.seed).toBe("dog-lege-dog:first-level:v5");
+    expect(state.level.seed).toBe(FIRST_LEVEL_SEED);
     expect(state.level.board.shape).toBe("irregular");
     expect(state.level.board.logicalCellSize).toBe(4);
     expect(state.level.blocks).toHaveLength(90);
@@ -120,6 +122,82 @@ describe("狗了个狗首关", () => {
     expect(root.innerHTML).toBe("");
   });
 
+  it("底层方块使用多个 4×4 细网格相位，避免初始行列完全对齐", () => {
+    const bottomBlocks = FIRST_LEVEL.blocks.filter((block) => block.z === 0);
+
+    expect(new Set(bottomBlocks.map((block) => block.x % 4)).size).toBeGreaterThan(1);
+    expect(new Set(bottomBlocks.map((block) => block.y % 4)).size).toBeGreaterThan(1);
+  });
+
+  it("渲染方块的跨层可见盒保持逻辑四分之一或二分之一覆盖比例", () => {
+    const root = document.createElement("div");
+    const game = startDogLegeDogGame(root);
+    const level = game.getState().level;
+    const boardColumns = level.board.width / 4;
+    const boardRows = level.board.height / 4;
+    const renderedBlocks = new Map(
+      [...root.querySelectorAll<HTMLElement>('[data-testid="dog-block"]')].map((element) => [
+        element.dataset.blockId,
+        {
+          left: parseFloat(element.style.getPropertyValue("--block-left")) / 100 * boardColumns,
+          top: parseFloat(element.style.getPropertyValue("--block-top")) / 100 * boardRows,
+          width: parseFloat(element.style.getPropertyValue("--block-width")) / 100 * boardColumns,
+          height: parseFloat(element.style.getPropertyValue("--block-height")) / 100 * boardRows,
+        },
+      ]),
+    );
+    const partialOverlaps = level.blocks.flatMap((block, index) =>
+      level.blocks.slice(index + 1).flatMap((other) => {
+        if (block.z === other.z) {
+          return [];
+        }
+
+        const logicalRatio = overlapRatio(block, other);
+        if (logicalRatio !== 0.25 && logicalRatio !== 0.5) {
+          return [];
+        }
+
+        const first = renderedBlocks.get(block.id);
+        const second = renderedBlocks.get(other.id);
+        if (first === undefined || second === undefined) {
+          return [];
+        }
+
+        return [{ logicalRatio, visualRatio: overlapRatio(first, second) }];
+      }),
+    );
+
+    expect(partialOverlaps.length).toBeGreaterThan(0);
+    expect(
+      partialOverlaps.every(({ logicalRatio, visualRatio }) =>
+        Math.abs(logicalRatio - visualRatio) <= 0.05,
+      ),
+    ).toBe(true);
+
+    game.destroy();
+
+    function overlapRatio(
+      first: { x?: number; y?: number; width: number; height: number; left?: number; top?: number },
+      second: { x?: number; y?: number; width: number; height: number; left?: number; top?: number },
+    ): number {
+      const firstLeft = first.left ?? first.x ?? 0;
+      const firstTop = first.top ?? first.y ?? 0;
+      const secondLeft = second.left ?? second.x ?? 0;
+      const secondTop = second.top ?? second.y ?? 0;
+      const width = Math.max(
+        0,
+        Math.min(firstLeft + first.width, secondLeft + second.width) -
+          Math.max(firstLeft, secondLeft),
+      );
+      const height = Math.max(
+        0,
+        Math.min(firstTop + first.height, secondTop + second.height) -
+          Math.max(firstTop, secondTop),
+      );
+      return (width * height) / (first.width * first.height);
+    }
+  });
+
   it("只让可点击方块进入暂存槽，并在三消后移除", () => {
     const root = document.createElement("div");
     const game = startDogLegeDogGame(root);
@@ -165,7 +243,7 @@ describe("狗了个狗首关", () => {
     }
   });
 
-  it("Pointer Events 选择期间锁定输入，动画后解锁下层并出现通关结果", async () => {
+  it("方块飞入暂存槽期间保持棋盘输入，动画后解锁下层并出现通关结果", async () => {
     vi.useFakeTimers();
     const root = document.createElement("div");
     const results: GameResult[] = [];
@@ -180,7 +258,11 @@ describe("狗了个狗首关", () => {
 
       expect(block?.disabled).toBe(false);
       block?.dispatchEvent(new Event("pointerup", { bubbles: true, cancelable: true }));
-      expect(game.getState().inputLocked).toBe(true);
+      const isTerminal = game.getState().session.status !== "playing";
+      expect(game.getState().inputLocked).toBe(isTerminal);
+      if (!isTerminal) {
+        expect(root.querySelector('[data-testid="dog-block"]:not([disabled])')).not.toBeNull();
+      }
       expect(game.getState().session.remainingBlocks.some((candidate) => candidate.id === blockId)).toBe(
         false,
       );
@@ -208,6 +290,48 @@ describe("狗了个狗首关", () => {
     game.destroy();
   });
 
+  it("可在多个方块飞入暂存槽期间继续操作，并保留各自飞行动画", async () => {
+    vi.useFakeTimers();
+    const root = document.createElement("div");
+    const game = startDogLegeDogGame(root);
+    const firstBlockId = game.getState().session.selectableBlockIds[0];
+    if (firstBlockId === undefined) {
+      throw new Error("Expected first-level selectable block");
+    }
+
+    dispatchPointerUp(firstBlockId);
+
+    const secondBlockId = game.getState().session.selectableBlockIds.find(
+      (blockId) => blockId !== firstBlockId,
+    );
+    if (secondBlockId === undefined) {
+      throw new Error("Expected another selectable block during flight");
+    }
+    dispatchPointerUp(secondBlockId);
+
+    expect(game.getState().inputLocked).toBe(false);
+    expect(game.getState().session.remainingBlocks.some((block) => block.id === firstBlockId)).toBe(
+      false,
+    );
+    expect(game.getState().session.remainingBlocks.some((block) => block.id === secondBlockId)).toBe(
+      false,
+    );
+    expect(root.querySelectorAll('[data-testid="dog-flight"]')).toHaveLength(2);
+
+    await vi.runAllTimersAsync();
+
+    expect(root.querySelectorAll('[data-testid="dog-flight"]')).toHaveLength(0);
+    game.destroy();
+
+    function dispatchPointerUp(blockId: string): void {
+      root
+        .querySelector<HTMLButtonElement>(
+          `[data-testid="dog-block"][data-block-id="${blockId}"]`,
+        )
+        ?.dispatchEvent(new Event("pointerup", { bubbles: true, cancelable: true }));
+    }
+  });
+
   it("三消只显示显眼动画，不渲染中间文案，并在动画后开放下一次操作", async () => {
     vi.useFakeTimers();
     const root = document.createElement("div");
@@ -231,14 +355,19 @@ describe("狗了个狗首关", () => {
 
     expect(matched).toBe(true);
     expect(game.getState().feedback).toBe("match");
-    expect(game.getState().inputLocked).toBe(true);
+    expect(game.getState().inputLocked).toBe(false);
     expect(root.querySelector('[data-testid="dog-feedback"]')).toBeNull();
     const matchEffect = root.querySelector('[data-testid="dog-match-effect"]');
     expect(matchEffect?.getAttribute("role")).toBe("status");
     expect(matchEffect?.getAttribute("aria-label")).toBe("三消成功");
+    expect(matchEffect?.closest('[data-testid="dog-tray-region"]')).not.toBeNull();
+    expect(root.querySelector('.dog-board-frame [data-testid="dog-match-effect"]')).toBeNull();
     expect(root.querySelectorAll('.dog-match-effect__spark')).toHaveLength(8);
     expect(root.textContent).not.toContain("三消");
     expect(game.getState().session.tray.length).toBeLessThan(7);
+
+    await vi.advanceTimersByTimeAsync(BLOCK_FLIGHT_DURATION_MS);
+    expect(root.querySelector('[data-testid="dog-match-effect"]')).toBe(matchEffect);
 
     await vi.runAllTimersAsync();
 

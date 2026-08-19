@@ -26,6 +26,48 @@ afterEach(() => {
 });
 
 describe("游戏公开音效行为", () => {
+  it("默认开启时进入游戏立即尝试播放背景音乐", () => {
+    const previousUserAgent = window.navigator.userAgent;
+    Object.defineProperty(window.navigator, "userAgent", {
+      configurable: true,
+      value: "Mozilla/5.0",
+    });
+    const playSpy = vi
+      .spyOn(window.HTMLMediaElement.prototype, "play")
+      .mockImplementation(() => Promise.resolve());
+    const pauseSpy = vi
+      .spyOn(window.HTMLMediaElement.prototype, "pause")
+      .mockImplementation(() => undefined);
+    const root = document.createElement("div");
+
+    try {
+      const game = startGame(root);
+
+      expect(playSpy).toHaveBeenCalledTimes(1);
+
+      game.destroy();
+    } finally {
+      playSpy.mockRestore();
+      pauseSpy.mockRestore();
+      Object.defineProperty(window.navigator, "userAgent", {
+        configurable: true,
+        value: previousUserAgent,
+      });
+    }
+
+    function startGame(gameRoot: HTMLElement) {
+      const app = mountApp(gameRoot, {
+        store: new ProgressStore({
+          storage: new MemoryStorage(),
+          userIdFactory: () => "123e4567-e89b-12d3-a456-426614174000",
+        }),
+      });
+      gameRoot.querySelector<HTMLButtonElement>('[data-action="register"]')?.click();
+      gameRoot.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
+      return app;
+    }
+  });
+
   it("首次交互后可静音，静音切换立即更新且不阻塞方块选择", () => {
     const root = document.createElement("div");
     const app = mountApp(root, {

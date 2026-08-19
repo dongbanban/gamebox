@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { mountApp } from "../src/app";
 import type { GameDefinition, GameLaunchContext } from "../src/catalog";
-import { FIRST_LEVEL } from "../src/games/dog-lege-dog";
+import { FIRST_LEVEL, FIRST_LEVEL_SEED } from "../src/games/dog-lege-dog";
 import { GAME_ID, ProgressStore, type StorageLike } from "../src/progress-store";
 
 class DamagedStorage implements StorageLike {
@@ -357,14 +357,15 @@ describe("注册与游戏目录 UI", () => {
     const blockHeightScale =
       parseFloat(firstBlock?.style.getPropertyValue("--block-height") ?? "0") /
       (100 / boardRows);
-    expect(blockWidthScale * blockHeightScale).toBeGreaterThan(1.8);
+    expect(blockWidthScale).toBeCloseTo(1);
+    expect(blockHeightScale).toBeCloseTo(1);
     expect(root.textContent).not.toContain("狗了个狗");
     expect(root.querySelector('.game-entry-view__brand [data-action="catalog"]')).not.toBeNull();
     expect(root.querySelector('[data-testid="dog-game"] h2')).toBeNull();
     expect(root.textContent).not.toContain("游戏入口已打开");
     expect(root.textContent).not.toContain("固定首关");
     expect(root.textContent).not.toContain("稳定关卡");
-    expect(root.textContent).not.toContain("dog-lege-dog:first-level:v5");
+    expect(root.textContent).not.toContain(FIRST_LEVEL_SEED);
     expect(root.textContent).not.toContain("选择没有遮挡的方块，凑齐三个相同图案。");
     expect(root.textContent).not.toContain("剩余方块");
     expect(root.textContent).not.toContain("图案");

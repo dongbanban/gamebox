@@ -379,7 +379,16 @@ function selectStructuralLayerPlacements(
   previousPlacements: readonly BlockPlacement[],
   random: SeededRandom,
 ): BlockPlacement[] {
-  const candidates = random.shuffle([...getCandidateAnchors(template, offset.x, offset.y)]);
+  const candidateOffsets = z === 0 ? getLayerOffsetOrder(z) : [offset];
+  const candidates = random.shuffle([
+    ...new Map(
+      candidateOffsets
+        .flatMap((candidateOffset) =>
+          getCandidateAnchors(template, candidateOffset.x, candidateOffset.y),
+        )
+        .map((candidate) => [`${candidate.x}:${candidate.y}`, candidate]),
+    ).values(),
+  ]);
   const selected: BlockPlacement[] = [];
 
   for (const region of CORNER_REGIONS) {

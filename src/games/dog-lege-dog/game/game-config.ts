@@ -1,7 +1,7 @@
 import type { DogPatternType } from "../levels/level-types";
 
 const GAME_ID = "dog-lege-dog" as const;
-const GENERATOR_VERSION = 5 as const;
+const GENERATOR_VERSION = 6 as const;
 
 export const DOG_GAME_RESULT_DISPLAY = Object.freeze({
   won: Object.freeze({

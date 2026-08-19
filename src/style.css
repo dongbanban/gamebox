@@ -667,7 +667,6 @@ h2 {
   color: #16445d;
   font: inherit;
   font-size: clamp(14px, 2.4vw, 26px);
-  transform: translate(0, calc(var(--block-z) * -4px));
   z-index: calc(10 + var(--block-z));
   box-shadow: 4px 5px 0 rgba(22, 68, 93, 0.2), inset 0 0 0 1px rgba(22, 68, 93, 0.12);
   touch-action: none;
@@ -676,7 +675,7 @@ h2 {
 
 .dog-block:not(:disabled):hover {
   filter: brightness(1.04);
-  transform: translate(0, calc(var(--block-z) * -4px - 2px));
+  transform: translateY(-2px);
 }
 
 .dog-block:not(:disabled):active {
@@ -749,6 +748,7 @@ h2 {
 }
 
 .dog-tray {
+  position: relative;
   margin-top: 24px;
   padding: 20px;
   border-radius: 20px;
@@ -791,14 +791,14 @@ h2 {
 }
 
 .dog-tray__slot--filled {
-  border: 3px solid rgba(255, 255, 255, 0.9);
+  border: 2px solid rgba(255, 253, 248, 0.82);
   background: var(--dog-block-background);
   box-shadow: 4px 5px 0 rgba(22, 68, 93, 0.2), inset 0 0 0 1px rgba(22, 68, 93, 0.12);
 }
 
 .dog-tray__slot .dog-block__glyph {
-  width: 96%;
-  height: 96%;
+  width: 88%;
+  height: 88%;
 }
 
 .dog-match-effect {
@@ -808,6 +808,10 @@ h2 {
   display: grid;
   place-items: center;
   overflow: hidden;
+  border: clamp(3px, 0.6vw, 7px) solid rgba(255, 255, 255, 0.94);
+  border-radius: inherit;
+  background: radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.46), rgba(255, 209, 102, 0.2) 42%, transparent 76%);
+  box-shadow: 0 0 0 5px rgba(255, 209, 102, 0.42), inset 0 0 30px rgba(255, 255, 255, 0.7);
   pointer-events: none;
   animation: dog-match-flash 620ms ease-out both;
 }
@@ -824,12 +828,32 @@ h2 {
 
 .dog-match-effect__ring {
   position: absolute;
-  width: clamp(72px, 14vw, 168px);
+  width: min(46%, 240px);
   aspect-ratio: 1;
   border: clamp(5px, 0.8vw, 9px) solid rgba(255, 255, 255, 0.94);
   border-radius: 50%;
   box-shadow: 0 0 0 8px rgba(255, 209, 102, 0.32), 0 0 34px rgba(255, 255, 255, 0.9);
   animation: dog-match-ring 620ms cubic-bezier(0.16, 0.8, 0.3, 1) both;
+}
+
+.dog-match-effect::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  padding: 6px 14px;
+  border: 2px solid rgba(255, 255, 255, 0.94);
+  border-radius: 999px;
+  background: rgba(22, 68, 93, 0.76);
+  box-shadow: 0 5px 0 rgba(22, 68, 93, 0.22), 0 0 22px rgba(255, 255, 255, 0.72);
+  color: #fff;
+  content: "三消！";
+  font-size: clamp(18px, 3.6vw, 30px);
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-shadow: 0 2px 0 rgba(22, 68, 93, 0.28);
+  transform: translate(-50%, -50%);
+  animation: dog-match-badge 620ms cubic-bezier(0.16, 0.8, 0.3, 1) both;
 }
 
 .dog-match-effect__spark {
@@ -937,6 +961,23 @@ h2 {
   100% {
     opacity: 0;
     transform: scale(1.9);
+  }
+}
+
+@keyframes dog-match-badge {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.65);
+  }
+
+  26% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1);
   }
 }
 
@@ -1169,8 +1210,8 @@ h2 {
   }
 
   .dog-tray__slot .dog-block__glyph {
-    width: 100%;
-    height: 100%;
+    width: 88%;
+    height: 88%;
   }
 }
 

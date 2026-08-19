@@ -242,9 +242,19 @@ test.describe("注册与游戏目录", () => {
     await selectableBlock.click();
     await expect(page.locator('[data-testid="dog-tray-slot"][data-pattern-type]')).toHaveCount(1);
     const visualSemantics = await page.evaluate(() => {
+      const serializeRect = (element: Element) => {
+        const rect = element.getBoundingClientRect();
+        return {
+          left: rect.left,
+          right: rect.right,
+          top: rect.top,
+          bottom: rect.bottom,
+        };
+      };
       const filledSlot = document.querySelector<HTMLElement>(
         '[data-testid="dog-tray-slot"][data-pattern-type]',
       );
+      const filledGlyph = filledSlot?.querySelector<HTMLElement>(".dog-block__glyph") ?? null;
       const matchingBlock = [...document.querySelectorAll<HTMLElement>('[data-testid="dog-block"]')].find(
         (block) => block.dataset.patternType === filledSlot?.dataset.patternType,
       );
@@ -257,11 +267,19 @@ test.describe("注册与游戏目录", () => {
         blockBorder: blockStyle?.border ?? "",
         slotShadow: slotStyle?.boxShadow ?? "",
         blockShadow: blockStyle?.boxShadow ?? "",
+        slotRect: filledSlot === null ? null : serializeRect(filledSlot),
+        glyphRect: filledGlyph === null ? null : serializeRect(filledGlyph),
       };
     });
     expect(visualSemantics.slotBackground).toBe(visualSemantics.blockBackground);
     expect(visualSemantics.slotBorder).toBe(visualSemantics.blockBorder);
     expect(visualSemantics.slotShadow).toBe(visualSemantics.blockShadow);
+    expect(visualSemantics.glyphRect).not.toBeNull();
+    expect(visualSemantics.slotRect).not.toBeNull();
+    expect(visualSemantics.glyphRect?.left).toBeGreaterThan(visualSemantics.slotRect?.left ?? 0);
+    expect(visualSemantics.glyphRect?.right).toBeLessThan(visualSemantics.slotRect?.right ?? 0);
+    expect(visualSemantics.glyphRect?.top).toBeGreaterThan(visualSemantics.slotRect?.top ?? 0);
+    expect(visualSemantics.glyphRect?.bottom).toBeLessThan(visualSemantics.slotRect?.bottom ?? 0);
     await page.getByRole("button", { name: "音效开启" }).click();
     await expect(page.getByRole("button", { name: "音效关闭" })).toBeVisible();
     await page.getByRole("button", { name: "音效关闭" }).click();

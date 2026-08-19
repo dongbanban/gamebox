@@ -9,7 +9,7 @@ import { DOG_GAME_ID, DOG_GAME_RESULT_DISPLAY } from "./game-config";
 import { getDogLegeDogLevel } from "../levels/level-provider";
 import { animateBlockFlight, type CancellableAnimation } from "../assets/animation-effects";
 import { GameSession, type GameSessionSnapshot } from "./game-session";
-import { createParticleEffects, type ParticleEffect } from "../assets/particle-effects";
+import { createParticleEffects } from "../assets/particle-effects";
 import { createSoundEffects } from "../assets/sound-effects";
 import { renderDogLegeDogGame } from "./game-renderer";
 import type {
@@ -31,8 +31,9 @@ interface DogGameRuntime {
   resultPresented: boolean;
   startedAt: number | null;
   endedAt: number | null;
-  activeFlight: CancellableAnimation | null;
-  feedbackVersion: number;
+  activeFlights: Set<CancellableAnimation>;
+  matchFeedbackActive: boolean;
+  matchAnimation: Promise<void> | null;
 }
 
 export function createDogLegeDogGame(
@@ -52,8 +53,9 @@ export function createDogLegeDogGame(
     resultPresented: false,
     startedAt: null,
     endedAt: null,
-    activeFlight: null,
-    feedbackVersion: 0,
+    activeFlights: new Set(),
+    matchFeedbackActive: false,
+    matchAnimation: null,
   };
   const gameContentRoot =
     root.querySelector<HTMLElement>("[data-game-content]") ?? root;
@@ -88,8 +90,6 @@ export function createDogLegeDogGame(
     runtime.hasInteracted = true;
     const didMatch = selection.removedCount > 0;
     const result = createResult(level, nextState.status);
-    const selectionVersion = runtime.feedbackVersion + 1;
-    runtime.feedbackVersion = selectionVersion;
     if (result !== null) {
       runtime.endedAt = Date.now();
       confirmResult(result, !shouldAnimate || !runtime.started);
@@ -99,6 +99,7 @@ export function createDogLegeDogGame(
       soundEffects.play("select");
       playFeedbackSounds(didMatch, result);
       runtime.feedback = "idle";
+      runtime.matchFeedbackActive = false;
       runtime.inputLocked = false;
       renderStartedGame(nextState);
       if (result !== null) {
@@ -107,8 +108,15 @@ export function createDogLegeDogGame(
       return nextState;
     }
 
-    runtime.inputLocked = true;
-    runtime.feedback = didMatch ? "match" : result?.status ?? "idle";
+    runtime.inputLocked = result !== null;
+    if (didMatch) {
+      runtime.matchFeedbackActive = true;
+      runtime.feedback = "match";
+    } else if (result !== null) {
+      runtime.feedback = result.status;
+    } else if (!runtime.matchFeedbackActive) {
+      runtime.feedback = "idle";
+    }
     soundEffects.play("select");
     playFeedbackSounds(didMatch, result);
     renderStartedGame(nextState);
@@ -120,14 +128,11 @@ export function createDogLegeDogGame(
       source: sourceRect,
       target: target?.getBoundingClientRect() ?? null,
     });
-    runtime.activeFlight = flight;
+    runtime.activeFlights.add(flight);
     void finishAnimatedSelection(
       flight,
-      runtime.feedback,
       result,
       didMatch,
-      selectionVersion,
-      nextState,
     );
 
     return nextState;
@@ -135,54 +140,78 @@ export function createDogLegeDogGame(
 
   async function finishAnimatedSelection(
     flight: CancellableAnimation,
-    selectionFeedback: DogVisualFeedback,
     result: GameResult | null,
     didMatch: boolean,
-    selectionVersion: number,
-    snapshot: GameSessionSnapshot,
   ): Promise<void> {
     await flight.promise;
-    if (runtime.destroyed || runtime.activeFlight !== flight) {
+    runtime.activeFlights.delete(flight);
+    if (runtime.destroyed) {
       return;
     }
 
-    runtime.activeFlight = null;
     if (result !== null) {
       if (didMatch) {
-        await particleEffects.play("match");
+        await ensureMatchFeedback();
         if (runtime.destroyed) {
           return;
         }
-        runtime.feedback = "won";
-        renderStartedGame(snapshot);
+      } else if (runtime.matchFeedbackActive) {
+        await ensureMatchFeedback();
+        if (runtime.destroyed) {
+          return;
+        }
       }
 
+      runtime.feedback = result.status;
+      renderStartedGame();
       await particleEffects.play(result.status);
       if (runtime.destroyed) {
         return;
       }
       runtime.inputLocked = false;
       runtime.feedback = "idle";
-      renderStartedGame(snapshot);
+      runtime.matchFeedbackActive = false;
+      renderStartedGame();
       presentResult(result);
       return;
     }
 
-    runtime.inputLocked = false;
-    renderStartedGame(snapshot);
-    if (isParticleFeedback(selectionFeedback)) {
-      void particleEffects.play(selectionFeedback).then(() => {
-        if (
-          !runtime.destroyed &&
-          runtime.feedbackVersion === selectionVersion &&
-          runtime.activeFlight === null &&
-          runtime.feedback === selectionFeedback
-        ) {
-          runtime.feedback = "idle";
-          renderStartedGame(snapshot);
-        }
-      });
+    if (didMatch) {
+      void ensureMatchFeedback();
     }
+  }
+
+  function ensureMatchFeedback(): Promise<void> {
+    if (runtime.matchAnimation !== null) {
+      return runtime.matchAnimation;
+    }
+
+    if (!runtime.matchFeedbackActive) {
+      return Promise.resolve();
+    }
+
+    if (runtime.feedback !== "match") {
+      runtime.feedback = "match";
+      renderStartedGame();
+    }
+
+    let animation: Promise<void>;
+    animation = particleEffects.play("match").then(() => {
+      if (runtime.matchAnimation === animation) {
+        runtime.matchAnimation = null;
+      }
+      if (runtime.destroyed || !runtime.matchFeedbackActive) {
+        return;
+      }
+
+      runtime.matchFeedbackActive = false;
+      if (runtime.feedback === "match") {
+        runtime.feedback = "idle";
+        renderStartedGame();
+      }
+    });
+    runtime.matchAnimation = animation;
+    return animation;
   }
 
   function confirmResult(result: GameResult, presentImmediately: boolean): void {
@@ -274,6 +303,9 @@ export function createDogLegeDogGame(
         runtime.startedAt = Date.now();
         renderDogLegeDogGame(root, createGameState(runtime));
         runtime.started = true;
+        if (runtime.soundEnabled) {
+          soundEffects.initialize();
+        }
       }
 
       return createGameState(runtime);
@@ -305,8 +337,10 @@ export function createDogLegeDogGame(
       }
 
       runtime.destroyed = true;
-      runtime.activeFlight?.cancel();
-      runtime.activeFlight = null;
+      for (const flight of runtime.activeFlights) {
+        flight.cancel();
+      }
+      runtime.activeFlights.clear();
       particleEffects.destroy();
       soundEffects.destroy();
       root.removeEventListener("pointerup", handlePointerUp);
@@ -366,10 +400,6 @@ function createResult(
     display: resultDisplay,
     actions,
   };
-}
-
-function isParticleFeedback(feedback: DogVisualFeedback): feedback is ParticleEffect {
-  return feedback !== "idle";
 }
 
 function findBlockElement(root: HTMLElement, blockId: string): HTMLElement | null {
