@@ -241,6 +241,14 @@ h2 {
   background: var(--coral-dark);
 }
 
+.primary-button--retry {
+  background: var(--sky-deep);
+}
+
+.primary-button--retry:hover {
+  background: #2f7fae;
+}
+
 .persistence-notice {
   display: flex;
   align-items: flex-start;
@@ -518,6 +526,18 @@ h2 {
   display: grid;
   justify-items: center;
   gap: 16px;
+}
+
+.game-result-card__actions--retry {
+  grid-template-columns: 56px minmax(0, 1fr);
+  align-items: stretch;
+  justify-items: stretch;
+  gap: 12px;
+}
+
+.game-result-card__actions--retry .icon-button {
+  width: 56px;
+  height: 56px;
 }
 
 .dog-game {

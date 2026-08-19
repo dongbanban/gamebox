@@ -746,8 +746,14 @@ describe("注册与游戏目录 UI", () => {
     expect(root.querySelector('[data-view="game-result"]')).not.toBeNull();
     expect(root.querySelector('[data-result="lost"]')).not.toBeNull();
     expect(root.textContent).toContain("第 1 关");
-    expect(root.querySelector('[data-action="retry"]')).not.toBeNull();
-    expect(root.querySelector('[data-action="catalog"]')).not.toBeNull();
+    const resultActions = root.querySelector<HTMLElement>(
+      ".game-result-card__actions--retry",
+    );
+    const catalogAction = root.querySelector<HTMLElement>('[data-action="catalog"]');
+    const retryAction = root.querySelector<HTMLElement>('[data-action="retry"]');
+    expect(resultActions).not.toBeNull();
+    expect([...resultActions?.children ?? []]).toEqual([catalogAction, retryAction]);
+    expect(retryAction?.classList.contains("primary-button--retry")).toBe(true);
 
     root.querySelector<HTMLButtonElement>('[data-action="retry"]')?.click();
     expect(root.querySelector('[data-testid="dog-board"]')).not.toBeNull();

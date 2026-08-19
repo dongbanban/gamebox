@@ -523,8 +523,13 @@ function updateSoundButton(root: HTMLElement, soundEnabled: boolean): void {
 }
 
 function renderResultActions(result: GameResult): string {
-  const actions = result.actions.map((action) => renderResultAction(action, result)).filter(Boolean);
-  return `<div class="game-result-card__actions">${actions.join("")}</div>`;
+  const isRetryResult = result.actions.includes("retry");
+  const orderedActions = isRetryResult
+    ? (["catalog", "retry"] as const).filter((action) => result.actions.includes(action))
+    : result.actions;
+  const actions = orderedActions.map((action) => renderResultAction(action, result)).filter(Boolean);
+  const retryClassName = isRetryResult ? " game-result-card__actions--retry" : "";
+  return `<div class="game-result-card__actions${retryClassName}">${actions.join("")}</div>`;
 }
 
 function renderResultAction(action: GameResultAction, result: GameResult): string {
@@ -538,7 +543,7 @@ function renderResultAction(action: GameResultAction, result: GameResult): strin
 
   if (action === "retry") {
     return `
-      <button class="primary-button primary-button--wide" type="button" data-action="retry" data-game-id="${result.gameId}" data-level-number="${result.levelNumber}">
+      <button class="primary-button primary-button--wide primary-button--retry" type="button" data-action="retry" data-game-id="${result.gameId}" data-level-number="${result.levelNumber}">
         重新挑战
       </button>
     `;
