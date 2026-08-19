@@ -36,21 +36,24 @@ export const GAME_CATALOG: readonly GameDefinition[] = Object.freeze([
 function createDogCover(): string {
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420">
-      <defs>
-        <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#ffdba6"/>
-          <stop offset="1" stop-color="#f08b72"/>
-        </linearGradient>
-      </defs>
-      <rect width="640" height="420" rx="42" fill="url(#sky)"/>
-      <circle cx="520" cy="96" r="62" fill="#ffeab7" opacity=".8"/>
-      <path d="M0 328c118-78 186 38 302-24 108-58 176 28 338-42v158H0Z" fill="#193b4b" opacity=".92"/>
-      <path d="M160 190 118 82l90 56 112-57-34 112" fill="#8a4b3c"/>
-      <path d="M180 204c0-66 54-112 126-112s126 46 126 112v74c0 68-55 104-126 104s-126-36-126-104Z" fill="#d87653"/>
-      <path d="M230 208c0-31 24-56 54-56s54 25 54 56v42c0 31-24 56-54 56s-54-25-54-56Zm130 0c0-31 24-56 54-56s54 25 54 56v42c0 31-24 56-54 56s-54-25-54-56Z" fill="#ffe5bb"/>
-      <circle cx="282" cy="217" r="13" fill="#193b4b"/><circle cx="410" cy="217" r="13" fill="#193b4b"/>
-      <path d="M315 275c18 17 43 17 61 0" fill="none" stroke="#193b4b" stroke-width="10" stroke-linecap="round"/>
-      <path d="M306 268h78l-39 34Z" fill="#193b4b"/>
+      <rect width="640" height="420" rx="42" fill="#d9f0fc"/>
+      <path d="M0 326c100-46 170-18 248 14 92 38 188-2 392-40v120H0Z" fill="#b5e1f4"/>
+      <circle cx="530" cy="84" r="42" fill="#ffd166"/>
+      <path d="M79 88c29-30 58-25 78 5 19-29 51-24 64 7" fill="none" stroke="#7bc7f5" stroke-width="12" stroke-linecap="round"/>
+      <path d="m94 266 20 13m-31-1 22-2m443 18 17 13m-26-1 20-2" fill="none" stroke="#3f94c3" stroke-width="8" stroke-linecap="round"/>
+      <g stroke="#16445d" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M223 170 144 103l21 124 79-28Z" fill="#ff8c7a"/>
+        <path d="M417 170 496 103l-21 124-79-28Z" fill="#ff8c7a"/>
+        <path d="M190 202c0-67 55-113 130-113s130 46 130 113v71c0 70-58 105-130 105s-130-35-130-105Z" fill="#f5b96d"/>
+        <path d="M237 213c0-31 24-55 53-55s53 24 53 55v35c0 31-24 55-53 55s-53-24-53-55Zm113 0c0-31 24-55 53-55s53 24 53 55v35c0 31-24 55-53 55s-53-24-53-55Z" fill="#fbfeff"/>
+        <circle cx="285" cy="218" r="10" fill="#16445d" stroke="none"/>
+        <circle cx="409" cy="218" r="10" fill="#16445d" stroke="none"/>
+        <path d="M304 280h72l-36 29Z" fill="#16445d"/>
+        <path d="M316 314c14 14 34 14 48 0" fill="none"/>
+        <path d="M191 295c-22 16-33 36-30 60m289-60c22 16 33 36 30 60" fill="none"/>
+      </g>
+      <path d="M245 67c16-12 33-12 49 0m70 0c16-12 33-12 49 0" fill="none" stroke="#3f94c3" stroke-width="7" stroke-linecap="round"/>
+      <path d="M98 337c20-19 38-19 58 0m426 0c-20-19-38-19-58 0" fill="none" stroke="#7bc7f5" stroke-width="9" stroke-linecap="round"/>
     </svg>`;
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }

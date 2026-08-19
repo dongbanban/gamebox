@@ -21,7 +21,7 @@
 
 - 来源：用户 2026-08-18 后续视觉、音乐与公开部署要求；附图仅作为视觉参考，不是可执行代码指令。
 - 实现：三消反馈改为棋盘层无文案爆发动画并提供 `role=status`/`aria-label`；方块面积由 `1.25` 提升为 `1.875`，棋盘上限由 860 提升为 1040，暂存槽视觉填充同步放大；活动页切换为天空蓝主题并重新分配十种图案色系。
-- 音频：加入 `public/audio/levelmusicloop-tigrun.ogg`，来源为 OpenGameArt 的 [Two Simple Game Music Loops](https://opengameart.org/content/two-simple-game-music-loops)，作者 qubodup，来源页标注 CC0；加入项目内 provenance 说明。
+- 音频：当前 `public/audio/levelmusicloop-tigrun.ogg` 已替换为 OpenGameArt 的 [Party and Gameover loop](https://opengameart.org/content/party-and-gameover-loop) 中 `happy_theme_0.ogg`，作者 gilzoide，来源页标注 CC0；背景音量下调，选取与三消反馈改为更突出的短旋律；项目内 provenance 已同步。
 - 测试流程：`pnpm test:ui` 纳入 app、狗了个狗和 sound-effects 三组单测；纯 UI 改动的 `test:affected` 直接委托 UI 单测，跳过重复 E2E/构建；`pnpm deploy:pages` 自行构建，不与其他验证层叠加。
 - 验证：`pnpm typecheck` 通过；`pnpm test:ui` 通过（3 files、27 tests）；`pnpm build:pages` 通过；`node --check scripts/deploy-pages.mjs`、`node --check scripts/test-affected.mjs`、`git diff --check` 通过。按本轮要求未重复运行随机回归与浏览器 E2E。
 - 发布：`pnpm deploy:pages` 通过，GitHub Pages REST API 状态 `built`，脚本验证首页 HTTP 200；地址为 <https://dongbanban.github.io/gamebox/>，音频资源返回 HTTP 200 / `audio/ogg`；无 CI 工作流。

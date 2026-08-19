@@ -80,8 +80,13 @@ describe("通用游戏定义与结果契约", () => {
     const app = mountApp(root, { store, catalog: [testGame] });
     root.querySelector<HTMLButtonElement>('[data-action="register"]')?.click();
 
-    expect(root.querySelector(".catalog-item__heading")?.textContent).toContain("测试类别");
-    expect(root.querySelector(".catalog-item__heading")?.textContent).toContain("测试游戏");
+    expect(root.querySelector(".catalog-item__heading h2")?.textContent).toBe("测试游戏");
+    expect(root.querySelector(".catalog-item__description")?.textContent).toContain(
+      "用于验证公共层契约。",
+    );
+    expect(root.querySelector(".catalog-item__stats")?.textContent).toContain("最高解锁关卡");
+    expect(root.querySelector(".status-dot")).toBeNull();
+    expect(root.querySelector('[data-action="enter-game"]')?.textContent).toContain("开始游戏");
 
     root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
     expect(dispatchBeforeUnload().defaultPrevented).toBe(true);
@@ -316,6 +321,10 @@ describe("注册与游戏目录 UI", () => {
     expect(catalogText).not.toContain("当前浏览器身份");
     const coverSource = root.querySelector<HTMLImageElement>(".catalog-item__cover")?.src ?? "";
     expect(decodeURIComponent(coverSource)).not.toContain("GAMEBOX · 01");
+    expect(root.querySelector(".catalog-item")).not.toBeNull();
+    expect(root.querySelector(".catalog-item__cover-wrap")).not.toBeNull();
+    expect(root.querySelector(".catalog-item__content h2")?.textContent).toBe("狗了个狗");
+    expect(root.querySelector(".status-dot")).toBeNull();
 
     root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
 

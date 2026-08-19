@@ -26,7 +26,7 @@ test.describe("注册与游戏目录", () => {
     await expect(page.getByRole("heading", { name: "狗了个狗" })).toBeVisible();
     await expect(page.getByText("最高解锁关卡")).toBeVisible();
     await expect(page.getByText("累计积分")).toBeVisible();
-    await expect(page.getByRole("button", { name: "进入游戏" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "开始游戏" })).toBeVisible();
 
     const catalogText = await page.locator('[data-view="catalog"]').textContent();
     expect(catalogText).not.toContain("你的游戏合集");
@@ -36,7 +36,7 @@ test.describe("注册与游戏目录", () => {
     const coverSource = await page.locator(".catalog-item__cover").getAttribute("src");
     expect(decodeURIComponent(coverSource ?? "")).not.toContain("GAMEBOX · 01");
 
-    await page.getByRole("button", { name: "进入游戏" }).click();
+    await page.getByRole("button", { name: "开始游戏" }).click();
     await expect(page.getByRole("heading", { name: "狗了个狗" })).toHaveCount(0);
     const catalogButton = page.locator('[data-view="game-entry"] [data-action="catalog"]');
     await expect(catalogButton).toHaveAttribute("aria-label", "返回游戏目录");
@@ -72,7 +72,7 @@ test.describe("注册与游戏目录", () => {
 
   test("浏览器后退在活动关卡中确认，取消后继续并确认后返回目录", async ({ page }) => {
     await page.getByRole("button", { name: "匿名注册" }).click();
-    await page.getByRole("button", { name: "进入游戏" }).click();
+    await page.getByRole("button", { name: "开始游戏" }).click();
     await page.locator('[data-testid="dog-block"]:not([disabled])').first().click();
     const savedState = await page.evaluate(() => window.localStorage.getItem("gamebox.state"));
 
@@ -98,7 +98,7 @@ test.describe("注册与游戏目录", () => {
 
   test("刷新活动关卡返回目录且不保存半局", async ({ page }) => {
     await page.getByRole("button", { name: "匿名注册" }).click();
-    await page.getByRole("button", { name: "进入游戏" }).click();
+    await page.getByRole("button", { name: "开始游戏" }).click();
     await page.locator('[data-testid="dog-block"]:not([disabled])').first().click();
     const savedState = await page.evaluate(() => window.localStorage.getItem("gamebox.state"));
 
@@ -113,7 +113,7 @@ test.describe("注册与游戏目录", () => {
 
   test("关闭活动关卡后重新打开不恢复半局", async ({ page }) => {
     await page.getByRole("button", { name: "匿名注册" }).click();
-    await page.getByRole("button", { name: "进入游戏" }).click();
+    await page.getByRole("button", { name: "开始游戏" }).click();
     await page.locator('[data-testid="dog-block"]:not([disabled])').first().click();
     const savedState = await page.evaluate(() => window.localStorage.getItem("gamebox.state"));
 
@@ -132,7 +132,7 @@ test.describe("注册与游戏目录", () => {
   test("移动端竖屏活动游戏将棋盘、暂存槽与控制压入无滚动视口", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.getByRole("button", { name: "匿名注册" }).click();
-    await page.getByRole("button", { name: "进入游戏" }).click();
+    await page.getByRole("button", { name: "开始游戏" }).click();
 
     const layout = await page.evaluate(() => {
       const serializeRect = (element: Element) => {

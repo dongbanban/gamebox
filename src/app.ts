@@ -193,11 +193,7 @@ export class GameboxApp {
           </div>
           <div class="catalog-item__content">
             <div class="catalog-item__heading">
-              <div>
-                <p class="eyebrow">${game.category}</p>
-                <h2>${game.name}</h2>
-              </div>
-              <span class="status-dot" aria-label="${game.playable ? "可以游玩" : "即将开放"}"></span>
+              <h2>${game.name}</h2>
             </div>
             <p class="catalog-item__description">${game.description}</p>
             <dl class="catalog-item__stats">
@@ -211,7 +207,7 @@ export class GameboxApp {
               </div>
             </dl>
             <button class="primary-button" type="button" data-action="enter-game" data-game-id="${game.id}" ${game.playable ? "" : "disabled"}>
-              进入游戏 <span aria-hidden="true">↗</span>
+              开始游戏 <span aria-hidden="true">↗</span>
             </button>
           </div>
         </article>

@@ -138,7 +138,7 @@ test.describe("狗了个狗完整浏览器闭环", () => {
 });
 
 async function enterGame(page: Page): Promise<void> {
-  await page.getByRole("button", { name: "进入游戏" }).click();
+  await page.getByRole("button", { name: "开始游戏" }).click();
   await expect(page.getByTestId("dog-game")).toBeVisible();
 }
 

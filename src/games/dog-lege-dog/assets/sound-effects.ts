@@ -10,16 +10,42 @@ export interface SoundEffects {
 }
 
 interface SoundProfile {
-  readonly frequency: number;
+  readonly frequencies: readonly number[];
   readonly duration: number;
   readonly type: OscillatorType;
+  readonly volume: number;
+  readonly noteSpacing: number;
 }
 
 const SOUND_PROFILES: Record<DogSoundEffect, SoundProfile> = {
-  select: { frequency: 520, duration: 0.07, type: "sine" },
-  match: { frequency: 760, duration: 0.16, type: "triangle" },
-  won: { frequency: 920, duration: 0.3, type: "sine" },
-  lost: { frequency: 190, duration: 0.32, type: "sawtooth" },
+  select: {
+    frequencies: [660, 880],
+    duration: 0.14,
+    type: "triangle",
+    volume: 0.16,
+    noteSpacing: 0.035,
+  },
+  match: {
+    frequencies: [523, 659, 784, 1046],
+    duration: 0.4,
+    type: "sine",
+    volume: 0.3,
+    noteSpacing: 0.055,
+  },
+  won: {
+    frequencies: [659, 784, 988, 1318],
+    duration: 0.5,
+    type: "sine",
+    volume: 0.22,
+    noteSpacing: 0.07,
+  },
+  lost: {
+    frequencies: [220, 174],
+    duration: 0.32,
+    type: "sawtooth",
+    volume: 0.12,
+    noteSpacing: 0.08,
+  },
 };
 
 type AudioContextConstructor = new () => AudioContext;
@@ -102,20 +128,32 @@ export function createSoundEffects(initialEnabled: boolean): SoundEffects {
 
       const profile = SOUND_PROFILES[effect];
       const now = context.currentTime;
-      try {
-        const oscillator = context.createOscillator();
-        const gain = context.createGain();
-        oscillator.type = profile.type;
-        oscillator.frequency.setValueAtTime(profile.frequency, now);
-        gain.gain.setValueAtTime(0.0001, now);
-        gain.gain.exponentialRampToValueAtTime(0.08, now + 0.015);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + profile.duration);
-        oscillator.connect(gain);
-        gain.connect(context.destination);
-        oscillator.start(now);
-        oscillator.stop(now + profile.duration);
-      } catch {
-        // Audio is optional. A browser audio failure cannot block gameplay.
+      for (const [index, frequency] of profile.frequencies.entries()) {
+        const startAt = now + index * profile.noteSpacing;
+        const endAt = Math.min(now + profile.duration, startAt + 0.16);
+        const attackAt = Math.min(startAt + 0.012, endAt - 0.005);
+        if (attackAt <= startAt) {
+          continue;
+        }
+
+        try {
+          const oscillator = context.createOscillator();
+          const gain = context.createGain();
+          oscillator.type = profile.type;
+          oscillator.frequency.setValueAtTime(frequency, startAt);
+          gain.gain.setValueAtTime(0.0001, startAt);
+          gain.gain.exponentialRampToValueAtTime(
+            profile.volume / profile.frequencies.length,
+            attackAt,
+          );
+          gain.gain.exponentialRampToValueAtTime(0.0001, endAt);
+          oscillator.connect(gain);
+          gain.connect(context.destination);
+          oscillator.start(startAt);
+          oscillator.stop(endAt);
+        } catch {
+          // Audio is optional. A browser audio failure cannot block gameplay.
+        }
       }
     },
 
@@ -144,7 +182,7 @@ function createBackgroundMusic(): HTMLAudioElement | null {
   audio.src = new URL(DOG_MUSIC_ASSET_PATH, document.baseURI).toString();
   audio.loop = true;
   audio.preload = "auto";
-  audio.volume = 0.18;
+  audio.volume = 0.1;
   audio.setAttribute("aria-hidden", "true");
   return audio;
 }

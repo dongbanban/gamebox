@@ -41,7 +41,7 @@ pnpm test:e2e:cross-browser
 
 ## 音乐素材
 
-`public/audio/levelmusicloop-tigrun.ogg` 来自 [Two Simple Game Music Loops](https://opengameart.org/content/two-simple-game-music-loops)，作者 qubodup，页面标注为 CC0；项目在首次用户交互后本地循环播放该音频，音效开关同时控制音乐与交互音效。
+`public/audio/levelmusicloop-tigrun.ogg` 来自 [Party and Gameover loop](https://opengameart.org/content/party-and-gameover-loop) 中的 `happy_theme_0.ogg`，作者 gilzoide，页面标注为 CC0；项目在首次用户交互后本地循环播放该轻快主题，背景音量低于选取/三消反馈，音效开关同时控制音乐与交互音效。
 
 随机失败报告包含 `testSeed`、关卡号、关卡 seed、生成器版本。按报告单关重放：
 
