@@ -73,9 +73,16 @@ describe("狗了个狗首关", () => {
     const root = document.createElement("div");
     const game = startDogLegeDogGame(root);
 
-    expect(root.querySelector('[data-testid="dog-board"]')).not.toBeNull();
+    const board = root.querySelector<HTMLElement>('[data-testid="dog-board"]');
+    const firstBlock = root.querySelector<HTMLElement>('[data-testid="dog-block"]');
+    expect(board).not.toBeNull();
+    expect(board?.dataset.surfaceShape).toBe("rectangle");
+    expect(board?.style.clipPath).toBe("");
     expect(root.querySelectorAll('[data-testid="dog-block"]')).toHaveLength(90);
     expect(root.querySelectorAll('[data-testid="dog-block"] svg')).toHaveLength(90);
+    expect(parseFloat(firstBlock?.style.getPropertyValue("--block-width") ?? "0")).toBeGreaterThan(0);
+    expect(parseFloat(firstBlock?.style.getPropertyValue("--block-height") ?? "0")).toBeGreaterThan(0);
+    expect(root.querySelector(".dog-game__stats")).toBeNull();
     expect(root.querySelector('[data-testid="dog-effects-canvas"]')).not.toBeNull();
     expect(root.textContent).not.toContain("打工狗");
     expect(root.textContent).not.toContain("单身狗");

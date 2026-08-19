@@ -31,13 +31,21 @@ Used by `/wayfinder`. The **map** is a file with one **child** file per ticket.
 
 ## Ticket 验收
 
+UI 文案、DOM、渲染器或样式改动优先运行：
+
+```bash
+pnpm test:ui
+```
+
+该命令只跑 app 与狗了个狗 UI 单测，不触发随机回归、浏览器 E2E 或构建。
+
 普通实现 ticket 完成前运行：
 
 ```bash
 pnpm test:affected
 ```
 
-该命令读取当前 Git 改动与未跟踪文件，按 Vitest import graph 运行受影响核心测试；按源码、样式与 E2E 文件范围选择 Chromium 流程；始终运行 `pnpm typecheck` 与 `pnpm build`。
+该命令读取当前 Git 改动与未跟踪文件，按 Vitest import graph 运行受影响核心测试；按源码、样式与 E2E 文件范围选择 Chromium 流程；末尾运行一次 `pnpm build`。`build` 已包含 `tsc --noEmit`，不再重复运行独立 typecheck；任一步失败立即停止。
 
 以下范围必须追加全量测试：
 
@@ -45,7 +53,7 @@ pnpm test:affected
 - 关卡生成器、可解性搜索、难度筛选或随机回归
 - 合并前、发布前或无法确认影响范围
 
-全量命令：
+全量命令（替代 `pnpm test:affected`，不要叠加运行）：
 
 ```bash
 pnpm test:qa

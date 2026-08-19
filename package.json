@@ -6,10 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "build:pages": "GITHUB_PAGES=true pnpm build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "pnpm test:core",
     "test:affected": "node scripts/test-affected.mjs",
+    "test:ui": "vitest run tests/app.test.ts tests/dog-lege-dog.test.ts",
     "test:core": "vitest run --exclude tests/random-regression.test.ts",
     "test:random": "vitest run tests/random-regression.test.ts",
     "test:watch": "vitest",

@@ -1,9 +1,7 @@
-import { defineConfig } from "vitest/config";
+import { defineConfig } from "vite";
+
+const isGitHubPagesBuild = process.env.GITHUB_PAGES === "true";
 
 export default defineConfig({
-  test: {
-    environment: "node",
-    include: ["tests/**/*.test.ts"],
-    restoreMocks: true,
-  },
+  base: isGitHubPagesBuild ? "/gamebox/" : "/",
 });

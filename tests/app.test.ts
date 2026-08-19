@@ -295,7 +295,7 @@ describe("活动关卡离开保护", () => {
 });
 
 describe("注册与游戏目录 UI", () => {
-  it("精简目录与游戏控制区，同时保留当前关卡和局内信息", () => {
+  it("精简目录与游戏控制区，同时保留当前关卡和局内行为", () => {
     const root = document.createElement("div");
     const app = mountApp(root, {
       store: new ProgressStore({
@@ -329,6 +329,18 @@ describe("注册与游戏目录 UI", () => {
     expect(root.querySelector('[data-action="toggle-sound"]')?.textContent).not.toContain("音效");
     expect(root.querySelector('.game-entry-view > h1.sr-only')?.textContent).toBe("活动游戏");
     expect(root.querySelector('[data-testid="dog-active-level"]')?.textContent).toContain("1");
+    const board = root.querySelector<HTMLElement>('[data-testid="dog-board"]');
+    const firstBlock = root.querySelector<HTMLElement>('[data-testid="dog-block"]');
+    const boardColumns = Number(board?.style.getPropertyValue("--board-columns"));
+    const boardRows = Number(board?.style.getPropertyValue("--board-rows"));
+    expect(board?.dataset.surfaceShape).toBe("rectangle");
+    expect(board?.style.clipPath).toBe("");
+    expect(parseFloat(firstBlock?.style.getPropertyValue("--block-width") ?? "0")).toBeGreaterThan(
+      100 / boardColumns,
+    );
+    expect(parseFloat(firstBlock?.style.getPropertyValue("--block-height") ?? "0")).toBeGreaterThan(
+      100 / boardRows,
+    );
     expect(root.textContent).not.toContain("狗了个狗");
     expect(root.querySelector('.game-entry-view__brand [data-action="catalog"]')).not.toBeNull();
     expect(root.querySelector('[data-testid="dog-game"] h2')).toBeNull();
@@ -366,6 +378,10 @@ describe("注册与游戏目录 UI", () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
     requestLevelThroughNavigationSeam(root, 2);
     expect(confirm).not.toHaveBeenCalled();
+    expect(root.querySelector(".dog-game__stats")).toBeNull();
+    expect(root.textContent).not.toContain("剩余方块");
+    expect(root.textContent).not.toContain("图案");
+    expect(root.textContent).not.toContain("层数");
 
     requestLevelThroughNavigationSeam(root, 1);
 

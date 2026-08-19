@@ -2,7 +2,6 @@ import { execFileSync, spawnSync } from "node:child_process";
 
 const root = process.cwd();
 const changedFiles = collectChangedFiles();
-let hasFailure = false;
 
 if (changedFiles.length === 0) {
   console.log("没有检测到改动，跳过受影响测试。");
@@ -21,7 +20,7 @@ const vitestTargets = changedFiles.filter(
 );
 
 if (vitestTargets.length > 0) {
-  run("pnpm", [
+  runOrExit("pnpm", [
     "exec",
     "vitest",
     "related",
@@ -36,25 +35,20 @@ if (vitestTargets.length > 0) {
 }
 
 if (requiresRandomRegression(changedFiles)) {
-  run("pnpm", ["test:random"]);
+  runOrExit("pnpm", ["test:random"]);
 } else {
   console.log("未触发关卡生成/随机回归范围，跳过随机回归。");
 }
 
 const e2eTargets = getE2ETargets(changedFiles);
 if (e2eTargets.length > 0) {
-  run("pnpm", ["exec", "playwright", "test", ...e2eTargets]);
+  runOrExit("pnpm", ["exec", "playwright", "test", ...e2eTargets]);
 } else {
   console.log("未触发浏览器流程范围，跳过 Chromium E2E。");
 }
 
-run("pnpm", ["typecheck"]);
-run("pnpm", ["build"]);
-
-if (hasFailure) {
-  console.error("受影响验证失败。");
-  process.exit(1);
-}
+// `build` already runs `tsc --noEmit`; avoid paying for a duplicate typecheck.
+runOrExit("pnpm", ["build"]);
 
 function collectChangedFiles() {
   const tracked = readGit(["diff", "--name-only", "HEAD", "--"]);
@@ -111,7 +105,7 @@ function getE2ETargets(files) {
   return [...targets].sort();
 }
 
-function run(command, args) {
+function runOrExit(command, args) {
   console.log(`\n$ ${command} ${args.join(" ")}`);
   const result = spawnSync(command, args, {
     cwd: root,
@@ -121,11 +115,12 @@ function run(command, args) {
 
   if (result.error) {
     console.error(`命令启动失败：${result.error.message}`);
-    hasFailure = true;
-    return;
+    console.error("受影响验证失败，已停止后续步骤。");
+    process.exit(1);
   }
 
   if (result.status !== 0) {
-    hasFailure = true;
+    console.error("受影响验证失败，已停止后续步骤。");
+    process.exit(result.status ?? 1);
   }
 }

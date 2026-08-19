@@ -2,7 +2,9 @@ import type { DogLegeDogLevel } from "../levels/first-level";
 import { getDogPatternClassName, renderDogPatternAsset } from "../assets/game-assets";
 import type { GameSessionSnapshot } from "./game-session";
 import type { DogLegeDogGameState, DogVisualFeedback } from "./game-types";
-import type { DogBoard } from "../levels/level-types";
+
+const BLOCK_AREA_SCALE = 1.25;
+const BLOCK_SIDE_SCALE = Math.sqrt(BLOCK_AREA_SCALE);
 
 export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameState): void {
   const { board } = state.level;
@@ -12,7 +14,6 @@ export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameSta
   const blockSize = state.level.blocks[0];
   const boardColumns = board.width / blockSize.width;
   const boardRows = board.height / blockSize.height;
-  const boardClipPath = renderBoardClipPath(board);
 
   gameRoot.innerHTML = `
     <section
@@ -27,13 +28,6 @@ export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameSta
           <span>关卡</span>
           <strong>${state.level.number}</strong>
         </div>
-        ${state.level.number === 1 ? "" : `
-          <dl class="dog-game__stats">
-            <div><dt>剩余方块</dt><dd>${blocks.length}</dd></div>
-            <div><dt>图案</dt><dd>${state.level.patternTypes.length} 种</dd></div>
-            <div><dt>层数</dt><dd>${state.level.maxLayers} 层</dd></div>
-          </dl>
-        `}
       </header>
       <p class="dog-game__status dog-game__status--${state.session.status}" data-testid="dog-status" role="status">
         ${renderStatusMessage(state.session.status)}
@@ -44,12 +38,13 @@ export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameSta
           class="dog-board"
           data-testid="dog-board"
           data-shape="${board.shape}"
+          data-surface-shape="rectangle"
           data-template-id="${board.templateId}"
           data-logical-width="${board.width}"
           data-logical-height="${board.height}"
-          style="--board-columns: ${boardColumns}; --board-rows: ${boardRows}; clip-path: polygon(${boardClipPath});"
+          style="--board-columns: ${boardColumns}; --board-rows: ${boardRows};"
           role="group"
-          aria-label="第 ${state.level.number} 关不规则形棋盘，${blocks.length} 个层叠方块"
+          aria-label="第 ${state.level.number} 关矩形棋盘，${blocks.length} 个层叠方块"
         >
           ${blocks
             .map((block) => renderBlock(block, boardColumns, boardRows, selectableBlockIds, state.inputLocked))
@@ -65,70 +60,6 @@ export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameSta
   `;
 }
 
-interface BoardPoint {
-  readonly x: number;
-  readonly y: number;
-}
-
-function renderBoardClipPath(board: DogBoard): string {
-  const rowBounds = new Map<number, { minX: number; maxX: number }>();
-  for (const cell of board.playableCells) {
-    const current = rowBounds.get(cell.y);
-    if (current === undefined) {
-      rowBounds.set(cell.y, { minX: cell.x, maxX: cell.x });
-      continue;
-    }
-
-    current.minX = Math.min(current.minX, cell.x);
-    current.maxX = Math.max(current.maxX, cell.x);
-  }
-
-  const rows = [...rowBounds.entries()].sort(([firstY], [secondY]) => firstY - secondY);
-  const points: BoardPoint[] = [];
-  for (const [y, bounds] of rows) {
-    points.push({ x: bounds.maxX + 1, y });
-    points.push({ x: bounds.maxX + 1, y: y + 1 });
-  }
-  for (const [y, bounds] of [...rows].reverse()) {
-    points.push({ x: bounds.minX, y: y + 1 });
-    points.push({ x: bounds.minX, y });
-  }
-
-  return simplifyPolygon(points)
-    .map((point) => `${((point.x / board.width) * 100).toFixed(3)}% ${((point.y / board.height) * 100).toFixed(3)}%`)
-    .join(", ");
-}
-
-function simplifyPolygon(points: readonly BoardPoint[]): readonly BoardPoint[] {
-  const simplified: BoardPoint[] = [];
-  for (const point of points) {
-    const previous = simplified.at(-1);
-    if (previous?.x === point.x && previous.y === point.y) {
-      continue;
-    }
-    simplified.push(point);
-  }
-
-  let changed = true;
-  while (changed && simplified.length > 2) {
-    changed = false;
-    for (let index = 0; index < simplified.length; index += 1) {
-      const previous = simplified[(index - 1 + simplified.length) % simplified.length];
-      const current = simplified[index];
-      const next = simplified[(index + 1) % simplified.length];
-      if (
-        (previous.x === current.x && current.x === next.x) ||
-        (previous.y === current.y && current.y === next.y)
-      ) {
-        simplified.splice(index, 1);
-        changed = true;
-        break;
-      }
-    }
-  }
-  return simplified;
-}
-
 function renderBlock(
   block: DogLegeDogLevel["blocks"][number],
   boardColumns: number,
@@ -139,8 +70,18 @@ function renderBlock(
   const className = getDogPatternClassName(block.patternType);
   const gridX = block.x / block.width;
   const gridY = block.y / block.height;
-  const blockWidth = 100 / boardColumns;
-  const blockHeight = 100 / boardRows;
+  const baseBlockWidth = 100 / boardColumns;
+  const baseBlockHeight = 100 / boardRows;
+  const blockWidth = baseBlockWidth * BLOCK_SIDE_SCALE;
+  const blockHeight = baseBlockHeight * BLOCK_SIDE_SCALE;
+  const left = clampVisualBlockPosition(
+    gridX * baseBlockWidth - (blockWidth - baseBlockWidth) / 2,
+    100 - blockWidth,
+  );
+  const top = clampVisualBlockPosition(
+    gridY * baseBlockHeight - (blockHeight - baseBlockHeight) / 2,
+    100 - blockHeight,
+  );
   const selectable = !inputLocked && selectableBlockIds.includes(block.id);
 
   return `
@@ -155,9 +96,13 @@ function renderBlock(
       data-z="${block.z}"
       aria-label="可选择方块"
       ${selectable ? "" : "disabled"}
-      style="--block-left: ${gridX * blockWidth}%; --block-top: ${gridY * blockHeight}%; --block-width: ${blockWidth}%; --block-height: ${blockHeight}%; --block-z: ${block.z};"
+      style="--block-left: ${left}%; --block-top: ${top}%; --block-width: ${blockWidth}%; --block-height: ${blockHeight}%; --block-z: ${block.z};"
     ><span class="dog-block__glyph">${renderDogPatternAsset(block.patternType)}</span></button>
   `;
+}
+
+function clampVisualBlockPosition(position: number, maxPosition: number): number {
+  return Math.min(Math.max(position, 0), maxPosition);
 }
 
 function renderTray(session: GameSessionSnapshot): string {
