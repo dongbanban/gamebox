@@ -45,9 +45,6 @@ export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameSta
           <strong>${state.level.number}</strong>
         </div>
       </header>
-      <p class="dog-game__status dog-game__status--${state.session.status}" data-testid="dog-status" role="status">
-        ${renderStatusMessage(state.session.status)}
-      </p>
       <div class="dog-board-frame">
         <div class="dog-board-scaler" style="--board-pixel-width: ${boardPixelWidth}px; --board-pixel-height: ${boardPixelHeight}px;">
           <div
@@ -240,6 +237,7 @@ function renderTray(session: GameSessionSnapshot, feedback: DogVisualFeedback): 
       </div>
       ${renderMatchFeedback(feedback)}
       <ol class="dog-tray__slots" data-testid="dog-tray">${renderTraySlots(session)}</ol>
+      <p class="dog-game__status dog-game__status--${session.status}" data-testid="dog-status" role="status">${renderStatusMessage(session.status)}</p>
       <div class="dog-effects-layer" data-testid="dog-effects-layer">
         <canvas class="dog-effects-canvas" data-testid="dog-effects-canvas"></canvas>
       </div>
@@ -275,15 +273,11 @@ function renderStatusMessage(status: GameSessionSnapshot["status"]): string {
 }
 
 function renderFeedback(feedback: DogVisualFeedback): string {
-  if (feedback === "idle" || feedback === "match") {
+  if (feedback !== "won") {
     return "";
   }
 
-  const messages: Record<Exclude<DogVisualFeedback, "idle" | "match">, string> = {
-    won: "通关反馈",
-    lost: "失败反馈",
-  };
-  return `<p class="dog-feedback dog-feedback--${feedback}" data-testid="dog-feedback" role="status">${messages[feedback]}</p>`;
+  return '<p class="dog-feedback dog-feedback--won" data-testid="dog-feedback" role="status">通关反馈</p>';
 }
 
 function renderMatchFeedback(feedback: DogVisualFeedback): string {

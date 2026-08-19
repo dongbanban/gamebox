@@ -427,6 +427,13 @@ describe("狗了个狗首关", () => {
     expect(game.getState().feedback).toBe("lost");
     expect(game.getState().inputLocked).toBe(true);
     expect(results).toEqual([]);
+    const lossStatus = root.querySelector<HTMLElement>('[data-testid="dog-status"]');
+    const traySlots = root.querySelector<HTMLElement>('[data-testid="dog-tray"]');
+    expect(lossStatus?.textContent).toContain("失败！暂存槽已满。");
+    expect(lossStatus?.closest('[data-testid="dog-tray-region"]')).not.toBeNull();
+    expect(traySlots?.nextElementSibling).toBe(lossStatus);
+    expect(root.querySelector('.dog-board-frame [data-testid="dog-feedback"]')).toBeNull();
+    expect(root.textContent).not.toContain("失败反馈");
 
     await vi.runAllTimersAsync();
 

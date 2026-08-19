@@ -599,19 +599,32 @@ h2 {
 }
 
 .dog-game__status {
-  margin: -8px 0 20px;
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-radius: 12px;
   color: var(--ink-muted);
-  font-size: 13px;
-  line-height: 1.6;
+  font-size: 14px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.dog-game__status:empty {
+  display: none;
 }
 
 .dog-game__status--won {
+  border: 1px solid rgba(38, 138, 115, 0.28);
+  background: rgba(99, 208, 172, 0.14);
   color: #268a73;
   font-weight: 800;
 }
 
 .dog-game__status--lost {
+  border: 1px solid rgba(238, 128, 105, 0.44);
+  background: rgba(238, 128, 105, 0.16);
+  box-shadow: 0 4px 12px rgba(144, 59, 43, 0.1);
   color: var(--coral-dark);
+  font-size: 15px;
   font-weight: 800;
 }
 
@@ -636,12 +649,6 @@ h2 {
   background: rgba(99, 208, 172, 0.2);
   color: #268a73;
   animation: dog-result-pop 560ms ease both;
-}
-
-.dog-feedback--lost {
-  background: rgba(238, 128, 105, 0.18);
-  color: var(--coral-dark);
-  animation: dog-result-shake 380ms ease both;
 }
 
 .dog-board-frame {
@@ -1090,21 +1097,6 @@ h2 {
   }
 }
 
-@keyframes dog-result-shake {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-
-  25% {
-    transform: translateX(-6px);
-  }
-
-  75% {
-    transform: translateX(6px);
-  }
-}
-
 @media (max-width: 700px) {
   .register-view,
   .catalog-view {
@@ -1257,8 +1249,9 @@ h2 {
   }
 
   .dog-game__status {
-    flex: 0 0 auto;
-    margin: -4px 0 8px;
+    margin: 8px 0 0;
+    padding: 7px 10px;
+    font-size: 13px;
   }
 
   .dog-board-frame {
