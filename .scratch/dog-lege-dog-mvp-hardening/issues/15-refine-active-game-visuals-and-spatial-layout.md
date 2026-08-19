@@ -61,7 +61,7 @@
 
 - 需求来源：2026-08-18 活动游戏页视觉反馈与棋盘空间分布反馈；附图仅作为视觉参考。
 - 实现：活动页收敛为 GAMEBOX、返回图标、右上角音效按钮；移除关卡选择 DOM；所有关卡隐藏三项统计；暂存槽复用棋盘方块视觉；移动端棋盘/暂存槽无滚动；棋盘背景移除可见网格线；狗了个狗源码按 `assets/`、`game/`、`levels/` 分组；生成器版本先升至 5 并加入中心/四角/边缘与跨区空间分布硬约束，后由 ticket 19 升至 6 以加入底层多相位摆放。
-- 验证：`pnpm test:affected` 通过（核心 85/85、随机 3/3、E2E 13/13、typecheck、build）；`pnpm test:e2e:cross-browser` 通过（Chromium、mobile Chromium、Safari 3/3）；`pnpm test:qa` 通过（核心 85/85、随机 3/3、E2E 13/13）。
+- 历史验证（ticket 15 完成时）：`pnpm test:affected` 通过（核心 85/85、随机 3/3、E2E 13/13、typecheck、build）；`pnpm test:e2e:cross-browser` 通过（Chromium、mobile Chromium、Safari 3/3）。该结果不是当前代码的权威验证；后续几何、音频与暂存槽修复见最新 ticket 19。
 - 回放说明：失败候选保留 diagnostic replay seam 供失败元数据检查；普通生成与正常回放路径继续严格执行空间分布校验。
 - 后续视觉调整：所有关卡隐藏三项统计；可见棋盘改为完整长方形，移除 `.dog-board-frame` 移动布局中的 `flex: 1`；ticket 19 进一步移除独立方块面积放大，保证显示覆盖比例与逻辑 `1/2`、`1/4` 一致。
 - 后续实测：`pnpm test:ui` 通过；`pnpm build:pages` 通过；GitHub Pages 地址为 <https://dongbanban.github.io/gamebox/>。当前发布由 `.github/workflows/deploy-pages.yml` 自动构建并部署，不再依赖已删除的本地发布脚本。

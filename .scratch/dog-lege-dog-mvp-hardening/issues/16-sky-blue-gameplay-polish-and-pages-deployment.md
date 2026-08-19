@@ -23,5 +23,5 @@
 - 实现：三消反馈改为活动页无文案爆发动画并提供 `role=status`/`aria-label`；初版方块面积由 `1.25` 提升为 `1.875`，后由 ticket 19 恢复为与逻辑 `4×4` 盒同步，避免视觉覆盖比例漂移；棋盘上限由 860 提升为 1040，暂存槽图案保留完整显示；活动页切换为天空蓝主题并重新分配十种图案色系。
 - 音频：当前 `public/audio/levelmusicloop-tigrun.ogg` 已替换为 OpenGameArt 的 [Party and Gameover loop](https://opengameart.org/content/party-and-gameover-loop) 中 `happy_theme_0.ogg`，作者 gilzoide，来源页标注 CC0；背景音量下调，选取与三消反馈改为更突出的短旋律；项目内 provenance 已同步。
 - 测试流程：`pnpm test:ui` 纳入 app、狗了个狗和 sound-effects 三组单测；纯 UI 改动的 `test:affected` 直接委托 UI 单测，跳过重复 E2E/构建；`pnpm build:pages` 只负责生成 Pages base 的构建产物。
-- 验证：`pnpm typecheck` 通过；`pnpm test:ui` 通过（3 files、27 tests）；`pnpm build:pages` 通过；`node --check scripts/test-affected.mjs`、`git diff --check` 通过。按本轮要求未重复运行随机回归与浏览器 E2E。
+- 历史验证（ticket 16 完成时）：`pnpm typecheck`、`pnpm test:ui`（3 files、27 tests）、`pnpm build:pages`、`node --check scripts/test-affected.mjs`、`git diff --check` 通过；当时按 ticket 范围未重复运行随机回归与浏览器 E2E。当前活动页音频初始化、方块几何与暂存槽验证以最新 ticket 19 为准。
 - 发布：当前仓库由 `.github/workflows/deploy-pages.yml` 在 `main` push 或手动触发时构建并部署 Pages artifact；地址为 <https://dongbanban.github.io/gamebox/>。本地不再提供 `pnpm deploy:pages` 或 `scripts/deploy-pages.mjs`。

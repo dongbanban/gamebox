@@ -603,6 +603,12 @@ function canAddPlacement(
     return false;
   }
 
+  if (previousPlacements.some((lowerBlock) =>
+    placement.x === lowerBlock.x && placement.y === lowerBlock.y,
+  )) {
+    return false;
+  }
+
   return !previousPlacements.some(
     (lowerBlock) =>
       blocksOverlap(placement, lowerBlock) &&

@@ -21,16 +21,20 @@
 - 音乐初始化放在游戏 `start()`，不是依赖第一次选择方块或手动切换开关；`HTMLAudioElement.play()` 失败只视为可恢复的浏览器媒体限制。
 - 视觉方块恢复为逻辑盒尺寸，移除与层叠关系无关的二维 z 平移；层级仍由 `z-index`、禁用态与阴影表达。
 - 底层候选锚点合并四个 `4×4` 方块内的半方块相位，再沿用同层碰撞、遮挡上限、区域分布、重叠比例与可解校验。
+- 候选筛选拒绝与已有下层方块完全同锚点的跨层摆放，避免完整对齐关系超过 10% 后才在末端校验失败；`1/2`、`1/4` 正面积遮挡继续由几何校验约束。
 - 旧 ticket 15、16、17 保留原编号；本 ticket 作为最新 follow-up，修正已完成 ticket 中被后续代码覆盖的面积、音乐初始化与验证表述。
 
 ## Verification
 
-- `pnpm test:ui`
-- `pnpm typecheck`
-- `pnpm exec playwright test tests/e2e/register-catalog.spec.ts --grep "移动端竖屏" --project=chromium`
-- `pnpm build:pages`
-- `pnpm test:qa`
-- `git diff --check`
+- `pnpm test:ui`：通过，3 files、32 tests。
+- `pnpm typecheck`：通过。
+- `pnpm exec playwright test tests/e2e/register-catalog.spec.ts --grep "移动端竖屏" --project=chromium`：通过，1/1。
+- `pnpm build:pages`：通过。
+- `pnpm test:random`：通过，3/3；默认 100 关压力回归完成。
+- `CI=1 pnpm test:e2e`：通过，14/14。
+- `CI=1 pnpm test:e2e:cross-browser`：通过，Chromium、mobile Chromium、Safari 3/3。
+- `git diff --check`：通过。
+- `pnpm test:qa`：业务测试未失败，但现有 `test:core` 脚本未排除 `tests/e2e/**`，Vitest 误收 Playwright 文件并以 3 个收集错误退出；核心 90 tests、随机 3/3、E2E 14/14 已按独立命令完成。
 
 ## Comments
 

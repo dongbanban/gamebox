@@ -40,4 +40,4 @@
 - 本轮专项验证：`pnpm exec playwright test tests/e2e/register-catalog.spec.ts --grep "动作行" --project=chromium` 通过；`pnpm test:e2e:cross-browser` 通过（Chromium、mobile Chromium、Safari 3/3）。完整 `register-catalog.spec.ts` 另有既存暂存槽边框断言失败，与本次目录卡片行高改动无关。
 - 后续视觉修正：移动端缩略图改为 `object-fit: cover`；“开始游戏”移除箭头图标；回归测试锁定 cover 覆盖模式与按钮纯文字。
 - 本轮验证：`pnpm exec playwright test tests/e2e/register-catalog.spec.ts --grep "动作行" --project=chromium` 通过（1/1）；`pnpm test:ui` 通过（3 files、28 tests）；`pnpm build:pages` 通过；`pnpm test:e2e:cross-browser` 通过（Chromium、mobile Chromium、Safari 3/3）；`git diff --check` 通过。
-- 后续修复见 ticket 19：默认开启音乐在活动游戏 `start()` 内立即初始化；暂存槽图案缩入槽内完整展示；旧的独立方块面积放大与 z 方向二维平移移除，避免视觉覆盖比例偏离逻辑 `1/2`、`1/4`。
+- 后续修复见最新 ticket 19：默认开启音乐在活动游戏 `start()` 内立即初始化；暂存槽图案缩入槽内完整展示；旧的独立方块面积放大与 z 方向二维平移移除，避免视觉覆盖比例偏离逻辑 `1/2`、`1/4`。ticket 17 编号与历史验证记录保留，不改写为 19。
