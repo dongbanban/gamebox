@@ -6,16 +6,16 @@ export interface DogPatternPresentation {
 }
 
 const DOG_PATTERN_ASSET_PATHS: Readonly<Record<DogPatternType, string>> = Object.freeze({
-  打工狗: "assets/dog-icons/01-working-dog.svg",
-  单身狗: "assets/dog-icons/02-single-dog.svg",
-  舔狗: "assets/dog-icons/03-licking-dog.svg",
-  看门狗: "assets/dog-icons/04-guard-dog.svg",
-  疯狗: "assets/dog-icons/05-mad-dog.svg",
-  拆家狗: "assets/dog-icons/06-destructive-dog.svg",
-  龇牙狗: "assets/dog-icons/07-snarling-dog.svg",
-  社恐狗: "assets/dog-icons/08-shy-dog.svg",
-  吃货狗: "assets/dog-icons/09-foodie-dog.svg",
-  傻狗: "assets/dog-icons/10-silly-dog.svg",
+  打工狗: "assets/dog-icons-square/01-working-dog.svg",
+  单身狗: "assets/dog-icons-square/02-single-dog.svg",
+  舔狗: "assets/dog-icons-square/03-licking-dog.svg",
+  看门狗: "assets/dog-icons-square/04-guard-dog.svg",
+  疯狗: "assets/dog-icons-square/05-mad-dog.svg",
+  拆家狗: "assets/dog-icons-square/06-destructive-dog.svg",
+  龇牙狗: "assets/dog-icons-square/07-snarling-dog.svg",
+  社恐狗: "assets/dog-icons-square/08-shy-dog.svg",
+  吃货狗: "assets/dog-icons-square/09-foodie-dog.svg",
+  傻狗: "assets/dog-icons-square/10-silly-dog.svg",
 });
 
 export const DOG_PATTERN_PRESENTATIONS: Readonly<Record<DogPatternType, DogPatternPresentation>> =

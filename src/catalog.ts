@@ -23,7 +23,7 @@ export const DOG_GAME_DEFINITION: GameDefinition = Object.freeze({
   name: "狗了个狗",
   category: "DOG · TRIPLE",
   description: "看清层叠关系，找出相同图案，完成一场轻松的三消挑战。",
-  cover: "assets/dog-icons/10-silly-dog.svg",
+  cover: "assets/dog-icons-square/10-silly-dog.svg",
   playable: true,
   launch: startDogLegeDogGame,
   resultDisplay: DOG_GAME_RESULT_DISPLAY,

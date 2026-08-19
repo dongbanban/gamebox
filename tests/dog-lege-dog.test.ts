@@ -31,6 +31,7 @@ describe("狗了个狗首关", () => {
     const assets = DOG_PATTERN_TYPES.map((patternType) => renderDogPatternAsset(patternType));
     expect(new Set(assets)).toHaveLength(10);
     expect(assets.every((asset) => asset.includes("<svg") && asset.includes("<image"))).toBe(true);
+    expect(assets.every((asset) => asset.includes('href="assets/dog-icons-square/'))).toBe(true);
   });
 
   it("通过公共启动与状态 seam 暴露稳定的不规则棋盘", () => {
