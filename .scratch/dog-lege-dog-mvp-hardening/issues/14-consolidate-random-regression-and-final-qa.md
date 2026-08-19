@@ -6,6 +6,8 @@
 
 **Status:** ready-for-agent
 
+**Current baseline:** 当前代码已实现固定默认 `testSeed`、失败报告与单关重放、1–100 连续前缀、固定检查点、100–1000 压力档、不规则轮廓/部分重叠/三态可解性验证，以及 Chromium、Safari（Playwright WebKit）与移动 Chromium smoke。下列勾选项是后续收敛目标，不应当当作当前已实现行为。
+
 - [ ] 未显式提供 test seed 时，每次常规随机回归创建并输出新的 test seed。
 - [ ] 同一次运行的关卡选择、生成与报告全部由记录的 test seed 驱动。
 - [ ] 常规随机回归生成 1–100 个跨阶段采样关卡，不只覆盖从第 1 关开始的连续前缀。

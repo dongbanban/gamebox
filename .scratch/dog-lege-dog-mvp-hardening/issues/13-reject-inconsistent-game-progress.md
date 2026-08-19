@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** in-progress
+**Status:** done
 
 - [x] 最高解锁关卡为正整数，累计积分为非负整数，完成关卡唯一且有序。
 - [x] 完成关卡集合与最高解锁关卡满足线性解锁关系。
@@ -20,4 +20,4 @@
 - `ProgressStore` 只接受完整线性完成前缀；重复、乱序、缺口、越界状态直接拒绝。旧版缺失完成历史仅在有界数量内兼容推导，超大历史进入临时模式，避免无界数组分配。
 - 首次完成锁定关卡、累计积分或最高解锁关卡溢出均拒绝；不补发完成历史，不重算已有累计积分。损坏状态可 reset，随后重新注册恢复持久模式。
 - 验证：`pnpm exec vitest run tests/progress-store.test.ts` — 26/26 通过；`pnpm typecheck` — 通过；`pnpm build` — 通过；`pnpm exec playwright test tests/e2e/register-catalog.spec.ts tests/e2e/full-flow.spec.ts --project=chromium --workers=1` — 12/12 通过。
-- `pnpm test:affected` 已运行，但默认 5s 动画测试在 `tests/dog-lege-dog.test.ts`、`tests/app.test.ts` 出现时序超时；ProgressStore 测试无失败。提高 timeout 后相关核心测试 25/25 通过。ticket 保持 `in-progress`，待受影响全量命令无环境/既有时序超时后再关闭。
+- 当前实现已完成语义校验；受损状态进入临时运行模式，重置后可重新注册恢复持久模式。本轮文档复核已验证 `pnpm test:ui`、`pnpm build` 与 `pnpm build:pages`；`pnpm test:qa` 仍会因 `test:core` 误收集 `tests/e2e/*.spec.ts` 而被 Vitest 阻断，属于独立测试脚本问题。

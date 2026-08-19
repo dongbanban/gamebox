@@ -679,6 +679,10 @@ h2 {
   transform: translate(0, calc(var(--block-z) * -4px - 2px));
 }
 
+.dog-block:not(:disabled):active {
+  box-shadow: none;
+}
+
 .dog-block:disabled {
   cursor: default;
   filter: brightness(0.72) saturate(0.76);

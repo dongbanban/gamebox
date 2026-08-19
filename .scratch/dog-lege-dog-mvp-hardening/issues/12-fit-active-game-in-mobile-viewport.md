@@ -18,7 +18,7 @@
 ## Comments
 
 - 移动活动游戏改为 `dvh` 高度约束与 flex 剩余空间布局，压缩头部、必要状态区、棋盘外围与暂存槽；短视口棋盘按逻辑宽高比等比缩放。
-- 移动 Chromium E2E 覆盖 390×844、390×667、320×568：页面/`body` 无滚动，棋盘与 7 格暂存槽在视口内；真实点击可点击方块、关卡按钮与音效开关，并验证棋盘等比缩放与桌面居中最大宽度。
-- 验证通过：`pnpm test:affected`（Chromium 6、typecheck、build）、`pnpm test:e2e:cross-browser`（Chromium/mobile Chromium/Firefox/WebKit 4）、`pnpm test:qa`（核心 68、随机 3、Chromium E2E 13）。
+- 移动 Chromium E2E 覆盖 390×844、390×667、320×568：页面/`body` 无滚动，棋盘与 7 格暂存槽在视口内；真实点击可点击方块与音效开关，并验证棋盘等比缩放与桌面居中最大宽度。
+- 验证通过：`pnpm test:affected`（Chromium、typecheck、build）、`pnpm test:e2e:cross-browser`（Chromium/mobile Chromium/Safari WebKit）、`pnpm test:qa`（核心、随机、Chromium E2E）。
 - 起始 commit：`f08b412`。code review Standards/Spec findings 已修复并重跑受影响验证。
-- 当前浏览器支持矩阵：Chromium、Safari（Playwright WebKit）与移动 Chromium；Firefox 不再作为支持目标。
+- 当前浏览器支持矩阵：Chromium、Safari（Playwright WebKit）与移动 Chromium。
