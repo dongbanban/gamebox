@@ -11,13 +11,14 @@
     "typecheck": "tsc --noEmit",
     "test": "pnpm test:core",
     "test:affected": "node scripts/test-affected.mjs",
-    "test:ui": "vitest run tests/app.test.ts tests/dog-lege-dog.test.ts",
+    "test:ui": "vitest run tests/app.test.ts tests/dog-lege-dog.test.ts tests/sound-effects.test.ts",
     "test:core": "vitest run --exclude tests/random-regression.test.ts",
     "test:random": "vitest run tests/random-regression.test.ts",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:cross-browser": "PLAYWRIGHT_CROSS_BROWSER=1 playwright test tests/e2e/cross-browser.spec.ts",
-    "test:qa": "pnpm test:core && pnpm test:random && pnpm test:e2e"
+    "test:qa": "pnpm test:core && pnpm test:random && pnpm test:e2e",
+    "deploy:pages": "node scripts/deploy-pages.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.51.0",

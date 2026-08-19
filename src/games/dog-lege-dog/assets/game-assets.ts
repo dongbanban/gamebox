@@ -10,52 +10,52 @@ export const DOG_PATTERN_PRESENTATIONS: Readonly<Record<DogPatternType, DogPatte
   Object.freeze({
     打工狗: {
       className: "working-dog",
-      accent: "#ee8069",
+      accent: "#ff5f69",
       detailMarkup: '<rect x="17" y="35" width="14" height="7" rx="2" fill="#183b48"/><path d="M20 35c0-4 8-4 8 0" fill="none" stroke="#183b48" stroke-width="2"/>',
     },
     单身狗: {
       className: "single-dog",
-      accent: "#ffc966",
+      accent: "#ffb53d",
       detailMarkup: '<path d="M24 42c-7-4-8-8-5-10 2-1 4 0 5 2 1-2 3-3 5-2 3 2 2 6-5 10Z" fill="#ee8069"/>',
     },
     舔狗: {
       className: "licking-dog",
-      accent: "#76b89a",
+      accent: "#19b886",
       detailMarkup: '<path d="M24 31v8c0 4-6 4-6 0 0-2 2-3 6-3Z" fill="#ee8069"/>',
     },
     看门狗: {
       className: "guard-dog",
-      accent: "#6c9dc4",
+      accent: "#258dcb",
       detailMarkup: '<path d="m24 34 8 3-2 6h-12l-2-6 8-3Z" fill="#183b48"/><path d="M24 36v5" stroke="#ffc966" stroke-width="2"/>',
     },
     疯狗: {
       className: "mad-dog",
-      accent: "#d47bd0",
+      accent: "#9b51e0",
       detailMarkup: '<path d="M17 36 21 32l3 4 3-4 4 4-7 5Z" fill="#183b48"/>',
     },
     拆家狗: {
       className: "destructive-dog",
-      accent: "#e8a15b",
+      accent: "#ed7b25",
       detailMarkup: '<path d="m17 35 5-3 2 3 2-3 5 3-2 7H19Z" fill="#183b48"/>',
     },
     龇牙狗: {
       className: "snarling-dog",
-      accent: "#a8c86e",
+      accent: "#82b83b",
       detailMarkup: '<path d="M17 33c4 4 10 4 14 0v7H17Z" fill="#fffdf8" stroke="#183b48" stroke-width="1.5"/>',
     },
     社恐狗: {
       className: "shy-dog",
-      accent: "#a5a6d8",
+      accent: "#5d60c8",
       detailMarkup: '<path d="M17 35h14v7H17Z" fill="#183b48" opacity=".8"/>',
     },
     吃货狗: {
       className: "foodie-dog",
-      accent: "#f0bd68",
+      accent: "#ec4d9a",
       detailMarkup: '<circle cx="24" cy="37" r="6" fill="#183b48"/><circle cx="22" cy="35" r="1.5" fill="#fff3d7"/>',
     },
     傻狗: {
       className: "silly-dog",
-      accent: "#8ec5c7",
+      accent: "#1babb0",
       detailMarkup: '<path d="M18 34c4 3 8 3 12 0l-2 8H20Z" fill="#183b48"/>',
     },
   });

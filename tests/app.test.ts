@@ -335,12 +335,13 @@ describe("注册与游戏目录 UI", () => {
     const boardRows = Number(board?.style.getPropertyValue("--board-rows"));
     expect(board?.dataset.surfaceShape).toBe("rectangle");
     expect(board?.style.clipPath).toBe("");
-    expect(parseFloat(firstBlock?.style.getPropertyValue("--block-width") ?? "0")).toBeGreaterThan(
-      100 / boardColumns,
-    );
-    expect(parseFloat(firstBlock?.style.getPropertyValue("--block-height") ?? "0")).toBeGreaterThan(
-      100 / boardRows,
-    );
+    const blockWidthScale =
+      parseFloat(firstBlock?.style.getPropertyValue("--block-width") ?? "0") /
+      (100 / boardColumns);
+    const blockHeightScale =
+      parseFloat(firstBlock?.style.getPropertyValue("--block-height") ?? "0") /
+      (100 / boardRows);
+    expect(blockWidthScale * blockHeightScale).toBeGreaterThan(1.8);
     expect(root.textContent).not.toContain("狗了个狗");
     expect(root.querySelector('.game-entry-view__brand [data-action="catalog"]')).not.toBeNull();
     expect(root.querySelector('[data-testid="dog-game"] h2')).toBeNull();

@@ -13,6 +13,12 @@ for (const file of changedFiles) {
   console.log(`  ${file}`);
 }
 
+if (isUiOnlyChange(changedFiles)) {
+  console.log("检测到 UI-only 改动：运行 UI 单测，跳过相关测试、E2E 与重复构建。\n");
+  runOrExit("pnpm", ["test:ui"]);
+  process.exit(0);
+}
+
 const vitestTargets = changedFiles.filter(
   (file) =>
     /^src\/.*\.ts$/.test(file) ||
@@ -74,6 +80,19 @@ function requiresRandomRegression(files) {
     (file) =>
       /^src\/games\/dog-lege-dog\/(?:level-|first-level\.ts|game-config\.ts)/.test(file) ||
       /^tests\/(?:level-generator|generation-failure|random-regression)\.test\.ts$/.test(file),
+  );
+}
+
+function isUiOnlyChange(files) {
+  return (
+    files.length > 0 &&
+    files.every(
+      (file) =>
+        file === "src/style.css" ||
+        /^src\/games\/dog-lege-dog\/(?:assets\/(?:animation-effects|game-assets|particle-effects|sound-effects)\.ts|game\/game-(?:controller|renderer)\.ts)$/.test(file) ||
+        /^tests\/(?:app|dog-lege-dog|sound-effects)\.test\.ts$/.test(file) ||
+        /^public\/audio\//.test(file),
+    )
   );
 }
 

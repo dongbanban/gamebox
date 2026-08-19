@@ -183,7 +183,7 @@ describe("狗了个狗首关", () => {
     game.destroy();
   });
 
-  it("三消反馈独立出现，并在飞行动画后开放下一次操作", async () => {
+  it("三消只显示显眼动画，不渲染中间文案，并在动画后开放下一次操作", async () => {
     vi.useFakeTimers();
     const root = document.createElement("div");
     const game = startDogLegeDogGame(root);
@@ -207,7 +207,12 @@ describe("狗了个狗首关", () => {
     expect(matched).toBe(true);
     expect(game.getState().feedback).toBe("match");
     expect(game.getState().inputLocked).toBe(true);
-    expect(root.querySelector('[data-testid="dog-feedback"]')?.textContent).toContain("三消");
+    expect(root.querySelector('[data-testid="dog-feedback"]')).toBeNull();
+    const matchEffect = root.querySelector('[data-testid="dog-match-effect"]');
+    expect(matchEffect?.getAttribute("role")).toBe("status");
+    expect(matchEffect?.getAttribute("aria-label")).toBe("三消成功");
+    expect(root.querySelectorAll('.dog-match-effect__spark')).toHaveLength(8);
+    expect(root.textContent).not.toContain("三消");
     expect(game.getState().session.tray.length).toBeLessThan(7);
 
     await vi.runAllTimersAsync();

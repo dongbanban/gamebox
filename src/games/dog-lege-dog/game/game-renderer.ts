@@ -3,7 +3,7 @@ import { getDogPatternClassName, renderDogPatternAsset } from "../assets/game-as
 import type { GameSessionSnapshot } from "./game-session";
 import type { DogLegeDogGameState, DogVisualFeedback } from "./game-types";
 
-const BLOCK_AREA_SCALE = 1.25;
+const BLOCK_AREA_SCALE = 1.875;
 const BLOCK_SIDE_SCALE = Math.sqrt(BLOCK_AREA_SCALE);
 
 export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameState): void {
@@ -32,7 +32,6 @@ export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameSta
       <p class="dog-game__status dog-game__status--${state.session.status}" data-testid="dog-status" role="status">
         ${renderStatusMessage(state.session.status)}
       </p>
-      ${renderFeedback(state.feedback)}
       <div class="dog-board-frame">
         <div
           class="dog-board"
@@ -50,6 +49,7 @@ export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameSta
             .map((block) => renderBlock(block, boardColumns, boardRows, selectableBlockIds, state.inputLocked))
             .join("")}
         </div>
+        ${renderFeedback(state.feedback)}
       </div>
       ${renderTray(state.session)}
       <div class="dog-effects-layer" data-testid="dog-effects-layer">
@@ -147,10 +147,18 @@ function renderFeedback(feedback: DogVisualFeedback): string {
     return "";
   }
 
-  const messages: Record<Exclude<DogVisualFeedback, "idle">, string> = {
-    match: "三消！",
+  if (feedback === "match") {
+    return `
+      <div class="dog-match-effect" data-testid="dog-match-effect" role="status" aria-label="三消成功">
+        <span class="dog-match-effect__ring"></span>
+        ${Array.from({ length: 8 }, (_, index) => `<span class="dog-match-effect__spark dog-match-effect__spark--${index + 1}"></span>`).join("")}
+      </div>
+    `;
+  }
+
+  const messages: Record<Exclude<DogVisualFeedback, "idle" | "match">, string> = {
     won: "通关反馈",
     lost: "失败反馈",
   };
-  return `<p class="dog-feedback dog-feedback--${feedback}" data-testid="dog-feedback">${messages[feedback]}</p>`;
+  return `<p class="dog-feedback dog-feedback--${feedback}" data-testid="dog-feedback" role="status">${messages[feedback]}</p>`;
 }

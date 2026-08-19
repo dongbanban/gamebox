@@ -289,6 +289,9 @@ export function createDogLegeDogGame(
       }
 
       runtime.soundEnabled = soundEnabled;
+      if (soundEnabled) {
+        soundEffects.initialize();
+      }
       soundEffects.setEnabled(soundEnabled);
     },
 

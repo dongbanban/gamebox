@@ -31,13 +31,13 @@ Used by `/wayfinder`. The **map** is a file with one **child** file per ticket.
 
 ## Ticket 验收
 
-UI 文案、DOM、渲染器或样式改动优先运行：
+UI 文案、DOM、渲染器、样式、视觉资源或游戏音效改动优先运行：
 
 ```bash
 pnpm test:ui
 ```
 
-该命令只跑 app 与狗了个狗 UI 单测，不触发随机回归、浏览器 E2E 或构建。
+该命令只跑 app、狗了个狗渲染/交互与音效单测，不触发随机回归、浏览器 E2E 或构建。`pnpm test:affected` 检测到纯 UI 改动时会自动委托给同一命令；已经手动运行 `test:ui` 后不要再叠加 `test:affected`。
 
 普通实现 ticket 完成前运行：
 
@@ -45,7 +45,7 @@ pnpm test:ui
 pnpm test:affected
 ```
 
-该命令读取当前 Git 改动与未跟踪文件，按 Vitest import graph 运行受影响核心测试；按源码、样式与 E2E 文件范围选择 Chromium 流程；末尾运行一次 `pnpm build`。`build` 已包含 `tsc --noEmit`，不再重复运行独立 typecheck；任一步失败立即停止。
+该命令读取当前 Git 改动与未跟踪文件；纯 UI 改动直接运行 `pnpm test:ui` 并结束，避免重复的相关测试、E2E 与构建；其他改动才按 Vitest import graph 运行受影响核心测试、按源码/样式/E2E 文件范围选择 Chromium 流程，并在末尾运行一次 `pnpm build`。`build` 已包含 `tsc --noEmit`，不再重复运行独立 typecheck；任一步失败立即停止。
 
 以下范围必须追加全量测试：
 

@@ -15,15 +15,15 @@ interface ParticleRun {
 }
 
 const EFFECT_DURATION: Record<ParticleEffect, number> = {
-  match: 300,
+  match: 620,
   won: 560,
   lost: 380,
 };
 
 const EFFECT_COLORS: Record<ParticleEffect, readonly string[]> = {
-  match: ["#ffc966", "#ee8069", "#76b89a"],
-  won: ["#ffc966", "#63b88a", "#8ec5c7", "#fff3d7"],
-  lost: ["#ee8069", "#c95e50", "#183b48"],
+  match: ["#ffffff", "#ffd166", "#ff6f91", "#52d6c6", "#7bc7f5"],
+  won: ["#ffd166", "#63b88a", "#7bc7f5", "#ffffff"],
+  lost: ["#ff8c7a", "#d86556", "#16445d"],
 };
 
 export interface ParticleEffects {
@@ -143,12 +143,12 @@ function resizeCanvas(canvas: HTMLCanvasElement): void {
 
 function createParticles(effect: ParticleEffect): Particle[] {
   const colors = EFFECT_COLORS[effect];
-  return Array.from({ length: effect === "won" ? 28 : 16 }, (_, index) => ({
+  return Array.from({ length: effect === "match" ? 32 : effect === "won" ? 28 : 16 }, (_, index) => ({
     x: 0.2 + ((index * 37) % 60) / 100,
     y: 0.32 + ((index * 19) % 25) / 100,
-    velocityX: ((index % 5) - 2) * 0.7,
-    velocityY: -1.2 - (index % 4) * 0.12,
-    size: 4 + (index % 4) * 2,
+    velocityX: ((index % 7) - 3) * (effect === "match" ? 0.82 : 0.7),
+    velocityY: -1.2 - (index % 4) * (effect === "match" ? 0.16 : 0.12),
+    size: effect === "match" ? 6 + (index % 4) * 2 : 4 + (index % 4) * 2,
     color: colors[index % colors.length],
     rotation: (index * 27) % 360,
   }));

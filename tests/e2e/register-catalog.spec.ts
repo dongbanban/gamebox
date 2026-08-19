@@ -310,7 +310,7 @@ test.describe("注册与游戏目录", () => {
       };
     });
 
-    expect(desktopLayout.boardWidth).toBeLessThanOrEqual(860);
+    expect(desktopLayout.boardWidth).toBeLessThanOrEqual(1040);
     expect(Math.abs(desktopLayout.boardCenter - desktopLayout.frameCenter)).toBeLessThanOrEqual(1);
   });
 });

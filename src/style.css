@@ -1,18 +1,21 @@
 :root {
-  color: #183b48;
-  background: #f7f2e9;
+  color: #16445d;
+  background: #eaf7ff;
   font-family: "Avenir Next", "PingFang SC", "Microsoft YaHei", sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
-  --ink: #183b48;
-  --ink-muted: #5e7074;
-  --cream: #f7f2e9;
-  --paper: #fffdf8;
-  --coral: #ee8069;
-  --coral-dark: #c95e50;
-  --yellow: #ffc966;
-  --line: rgba(24, 59, 72, 0.13);
-  --shadow: 0 24px 60px rgba(24, 59, 72, 0.13);
+  --ink: #16445d;
+  --ink-muted: #5c7782;
+  --cream: #eaf7ff;
+  --paper: #fbfeff;
+  --coral: #ff8c7a;
+  --coral-dark: #d86556;
+  --yellow: #ffd166;
+  --sky: #7bc7f5;
+  --sky-deep: #3f94c3;
+  --sky-pale: #d9f0fc;
+  --line: rgba(22, 68, 93, 0.14);
+  --shadow: 0 24px 60px rgba(22, 68, 93, 0.14);
 }
 
 * {
@@ -29,8 +32,8 @@ body {
   min-height: 100vh;
   margin: 0;
   background:
-    radial-gradient(circle at 12% 8%, rgba(255, 201, 102, 0.32), transparent 27rem),
-    radial-gradient(circle at 92% 78%, rgba(238, 128, 105, 0.18), transparent 30rem),
+    radial-gradient(circle at 12% 8%, rgba(123, 199, 245, 0.38), transparent 27rem),
+    radial-gradient(circle at 92% 78%, rgba(82, 214, 198, 0.2), transparent 30rem),
     var(--cream);
 }
 
@@ -392,7 +395,7 @@ h2 {
 }
 
 .game-entry-view {
-  width: min(100%, 1080px);
+  width: min(100%, 1200px);
   min-height: 100vh;
   margin: 0 auto;
   padding: 32px 24px 56px;
@@ -491,7 +494,7 @@ h2 {
   padding: clamp(14px, 2.5vw, 26px);
   border: 1px solid rgba(255, 255, 255, 0.9);
   border-radius: 26px;
-  background: rgba(255, 253, 248, 0.9);
+  background: rgba(251, 254, 255, 0.94);
   box-shadow: var(--shadow);
 }
 
@@ -510,7 +513,7 @@ h2 {
   min-height: 38px;
   padding: 6px 11px;
   border-radius: 11px;
-  background: #f6f0e5;
+  background: #e4f3fb;
   color: var(--ink-muted);
   font-size: 11px;
   font-weight: 800;
@@ -531,16 +534,16 @@ h2 {
   place-items: center;
   border: 1px solid var(--line);
   border-radius: 14px;
-  background: rgba(255, 253, 248, 0.86);
+  background: rgba(251, 254, 255, 0.9);
   color: var(--ink-muted);
   cursor: pointer;
   transition: color 160ms ease, border-color 160ms ease, background 160ms ease;
 }
 
 .sound-button:hover {
-  border-color: var(--coral);
+  border-color: var(--sky-deep);
   background: var(--paper);
-  color: var(--coral-dark);
+  color: var(--sky-deep);
 }
 
 .sound-button__icon {
@@ -568,7 +571,7 @@ h2 {
 }
 
 .dog-game__status--won {
-  color: #39825c;
+  color: #268a73;
   font-weight: 800;
 }
 
@@ -578,8 +581,12 @@ h2 {
 }
 
 .dog-feedback {
+  position: absolute;
+  z-index: 40;
+  top: 50%;
+  left: 50%;
   width: fit-content;
-  margin: -8px auto 16px;
+  margin: 0;
   padding: 7px 14px;
   border-radius: 999px;
   font-size: 12px;
@@ -587,17 +594,12 @@ h2 {
   letter-spacing: 0.08em;
   pointer-events: none;
   text-align: center;
-}
-
-.dog-feedback--match {
-  background: rgba(255, 201, 102, 0.28);
-  color: #9a6817;
-  animation: dog-match-pop 300ms ease both;
+  transform: translate(-50%, -50%);
 }
 
 .dog-feedback--won {
-  background: rgba(99, 184, 138, 0.2);
-  color: #39825c;
+  background: rgba(99, 208, 172, 0.2);
+  color: #268a73;
   animation: dog-result-pop 560ms ease both;
 }
 
@@ -608,27 +610,28 @@ h2 {
 }
 
 .dog-board-frame {
+  position: relative;
   display: flex;
   justify-content: center;
   max-width: 100%;
   overflow: hidden;
   padding: clamp(8px, 2vw, 20px);
   border-radius: 22px;
-  background: #e7d5b8;
+  background: var(--sky-pale);
   overscroll-behavior: contain;
   touch-action: none;
 }
 
 .dog-board {
   position: relative;
-  width: min(100%, 860px);
-  max-width: 860px;
+  width: min(100%, 1040px);
+  max-width: 1040px;
   aspect-ratio: var(--board-columns) / var(--board-rows);
   overflow: hidden;
-  border: 7px solid #b6875a;
+  border: 8px solid #4f9bc0;
   border-radius: 18px;
-  background: #c79e6b;
-  box-shadow: inset 0 0 0 2px rgba(24, 59, 72, 0.12), 0 16px 28px rgba(24, 59, 72, 0.14);
+  background: #78afd0;
+  box-shadow: inset 0 0 0 2px rgba(22, 68, 93, 0.16), 0 16px 28px rgba(22, 68, 93, 0.18);
   overscroll-behavior: contain;
   touch-action: none;
   user-select: none;
@@ -648,12 +651,12 @@ h2 {
   border: 2px solid rgba(255, 253, 248, 0.82);
   border-radius: 10px;
   cursor: pointer;
-  color: #183b48;
+  color: #16445d;
   font: inherit;
   font-size: clamp(14px, 2.4vw, 26px);
   transform: translate(0, calc(var(--block-z) * -4px));
   z-index: calc(10 + var(--block-z));
-  box-shadow: 3px 4px 0 rgba(24, 59, 72, 0.18), inset 0 0 0 1px rgba(24, 59, 72, 0.1);
+  box-shadow: 4px 5px 0 rgba(22, 68, 93, 0.2), inset 0 0 0 1px rgba(22, 68, 93, 0.12);
   touch-action: none;
   user-select: none;
 }
@@ -668,52 +671,52 @@ h2 {
 }
 
 .dog-block--working-dog {
-  --dog-block-background: #ffe0a6;
+  --dog-block-background: #ff91a4;
   background: var(--dog-block-background);
 }
 
 .dog-block--single-dog {
-  --dog-block-background: #ffc0ae;
+  --dog-block-background: #f4d35e;
   background: var(--dog-block-background);
 }
 
 .dog-block--licking-dog {
-  --dog-block-background: #bde3d1;
+  --dog-block-background: #67d19a;
   background: var(--dog-block-background);
 }
 
 .dog-block--guard-dog {
-  --dog-block-background: #bcd7ee;
+  --dog-block-background: #71a9ea;
   background: var(--dog-block-background);
 }
 
 .dog-block--mad-dog {
-  --dog-block-background: #e4b4df;
+  --dog-block-background: #c28be8;
   background: var(--dog-block-background);
 }
 
 .dog-block--destructive-dog {
-  --dog-block-background: #f0c38f;
+  --dog-block-background: #ef854d;
   background: var(--dog-block-background);
 }
 
 .dog-block--snarling-dog {
-  --dog-block-background: #cfe39f;
+  --dog-block-background: #b6d86b;
   background: var(--dog-block-background);
 }
 
 .dog-block--shy-dog {
-  --dog-block-background: #c9c9ea;
+  --dog-block-background: #8489e9;
   background: var(--dog-block-background);
 }
 
 .dog-block--foodie-dog {
-  --dog-block-background: #f5d895;
+  --dog-block-background: #e97abc;
   background: var(--dog-block-background);
 }
 
 .dog-block--silly-dog {
-  --dog-block-background: #b9dcdd;
+  --dog-block-background: #5dc8c4;
   background: var(--dog-block-background);
 }
 
@@ -724,10 +727,10 @@ h2 {
 }
 
 .dog-tray {
-  margin-top: 22px;
-  padding: 16px;
-  border-radius: 16px;
-  background: #f6f0e5;
+  margin-top: 24px;
+  padding: 20px;
+  border-radius: 20px;
+  background: #e7f5fc;
 }
 
 .dog-tray__heading {
@@ -736,19 +739,19 @@ h2 {
   justify-content: space-between;
   margin-bottom: 10px;
   color: var(--ink-muted);
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .dog-tray__heading h3 {
   margin: 0;
   color: var(--ink);
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .dog-tray__slots {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 8px;
+  gap: 10px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -760,21 +763,74 @@ h2 {
   aspect-ratio: 1;
   place-items: center;
   overflow: hidden;
-  border: 1px dashed rgba(24, 59, 72, 0.18);
-  border-radius: 10px;
-  background: rgba(255, 253, 248, 0.65);
+  border: 2px dashed rgba(22, 68, 93, 0.2);
+  border-radius: 14px;
+  background: rgba(251, 254, 255, 0.78);
 }
 
 .dog-tray__slot--filled {
-  border: 2px solid rgba(255, 253, 248, 0.82);
+  border: 3px solid rgba(255, 255, 255, 0.9);
   background: var(--dog-block-background);
-  box-shadow: 3px 4px 0 rgba(24, 59, 72, 0.18), inset 0 0 0 1px rgba(24, 59, 72, 0.1);
+  box-shadow: 4px 5px 0 rgba(22, 68, 93, 0.2), inset 0 0 0 1px rgba(22, 68, 93, 0.12);
 }
 
 .dog-tray__slot .dog-block__glyph {
-  width: 78%;
-  height: 78%;
+  width: 96%;
+  height: 96%;
 }
+
+.dog-match-effect {
+  position: absolute;
+  z-index: 35;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  pointer-events: none;
+  animation: dog-match-flash 620ms ease-out both;
+}
+
+.dog-match-effect::before {
+  position: absolute;
+  width: clamp(120px, 24vw, 260px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.72), rgba(123, 199, 245, 0.16) 48%, transparent 72%);
+  content: "";
+  animation: dog-match-glow 620ms ease-out both;
+}
+
+.dog-match-effect__ring {
+  position: absolute;
+  width: clamp(72px, 14vw, 168px);
+  aspect-ratio: 1;
+  border: clamp(5px, 0.8vw, 9px) solid rgba(255, 255, 255, 0.94);
+  border-radius: 50%;
+  box-shadow: 0 0 0 8px rgba(255, 209, 102, 0.32), 0 0 34px rgba(255, 255, 255, 0.9);
+  animation: dog-match-ring 620ms cubic-bezier(0.16, 0.8, 0.3, 1) both;
+}
+
+.dog-match-effect__spark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: clamp(5px, 0.8vw, 9px);
+  height: clamp(26px, 5vw, 64px);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #fff, #ffd166);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.9);
+  transform-origin: 50% 100%;
+  animation: dog-match-spark 620ms cubic-bezier(0.16, 0.8, 0.3, 1) both;
+}
+
+.dog-match-effect__spark--1 { --spark-angle: 0deg; }
+.dog-match-effect__spark--2 { --spark-angle: 45deg; }
+.dog-match-effect__spark--3 { --spark-angle: 90deg; }
+.dog-match-effect__spark--4 { --spark-angle: 135deg; }
+.dog-match-effect__spark--5 { --spark-angle: 180deg; }
+.dog-match-effect__spark--6 { --spark-angle: 225deg; }
+.dog-match-effect__spark--7 { --spark-angle: 270deg; }
+.dog-match-effect__spark--8 { --spark-angle: 315deg; }
 
 .dog-effects-layer,
 .dog-animation-layer {
@@ -804,8 +860,8 @@ h2 {
   display: grid;
   place-items: center;
   border-radius: 10px;
-  background: #fffdf8;
-  box-shadow: 3px 4px 0 rgba(24, 59, 72, 0.18), 0 10px 24px rgba(24, 59, 72, 0.18);
+  background: #fbfeff;
+  box-shadow: 4px 5px 0 rgba(22, 68, 93, 0.2), 0 10px 24px rgba(22, 68, 93, 0.2);
   will-change: transform, opacity;
 }
 
@@ -815,20 +871,66 @@ h2 {
   height: 82%;
 }
 
-@keyframes dog-match-pop {
+@keyframes dog-match-flash {
   0% {
     opacity: 0;
-    transform: translateY(6px) scale(0.8);
   }
 
-  55% {
+  14% {
     opacity: 1;
-    transform: translateY(0) scale(1.08);
   }
 
   100% {
+    opacity: 0;
+  }
+}
+
+@keyframes dog-match-glow {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+
+  30% {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+
+@keyframes dog-match-ring {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+
+  24% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.9);
+  }
+}
+
+@keyframes dog-match-spark {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -100%) rotate(var(--spark-angle)) translateY(0) scaleY(0.25);
+  }
+
+  28% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -100%) rotate(var(--spark-angle)) translateY(clamp(-86px, -7vw, -38px)) scaleY(1.15);
   }
 }
 
@@ -913,7 +1015,7 @@ h2 {
     min-height: 0;
     flex-direction: column;
     overflow: hidden;
-    padding: 12px 12px 16px;
+    padding: 10px 8px 12px;
   }
 
   .game-entry-view__header {
@@ -971,7 +1073,7 @@ h2 {
     flex: 1 1 auto;
     flex-direction: column;
     overflow: hidden;
-    padding: 6px;
+    padding: 5px;
     border-radius: 18px;
   }
 
@@ -989,11 +1091,11 @@ h2 {
   .dog-board-frame {
     min-height: 0;
     align-items: center;
-    padding: 4px;
+    padding: 3px;
   }
 
   .dog-board {
-    width: min(100%, 860px);
+    width: min(100%, 1040px);
     height: auto;
     max-width: 100%;
     max-height: 100%;
@@ -1002,8 +1104,8 @@ h2 {
 
   .dog-tray {
     flex: 0 0 auto;
-    margin-top: 6px;
-    padding: 6px;
+    margin-top: 7px;
+    padding: 8px;
   }
 
   .dog-tray__heading {
@@ -1012,6 +1114,11 @@ h2 {
 
   .dog-tray__slots {
     gap: 4px;
+  }
+
+  .dog-tray__slot .dog-block__glyph {
+    width: 100%;
+    height: 100%;
   }
 }
 
