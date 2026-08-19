@@ -11,7 +11,7 @@ import {
   LEVEL_GENERATOR_VERSION,
   LevelGenerator,
   type DogLegeDogLevel,
-} from "../src/games/dog-lege-dog";
+} from "@/games/dog-lege-dog";
 
 const RANDOM_TEST_SEED =
   process.env.DOG_RANDOM_TEST_SEED ?? "random-regression-default-v1";

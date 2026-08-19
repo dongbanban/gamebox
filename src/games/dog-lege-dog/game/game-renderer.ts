@@ -1,7 +1,11 @@
-import type { DogLegeDogLevel } from "../levels/first-level";
-import { getDogPatternClassName, renderDogPatternAsset } from "../assets/game-assets";
-import type { GameSessionSnapshot } from "./game-session";
-import type { DogLegeDogGameState, DogVisualFeedback } from "./game-types";
+import type { DogLegeDogLevel } from "@/games/dog-lege-dog/levels/first-level";
+import { BLOCK_HEIGHT, BLOCK_WIDTH } from "@/games/dog-lege-dog/levels/level-types";
+import { getDogPatternClassName, renderDogPatternAsset } from "@/games/dog-lege-dog/assets/game-assets";
+import type { GameSessionSnapshot } from "@/games/dog-lege-dog/game/game-session";
+import type { DogLegeDogGameState, DogVisualFeedback } from "@/games/dog-lege-dog/game/game-types";
+
+export const DOG_BLOCK_VISUAL_SIZE_PX = 40;
+export const DOG_LOGICAL_UNIT_VISUAL_SIZE_PX = DOG_BLOCK_VISUAL_SIZE_PX / BLOCK_WIDTH;
 
 export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameState): void {
   const { board } = state.level;
@@ -12,9 +16,18 @@ export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameSta
   const blockSize = state.level.blocks[0];
   const boardColumns = board.width / blockSize.width;
   const boardRows = board.height / blockSize.height;
+  const boardPixelWidth = board.width * DOG_LOGICAL_UNIT_VISUAL_SIZE_PX;
+  const boardPixelHeight = board.height * (DOG_BLOCK_VISUAL_SIZE_PX / BLOCK_HEIGHT);
 
   if (existingGame !== null) {
-    updateDogLegeDogGame(existingGame, state, boardColumns, boardRows);
+    updateDogLegeDogGame(
+      existingGame,
+      state,
+      boardColumns,
+      boardRows,
+      boardPixelWidth,
+      boardPixelHeight,
+    );
     return;
   }
 
@@ -36,21 +49,31 @@ export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameSta
         ${renderStatusMessage(state.session.status)}
       </p>
       <div class="dog-board-frame">
-        <div
-          class="dog-board"
-          data-testid="dog-board"
-          data-shape="${board.shape}"
-          data-surface-shape="rectangle"
-          data-template-id="${board.templateId}"
-          data-logical-width="${board.width}"
-          data-logical-height="${board.height}"
-          style="--board-columns: ${boardColumns}; --board-rows: ${boardRows};"
-          role="group"
-          aria-label="第 ${state.level.number} 关矩形棋盘，${blocks.length} 个层叠方块"
-        >
-          ${blocks
-            .map((block) => renderBlock(block, boardColumns, boardRows, selectableBlockIds, state.inputLocked))
-            .join("")}
+        <div class="dog-board-scaler" style="--board-pixel-width: ${boardPixelWidth}px; --board-pixel-height: ${boardPixelHeight}px;">
+          <div
+            class="dog-board"
+            data-testid="dog-board"
+            data-shape="${board.shape}"
+            data-surface-shape="rectangle"
+            data-template-id="${board.templateId}"
+            data-logical-width="${board.width}"
+            data-logical-height="${board.height}"
+            style="--board-columns: ${boardColumns}; --board-rows: ${boardRows}; --board-pixel-width: ${boardPixelWidth}px; --board-pixel-height: ${boardPixelHeight}px;"
+            role="group"
+            aria-label="第 ${state.level.number} 关矩形棋盘，${blocks.length} 个层叠方块"
+          >
+            ${blocks
+              .map((block) =>
+                renderBlock(
+                  block,
+                  boardPixelWidth,
+                  boardPixelHeight,
+                  selectableBlockIds,
+                  state.inputLocked,
+                ),
+              )
+              .join("")}
+          </div>
         </div>
         ${renderFeedback(state.feedback)}
       </div>
@@ -58,6 +81,7 @@ export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameSta
       <div class="dog-animation-layer" data-testid="dog-animation-layer"></div>
     </section>
   `;
+  fitDogBoardToFrame(gameRoot);
 }
 
 function updateDogLegeDogGame(
@@ -65,10 +89,13 @@ function updateDogLegeDogGame(
   state: DogLegeDogGameState,
   boardColumns: number,
   boardRows: number,
+  boardPixelWidth: number,
+  boardPixelHeight: number,
 ): void {
   const { board } = state.level;
   const { remainingBlocks, selectableBlockIds } = state.session;
   const boardElement = gameRoot.querySelector<HTMLElement>('[data-testid="dog-board"]');
+  const boardScaler = gameRoot.querySelector<HTMLElement>(".dog-board-scaler");
   const statusElement = gameRoot.querySelector<HTMLElement>('[data-testid="dog-status"]');
   const boardFrame = gameRoot.querySelector<HTMLElement>('.dog-board-frame');
   const tray = gameRoot.querySelector<HTMLElement>('[data-testid="dog-tray-region"]');
@@ -90,14 +117,26 @@ function updateDogLegeDogGame(
     boardElement.dataset.logicalHeight = String(board.height);
     boardElement.style.setProperty("--board-columns", String(boardColumns));
     boardElement.style.setProperty("--board-rows", String(boardRows));
+    boardElement.style.setProperty("--board-pixel-width", `${boardPixelWidth}px`);
+    boardElement.style.setProperty("--board-pixel-height", `${boardPixelHeight}px`);
     boardElement.setAttribute(
       "aria-label",
       `第 ${state.level.number} 关矩形棋盘，${remainingBlocks.length} 个层叠方块`,
     );
     boardElement.innerHTML = remainingBlocks
-      .map((block) => renderBlock(block, boardColumns, boardRows, selectableBlockIds, state.inputLocked))
+      .map((block) =>
+        renderBlock(
+          block,
+          boardPixelWidth,
+          boardPixelHeight,
+          selectableBlockIds,
+          state.inputLocked,
+        ),
+      )
       .join("");
   }
+  boardScaler?.style.setProperty("--board-pixel-width", `${boardPixelWidth}px`);
+  boardScaler?.style.setProperty("--board-pixel-height", `${boardPixelHeight}px`);
 
   boardFrame?.querySelector<HTMLElement>('[data-testid="dog-feedback"]')?.remove();
   const boardFeedback = renderFeedback(state.feedback);
@@ -121,29 +160,53 @@ function updateDogLegeDogGame(
   } else {
     matchEffect?.remove();
   }
+
+  fitDogBoardToFrame(gameRoot);
+}
+
+export function fitDogBoardToFrame(root: HTMLElement): void {
+  const frame = root.querySelector<HTMLElement>(".dog-board-frame");
+  const scaler = root.querySelector<HTMLElement>(".dog-board-scaler");
+  const board = root.querySelector<HTMLElement>('[data-testid="dog-board"]');
+  if (frame === null || scaler === null || board === null) {
+    return;
+  }
+
+  const frameStyle = getComputedStyle(frame);
+  const availableWidth =
+    frame.clientWidth -
+    Number.parseFloat(frameStyle.paddingLeft) -
+    Number.parseFloat(frameStyle.paddingRight);
+  const boardOuterWidth = board.offsetWidth;
+  const boardOuterHeight = board.offsetHeight;
+  if (boardOuterWidth <= 0 || boardOuterHeight <= 0) {
+    return;
+  }
+  const scale =
+    availableWidth > 0 ? Math.min(1, availableWidth / boardOuterWidth) : 1;
+
+  board.style.setProperty("--board-display-scale", String(scale));
+  scaler.style.width = `${boardOuterWidth * scale}px`;
+  scaler.style.height = `${boardOuterHeight * scale}px`;
 }
 
 function renderBlock(
   block: DogLegeDogLevel["blocks"][number],
-  boardColumns: number,
-  boardRows: number,
+  boardPixelWidth: number,
+  boardPixelHeight: number,
   selectableBlockIds: readonly string[],
   inputLocked: boolean,
 ): string {
   const className = getDogPatternClassName(block.patternType);
-  const gridX = block.x / block.width;
-  const gridY = block.y / block.height;
-  const baseBlockWidth = 100 / boardColumns;
-  const baseBlockHeight = 100 / boardRows;
-  const blockWidth = baseBlockWidth;
-  const blockHeight = baseBlockHeight;
+  const blockWidth = DOG_BLOCK_VISUAL_SIZE_PX;
+  const blockHeight = DOG_BLOCK_VISUAL_SIZE_PX;
   const left = clampVisualBlockPosition(
-    gridX * baseBlockWidth - (blockWidth - baseBlockWidth) / 2,
-    100 - blockWidth,
+    block.x * DOG_LOGICAL_UNIT_VISUAL_SIZE_PX,
+    boardPixelWidth - blockWidth,
   );
   const top = clampVisualBlockPosition(
-    gridY * baseBlockHeight - (blockHeight - baseBlockHeight) / 2,
-    100 - blockHeight,
+    block.y * DOG_LOGICAL_UNIT_VISUAL_SIZE_PX,
+    boardPixelHeight - blockHeight,
   );
   const selectable = !inputLocked && selectableBlockIds.includes(block.id);
 
@@ -159,7 +222,7 @@ function renderBlock(
       data-z="${block.z}"
       aria-label="可选择方块"
       ${selectable ? "" : "disabled"}
-      style="--block-left: ${left}%; --block-top: ${top}%; --block-width: ${blockWidth}%; --block-height: ${blockHeight}%; --block-z: ${block.z};"
+      style="--block-left: ${left}px; --block-top: ${top}px; --block-width: ${blockWidth}px; --block-height: ${blockHeight}px; --block-z: ${block.z};"
     ><span class="dog-block__glyph">${renderDogPatternAsset(block.patternType)}</span></button>
   `;
 }

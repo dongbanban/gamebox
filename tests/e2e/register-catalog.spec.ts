@@ -356,6 +356,47 @@ test.describe("注册与游戏目录", () => {
     expect(desktopLayout.boardWidth).toBeLessThanOrEqual(1040);
     expect(Math.abs(desktopLayout.boardCenter - desktopLayout.frameCenter)).toBeLessThanOrEqual(1);
   });
+
+  test("活动棋盘使用 40px 方块与同尺寸底层网格", async ({ page }) => {
+    await page.setViewportSize({ width: 430, height: 932 });
+    await page.getByRole("button", { name: "匿名注册" }).click();
+    await page.getByRole("button", { name: "开始游戏" }).click();
+
+    const layout = await page.evaluate(() => {
+      const board = document.querySelector<HTMLElement>('[data-testid="dog-board"]');
+      const block = document.querySelector<HTMLElement>('[data-testid="dog-block"]');
+      const boardRect = board?.getBoundingClientRect();
+      const blockRect = block?.getBoundingClientRect();
+      const boardStyle = board === null ? null : getComputedStyle(board);
+      const scale = Number(board?.style.getPropertyValue("--board-display-scale") || 1);
+      return {
+        viewportWidth: window.innerWidth,
+        boardLeft: boardRect?.left ?? 0,
+        boardRight: boardRect?.right ?? 0,
+        boardContentWidth:
+          (boardRect?.width ?? 0) / scale -
+          Number.parseFloat(boardStyle?.borderLeftWidth ?? "0") -
+          Number.parseFloat(boardStyle?.borderRightWidth ?? "0"),
+        boardContentHeight:
+          (boardRect?.height ?? 0) / scale -
+          Number.parseFloat(boardStyle?.borderTopWidth ?? "0") -
+          Number.parseFloat(boardStyle?.borderBottomWidth ?? "0"),
+        blockWidth: (blockRect?.width ?? 0) / scale,
+        blockHeight: (blockRect?.height ?? 0) / scale,
+        columns: Number(board?.style.getPropertyValue("--board-columns") ?? 0),
+        rows: Number(board?.style.getPropertyValue("--board-rows") ?? 0),
+        scale,
+      };
+    });
+
+    expect(layout.blockWidth).toBeCloseTo(40, 1);
+    expect(layout.blockHeight).toBeCloseTo(40, 1);
+    expect(layout.boardContentWidth / layout.columns).toBeCloseTo(40, 1);
+    expect(layout.boardContentHeight / layout.rows).toBeCloseTo(40, 1);
+    expect(layout.scale).toBeLessThan(1);
+    expect(layout.boardLeft).toBeGreaterThanOrEqual(0);
+    expect(layout.boardRight).toBeLessThanOrEqual(layout.viewportWidth);
+  });
 });
 
 async function acceptBeforeUnload<T>(page: Page, action: () => Promise<T>): Promise<T> {

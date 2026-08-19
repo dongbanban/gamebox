@@ -1,5 +1,5 @@
-import { DEFAULT_LEVEL_REWARD } from "../game/game-config";
-import type { DogLevelDifficulty } from "./level-types";
+import { DEFAULT_LEVEL_REWARD } from "@/games/dog-lege-dog/game/game-config";
+import type { DogLevelDifficulty } from "@/games/dog-lege-dog/levels/level-types";
 
 export const DOG_REWARD_CONFIG_VERSION = 1 as const;
 

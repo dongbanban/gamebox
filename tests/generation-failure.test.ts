@@ -3,7 +3,7 @@ import {
   LEVEL_GENERATOR_VERSION,
   MAX_LEVEL_GENERATION_ATTEMPTS,
   LevelGenerator,
-} from "../src/games/dog-lege-dog";
+} from "@/games/dog-lege-dog";
 
 describe("LevelGenerator 候选筛选失败", () => {
   it("筛选全部失败时保留 replay metadata，并可重放失败候选", () => {

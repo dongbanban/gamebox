@@ -1,11 +1,11 @@
-import { insertPatternIntoTray } from "./level-rules";
-import { createBlockGraph, type BlockGraph } from "./level-graph";
+import { insertPatternIntoTray } from "@/games/dog-lege-dog/levels/level-rules";
+import { createBlockGraph, type BlockGraph } from "@/games/dog-lege-dog/levels/level-graph";
 import type {
   DogLevelGeometry,
   DogPatternType,
   DogSafeChoiceSearchStatus,
   DogSolvabilityStatus,
-} from "./level-types";
+} from "@/games/dog-lege-dog/levels/level-types";
 
 export const MAX_SOLVABILITY_SEARCH_BRANCHES = 16 as const;
 

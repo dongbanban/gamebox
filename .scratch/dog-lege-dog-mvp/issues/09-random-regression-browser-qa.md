@@ -6,7 +6,7 @@
 
 **Status:** done
 
-- [x] 每次随机测试运行生成 1–100 个关卡，并记录 `testSeed`、关卡号、关卡 seed 与生成器版本。
+- [x] 每次随机测试按固定默认或显式 `testSeed` 确定性生成 1–100 个连续前缀关卡，并记录 `testSeed`、关卡号、关卡 seed 与生成器版本。
 - [x] 固定覆盖第 1、5、10、15、30、100 关；另设 100–1000 个关卡压力测试。
 - [x] 任意随机测试失败可使用记录的 seed 单独重放。
 - [x] 属性测试覆盖方块数量、图案总数、形状、层叠、遮挡上限、可解性、安全选择与难度区间。
@@ -23,3 +23,4 @@
 - 新增 Playwright 完整闭环、存储异常、跨浏览器 smoke；默认 Chromium，`PLAYWRIGHT_CROSS_BROWSER=1` 扩展 Safari（Playwright WebKit）与移动 Chromium。
 - 验证通过：`pnpm typecheck`、`pnpm test`（46 tests）、`pnpm test:random`（默认 seed，3 tests）、`DOG_STRESS_LEVEL_COUNT=1000` 压力测试、`pnpm exec playwright test --project=chromium`（12 tests）、`pnpm build`、`git diff --check`。
 - 跨浏览器配置当前运行 Chromium、Safari（Playwright WebKit）与移动 Chromium；运行 WebKit 前需先安装 Playwright WebKit。
+- 当前全量命令与跨阶段随机采样的后续收敛见 hardening ticket 19：`test:core` 尚未排除 Playwright spec，默认 seed 仍固定，常规集合仍是连续前缀。

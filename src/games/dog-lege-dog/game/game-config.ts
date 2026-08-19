@@ -1,4 +1,4 @@
-import type { DogPatternType } from "../levels/level-types";
+import type { DogPatternType } from "@/games/dog-lege-dog/levels/level-types";
 
 const GAME_ID = "dog-lege-dog" as const;
 const GENERATOR_VERSION = 6 as const;

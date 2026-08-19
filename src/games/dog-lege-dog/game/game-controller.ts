@@ -3,21 +3,24 @@ import type {
   GameResult,
   GameResultAction,
   GameResultDisplay,
-} from "../../../game-contracts";
-import { FIRST_LEVEL, type DogLegeDogLevel } from "../levels/first-level";
-import { DOG_GAME_ID, DOG_GAME_RESULT_DISPLAY } from "./game-config";
-import { getDogLegeDogLevel } from "../levels/level-provider";
-import { animateBlockFlight, type CancellableAnimation } from "../assets/animation-effects";
-import { GameSession, type GameSessionSnapshot } from "./game-session";
-import { createParticleEffects } from "../assets/particle-effects";
-import { createSoundEffects } from "../assets/sound-effects";
-import { renderDogLegeDogGame } from "./game-renderer";
+} from "@/game-contracts";
+import { FIRST_LEVEL, type DogLegeDogLevel } from "@/games/dog-lege-dog/levels/first-level";
+import { DOG_GAME_ID, DOG_GAME_RESULT_DISPLAY } from "@/games/dog-lege-dog/game/game-config";
+import { getDogLegeDogLevel } from "@/games/dog-lege-dog/levels/level-provider";
+import { animateBlockFlight, type CancellableAnimation } from "@/games/dog-lege-dog/assets/animation-effects";
+import { GameSession, type GameSessionSnapshot } from "@/games/dog-lege-dog/game/game-session";
+import { createParticleEffects } from "@/games/dog-lege-dog/assets/particle-effects";
+import { createSoundEffects } from "@/games/dog-lege-dog/assets/sound-effects";
+import {
+  fitDogBoardToFrame,
+  renderDogLegeDogGame,
+} from "@/games/dog-lege-dog/game/game-renderer";
 import type {
   DogLegeDogGame,
   DogLegeDogGameOptions,
   DogLegeDogGameState,
   DogVisualFeedback,
-} from "./game-types";
+} from "@/games/dog-lege-dog/game/game-types";
 
 interface DogGameRuntime {
   readonly session: GameSession;
@@ -61,6 +64,8 @@ export function createDogLegeDogGame(
     root.querySelector<HTMLElement>("[data-game-content]") ?? root;
   const soundEffects = createSoundEffects(runtime.soundEnabled);
   const particleEffects = createParticleEffects(root);
+  const handleViewportResize = (): void => fitDogBoardToFrame(root);
+  window.addEventListener("resize", handleViewportResize);
 
   const selectBlock = (blockId: string): GameSessionSnapshot => {
     if (runtime.destroyed) {
@@ -345,6 +350,7 @@ export function createDogLegeDogGame(
       soundEffects.destroy();
       root.removeEventListener("pointerup", handlePointerUp);
       root.removeEventListener("click", handleClick);
+      window.removeEventListener("resize", handleViewportResize);
       gameContentRoot.replaceChildren();
     },
   };

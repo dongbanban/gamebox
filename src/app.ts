@@ -4,14 +4,14 @@ import {
   type GameLaunchHandle,
   type GameResult,
   type GameResultAction,
-} from "./catalog";
+} from "@/catalog";
 import {
   createInitialGameProgress,
   ProgressStore,
   type LevelCompletionResult,
   type StoreSnapshot,
-} from "./progress-store";
-import { renderDogPatternAsset } from "./games/dog-lege-dog/assets/game-assets";
+} from "@/progress-store";
+import { renderDogPatternAsset } from "@/games/dog-lege-dog/assets/game-assets";
 
 export interface MountAppOptions {
   store?: ProgressStore;

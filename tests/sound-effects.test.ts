@@ -1,9 +1,9 @@
 /** @vitest-environment jsdom */
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { mountApp } from "../src/app";
-import { FIRST_LEVEL } from "../src/games/dog-lege-dog";
-import { ProgressStore, type StorageLike } from "../src/progress-store";
+import { mountApp } from "@/app";
+import { FIRST_LEVEL } from "@/games/dog-lege-dog";
+import { ProgressStore, type StorageLike } from "@/progress-store";
 
 class MemoryStorage implements StorageLike {
   private readonly values = new Map<string, string>();

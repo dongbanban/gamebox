@@ -3,8 +3,8 @@ import type {
   DogLevelDifficulty,
   DogLevelGeometry,
   DogSafeChoiceSearchStatus,
-} from "./level-types";
-import { getDifficultyTarget } from "./level-progression";
+} from "@/games/dog-lege-dog/levels/level-types";
+import { getDifficultyTarget } from "@/games/dog-lege-dog/levels/level-progression";
 import {
   countSafeChoiceMetrics,
   findSolvability,
@@ -12,9 +12,9 @@ import {
   verifyRemovalPath,
   type PathVerification,
   type SolvabilityResult,
-} from "./level-solvability";
-import { createBlockGraph } from "./level-graph";
-import { getPositiveOverlapArea } from "./level-rules";
+} from "@/games/dog-lege-dog/levels/level-solvability";
+import { createBlockGraph } from "@/games/dog-lege-dog/levels/level-graph";
+import { getPositiveOverlapArea } from "@/games/dog-lege-dog/levels/level-rules";
 
 export function isDifficultyWithinTarget(
   difficulty: DogLevelDifficulty,

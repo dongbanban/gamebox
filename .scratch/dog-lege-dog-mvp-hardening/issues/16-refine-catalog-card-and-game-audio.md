@@ -1,8 +1,8 @@
-# 17 — 收敛游戏目录卡片与愉快音频反馈
+# 16 — 收敛游戏目录卡片与愉快音频反馈
 
 **What to build:** 将游戏目录卡片改为紧凑的左右布局，左侧使用狗主题卡通涂鸦封面并撑满卡片高度，右侧按缩小后的游戏名、简介、最高解锁关卡与开始游戏顺序排列；目录卡片不展示累计积分、不展示绿色状态提示；替换为更轻快的本地开源循环音乐，降低背景音量并强化选取方块与三消成功音效的听感层次。
 
-**Related to:** 16 — 天空蓝活动页视觉、音乐与 Pages 发布收敛
+**Related to:** 15 — 天空蓝活动页视觉、音乐与 Pages 发布收敛
 
 **Status:** done
 
@@ -19,7 +19,7 @@
 - [x] 背景音乐音量低于交互音效；进入活动游戏时沿用户启动点击链初始化，首次方块操作可重试，暂停/恢复与持久化行为保持不变。
 - [x] 选取方块与三消成功音效使用更清晰的多音符/旋律反馈，且不阻塞游戏流程。
 - [x] UI 单测覆盖目录卡片结构与状态提示移除；现有游戏公开行为与音效开关测试继续通过。
-- [x] 更新 spec.md 与 01–16 ticket 中发现的过期展示、音乐来源和测试命令描述。
+- [x] 更新 spec.md 与 01–15 ticket 中发现的过期展示、音乐来源和测试命令描述。
 
 ## Verification
 
@@ -40,4 +40,4 @@
 - 本轮专项验证：`pnpm exec playwright test tests/e2e/register-catalog.spec.ts --grep "动作行" --project=chromium` 通过；`pnpm test:e2e:cross-browser` 通过（Chromium、mobile Chromium、Safari 3/3）。完整 `register-catalog.spec.ts` 另有既存暂存槽边框断言失败，与本次目录卡片行高改动无关。
 - 后续视觉修正：移动端缩略图改为 `object-fit: cover`；“开始游戏”移除箭头图标；回归测试锁定 cover 覆盖模式与按钮纯文字。
 - 本轮验证：`pnpm exec playwright test tests/e2e/register-catalog.spec.ts --grep "动作行" --project=chromium` 通过（1/1）；`pnpm test:ui` 通过（3 files、28 tests）；`pnpm build:pages` 通过；`pnpm test:e2e:cross-browser` 通过（Chromium、mobile Chromium、Safari 3/3）；`git diff --check` 通过。
-- 后续修复见最新 ticket 19：默认开启音乐在活动游戏 `start()` 内立即初始化；暂存槽图案缩入槽内完整展示；旧的独立方块面积放大与 z 方向二维平移移除，避免视觉覆盖比例偏离逻辑 `1/2`、`1/4`。ticket 17 编号与历史验证记录保留，不改写为 19。
+- 后续修复见 ticket 18：默认开启音乐在活动游戏 `start()` 内立即初始化；暂存槽图案缩入槽内完整展示；旧的独立方块面积放大与 z 方向二维平移移除，避免视觉覆盖比例偏离逻辑 `1/2`、`1/4`。ticket 16 编号与历史验证记录保留。

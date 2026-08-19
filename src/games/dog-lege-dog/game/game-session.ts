@@ -3,13 +3,13 @@ import {
   type DogBlock,
   type DogLegeDogLevel,
   type DogPatternType,
-} from "../levels/first-level";
-import { createBlockGraph, type BlockGraph } from "../levels/level-graph";
-import { freezeDogLegeDogLevel } from "../levels/level-immutability";
+} from "@/games/dog-lege-dog/levels/first-level";
+import { createBlockGraph, type BlockGraph } from "@/games/dog-lege-dog/levels/level-graph";
+import { freezeDogLegeDogLevel } from "@/games/dog-lege-dog/levels/level-immutability";
 import {
   insertPatternIntoTray,
   resolvePatternMatches,
-} from "../levels/level-rules";
+} from "@/games/dog-lege-dog/levels/level-rules";
 
 export const GAME_SESSION_TRAY_CAPACITY = 7 as const;
 

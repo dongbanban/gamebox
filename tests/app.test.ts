@@ -1,10 +1,10 @@
 /** @vitest-environment jsdom */
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { mountApp } from "../src/app";
-import type { GameDefinition, GameLaunchContext } from "../src/catalog";
-import { FIRST_LEVEL, FIRST_LEVEL_SEED } from "../src/games/dog-lege-dog";
-import { GAME_ID, ProgressStore, type StorageLike } from "../src/progress-store";
+import { mountApp } from "@/app";
+import type { GameDefinition, GameLaunchContext } from "@/catalog";
+import { FIRST_LEVEL, FIRST_LEVEL_SEED } from "@/games/dog-lege-dog";
+import { GAME_ID, ProgressStore, type StorageLike } from "@/progress-store";
 
 class DamagedStorage implements StorageLike {
   getItem(): string {
@@ -347,18 +347,10 @@ describe("注册与游戏目录 UI", () => {
     expect(root.querySelector('[data-testid="dog-active-level"]')?.textContent).toContain("1");
     const board = root.querySelector<HTMLElement>('[data-testid="dog-board"]');
     const firstBlock = root.querySelector<HTMLElement>('[data-testid="dog-block"]');
-    const boardColumns = Number(board?.style.getPropertyValue("--board-columns"));
-    const boardRows = Number(board?.style.getPropertyValue("--board-rows"));
     expect(board?.dataset.surfaceShape).toBe("rectangle");
     expect(board?.style.clipPath).toBe("");
-    const blockWidthScale =
-      parseFloat(firstBlock?.style.getPropertyValue("--block-width") ?? "0") /
-      (100 / boardColumns);
-    const blockHeightScale =
-      parseFloat(firstBlock?.style.getPropertyValue("--block-height") ?? "0") /
-      (100 / boardRows);
-    expect(blockWidthScale).toBeCloseTo(1);
-    expect(blockHeightScale).toBeCloseTo(1);
+    expect(firstBlock?.style.getPropertyValue("--block-width")).toBe("40px");
+    expect(firstBlock?.style.getPropertyValue("--block-height")).toBe("40px");
     expect(root.textContent).not.toContain("狗了个狗");
     expect(root.querySelector('.game-entry-view__brand [data-action="catalog"]')).not.toBeNull();
     expect(root.querySelector('[data-testid="dog-game"] h2')).toBeNull();

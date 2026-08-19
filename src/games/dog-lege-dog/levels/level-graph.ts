@@ -1,4 +1,4 @@
-import type { DogBlock } from "./level-types";
+import type { DogBlock } from "@/games/dog-lege-dog/levels/level-types";
 
 export interface Rectangle {
   readonly x: number;

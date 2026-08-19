@@ -53,11 +53,13 @@ pnpm test:affected
 - 关卡生成器、可解性搜索、难度筛选或随机回归
 - 合并前、发布前或无法确认影响范围
 
-全量命令（替代 `pnpm test:affected`，不要叠加运行）：
+目标全量命令（替代 `pnpm test:affected`，不要叠加运行）：
 
 ```bash
 pnpm test:qa
 ```
+
+当前 `test:core` 尚未排除 `tests/e2e/**`，`test:affected` 的生成器匹配仍使用目录整理前路径；两项由 ticket 19 跟踪。ticket 19 完成前，全量验证分别运行排除 E2E 的核心 Vitest、`pnpm test:random` 与 `pnpm test:e2e`，生成器改动必须显式运行随机回归。
 
 响应式或浏览器兼容改动追加：
 

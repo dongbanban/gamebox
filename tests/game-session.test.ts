@@ -5,7 +5,7 @@ import {
   type DogBlock,
   type DogLegeDogLevel,
   type DogPatternType,
-} from "../src/games/dog-lege-dog";
+} from "@/games/dog-lege-dog";
 
 const WORKING_DOG: DogPatternType = "打工狗";
 const SINGLE_DOG: DogPatternType = "单身狗";

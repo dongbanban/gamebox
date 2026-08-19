@@ -1,4 +1,4 @@
-import { DOG_GAME_ID } from "./games/dog-lege-dog/game/game-config";
+import { DOG_GAME_ID } from "@/games/dog-lege-dog/game/game-config";
 
 export const STORAGE_KEY = "gamebox.state";
 export const APP_STATE_VERSION = 1 as const;

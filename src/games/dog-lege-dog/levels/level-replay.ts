@@ -5,10 +5,10 @@ import type {
   DogLevelReplay,
   DogLevelReplayMode,
   DogLegeDogLevel,
-} from "./level-types";
-import type { LevelGeneratorRequest } from "./level-generator-contracts";
-import { freezeDogLegeDogLevel } from "./level-immutability";
-import { DOG_REWARD_CONFIG_VERSION } from "./level-reward";
+} from "@/games/dog-lege-dog/levels/level-types";
+import type { LevelGeneratorRequest } from "@/games/dog-lege-dog/levels/level-generator-contracts";
+import { freezeDogLegeDogLevel } from "@/games/dog-lege-dog/levels/level-immutability";
+import { DOG_REWARD_CONFIG_VERSION } from "@/games/dog-lege-dog/levels/level-reward";
 
 export interface GeneratedLevelCandidate {
   readonly attempt: number;

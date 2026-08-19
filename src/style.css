@@ -32,8 +32,16 @@ body {
   min-height: 100vh;
   margin: 0;
   background:
-    radial-gradient(circle at 12% 8%, rgba(123, 199, 245, 0.38), transparent 27rem),
-    radial-gradient(circle at 92% 78%, rgba(82, 214, 198, 0.2), transparent 30rem),
+    radial-gradient(
+      circle at 12% 8%,
+      rgba(123, 199, 245, 0.38),
+      transparent 27rem
+    ),
+    radial-gradient(
+      circle at 92% 78%,
+      rgba(82, 214, 198, 0.2),
+      transparent 30rem
+    ),
     var(--cream);
 }
 
@@ -122,14 +130,17 @@ button:focus-visible {
 }
 
 .brand-lockup__mark--dog {
-  padding: 2px;
+  padding: 0;
+  border-radius: 50%;
   background: var(--sky-pale);
 }
 
 .brand-lockup__mark--dog svg {
   display: block;
-  width: 100%;
-  height: 100%;
+  width: 114.2%;
+  height: 114.2%;
+  max-width: none;
+  flex: none;
 }
 
 .brand-lockup--compact {
@@ -198,7 +209,10 @@ h2 {
   color: #fffdf8;
   font-size: 14px;
   font-weight: 800;
-  transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
+  transition:
+    transform 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .primary-button:hover {
@@ -282,7 +296,9 @@ h2 {
   background: transparent;
   color: var(--ink-muted);
   font-size: 12px;
-  transition: color 160ms ease, border-color 160ms ease;
+  transition:
+    color 160ms ease,
+    border-color 160ms ease;
 }
 
 .text-button:hover {
@@ -301,7 +317,10 @@ h2 {
   background: rgba(255, 253, 248, 0.86);
   color: var(--ink-muted);
   cursor: pointer;
-  transition: color 160ms ease, border-color 160ms ease, background 160ms ease;
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease;
 }
 
 .icon-button:hover {
@@ -550,7 +569,10 @@ h2 {
   background: rgba(251, 254, 255, 0.9);
   color: var(--ink-muted);
   cursor: pointer;
-  transition: color 160ms ease, border-color 160ms ease, background 160ms ease;
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease;
 }
 
 .sound-button:hover {
@@ -635,18 +657,32 @@ h2 {
   touch-action: none;
 }
 
-.dog-board {
+.dog-board-scaler {
+  --dog-board-border-size: 8px;
+  --dog-board-border-total-size: 16px;
   position: relative;
-  width: min(100%, 1040px);
-  max-width: 1040px;
-  aspect-ratio: var(--board-columns) / var(--board-rows);
+  flex: 0 0 auto;
+  width: calc(var(--board-pixel-width) + var(--dog-board-border-total-size));
+  height: calc(var(--board-pixel-height) + var(--dog-board-border-total-size));
+}
+
+.dog-board {
+  position: absolute;
+  inset: 0 auto auto 0;
+  box-sizing: content-box;
+  width: var(--board-pixel-width);
+  height: var(--board-pixel-height);
   overflow: hidden;
-  border: 8px solid #4f9bc0;
+  border: var(--dog-board-border-size) solid #4f9bc0;
   border-radius: 18px;
   background: #78afd0;
-  box-shadow: inset 0 0 0 2px rgba(22, 68, 93, 0.16), 0 16px 28px rgba(22, 68, 93, 0.18);
+  box-shadow:
+    inset 0 0 0 2px rgba(22, 68, 93, 0.16),
+    0 16px 28px rgba(22, 68, 93, 0.18);
   overscroll-behavior: contain;
   touch-action: none;
+  transform: scale(var(--board-display-scale, 1));
+  transform-origin: top left;
   user-select: none;
 }
 
@@ -660,7 +696,7 @@ h2 {
   place-items: center;
   appearance: none;
   margin: 0;
-  padding: 4px;
+  /* padding: 4px; */
   border: 2px solid rgba(255, 253, 248, 0.82);
   border-radius: 10px;
   cursor: pointer;
@@ -668,7 +704,9 @@ h2 {
   font: inherit;
   font-size: clamp(14px, 2.4vw, 26px);
   z-index: calc(10 + var(--block-z));
-  box-shadow: 4px 5px 0 rgba(22, 68, 93, 0.2), inset 0 0 0 1px rgba(22, 68, 93, 0.12);
+  box-shadow:
+    4px 5px 0 rgba(22, 68, 93, 0.2),
+    inset 0 0 0 1px rgba(22, 68, 93, 0.12);
   touch-action: none;
   user-select: none;
 }
@@ -793,7 +831,9 @@ h2 {
 .dog-tray__slot--filled {
   border: 2px solid rgba(255, 253, 248, 0.82);
   background: var(--dog-block-background);
-  box-shadow: 4px 5px 0 rgba(22, 68, 93, 0.2), inset 0 0 0 1px rgba(22, 68, 93, 0.12);
+  box-shadow:
+    4px 5px 0 rgba(22, 68, 93, 0.2),
+    inset 0 0 0 1px rgba(22, 68, 93, 0.12);
 }
 
 .dog-tray__slot .dog-block__glyph {
@@ -810,8 +850,15 @@ h2 {
   overflow: hidden;
   border: clamp(3px, 0.6vw, 7px) solid rgba(255, 255, 255, 0.94);
   border-radius: inherit;
-  background: radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.46), rgba(255, 209, 102, 0.2) 42%, transparent 76%);
-  box-shadow: 0 0 0 5px rgba(255, 209, 102, 0.42), inset 0 0 30px rgba(255, 255, 255, 0.7);
+  background: radial-gradient(
+    circle at 50% 42%,
+    rgba(255, 255, 255, 0.46),
+    rgba(255, 209, 102, 0.2) 42%,
+    transparent 76%
+  );
+  box-shadow:
+    0 0 0 5px rgba(255, 209, 102, 0.42),
+    inset 0 0 30px rgba(255, 255, 255, 0.7);
   pointer-events: none;
   animation: dog-match-flash 620ms ease-out both;
 }
@@ -821,7 +868,12 @@ h2 {
   width: clamp(120px, 24vw, 260px);
   aspect-ratio: 1;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.72), rgba(123, 199, 245, 0.16) 48%, transparent 72%);
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.72),
+    rgba(123, 199, 245, 0.16) 48%,
+    transparent 72%
+  );
   content: "";
   animation: dog-match-glow 620ms ease-out both;
 }
@@ -832,7 +884,9 @@ h2 {
   aspect-ratio: 1;
   border: clamp(5px, 0.8vw, 9px) solid rgba(255, 255, 255, 0.94);
   border-radius: 50%;
-  box-shadow: 0 0 0 8px rgba(255, 209, 102, 0.32), 0 0 34px rgba(255, 255, 255, 0.9);
+  box-shadow:
+    0 0 0 8px rgba(255, 209, 102, 0.32),
+    0 0 34px rgba(255, 255, 255, 0.9);
   animation: dog-match-ring 620ms cubic-bezier(0.16, 0.8, 0.3, 1) both;
 }
 
@@ -844,7 +898,9 @@ h2 {
   border: 2px solid rgba(255, 255, 255, 0.94);
   border-radius: 999px;
   background: rgba(22, 68, 93, 0.76);
-  box-shadow: 0 5px 0 rgba(22, 68, 93, 0.22), 0 0 22px rgba(255, 255, 255, 0.72);
+  box-shadow:
+    0 5px 0 rgba(22, 68, 93, 0.22),
+    0 0 22px rgba(255, 255, 255, 0.72);
   color: #fff;
   content: "三消！";
   font-size: clamp(18px, 3.6vw, 30px);
@@ -869,14 +925,30 @@ h2 {
   animation: dog-match-spark 620ms cubic-bezier(0.16, 0.8, 0.3, 1) both;
 }
 
-.dog-match-effect__spark--1 { --spark-angle: 0deg; }
-.dog-match-effect__spark--2 { --spark-angle: 45deg; }
-.dog-match-effect__spark--3 { --spark-angle: 90deg; }
-.dog-match-effect__spark--4 { --spark-angle: 135deg; }
-.dog-match-effect__spark--5 { --spark-angle: 180deg; }
-.dog-match-effect__spark--6 { --spark-angle: 225deg; }
-.dog-match-effect__spark--7 { --spark-angle: 270deg; }
-.dog-match-effect__spark--8 { --spark-angle: 315deg; }
+.dog-match-effect__spark--1 {
+  --spark-angle: 0deg;
+}
+.dog-match-effect__spark--2 {
+  --spark-angle: 45deg;
+}
+.dog-match-effect__spark--3 {
+  --spark-angle: 90deg;
+}
+.dog-match-effect__spark--4 {
+  --spark-angle: 135deg;
+}
+.dog-match-effect__spark--5 {
+  --spark-angle: 180deg;
+}
+.dog-match-effect__spark--6 {
+  --spark-angle: 225deg;
+}
+.dog-match-effect__spark--7 {
+  --spark-angle: 270deg;
+}
+.dog-match-effect__spark--8 {
+  --spark-angle: 315deg;
+}
 
 .dog-effects-layer,
 .dog-animation-layer {
@@ -907,7 +979,9 @@ h2 {
   place-items: center;
   border-radius: 10px;
   background: #fbfeff;
-  box-shadow: 4px 5px 0 rgba(22, 68, 93, 0.2), 0 10px 24px rgba(22, 68, 93, 0.2);
+  box-shadow:
+    4px 5px 0 rgba(22, 68, 93, 0.2),
+    0 10px 24px rgba(22, 68, 93, 0.2);
   will-change: transform, opacity;
 }
 
@@ -984,7 +1058,8 @@ h2 {
 @keyframes dog-match-spark {
   0% {
     opacity: 0;
-    transform: translate(-50%, -100%) rotate(var(--spark-angle)) translateY(0) scaleY(0.25);
+    transform: translate(-50%, -100%) rotate(var(--spark-angle)) translateY(0)
+      scaleY(0.25);
   }
 
   28% {
@@ -993,7 +1068,8 @@ h2 {
 
   100% {
     opacity: 0;
-    transform: translate(-50%, -100%) rotate(var(--spark-angle)) translateY(clamp(-86px, -7vw, -38px)) scaleY(1.15);
+    transform: translate(-50%, -100%) rotate(var(--spark-angle))
+      translateY(clamp(-86px, -7vw, -38px)) scaleY(1.15);
   }
 }
 
@@ -1136,6 +1212,10 @@ h2 {
     font-size: 16px;
   }
 
+  .game-entry-view__header .brand-lockup__mark--dog {
+    border-radius: 50%;
+  }
+
   .game-entry-view__header .icon-button {
     flex: 0 0 auto;
     margin: 0;
@@ -1187,12 +1267,9 @@ h2 {
     padding: 3px;
   }
 
-  .dog-board {
-    width: min(100%, 1040px);
-    height: auto;
-    max-width: 100%;
-    max-height: 100%;
-    border-width: 5px;
+  .dog-board-scaler {
+    --dog-board-border-size: 5px;
+    --dog-board-border-total-size: 10px;
   }
 
   .dog-tray {
@@ -1231,5 +1308,4 @@ h2 {
   .game-entry-view__header .icon-button {
     margin-top: 0;
   }
-
 }

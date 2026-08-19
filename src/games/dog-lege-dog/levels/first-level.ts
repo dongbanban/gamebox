@@ -3,9 +3,9 @@ import {
   DEFAULT_LEVEL_REWARD,
   FIRST_LEVEL_GENERATOR_VERSION,
   FIRST_LEVEL_NUMBER,
-} from "../game/game-config";
-import { GeneratedLevelGenerator } from "./level-generation-engine";
-import type { DogLegeDogLevel } from "./level-types";
+} from "@/games/dog-lege-dog/game/game-config";
+import { GeneratedLevelGenerator } from "@/games/dog-lege-dog/levels/level-generation-engine";
+import type { DogLegeDogLevel } from "@/games/dog-lege-dog/levels/level-types";
 
 export {
   BLOCK_HEIGHT,
@@ -28,7 +28,7 @@ export {
   type DogDifficultyCertainty,
   type DogSafeChoiceSearchStatus,
   type DogSolvabilityStatus,
-} from "./level-types";
+} from "@/games/dog-lege-dog/levels/level-types";
 
 export const FIRST_LEVEL_REWARD = DEFAULT_LEVEL_REWARD;
 
@@ -38,7 +38,7 @@ export {
   FIRST_LEVEL_NUMBER,
   FIRST_LEVEL_PATTERN_TYPES,
   FIRST_LEVEL_SEED,
-} from "../game/game-config";
+} from "@/games/dog-lege-dog/game/game-config";
 
 /** Public first-level value generated through same provider pipeline as every level. */
 export const FIRST_LEVEL: DogLegeDogLevel = new GeneratedLevelGenerator().generate({

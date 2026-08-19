@@ -3,50 +3,50 @@ import {
   DEFAULT_LEVEL_SEED,
   DOG_GAME_ID,
   LEVEL_GENERATOR_VERSION,
-} from "../game/game-config";
-import { MAX_LEVEL_GENERATION_ATTEMPTS } from "./level-generation-engine";
+} from "@/games/dog-lege-dog/game/game-config";
+import { MAX_LEVEL_GENERATION_ATTEMPTS } from "@/games/dog-lege-dog/levels/level-generation-engine";
 import {
   DogLevelProvider,
-} from "./level-provider";
+} from "@/games/dog-lege-dog/levels/level-provider";
 import {
   calculateDifficultyMetrics,
   isDifficultyWithinTarget,
-} from "./level-difficulty";
+} from "@/games/dog-lege-dog/levels/level-difficulty";
 import {
   findSolvability,
-} from "./level-solvability";
+} from "@/games/dog-lege-dog/levels/level-solvability";
 import type {
   SolvabilityResult,
   SolvabilitySearchOptions,
-} from "./level-solvability";
+} from "@/games/dog-lege-dog/levels/level-solvability";
 import {
   getBlockCount,
   getDifficultyTarget,
   getMaxLayers,
   getPatternTypeCount,
-} from "./level-progression";
+} from "@/games/dog-lege-dog/levels/level-progression";
 import {
   DOG_SHAPE_TEMPLATES,
   type DogShapeTemplate,
-} from "./level-shapes";
+} from "@/games/dog-lege-dog/levels/level-shapes";
 import type {
   DogLevelDifficulty,
   DogLevelGenerationFailure,
   DogLevelReplay,
   DogLevelGeometry,
   DogLegeDogLevel,
-} from "./level-types";
+} from "@/games/dog-lege-dog/levels/level-types";
 import {
   calculateDogLevelReward,
   DOG_LEVEL_REWARD_CONFIG,
   DOG_REWARD_CONFIG_VERSION,
-} from "./level-reward";
-import type { DogLevelRewardConfig } from "./level-reward";
+} from "@/games/dog-lege-dog/levels/level-reward";
+import type { DogLevelRewardConfig } from "@/games/dog-lege-dog/levels/level-reward";
 import type {
   LevelCandidateFilter,
   LevelGeneratorOptions,
   LevelGeneratorRequest,
-} from "./level-generator-contracts";
+} from "@/games/dog-lege-dog/levels/level-generator-contracts";
 
 export {
   DEFAULT_LEVEL_REWARD,
@@ -102,7 +102,7 @@ export type {
 export type {
   SolvabilityResult,
   SolvabilitySearchOptions,
-} from "./level-solvability";
+} from "@/games/dog-lege-dog/levels/level-solvability";
 
 export class LevelGenerator {
   private readonly provider: DogLevelProvider;

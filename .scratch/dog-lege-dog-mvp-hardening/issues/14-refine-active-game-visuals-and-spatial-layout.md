@@ -1,4 +1,4 @@
-# 15 — 收敛活动游戏页视觉与棋盘空间分布
+# 14 — 收敛活动游戏页视觉与棋盘空间分布
 
 **What to build:** 根据最新视觉反馈收敛活动游戏页顶部控制、信息密度、暂存槽与棋盘尺寸；隐藏关卡选择 UI 但保留已解锁关卡重玩逻辑；在不改动前期难度与可解主流程的前提下，增强棋盘方块的中心/四角空间分布与区域层叠关系；同时按功能整理狗了个狗源码目录，减少文件平铺。
 
@@ -24,7 +24,7 @@
 - [x] 空间分布调整继续满足既有不规则轮廓连通、方块位于棋盘形状内、同层无正面积重叠、`1/4`/`1/2` 部分重叠比例、完全对齐上限、下层遮挡上限与无道具可解约束。
 - [x] 摆放算法改变提升生成器版本；同一新版本、游戏身份、关卡号与显式 seed 可稳定重放同一棋盘、图案、区域分布与层叠关系。
 - [x] `src/games/dog-lege-dog/` 按功能分组，至少形成以下目录：`assets/` 存放 `animation-effects.ts`、`game-assets.ts`、`particle-effects.ts`、`sound-effects.ts`；`game/` 存放 `game-config.ts`、`game-controller.ts`、`game-renderer.ts`、`game-session.ts`、`game-types.ts`；`levels/` 存放 `first-level.ts` 与全部 `level-*.ts` 生成、规则、图案、回放和难度文件。
-- [x] 根目录 `src/games/dog-lege-dog/index.ts` 保持游戏入口职责与现有外部导入 seam；移动文件后所有相对路径、测试导入与构建入口更新正确，不新增散落的重复实现。
+- [x] 根目录 `src/games/dog-lege-dog/index.ts` 保持游戏入口职责与现有外部导入 seam；移动文件后源码与测试内部 import 统一为 `@/* → src/*` alias，构建入口更新正确，不新增散落的重复实现。
 - [x] 文件结构整理不改变游戏运行行为、DOM seam、关卡生成结果、生成器版本、游戏进度或公开 API；目录命名与职责边界在 ticket 实现说明中记录。
 
 ## Implementation Notes
@@ -45,7 +45,7 @@
   ```
 
   `assets/` 只放图案、音效与动画资源；`game/` 只放局内状态、控制器、渲染器与游戏配置；`levels/` 只放关卡类型、生成、摆放、规则、难度、回放与奖励逻辑。不要为单个文件继续创建更深层目录。
-- 移动文件后优先统一 import 路径与 barrel/entry 导出，再运行类型检查；不通过复制旧文件或保留两份实现兼容旧路径。
+- 移动文件后优先统一 `@/...` import 与 barrel/entry 导出，再运行类型检查；不通过复制旧文件或保留两份实现兼容旧路径。
 
 ## Verification
 
@@ -60,8 +60,8 @@
 ## Comments
 
 - 需求来源：2026-08-18 活动游戏页视觉反馈与棋盘空间分布反馈；附图仅作为视觉参考。
-- 实现：活动页收敛为 GAMEBOX、返回图标、右上角音效按钮；移除关卡选择 DOM；所有关卡隐藏三项统计；暂存槽复用棋盘方块视觉；移动端棋盘/暂存槽无滚动；棋盘背景移除可见网格线；狗了个狗源码按 `assets/`、`game/`、`levels/` 分组；生成器版本先升至 5 并加入中心/四角/边缘与跨区空间分布硬约束，后由 ticket 19 升至 6 以加入底层多相位摆放。
-- 历史验证（ticket 15 完成时）：`pnpm test:affected` 通过（核心 85/85、随机 3/3、E2E 13/13、typecheck、build）；`pnpm test:e2e:cross-browser` 通过（Chromium、mobile Chromium、Safari 3/3）。该结果不是当前代码的权威验证；后续几何、音频与暂存槽修复见最新 ticket 19。
+- 实现：活动页收敛为 GAMEBOX、返回图标、右上角音效按钮；移除关卡选择 DOM；所有关卡隐藏三项统计；暂存槽复用棋盘方块视觉；移动端棋盘/暂存槽无滚动；棋盘背景移除可见网格线；狗了个狗源码按 `assets/`、`game/`、`levels/` 分组；生成器版本先升至 5 并加入中心/四角/边缘与跨区空间分布硬约束，后由 ticket 18 升至 6 以加入底层多相位摆放。
+- 历史验证（ticket 14 完成时）：`pnpm test:affected` 通过（核心 85/85、随机 3/3、E2E 13/13、typecheck、build）；`pnpm test:e2e:cross-browser` 通过（Chromium、mobile Chromium、Safari 3/3）。该结果不是当前代码的权威验证；后续几何、音频与暂存槽修复见 ticket 18。
 - 回放说明：失败候选保留 diagnostic replay seam 供失败元数据检查；普通生成与正常回放路径继续严格执行空间分布校验。
-- 后续视觉调整：所有关卡隐藏三项统计；可见棋盘改为完整长方形，移除 `.dog-board-frame` 移动布局中的 `flex: 1`；ticket 19 进一步移除独立方块面积放大，保证显示覆盖比例与逻辑 `1/2`、`1/4` 一致。
+- 后续视觉调整：所有关卡隐藏三项统计；可见棋盘改为完整长方形，移除 `.dog-board-frame` 移动布局中的 `flex: 1`；ticket 18 进一步移除独立方块面积放大，保证显示覆盖比例与逻辑 `1/2`、`1/4` 一致。
 - 后续实测：`pnpm test:ui` 通过；`pnpm build:pages` 通过；GitHub Pages 地址为 <https://dongbanban.github.io/gamebox/>。当前发布由 `.github/workflows/deploy-pages.yml` 自动构建并部署，不再依赖已删除的本地发布脚本。

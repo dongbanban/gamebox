@@ -1,7 +1,7 @@
-import type { DogBoard, DogBoardCell, DogBoardShape } from "./level-types";
-import { BLOCK_WIDTH } from "./level-types";
-import { FIRST_LEVEL_TEMPLATE_ID } from "../game/game-config";
-import { SeededRandom } from "./level-random";
+import type { DogBoard, DogBoardCell, DogBoardShape } from "@/games/dog-lege-dog/levels/level-types";
+import { BLOCK_WIDTH } from "@/games/dog-lege-dog/levels/level-types";
+import { FIRST_LEVEL_TEMPLATE_ID } from "@/games/dog-lege-dog/game/game-config";
+import { SeededRandom } from "@/games/dog-lege-dog/levels/level-random";
 
 const BASE_TEMPLATE_WIDTH = 24;
 const BASE_TEMPLATE_HEIGHT = 20;

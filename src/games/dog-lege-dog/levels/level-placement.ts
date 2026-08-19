@@ -5,16 +5,16 @@ import {
   type DogBlock,
   type DogBoard,
   type DogPatternType,
-} from "./level-types";
+} from "@/games/dog-lege-dog/levels/level-types";
 import {
   FIRST_LEVEL_BLOCK_COUNT,
   FIRST_LEVEL_MAX_LAYERS,
-} from "../game/game-config";
-import { getPositiveOverlapArea, hasPositiveAreaOverlap } from "./level-rules";
-import { getPatternTypeCount } from "./level-progression";
-import { createPlacementGraph } from "./level-graph";
-import { SeededRandom } from "./level-random";
-import type { DogShapeTemplate } from "./level-shapes";
+} from "@/games/dog-lege-dog/game/game-config";
+import { getPositiveOverlapArea, hasPositiveAreaOverlap } from "@/games/dog-lege-dog/levels/level-rules";
+import { getPatternTypeCount } from "@/games/dog-lege-dog/levels/level-progression";
+import { createPlacementGraph } from "@/games/dog-lege-dog/levels/level-graph";
+import { SeededRandom } from "@/games/dog-lege-dog/levels/level-random";
+import type { DogShapeTemplate } from "@/games/dog-lege-dog/levels/level-shapes";
 
 const MAX_BLOCKS_PER_LOWER_BLOCK = 4;
 const LAYER_OFFSETS = [

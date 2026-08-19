@@ -1,9 +1,9 @@
 import {
   DOG_GAME_ID,
   DOG_GAME_RESULT_DISPLAY,
-} from "./games/dog-lege-dog/game/game-config";
-import { startDogLegeDogGame } from "./games/dog-lege-dog";
-import type { GameDefinition } from "./game-contracts";
+} from "@/games/dog-lege-dog/game/game-config";
+import { startDogLegeDogGame } from "@/games/dog-lege-dog";
+import type { GameDefinition } from "@/game-contracts";
 
 export type {
   GameCatalogItem,
@@ -16,7 +16,7 @@ export type {
   GameResultDisplay,
   GameResultDisplayMetadata,
   GameResultStatus,
-} from "./game-contracts";
+} from "@/game-contracts";
 
 export const DOG_GAME_DEFINITION: GameDefinition = Object.freeze({
   id: DOG_GAME_ID,

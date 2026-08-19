@@ -1,4 +1,4 @@
-import type { DogLegeDogLevel } from "./level-types";
+import type { DogLegeDogLevel } from "@/games/dog-lege-dog/levels/level-types";
 
 export function freezeDogLegeDogLevel(level: DogLegeDogLevel): DogLegeDogLevel {
   return deepFreeze(level);

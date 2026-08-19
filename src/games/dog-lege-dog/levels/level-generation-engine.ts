@@ -8,17 +8,17 @@ import {
   FIRST_LEVEL_SEED,
   FIRST_LEVEL_TEMPLATE_ID,
   LEVEL_GENERATOR_VERSION,
-} from "../game/game-config";
+} from "@/games/dog-lege-dog/game/game-config";
 import {
   getBlockCount,
   getMaxLayers,
-} from "./level-progression";
+} from "@/games/dog-lege-dog/levels/level-progression";
 import {
   createBoard,
   DOG_SHAPE_TEMPLATES,
   selectShapeTemplate,
   type DogShapeTemplate,
-} from "./level-shapes";
+} from "@/games/dog-lege-dog/levels/level-shapes";
 import {
   createFirstLevelBlockPlacements,
   createGuaranteedBlockPlacements,
@@ -30,28 +30,28 @@ import {
   validatePlacementGeometry,
   validateSpatialDistribution,
   type PlacementFactory,
-} from "./level-placement";
+} from "@/games/dog-lege-dog/levels/level-placement";
 import {
   findSolvability,
   verifyRemovalPath,
   type SolvabilitySearchOptions,
   type SolvabilityResult,
-} from "./level-solvability";
+} from "@/games/dog-lege-dog/levels/level-solvability";
 import {
   calculateDifficultyMetrics,
   compareDifficultyDistance,
   getRelaxedDifficultyTarget,
   isDifficultyWithinTarget,
-} from "./level-difficulty";
+} from "@/games/dog-lege-dog/levels/level-difficulty";
 import {
   calculateDogLevelReward,
   DOG_REWARD_CONFIG_VERSION,
-} from "./level-reward";
+} from "@/games/dog-lege-dog/levels/level-reward";
 import {
   getCandidateRandomSeed,
   getGuaranteedRandomSeed,
   SeededRandom,
-} from "./level-random";
+} from "@/games/dog-lege-dog/levels/level-random";
 import type {
   DogLevelDifficulty,
   DogLevelGenerationFailure,
@@ -60,12 +60,12 @@ import type {
   DogLevelReplayMode,
   DogLegeDogLevel,
   DogPatternType,
-} from "./level-types";
+} from "@/games/dog-lege-dog/levels/level-types";
 import type {
   LevelCandidateFilter,
   LevelGeneratorOptions,
   LevelGeneratorRequest,
-} from "./level-generator-contracts";
+} from "@/games/dog-lege-dog/levels/level-generator-contracts";
 import {
   createGenerationFailure,
   finalizeCandidate,
@@ -73,7 +73,7 @@ import {
   validateReplay,
   validateRequest,
   type GeneratedLevelCandidate,
-} from "./level-replay";
+} from "@/games/dog-lege-dog/levels/level-replay";
 
 export const MAX_LEVEL_GENERATION_ATTEMPTS = 100 as const;
 // Default target search gets one relaxed-target window before using closest proven candidate.

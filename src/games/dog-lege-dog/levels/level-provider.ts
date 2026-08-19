@@ -1,30 +1,30 @@
 import {
   DEFAULT_LEVEL_SEED,
   LEVEL_GENERATOR_VERSION,
-} from "../game/game-config";
+} from "@/games/dog-lege-dog/game/game-config";
 import {
   GeneratedLevelGenerator,
-} from "./level-generation-engine";
+} from "@/games/dog-lege-dog/levels/level-generation-engine";
 import {
   normalizeRequest,
   validateReplay,
   validateRequest,
-} from "./level-replay";
+} from "@/games/dog-lege-dog/levels/level-replay";
 import type {
   LevelGeneratorOptions,
   LevelGeneratorRequest,
-} from "./level-generator-contracts";
+} from "@/games/dog-lege-dog/levels/level-generator-contracts";
 import type {
   DogLevelDifficulty,
   DogLevelGenerationFailure,
   DogLevelGeometry,
   DogLevelReplay,
   DogLegeDogLevel,
-} from "./level-types";
+} from "@/games/dog-lege-dog/levels/level-types";
 import type {
   SolvabilityResult,
   SolvabilitySearchOptions,
-} from "./level-solvability";
+} from "@/games/dog-lege-dog/levels/level-solvability";
 
 /** One deterministic level source for every level. */
 export class DogLevelProvider {

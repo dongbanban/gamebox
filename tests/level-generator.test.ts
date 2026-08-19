@@ -17,7 +17,7 @@ import {
   getDogLegeDogLevel,
   DEFAULT_LEVEL_SEED,
   DOG_REWARD_CONFIG_VERSION,
-} from "../src/games/dog-lege-dog";
+} from "@/games/dog-lege-dog";
 
 describe("LevelGenerator", () => {
   it("按公开难度计算稳定、非负且随阶段变化的通关奖励", () => {

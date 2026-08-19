@@ -5,7 +5,7 @@ export {
   type GameSessionSelectionResult,
   type GameSessionSnapshot,
   type GameSessionStatus,
-} from "./game/game-session";
+} from "@/games/dog-lege-dog/game/game-session";
 
 export {
   BLOCK_HEIGHT,
@@ -18,8 +18,8 @@ export {
   FIRST_LEVEL_PATTERN_TYPES,
   FIRST_LEVEL_REWARD,
   FIRST_LEVEL_SEED,
-} from "./levels/first-level";
-export { getDogLegeDogLevel } from "./levels/level-provider";
+} from "@/games/dog-lege-dog/levels/first-level";
+export { getDogLegeDogLevel } from "@/games/dog-lege-dog/levels/level-provider";
 export type {
   DogBlock,
   DogBoard,
@@ -38,7 +38,7 @@ export type {
   DogPatternType,
   DogSafeChoiceSearchStatus,
   DogSolvabilityStatus,
-} from "./levels/first-level";
+} from "@/games/dog-lege-dog/levels/first-level";
 
 export {
   DEFAULT_LEVEL_GENERATOR,
@@ -72,12 +72,12 @@ export {
   type DogLevelRewardConfig,
   type SolvabilityResult,
   type SolvabilitySearchOptions,
-} from "./levels/level-generator";
+} from "@/games/dog-lege-dog/levels/level-generator";
 
-export { createDogLegeDogGame, startDogLegeDogGame } from "./game/game-controller";
+export { createDogLegeDogGame, startDogLegeDogGame } from "@/games/dog-lege-dog/game/game-controller";
 export type {
   DogLegeDogGame,
   DogLegeDogGameOptions,
   DogLegeDogGameState,
   DogVisualFeedback,
-} from "./game/game-types";
+} from "@/games/dog-lege-dog/game/game-types";

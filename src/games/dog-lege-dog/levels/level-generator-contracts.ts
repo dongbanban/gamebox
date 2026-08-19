@@ -1,4 +1,4 @@
-import type { DogDifficultyTarget, DogLevelDifficulty } from "./level-types";
+import type { DogDifficultyTarget, DogLevelDifficulty } from "@/games/dog-lege-dog/levels/level-types";
 
 export interface LevelGeneratorRequest {
   readonly levelNumber: number;

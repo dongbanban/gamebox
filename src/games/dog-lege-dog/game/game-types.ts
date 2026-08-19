@@ -1,7 +1,7 @@
-import type { GameLaunchContext } from "../../../game-contracts";
-import type { DogLegeDogLevel } from "../levels/first-level";
-import type { GameSessionSnapshot } from "./game-session";
-import type { DOG_GAME_ID } from "./game-config";
+import type { GameLaunchContext } from "@/game-contracts";
+import type { DogLegeDogLevel } from "@/games/dog-lege-dog/levels/first-level";
+import type { GameSessionSnapshot } from "@/games/dog-lege-dog/game/game-session";
+import type { DOG_GAME_ID } from "@/games/dog-lege-dog/game/game-config";
 
 export interface DogLegeDogGameState {
   readonly gameId: typeof DOG_GAME_ID;

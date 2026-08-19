@@ -1,4 +1,4 @@
-import type { DogDifficultyTarget } from "./level-types";
+import type { DogDifficultyTarget } from "@/games/dog-lege-dog/levels/level-types";
 
 export type ProgressStage = 0 | 1 | 2 | 3;
 

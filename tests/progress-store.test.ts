@@ -4,11 +4,11 @@ import {
   GAME_ID,
   ProgressStore,
   type StorageLike,
-} from "../src/progress-store";
+} from "@/progress-store";
 import {
   LEVEL_GENERATOR_VERSION,
   LevelGenerator,
-} from "../src/games/dog-lege-dog";
+} from "@/games/dog-lege-dog";
 
 class MemoryStorage implements StorageLike {
   private readonly values = new Map<string, string>();

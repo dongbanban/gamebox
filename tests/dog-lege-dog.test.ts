@@ -1,15 +1,19 @@
 /** @vitest-environment jsdom */
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { GameResult } from "../src/catalog";
-import { BLOCK_FLIGHT_DURATION_MS } from "../src/games/dog-lege-dog/assets/animation-effects";
+import type { GameResult } from "@/catalog";
+import { BLOCK_FLIGHT_DURATION_MS } from "@/games/dog-lege-dog/assets/animation-effects";
 import {
   DOG_PATTERN_TYPES,
   FIRST_LEVEL,
   FIRST_LEVEL_SEED,
   startDogLegeDogGame,
-} from "../src/games/dog-lege-dog";
-import { renderDogPatternAsset } from "../src/games/dog-lege-dog/assets/game-assets";
+} from "@/games/dog-lege-dog";
+import { renderDogPatternAsset } from "@/games/dog-lege-dog/assets/game-assets";
+import {
+  DOG_BLOCK_VISUAL_SIZE_PX,
+  DOG_LOGICAL_UNIT_VISUAL_SIZE_PX,
+} from "@/games/dog-lege-dog/game/game-renderer";
 
 afterEach(() => {
   vi.useRealTimers();
@@ -105,6 +109,12 @@ describe("狗了个狗首关", () => {
     expect(board).not.toBeNull();
     expect(board?.dataset.surfaceShape).toBe("rectangle");
     expect(board?.style.clipPath).toBe("");
+    expect(board?.style.getPropertyValue("--board-pixel-width")).toBe("480px");
+    expect(board?.style.getPropertyValue("--board-pixel-height")).toBe("400px");
+    expect(DOG_BLOCK_VISUAL_SIZE_PX).toBe(40);
+    expect(DOG_LOGICAL_UNIT_VISUAL_SIZE_PX).toBe(10);
+    expect(firstBlock?.style.getPropertyValue("--block-width")).toBe("40px");
+    expect(firstBlock?.style.getPropertyValue("--block-height")).toBe("40px");
     expect(root.querySelectorAll('[data-testid="dog-block"]')).toHaveLength(90);
     expect(root.querySelectorAll('[data-testid="dog-block"] svg')).toHaveLength(90);
     expect(parseFloat(firstBlock?.style.getPropertyValue("--block-width") ?? "0")).toBeGreaterThan(0);
@@ -133,16 +143,22 @@ describe("狗了个狗首关", () => {
     const root = document.createElement("div");
     const game = startDogLegeDogGame(root);
     const level = game.getState().level;
-    const boardColumns = level.board.width / 4;
-    const boardRows = level.board.height / 4;
     const renderedBlocks = new Map(
       [...root.querySelectorAll<HTMLElement>('[data-testid="dog-block"]')].map((element) => [
         element.dataset.blockId,
         {
-          left: parseFloat(element.style.getPropertyValue("--block-left")) / 100 * boardColumns,
-          top: parseFloat(element.style.getPropertyValue("--block-top")) / 100 * boardRows,
-          width: parseFloat(element.style.getPropertyValue("--block-width")) / 100 * boardColumns,
-          height: parseFloat(element.style.getPropertyValue("--block-height")) / 100 * boardRows,
+          left:
+            parseFloat(element.style.getPropertyValue("--block-left")) /
+            DOG_LOGICAL_UNIT_VISUAL_SIZE_PX,
+          top:
+            parseFloat(element.style.getPropertyValue("--block-top")) /
+            DOG_LOGICAL_UNIT_VISUAL_SIZE_PX,
+          width:
+            parseFloat(element.style.getPropertyValue("--block-width")) /
+            DOG_LOGICAL_UNIT_VISUAL_SIZE_PX,
+          height:
+            parseFloat(element.style.getPropertyValue("--block-height")) /
+            DOG_LOGICAL_UNIT_VISUAL_SIZE_PX,
         },
       ]),
     );
