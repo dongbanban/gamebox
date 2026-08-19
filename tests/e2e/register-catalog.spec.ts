@@ -25,7 +25,7 @@ test.describe("注册与游戏目录", () => {
     ).toBe(true);
     await expect(page.getByRole("heading", { name: "狗了个狗" })).toBeVisible();
     await expect(page.getByText("最高解锁关卡")).toBeVisible();
-    await expect(page.getByText("累计积分")).toBeVisible();
+    await expect(page.getByText("累计积分")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "开始游戏" })).toBeVisible();
 
     const catalogText = await page.locator('[data-view="catalog"]').textContent();

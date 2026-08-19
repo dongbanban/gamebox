@@ -197,19 +197,15 @@ export class GameboxApp {
               <h2>${game.name}</h2>
             </div>
             <p class="catalog-item__description">${game.description}</p>
-            <dl class="catalog-item__stats">
-              <div>
+            <div class="catalog-item__actions">
+              <dl class="catalog-item__level">
                 <dt>最高解锁关卡</dt>
                 <dd>第 ${progress.highestUnlockedLevel} 关</dd>
-              </div>
-              <div>
-                <dt>累计积分</dt>
-                <dd>${progress.totalScore}</dd>
-              </div>
-            </dl>
-            <button class="primary-button" type="button" data-action="enter-game" data-game-id="${game.id}" ${game.playable ? "" : "disabled"}>
-              开始游戏 <span aria-hidden="true">↗</span>
-            </button>
+              </dl>
+              <button class="primary-button" type="button" data-action="enter-game" data-game-id="${game.id}" ${game.playable ? "" : "disabled"}>
+                开始游戏 <span aria-hidden="true">↗</span>
+              </button>
+            </div>
           </div>
         </article>
       `;

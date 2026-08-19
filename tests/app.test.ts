@@ -84,7 +84,10 @@ describe("通用游戏定义与结果契约", () => {
     expect(root.querySelector(".catalog-item__description")?.textContent).toContain(
       "用于验证公共层契约。",
     );
-    expect(root.querySelector(".catalog-item__stats")?.textContent).toContain("最高解锁关卡");
+    expect(root.querySelector(".catalog-item__level")?.textContent).toContain("最高解锁关卡");
+    expect(root.querySelector(".catalog-item__actions")).not.toBeNull();
+    expect(root.querySelector(".catalog-item__actions [data-action=\"enter-game\"]")).not.toBeNull();
+    expect(root.querySelector('[data-view="catalog"]')?.textContent).not.toContain("累计积分");
     expect(root.querySelector(".status-dot")).toBeNull();
     expect(root.querySelector('[data-action="enter-game"]')?.textContent).toContain("开始游戏");
 
@@ -319,11 +322,14 @@ describe("注册与游戏目录 UI", () => {
     expect(catalogText).not.toContain("首个游戏");
     expect(catalogText).not.toContain("更多游戏正在路上");
     expect(catalogText).not.toContain("当前浏览器身份");
+    expect(catalogText).not.toContain("累计积分");
     const coverSource = root.querySelector<HTMLImageElement>(".catalog-item__cover")?.src ?? "";
     expect(decodeURIComponent(coverSource)).not.toContain("GAMEBOX · 01");
     expect(root.querySelector(".catalog-item")).not.toBeNull();
     expect(root.querySelector(".catalog-item__cover-wrap")).not.toBeNull();
     expect(root.querySelector(".catalog-item__content h2")?.textContent).toBe("狗了个狗");
+    expect(root.querySelector(".catalog-item__level")?.textContent).toContain("最高解锁关卡");
+    expect(root.querySelector(".catalog-item__actions")).not.toBeNull();
     expect(root.querySelector(".status-dot")).toBeNull();
     expect(root.querySelector(".catalog-header .brand-lockup__mark--dog svg")).not.toBeNull();
 
@@ -800,8 +806,8 @@ describe("注册与游戏目录 UI", () => {
     expect(refreshedRoot.querySelector('[data-view="catalog"]')?.textContent).toContain(
       "第 2 关",
     );
-    expect(refreshedRoot.querySelector('[data-view="catalog"]')?.textContent).toContain(
-      "100",
+    expect(refreshedRoot.querySelector('[data-view="catalog"]')?.textContent).not.toContain(
+      "累计积分",
     );
 
     refreshedApp.destroy();
