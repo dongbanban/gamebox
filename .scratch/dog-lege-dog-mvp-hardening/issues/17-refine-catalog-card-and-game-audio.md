@@ -12,6 +12,7 @@
 - [x] 封面使用项目内的狗主题 SVG 卡通涂鸦资源，不依赖第三方运行时 CDN。
 - [x] 卡片右侧按缩小后的游戏名、简介、最高解锁关卡与开始游戏顺序渲染；最高解锁关卡与开始游戏位于同一行。
 - [x] 游戏目录卡片不渲染累计积分；累计积分仍可在通关结果页展示。
+- [x] 最高解锁关卡与开始游戏动作行显式清除 `dl` 默认外边距，避免右侧 grid 行高被浏览器默认样式拉伸。
 - [x] 卡片不渲染绿色可玩状态圆点或等价状态提示。
 - [x] 背景音乐替换为本地 CC0、可循环、偏轻快的音频资源；不依赖第三方运行时 CDN。
 - [x] 背景音乐音量低于交互音效；音乐开关、首次用户交互初始化、暂停/恢复与持久化行为保持不变。
@@ -34,3 +35,5 @@
 - 音频：保留 `audio/levelmusicloop-tigrun.ogg` 运行时路径以避免部署引用漂移，替换文件内容为 `happy_theme_0.ogg`；背景音量降至 `0.1`，选取/三消/通关/失败改为多音符 profile。
 - 验证：`pnpm test:ui` 通过（3 files、28 tests）；`pnpm build:pages` 通过；`pnpm test:e2e:cross-browser` 通过（Chromium、mobile Chromium、Safari 3/3）；`git diff --check` 通过。
 - 后续视觉调整：目录卡片移除累计积分；最高解锁关卡与开始游戏同排；游戏名缩小；卡片高度压缩；左侧缩略图随卡片高度撑满。验证：`pnpm test:ui` 通过（3 files、28 tests）；`pnpm build:pages` 通过；`pnpm test:e2e:cross-browser` 通过（Chromium、mobile Chromium、Safari 3/3）；`git diff --check` 通过。
+- 行高异常修复：重置 `.catalog-item__level` 的 user-agent `dl` 外边距，动作行在 390×844 视口回归中从 104px 收敛到 72px；保留 Playwright 几何断言。
+- 本轮专项验证：`pnpm exec playwright test tests/e2e/register-catalog.spec.ts --grep "动作行" --project=chromium` 通过；`pnpm test:e2e:cross-browser` 通过（Chromium、mobile Chromium、Safari 3/3）。完整 `register-catalog.spec.ts` 另有既存暂存槽边框断言失败，与本次目录卡片行高改动无关。

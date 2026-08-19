@@ -56,6 +56,27 @@ test.describe("注册与游戏目录", () => {
     await expect(page.getByText("层数")).toHaveCount(0);
   });
 
+  test("目录卡片右侧动作行保持紧凑高度", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.getByRole("button", { name: "匿名注册" }).click();
+
+    const layout = await page.evaluate(() => {
+      const getHeight = (selector: string): number => {
+        const element = document.querySelector<HTMLElement>(selector);
+        return element?.getBoundingClientRect().height ?? 0;
+      };
+
+      return {
+        actionsHeight: getHeight(".catalog-item__actions"),
+        levelHeight: getHeight(".catalog-item__level"),
+        buttonHeight: getHeight('.catalog-item__actions [data-action="enter-game"]'),
+      };
+    });
+    expect(layout.actionsHeight).toBeLessThanOrEqual(72);
+    expect(layout.buttonHeight).toBeLessThanOrEqual(72);
+    expect(layout.levelHeight).toBeLessThanOrEqual(72);
+  });
+
   test("回访跳过注册，确认重置后返回注册页", async ({ page }) => {
     await page.getByRole("button", { name: "匿名注册" }).click();
     await page.reload();
