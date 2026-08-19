@@ -349,8 +349,8 @@ describe("注册与游戏目录 UI", () => {
     const firstBlock = root.querySelector<HTMLElement>('[data-testid="dog-block"]');
     expect(board?.dataset.surfaceShape).toBe("rectangle");
     expect(board?.style.clipPath).toBe("");
-    expect(firstBlock?.style.getPropertyValue("--block-width")).toBe("40px");
-    expect(firstBlock?.style.getPropertyValue("--block-height")).toBe("40px");
+    expect(firstBlock?.style.getPropertyValue("--block-width")).toBe("48px");
+    expect(firstBlock?.style.getPropertyValue("--block-height")).toBe("48px");
     expect(root.textContent).not.toContain("狗了个狗");
     expect(root.querySelector('.game-entry-view__brand [data-action="catalog"]')).not.toBeNull();
     expect(root.querySelector('[data-testid="dog-game"] h2')).toBeNull();

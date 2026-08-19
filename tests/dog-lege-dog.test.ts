@@ -109,12 +109,12 @@ describe("狗了个狗首关", () => {
     expect(board).not.toBeNull();
     expect(board?.dataset.surfaceShape).toBe("rectangle");
     expect(board?.style.clipPath).toBe("");
-    expect(board?.style.getPropertyValue("--board-pixel-width")).toBe("480px");
-    expect(board?.style.getPropertyValue("--board-pixel-height")).toBe("400px");
-    expect(DOG_BLOCK_VISUAL_SIZE_PX).toBe(40);
-    expect(DOG_LOGICAL_UNIT_VISUAL_SIZE_PX).toBe(10);
-    expect(firstBlock?.style.getPropertyValue("--block-width")).toBe("40px");
-    expect(firstBlock?.style.getPropertyValue("--block-height")).toBe("40px");
+    expect(board?.style.getPropertyValue("--board-pixel-width")).toBe("576px");
+    expect(board?.style.getPropertyValue("--board-pixel-height")).toBe("480px");
+    expect(DOG_BLOCK_VISUAL_SIZE_PX).toBe(48);
+    expect(DOG_LOGICAL_UNIT_VISUAL_SIZE_PX).toBe(12);
+    expect(firstBlock?.style.getPropertyValue("--block-width")).toBe("48px");
+    expect(firstBlock?.style.getPropertyValue("--block-height")).toBe("48px");
     expect(root.querySelectorAll('[data-testid="dog-block"]')).toHaveLength(90);
     expect(root.querySelectorAll('[data-testid="dog-block"] svg')).toHaveLength(90);
     expect(parseFloat(firstBlock?.style.getPropertyValue("--block-width") ?? "0")).toBeGreaterThan(0);
@@ -130,6 +130,29 @@ describe("狗了个狗首关", () => {
     game.destroy();
 
     expect(root.innerHTML).toBe("");
+  });
+
+  it("按 12px 逻辑单位映射棋盘面积与方块 left/top 偏移", () => {
+    const root = document.createElement("div");
+    const game = startDogLegeDogGame(root);
+    const { board, blocks } = game.getState().level;
+
+    for (const block of blocks) {
+      const element = root.querySelector<HTMLElement>(
+        `[data-testid="dog-block"][data-block-id="${block.id}"]`,
+      );
+      expect(element).not.toBeNull();
+      expect(Number.parseFloat(element?.style.getPropertyValue("--block-left") ?? "NaN")).toBe(
+        block.x * DOG_LOGICAL_UNIT_VISUAL_SIZE_PX,
+      );
+      expect(Number.parseFloat(element?.style.getPropertyValue("--block-top") ?? "NaN")).toBe(
+        block.y * DOG_LOGICAL_UNIT_VISUAL_SIZE_PX,
+      );
+    }
+
+    expect(board.width * DOG_LOGICAL_UNIT_VISUAL_SIZE_PX).toBe(576);
+    expect(board.height * DOG_LOGICAL_UNIT_VISUAL_SIZE_PX).toBe(480);
+    game.destroy();
   });
 
   it("底层方块使用多个 4×4 细网格相位，避免初始行列完全对齐", () => {

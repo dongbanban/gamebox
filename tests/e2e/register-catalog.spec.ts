@@ -357,7 +357,7 @@ test.describe("注册与游戏目录", () => {
     expect(Math.abs(desktopLayout.boardCenter - desktopLayout.frameCenter)).toBeLessThanOrEqual(1);
   });
 
-  test("活动棋盘使用 40px 方块与同尺寸底层网格", async ({ page }) => {
+  test("活动棋盘使用 48px 方块与同尺寸底层网格", async ({ page }) => {
     await page.setViewportSize({ width: 430, height: 932 });
     await page.getByRole("button", { name: "匿名注册" }).click();
     await page.getByRole("button", { name: "开始游戏" }).click();
@@ -389,10 +389,10 @@ test.describe("注册与游戏目录", () => {
       };
     });
 
-    expect(layout.blockWidth).toBeCloseTo(40, 1);
-    expect(layout.blockHeight).toBeCloseTo(40, 1);
-    expect(layout.boardContentWidth / layout.columns).toBeCloseTo(40, 1);
-    expect(layout.boardContentHeight / layout.rows).toBeCloseTo(40, 1);
+    expect(layout.blockWidth).toBeCloseTo(48, 1);
+    expect(layout.blockHeight).toBeCloseTo(48, 1);
+    expect(layout.boardContentWidth / layout.columns).toBeCloseTo(48, 1);
+    expect(layout.boardContentHeight / layout.rows).toBeCloseTo(48, 1);
     expect(layout.scale).toBeLessThan(1);
     expect(layout.boardLeft).toBeGreaterThanOrEqual(0);
     expect(layout.boardRight).toBeLessThanOrEqual(layout.viewportWidth);

@@ -26,6 +26,6 @@ test("跨浏览器核心 smoke：注册、目录与首关入口可用", async ({
   });
   expect(boardLayout.left).toBeGreaterThanOrEqual(0);
   expect(boardLayout.right).toBeLessThanOrEqual(boardLayout.viewportWidth);
-  expect(boardLayout.blockWidth).toBe("40px");
-  expect(boardLayout.blockHeight).toBe("40px");
+  expect(boardLayout.blockWidth).toBe("48px");
+  expect(boardLayout.blockHeight).toBe("48px");
 });

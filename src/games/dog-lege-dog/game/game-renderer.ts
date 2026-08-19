@@ -4,8 +4,11 @@ import { getDogPatternClassName, renderDogPatternAsset } from "@/games/dog-lege-
 import type { GameSessionSnapshot } from "@/games/dog-lege-dog/game/game-session";
 import type { DogLegeDogGameState, DogVisualFeedback } from "@/games/dog-lege-dog/game/game-types";
 
-export const DOG_BLOCK_VISUAL_SIZE_PX = 40;
-export const DOG_LOGICAL_UNIT_VISUAL_SIZE_PX = DOG_BLOCK_VISUAL_SIZE_PX / BLOCK_WIDTH;
+export const DOG_BLOCK_VISUAL_SIZE_PX = 48;
+export const DOG_LOGICAL_UNIT_VISUAL_WIDTH_PX = DOG_BLOCK_VISUAL_SIZE_PX / BLOCK_WIDTH;
+export const DOG_LOGICAL_UNIT_VISUAL_HEIGHT_PX = DOG_BLOCK_VISUAL_SIZE_PX / BLOCK_HEIGHT;
+/** Backward-compatible square-unit alias for layout consumers. */
+export const DOG_LOGICAL_UNIT_VISUAL_SIZE_PX = DOG_LOGICAL_UNIT_VISUAL_WIDTH_PX;
 
 export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameState): void {
   const { board } = state.level;
@@ -13,11 +16,10 @@ export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameSta
   const blocks = remainingBlocks;
   const gameRoot = root.querySelector<HTMLElement>("[data-game-content]") ?? root;
   const existingGame = gameRoot.querySelector<HTMLElement>('[data-testid="dog-game"]');
-  const blockSize = state.level.blocks[0];
-  const boardColumns = board.width / blockSize.width;
-  const boardRows = board.height / blockSize.height;
-  const boardPixelWidth = board.width * DOG_LOGICAL_UNIT_VISUAL_SIZE_PX;
-  const boardPixelHeight = board.height * (DOG_BLOCK_VISUAL_SIZE_PX / BLOCK_HEIGHT);
+  const boardColumns = board.width / BLOCK_WIDTH;
+  const boardRows = board.height / BLOCK_HEIGHT;
+  const boardPixelWidth = board.width * DOG_LOGICAL_UNIT_VISUAL_WIDTH_PX;
+  const boardPixelHeight = board.height * DOG_LOGICAL_UNIT_VISUAL_HEIGHT_PX;
 
   if (existingGame !== null) {
     updateDogLegeDogGame(
@@ -195,14 +197,14 @@ function renderBlock(
   inputLocked: boolean,
 ): string {
   const className = getDogPatternClassName(block.patternType);
-  const blockWidth = DOG_BLOCK_VISUAL_SIZE_PX;
-  const blockHeight = DOG_BLOCK_VISUAL_SIZE_PX;
+  const blockWidth = BLOCK_WIDTH * DOG_LOGICAL_UNIT_VISUAL_WIDTH_PX;
+  const blockHeight = BLOCK_HEIGHT * DOG_LOGICAL_UNIT_VISUAL_HEIGHT_PX;
   const left = clampVisualBlockPosition(
-    block.x * DOG_LOGICAL_UNIT_VISUAL_SIZE_PX,
+    block.x * DOG_LOGICAL_UNIT_VISUAL_WIDTH_PX,
     boardPixelWidth - blockWidth,
   );
   const top = clampVisualBlockPosition(
-    block.y * DOG_LOGICAL_UNIT_VISUAL_SIZE_PX,
+    block.y * DOG_LOGICAL_UNIT_VISUAL_HEIGHT_PX,
     boardPixelHeight - blockHeight,
   );
   const selectable = !inputLocked && selectableBlockIds.includes(block.id);
