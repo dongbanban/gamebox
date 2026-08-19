@@ -10,7 +10,6 @@ pnpm test:random       # 1–100 随机回归、固定检查点、100–1000 压
 pnpm test:e2e          # Chromium 浏览器流程
 pnpm test:qa           # 核心 + 随机回归 + Chromium E2E
 pnpm build:pages       # 生成 GitHub Pages /gamebox/ 路径产物
-pnpm deploy:pages      # build:pages + GitHub REST API 发布 gh-pages
 ```
 
 ## Ticket 验收规则
@@ -33,11 +32,11 @@ UI 文案、DOM、渲染器、样式、视觉资源或游戏音效改动运行 `
 pnpm test:e2e:cross-browser
 ```
 
-`pnpm test:qa` 与 `pnpm test:affected` 是互斥验证层；发布前只需追加 `pnpm build:pages`，不重复运行两套测试。`pnpm deploy:pages` 会自行执行一次 `build:pages`，不要在它之前重复构建。
+`pnpm test:qa` 与 `pnpm test:affected` 是互斥验证层；发布前只需追加 `pnpm build:pages`，不重复运行两套测试。
 
 ## GitHub Pages
 
-`pnpm build:pages` 生成 `/gamebox/` base 的静态 `dist/`。`pnpm deploy:pages` 使用 GitHub Git Data REST API 原子更新 `gh-pages`，再使用 Pages REST API 将 source 指向该分支；需要 `GITHUB_TOKEN`/`GH_TOKEN`，或本机已完成 `gh auth login`。当前部署不使用 CI，公开地址：<https://dongbanban.github.io/gamebox/>。
+`pnpm build:pages` 生成 `/gamebox/` base 的静态 `dist/`。推送 `main` 后，`.github/workflows/deploy-pages.yml` 自动构建并发布 GitHub Pages；也支持在 Actions 页面手动触发。首次启用需在仓库 Settings → Pages → Build and deployment → Source 选择 `GitHub Actions`。公开地址：<https://dongbanban.github.io/gamebox/>。
 
 ## 音乐素材
 
