@@ -34,6 +34,10 @@ pnpm test:e2e:cross-browser
 
 `pnpm test:qa` 与 `pnpm test:affected` 是互斥验证层；发布前需要构建时追加 `pnpm build:pages`，不重复运行两套测试。
 
+## GitHub Pages
+
+`pnpm build:pages` 生成 `/gamebox/` base 的静态 `dist/`。当前部署不使用 CI，仅将 `dist/` 发布到 `gh-pages`；公开地址：<https://dongbanban.github.io/gamebox/>。
+
 随机失败报告包含 `testSeed`、关卡号、关卡 seed、生成器版本。按报告单关重放：
 
 ```bash

@@ -64,3 +64,4 @@
 - 验证：`pnpm test:affected` 通过（核心 85/85、随机 3/3、E2E 13/13、typecheck、build）；`pnpm test:e2e:cross-browser` 通过（Chromium、mobile Chromium、Safari 3/3）；`pnpm test:qa` 通过（核心 85/85、随机 3/3、E2E 13/13）。
 - 回放说明：失败候选保留 diagnostic replay seam 供失败元数据检查；普通生成与正常回放路径继续严格执行空间分布校验。
 - 后续视觉调整：所有关卡隐藏三项统计；可见棋盘改为完整长方形，移除 `.dog-board-frame` 移动布局中的 `flex: 1`，方块可见面积提升 25%。本轮验证命令为 `pnpm test:ui` 与 `pnpm build:pages`。
+- 后续实测：`pnpm test:ui` 通过（2 files、25 tests、13.86s）；`pnpm build:pages` 通过；GitHub Pages 状态 `built`，首页 HTTP 200，地址为 <https://dongbanban.github.io/gamebox/>。部署仅发布 `dist/` 到 `gh-pages`，无 CI。
