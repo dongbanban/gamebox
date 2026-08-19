@@ -89,7 +89,7 @@ describe("通用游戏定义与结果契约", () => {
     expect(root.querySelector(".catalog-item__actions [data-action=\"enter-game\"]")).not.toBeNull();
     expect(root.querySelector('[data-view="catalog"]')?.textContent).not.toContain("累计积分");
     expect(root.querySelector(".status-dot")).toBeNull();
-    expect(root.querySelector('[data-action="enter-game"]')?.textContent).toContain("开始游戏");
+    expect(root.querySelector('[data-action="enter-game"]')?.textContent?.trim()).toBe("开始游戏");
 
     root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
     expect(dispatchBeforeUnload().defaultPrevented).toBe(true);

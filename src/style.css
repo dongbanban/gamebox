@@ -1010,7 +1010,7 @@ h2 {
   }
 
   .catalog-item__cover {
-    object-fit: contain;
+    object-fit: cover;
     background: var(--sky-pale);
   }
 

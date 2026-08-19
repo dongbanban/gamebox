@@ -26,7 +26,7 @@ test.describe("注册与游戏目录", () => {
     await expect(page.getByRole("heading", { name: "狗了个狗" })).toBeVisible();
     await expect(page.getByText("最高解锁关卡")).toBeVisible();
     await expect(page.getByText("累计积分")).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "开始游戏" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "开始游戏" })).toHaveText("开始游戏");
 
     const catalogText = await page.locator('[data-view="catalog"]').textContent();
     expect(catalogText).not.toContain("你的游戏合集");
@@ -70,11 +70,15 @@ test.describe("注册与游戏目录", () => {
         actionsHeight: getHeight(".catalog-item__actions"),
         levelHeight: getHeight(".catalog-item__level"),
         buttonHeight: getHeight('.catalog-item__actions [data-action="enter-game"]'),
+        coverObjectFit: getComputedStyle(
+          document.querySelector<HTMLElement>(".catalog-item__cover") as HTMLElement,
+        ).objectFit,
       };
     });
     expect(layout.actionsHeight).toBeLessThanOrEqual(72);
     expect(layout.buttonHeight).toBeLessThanOrEqual(72);
     expect(layout.levelHeight).toBeLessThanOrEqual(72);
+    expect(layout.coverObjectFit).toBe("cover");
   });
 
   test("回访跳过注册，确认重置后返回注册页", async ({ page }) => {

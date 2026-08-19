@@ -203,7 +203,7 @@ export class GameboxApp {
                 <dd>第 ${progress.highestUnlockedLevel} 关</dd>
               </dl>
               <button class="primary-button" type="button" data-action="enter-game" data-game-id="${game.id}" ${game.playable ? "" : "disabled"}>
-                开始游戏 <span aria-hidden="true">↗</span>
+                开始游戏
               </button>
             </div>
           </div>
