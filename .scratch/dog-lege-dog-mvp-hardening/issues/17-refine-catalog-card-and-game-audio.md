@@ -9,7 +9,7 @@
 ## Acceptance Criteria
 
 - [x] 游戏目录卡片在桌面与移动布局中均保持左图右文；封面不再占据整张卡片的主要高度。
-- [x] 封面为代码内嵌的狗主题卡通涂鸦形象，不新增运行时图片依赖。
+- [x] 封面使用项目内的狗主题 SVG 卡通涂鸦资源，不依赖第三方运行时 CDN。
 - [x] 卡片右侧按游戏名、简介、最高解锁关卡/累计积分、开始游戏顺序渲染。
 - [x] 卡片不渲染绿色可玩状态圆点或等价状态提示。
 - [x] 背景音乐替换为本地 CC0、可循环、偏轻快的音频资源；不依赖第三方运行时 CDN。
@@ -22,12 +22,13 @@
 
 - `pnpm test:ui`
 - `pnpm build:pages`
+- `pnpm test:e2e:cross-browser`
 - `git diff --check`
 
 ## Comments
 
 - 需求来源：2026-08-19 首页卡片与游戏音频反馈；附图只作为视觉参考。
 - 音频候选：OpenGameArt 的 [Party and Gameover loop](https://opengameart.org/content/party-and-gameover-loop)，选用 `happy_theme_0.ogg`；来源页标注 CC0。
-- 实现：目录卡片改为桌面/移动均为左图右文；移除 category 与绿色状态圆点；开始按钮统一为“开始游戏”；封面改为天空蓝狗主题代码内嵌涂鸦 SVG。
+- 实现：目录卡片改为桌面/移动均为左图右文；移除 category 与绿色状态圆点；开始按钮统一为“开始游戏”；封面改为项目内第 10 项“傻狗” SVG 涂鸦资源。
 - 音频：保留 `audio/levelmusicloop-tigrun.ogg` 运行时路径以避免部署引用漂移，替换文件内容为 `happy_theme_0.ogg`；背景音量降至 `0.1`，选取/三消/通关/失败改为多音符 profile。
-- 验证：`pnpm test:ui` 通过（3 files、27 tests）；`pnpm build:pages` 通过；`git diff --check` 通过。
+- 验证：`pnpm test:ui` 通过（3 files、28 tests）；`pnpm build:pages` 通过；`pnpm test:e2e:cross-browser` 通过（Chromium、mobile Chromium、Safari 3/3）；`git diff --check` 通过。

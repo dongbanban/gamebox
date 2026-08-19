@@ -325,6 +325,7 @@ describe("注册与游戏目录 UI", () => {
     expect(root.querySelector(".catalog-item__cover-wrap")).not.toBeNull();
     expect(root.querySelector(".catalog-item__content h2")?.textContent).toBe("狗了个狗");
     expect(root.querySelector(".status-dot")).toBeNull();
+    expect(root.querySelector(".catalog-header .brand-lockup__mark--dog svg")).not.toBeNull();
 
     root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
 

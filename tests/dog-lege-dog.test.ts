@@ -2,13 +2,37 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { GameResult } from "../src/catalog";
-import { FIRST_LEVEL, startDogLegeDogGame } from "../src/games/dog-lege-dog";
+import {
+  DOG_PATTERN_TYPES,
+  FIRST_LEVEL,
+  startDogLegeDogGame,
+} from "../src/games/dog-lege-dog";
+import { renderDogPatternAsset } from "../src/games/dog-lege-dog/assets/game-assets";
 
 afterEach(() => {
   vi.useRealTimers();
 });
 
 describe("狗了个狗首关", () => {
+  it("按图片行优先顺序提供十种独立狗主题 SVG", () => {
+    expect(DOG_PATTERN_TYPES).toEqual([
+      "打工狗",
+      "单身狗",
+      "舔狗",
+      "看门狗",
+      "疯狗",
+      "拆家狗",
+      "龇牙狗",
+      "社恐狗",
+      "吃货狗",
+      "傻狗",
+    ]);
+
+    const assets = DOG_PATTERN_TYPES.map((patternType) => renderDogPatternAsset(patternType));
+    expect(new Set(assets)).toHaveLength(10);
+    expect(assets.every((asset) => asset.includes("<svg") && asset.includes("<image"))).toBe(true);
+  });
+
   it("通过公共启动与状态 seam 暴露稳定的不规则棋盘", () => {
     const firstRoot = document.createElement("div");
     const secondRoot = document.createElement("div");

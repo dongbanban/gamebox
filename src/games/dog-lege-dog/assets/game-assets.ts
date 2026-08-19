@@ -2,61 +2,63 @@ import type { DogPatternType } from "../levels/level-types";
 
 export interface DogPatternPresentation {
   readonly className: string;
-  readonly accent: string;
-  readonly detailMarkup: string;
+  readonly assetPath: string;
 }
+
+const DOG_PATTERN_ASSET_PATHS: Readonly<Record<DogPatternType, string>> = Object.freeze({
+  打工狗: "assets/dog-icons/01-working-dog.svg",
+  单身狗: "assets/dog-icons/02-single-dog.svg",
+  舔狗: "assets/dog-icons/03-licking-dog.svg",
+  看门狗: "assets/dog-icons/04-guard-dog.svg",
+  疯狗: "assets/dog-icons/05-mad-dog.svg",
+  拆家狗: "assets/dog-icons/06-destructive-dog.svg",
+  龇牙狗: "assets/dog-icons/07-snarling-dog.svg",
+  社恐狗: "assets/dog-icons/08-shy-dog.svg",
+  吃货狗: "assets/dog-icons/09-foodie-dog.svg",
+  傻狗: "assets/dog-icons/10-silly-dog.svg",
+});
 
 export const DOG_PATTERN_PRESENTATIONS: Readonly<Record<DogPatternType, DogPatternPresentation>> =
   Object.freeze({
     打工狗: {
       className: "working-dog",
-      accent: "#ff5f69",
-      detailMarkup: '<rect x="17" y="35" width="14" height="7" rx="2" fill="#183b48"/><path d="M20 35c0-4 8-4 8 0" fill="none" stroke="#183b48" stroke-width="2"/>',
+      assetPath: DOG_PATTERN_ASSET_PATHS.打工狗,
     },
     单身狗: {
       className: "single-dog",
-      accent: "#ffb53d",
-      detailMarkup: '<path d="M24 42c-7-4-8-8-5-10 2-1 4 0 5 2 1-2 3-3 5-2 3 2 2 6-5 10Z" fill="#ee8069"/>',
+      assetPath: DOG_PATTERN_ASSET_PATHS.单身狗,
     },
     舔狗: {
       className: "licking-dog",
-      accent: "#19b886",
-      detailMarkup: '<path d="M24 31v8c0 4-6 4-6 0 0-2 2-3 6-3Z" fill="#ee8069"/>',
+      assetPath: DOG_PATTERN_ASSET_PATHS.舔狗,
     },
     看门狗: {
       className: "guard-dog",
-      accent: "#258dcb",
-      detailMarkup: '<path d="m24 34 8 3-2 6h-12l-2-6 8-3Z" fill="#183b48"/><path d="M24 36v5" stroke="#ffc966" stroke-width="2"/>',
+      assetPath: DOG_PATTERN_ASSET_PATHS.看门狗,
     },
     疯狗: {
       className: "mad-dog",
-      accent: "#9b51e0",
-      detailMarkup: '<path d="M17 36 21 32l3 4 3-4 4 4-7 5Z" fill="#183b48"/>',
+      assetPath: DOG_PATTERN_ASSET_PATHS.疯狗,
     },
     拆家狗: {
       className: "destructive-dog",
-      accent: "#ed7b25",
-      detailMarkup: '<path d="m17 35 5-3 2 3 2-3 5 3-2 7H19Z" fill="#183b48"/>',
+      assetPath: DOG_PATTERN_ASSET_PATHS.拆家狗,
     },
     龇牙狗: {
       className: "snarling-dog",
-      accent: "#82b83b",
-      detailMarkup: '<path d="M17 33c4 4 10 4 14 0v7H17Z" fill="#fffdf8" stroke="#183b48" stroke-width="1.5"/>',
+      assetPath: DOG_PATTERN_ASSET_PATHS.龇牙狗,
     },
     社恐狗: {
       className: "shy-dog",
-      accent: "#5d60c8",
-      detailMarkup: '<path d="M17 35h14v7H17Z" fill="#183b48" opacity=".8"/>',
+      assetPath: DOG_PATTERN_ASSET_PATHS.社恐狗,
     },
     吃货狗: {
       className: "foodie-dog",
-      accent: "#ec4d9a",
-      detailMarkup: '<circle cx="24" cy="37" r="6" fill="#183b48"/><circle cx="22" cy="35" r="1.5" fill="#fff3d7"/>',
+      assetPath: DOG_PATTERN_ASSET_PATHS.吃货狗,
     },
     傻狗: {
       className: "silly-dog",
-      accent: "#1babb0",
-      detailMarkup: '<path d="M18 34c4 3 8 3 12 0l-2 8H20Z" fill="#183b48"/>',
+      assetPath: DOG_PATTERN_ASSET_PATHS.傻狗,
     },
   });
 
@@ -68,12 +70,8 @@ export function renderDogPatternAsset(patternType: DogPatternType): string {
   const presentation = DOG_PATTERN_PRESENTATIONS[patternType];
 
   return `
-    <svg viewBox="0 0 48 48" width="100%" height="100%" aria-hidden="true" focusable="false">
-      <path d="M11 18 8 7l10 6c4-2 8-2 12 0l10-6-3 11c2 3 3 7 3 11 0 9-7 14-16 14S8 38 8 29c0-4 1-8 3-11Z" fill="${presentation.accent}"/>
-      <path d="M13 25c0-5 5-9 11-9s11 4 11 9v7c0 5-5 8-11 8s-11-3-11-8Z" fill="#fff3d7"/>
-      <circle cx="19" cy="26" r="2" fill="#183b48"/><circle cx="29" cy="26" r="2" fill="#183b48"/>
-      <path d="M21 32c2 2 4 2 6 0" fill="none" stroke="#183b48" stroke-width="2" stroke-linecap="round"/>
-      ${presentation.detailMarkup}
+    <svg viewBox="0 0 340 388" width="100%" height="100%" aria-hidden="true" focusable="false">
+      <image href="${presentation.assetPath}" width="340" height="388" preserveAspectRatio="xMidYMid meet" />
     </svg>
   `;
 }

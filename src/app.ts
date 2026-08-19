@@ -11,6 +11,7 @@ import {
   type LevelCompletionResult,
   type StoreSnapshot,
 } from "./progress-store";
+import { renderDogPatternAsset } from "./games/dog-lege-dog/assets/game-assets";
 
 export interface MountAppOptions {
   store?: ProgressStore;
@@ -159,7 +160,7 @@ export class GameboxApp {
         <div class="register-view__glow" aria-hidden="true"></div>
         <section class="register-panel" aria-labelledby="register-title">
           <div class="brand-lockup">
-            <span class="brand-lockup__mark" aria-hidden="true">🐶</span>
+            ${renderDogBrandMark()}
             <span class="brand-lockup__name">GAMEBOX</span>
           </div>
           <p class="eyebrow">浏览器小游戏合集 · 01</p>
@@ -219,7 +220,7 @@ export class GameboxApp {
         <header class="catalog-header">
           <div>
             <div class="brand-lockup brand-lockup--compact">
-              <span class="brand-lockup__mark" aria-hidden="true">🐶</span>
+              ${renderDogBrandMark()}
               <span class="brand-lockup__name">GAMEBOX</span>
             </div>
             <h1>游戏目录</h1>
@@ -270,7 +271,7 @@ export class GameboxApp {
           <div class="game-entry-view__brand">
             ${renderCatalogIconButton("icon-button game-entry-view__catalog-button")}
             <div class="brand-lockup brand-lockup--compact">
-              <span class="brand-lockup__mark" aria-hidden="true">🐶</span>
+              ${renderDogBrandMark()}
               <span class="brand-lockup__name">GAMEBOX</span>
             </div>
           </div>
@@ -470,6 +471,10 @@ function renderPersistenceNotice(warning: string | null): string {
       ${warning}
     </p>
   `;
+}
+
+function renderDogBrandMark(): string {
+  return `<span class="brand-lockup__mark brand-lockup__mark--dog" aria-hidden="true">${renderDogPatternAsset("傻狗")}</span>`;
 }
 
 function renderCatalogIconButton(className = "icon-button"): string {

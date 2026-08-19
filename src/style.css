@@ -114,10 +114,22 @@ button:focus-visible {
   width: 32px;
   height: 32px;
   place-items: center;
+  overflow: hidden;
   border-radius: 11px;
   background: var(--yellow);
   font-size: 18px;
   letter-spacing: 0;
+}
+
+.brand-lockup__mark--dog {
+  padding: 2px;
+  background: var(--sky-pale);
+}
+
+.brand-lockup__mark--dog svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .brand-lockup--compact {
@@ -310,7 +322,7 @@ h2 {
 
 .catalog-item {
   display: grid;
-  grid-template-columns: minmax(180px, 31%) minmax(0, 1fr);
+  grid-template-columns: minmax(220px, 38%) minmax(0, 1fr);
   min-height: 250px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.9);
@@ -659,52 +671,52 @@ h2 {
 }
 
 .dog-block--working-dog {
-  --dog-block-background: #ff91a4;
+  --dog-block-background: #ef6f63;
   background: var(--dog-block-background);
 }
 
 .dog-block--single-dog {
-  --dog-block-background: #f4d35e;
+  --dog-block-background: #ffbf21;
   background: var(--dog-block-background);
 }
 
 .dog-block--licking-dog {
-  --dog-block-background: #67d19a;
+  --dog-block-background: #8fd8bf;
   background: var(--dog-block-background);
 }
 
 .dog-block--guard-dog {
-  --dog-block-background: #71a9ea;
+  --dog-block-background: #45c2e9;
   background: var(--dog-block-background);
 }
 
 .dog-block--mad-dog {
-  --dog-block-background: #c28be8;
+  --dog-block-background: #a98ce4;
   background: var(--dog-block-background);
 }
 
 .dog-block--destructive-dog {
-  --dog-block-background: #ef854d;
+  --dog-block-background: #ff8c19;
   background: var(--dog-block-background);
 }
 
 .dog-block--snarling-dog {
-  --dog-block-background: #b6d86b;
+  --dog-block-background: #9ac62a;
   background: var(--dog-block-background);
 }
 
 .dog-block--shy-dog {
-  --dog-block-background: #8489e9;
+  --dog-block-background: #4f72cf;
   background: var(--dog-block-background);
 }
 
 .dog-block--foodie-dog {
-  --dog-block-background: #e97abc;
+  --dog-block-background: #ec99aa;
   background: var(--dog-block-background);
 }
 
 .dog-block--silly-dog {
-  --dog-block-background: #5dc8c4;
+  --dog-block-background: #16aeb8;
   background: var(--dog-block-background);
 }
 
@@ -974,7 +986,7 @@ h2 {
   }
 
   .catalog-item {
-    grid-template-columns: minmax(116px, 34%) minmax(0, 1fr);
+    grid-template-columns: minmax(128px, 40%) minmax(0, 1fr);
   }
 
   .catalog-item__cover-wrap,
@@ -1003,7 +1015,7 @@ h2 {
   }
 
   .catalog-item__stats {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
     margin-top: 0;
     margin-bottom: 14px;
