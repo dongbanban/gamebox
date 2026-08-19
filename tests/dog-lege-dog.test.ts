@@ -392,7 +392,7 @@ describe("狗了个狗首关", () => {
     game.destroy();
   });
 
-  it("失败拥有独立反馈，并在反馈完成后报告失败结果", async () => {
+  it("失败提示显示在暂存槽下方，并在反馈完成后报告失败结果", async () => {
     vi.useFakeTimers();
     const root = document.createElement("div");
     const results: GameResult[] = [];
