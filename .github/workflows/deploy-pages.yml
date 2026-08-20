@@ -40,6 +40,8 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build Pages site
+        env:
+          VITE_ASSET_CDN_BASE_URL: ${{ vars.ASSET_CDN_BASE_URL || 'https://gamebox-assets.pages.dev' }}
         run: pnpm build:pages
 
       - name: Configure GitHub Pages

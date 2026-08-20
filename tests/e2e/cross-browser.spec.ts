@@ -32,19 +32,30 @@ test("跨浏览器核心 smoke：注册、目录与首关入口可用", async ({
 
 test("龇牙狗图案在跨浏览器中保留白色牙齿", async ({ page }) => {
   await page.goto("/");
+  await page.evaluate(() => window.localStorage.clear());
+  await page.reload();
+  await page.getByRole("button", { name: "匿名注册" }).click();
 
-  const renderedAsset = await page.evaluate(async () => {
+  const catalogCoverSource = await page.locator(".catalog-item__cover").getAttribute("src");
+  expect(catalogCoverSource).not.toBeNull();
+  const snarlingDogSource = catalogCoverSource?.replace(
+    "10-silly-dog.svg",
+    "07-snarling-dog.svg",
+  );
+
+  const renderedAsset = await page.evaluate(async (assetSource) => {
     const host = document.createElement("div");
     host.style.width = "335px";
     host.style.height = "388px";
-    host.innerHTML =
-      '<img src="assets/dog-icons-square/07-snarling-dog.svg" width="100%" height="100%" alt="" aria-hidden="true" />';
+    const image = document.createElement("img");
+    image.crossOrigin = "anonymous";
+    image.width = 335;
+    image.height = 388;
+    image.alt = "";
+    image.setAttribute("aria-hidden", "true");
+    image.src = assetSource;
+    host.append(image);
     document.body.append(host);
-
-    const image = host.querySelector<HTMLImageElement>("img");
-    if (image === null) {
-      return { tagName: host.firstElementChild?.tagName ?? "", naturalWidth: 0, whitePixels: 0 };
-    }
 
     await image.decode();
     const canvas = document.createElement("canvas");
@@ -65,7 +76,7 @@ test("龇牙狗图案在跨浏览器中保留白色牙齿", async ({ page }) => 
     }
 
     return { tagName: image.tagName, naturalWidth: image.naturalWidth, whitePixels };
-  });
+  }, snarlingDogSource ?? "");
 
   expect(renderedAsset.tagName).toBe("IMG");
   expect(renderedAsset.naturalWidth).toBe(335);

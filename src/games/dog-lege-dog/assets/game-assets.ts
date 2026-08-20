@@ -1,4 +1,5 @@
 import type { DogPatternType } from "@/games/dog-lege-dog/levels/level-types";
+import { resolveAssetUrl } from "@/asset-url";
 
 export interface DogPatternPresentation {
   readonly className: string;
@@ -66,10 +67,14 @@ export function getDogPatternClassName(patternType: DogPatternType): string {
   return DOG_PATTERN_PRESENTATIONS[patternType].className;
 }
 
+export function getDogPatternAssetUrl(patternType: DogPatternType): string {
+  return resolveAssetUrl(DOG_PATTERN_PRESENTATIONS[patternType].assetPath);
+}
+
 export function renderDogPatternAsset(patternType: DogPatternType): string {
-  const presentation = DOG_PATTERN_PRESENTATIONS[patternType];
+  const assetUrl = getDogPatternAssetUrl(patternType);
 
   return `
-    <img src="${presentation.assetPath}" width="100%" height="100%" alt="" aria-hidden="true" />
+    <img src="${assetUrl}" crossorigin="anonymous" width="100%" height="100%" alt="" aria-hidden="true" />
   `;
 }

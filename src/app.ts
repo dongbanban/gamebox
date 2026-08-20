@@ -190,7 +190,7 @@ export class GameboxApp {
       return `
         <article class="catalog-item" data-game-id="${game.id}">
           <div class="catalog-item__cover-wrap">
-            <img class="catalog-item__cover" src="${game.cover}" alt="${game.name}封面" />
+            <img class="catalog-item__cover" src="${game.cover}" crossorigin="anonymous" alt="${game.name}封面" />
           </div>
           <div class="catalog-item__content">
             <div class="catalog-item__heading">

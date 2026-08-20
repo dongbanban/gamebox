@@ -55,6 +55,18 @@ Vite 与 TypeScript 统一使用 `@/* → src/*`。源码和测试中的项目�
 
 `pnpm build:pages` 生成 `/gamebox/` base 的静态 `dist/`。推送 `main` 后，`.github/workflows/deploy-pages.yml` 自动构建并发布 GitHub Pages；也支持在 Actions 页面手动触发。首次启用需在仓库 Settings → Pages → Build and deployment → Source 选择 `GitHub Actions`。公开地址：<https://dongbanban.github.io/gamebox/>。
 
+## 静态 SVG CDN
+
+`public/assets/dog-icons-square/*.svg` 支持 CDN 前缀。生产默认配置在 `.env.production`，狗图资源与目录封面从 `https://gamebox-assets.pages.dev` 加载；本地开发继续使用当前站点路径。
+
+本地构建：
+
+```bash
+VITE_ASSET_CDN_BASE_URL=https://cdn.example.com/gamebox/v1 pnpm build:pages
+```
+
+GitHub Pages 优先使用仓库 Variables 中的 `ASSET_CDN_BASE_URL`；未设置时回退到 `https://gamebox-assets.pages.dev`。`public/_headers` 为狗图 SVG 设置一年长期缓存。CDN 需返回 `Content-Type: image/svg+xml`、HTTPS、`Access-Control-Allow-Origin`。修改同名 SVG 时需更新资源版本或清理 CDN 缓存。
+
 ## 音乐素材
 
 `public/audio/levelmusicloop-tigrun.ogg` 来自 [Party and Gameover loop](https://opengameart.org/content/party-and-gameover-loop) 中的 `happy_theme_0.ogg`，作者 gilzoide，页面标注为 CC0；项目在首次用户交互后本地循环播放该轻快主题，背景音量低于选取/三消反馈，音效开关同时控制音乐与交互音效。

@@ -1,6 +1,7 @@
 /** @vitest-environment jsdom */
 
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { resolveAssetUrl } from "@/asset-url";
 import type { GameResult } from "@/catalog";
 import { BLOCK_FLIGHT_DURATION_MS } from "@/games/dog-lege-dog/assets/animation-effects";
 import {
@@ -45,6 +46,18 @@ describe("狗了个狗首关", () => {
 
     expect(asset).toContain("<img");
     expect(asset).not.toContain("<image");
+  });
+
+  it("按 CDN 前缀解析狗图资源，并保留本地路径回退", () => {
+    expect(resolveAssetUrl("assets/dog-icons-square/07-snarling-dog.svg")).toBe(
+      "assets/dog-icons-square/07-snarling-dog.svg",
+    );
+    expect(
+      resolveAssetUrl(
+        "assets/dog-icons-square/07-snarling-dog.svg",
+        " https://cdn.example.com/gamebox/v1/ ",
+      ),
+    ).toBe("https://cdn.example.com/gamebox/v1/assets/dog-icons-square/07-snarling-dog.svg");
   });
 
   it("通过公共启动与状态 seam 暴露稳定的不规则棋盘", () => {
