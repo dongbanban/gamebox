@@ -148,8 +148,6 @@ export function createDogLegeDogGame(
     }
     soundEffects.play("select");
     playFeedbackSounds(didMatch, result);
-    renderStartedGame(nextState);
-
     const target = findTrayTarget(root, patternType);
     const flight = animateBlockFlight({
       root,
@@ -158,6 +156,7 @@ export function createDogLegeDogGame(
       target: target?.getBoundingClientRect() ?? null,
     });
     runtime.activeFlights.add(flight);
+    renderStartedGame(nextState);
     void finishAnimatedSelection(
       flight,
       result,
@@ -557,6 +556,7 @@ function createGameState(
     session: sessionState,
     inputLocked: runtime.inputLocked,
     loadoutLocked:
+      sessionState.status !== "playing" ||
       runtime.inputLocked ||
       runtime.activeFlights.size > 0 ||
       runtime.matchAnimation !== null,

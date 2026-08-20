@@ -559,6 +559,24 @@ h2 {
   box-shadow: var(--shadow);
 }
 
+.dog-loadout-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(16px, 4vw, 40px);
+  overflow: auto;
+}
+
+.dog-loadout-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(22, 68, 93, 0.38);
+  backdrop-filter: blur(3px);
+}
+
 .dog-loadout,
 .dog-loadout-summary {
   margin-top: 20px;
@@ -566,6 +584,16 @@ h2 {
   border: 1px solid rgba(79, 155, 192, 0.18);
   border-radius: 20px;
   background: #f2fbff;
+}
+
+.dog-loadout-modal .dog-loadout {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 900px);
+  max-height: calc(100dvh - 48px);
+  margin: 0;
+  overflow-y: auto;
+  box-shadow: 0 24px 70px rgba(22, 68, 93, 0.28);
 }
 
 .dog-loadout__heading,
@@ -712,22 +740,65 @@ h2 {
 
 .dog-loadout-summary {
   align-items: center;
-  padding: 14px 16px;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 10px 12px;
+}
+
+.dog-loadout-summary__label {
+  flex: 0 0 auto;
+  color: var(--ink-muted);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
 }
 
 .dog-loadout-summary__items {
   display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
   flex-wrap: wrap;
   gap: 6px;
 }
 
-.dog-loadout-summary__items span {
-  padding: 5px 8px;
+.dog-loadout-thumbnail {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px 3px 3px;
   border-radius: 999px;
   background: #dceff9;
   color: var(--sky-deep);
   font-size: 11px;
   font-weight: 800;
+}
+
+.dog-loadout-thumbnail__icon {
+  display: inline-grid;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--yellow);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.dog-loadout-thumbnail__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dog-loadout-summary .text-button {
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding: 6px 10px;
+  border-radius: 10px;
+  white-space: nowrap;
 }
 
 .game-result-card__loadout-action {
@@ -1411,8 +1482,8 @@ h2 {
     border-radius: 18px;
   }
 
-  .dog-game:has(.dog-loadout) {
-    overflow-y: auto;
+  .dog-game:has(.dog-loadout-modal) {
+    overflow: hidden;
   }
 
   .dog-loadout,
@@ -1421,26 +1492,47 @@ h2 {
     padding: 12px;
   }
 
-  .dog-loadout-summary {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    z-index: 5;
-    margin: 0;
-    padding: 0;
-    border: 0;
-    background: transparent;
+  .dog-loadout-modal {
+    align-items: center;
+    padding: 12px;
   }
 
-  .dog-loadout-summary > div {
-    display: none;
+  .dog-loadout-modal .dog-loadout {
+    width: 100%;
+    max-height: calc(100dvh - 24px);
+    padding: 16px;
+    border-radius: 24px;
+  }
+
+  .dog-loadout-summary {
+    margin: 0;
+    gap: 6px;
+    padding: 7px 8px;
+  }
+
+  .dog-loadout-summary__label {
+    font-size: 11px;
+  }
+
+  .dog-loadout-thumbnail {
+    gap: 4px;
+    padding: 2px 5px 2px 2px;
+  }
+
+  .dog-loadout-thumbnail__name {
+    max-width: 8em;
+    font-size: 10px;
+  }
+
+  .dog-loadout-thumbnail__icon {
+    width: 25px;
+    height: 25px;
+    border-radius: 8px;
   }
 
   .dog-loadout-summary .text-button {
-    min-height: 32px;
+    min-height: 30px;
     padding: 5px 8px;
-    border-radius: 10px;
-    background: rgba(242, 251, 255, 0.94);
     font-size: 11px;
   }
 

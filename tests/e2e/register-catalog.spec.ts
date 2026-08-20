@@ -37,9 +37,12 @@ test.describe("注册与游戏目录", () => {
     expect(decodeURIComponent(coverSource ?? "")).not.toContain("GAMEBOX · 01");
 
     await page.getByRole("button", { name: "开始游戏" }).click();
+    await expect(page.getByTestId("dog-loadout-modal")).toBeVisible();
     await expect(page.getByTestId("dog-loadout-panel")).toBeVisible();
     await expect(page.getByTestId("dog-loadout-option")).toHaveCount(5);
     await confirmDogLoadout(page);
+    await expect(page.getByTestId("dog-loadout-thumbnail")).toHaveCount(3);
+    await expect(page.getByRole("button", { name: "变更" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "狗了个狗" })).toHaveCount(0);
     const catalogButton = page.locator('[data-view="game-entry"] [data-action="catalog"]');
     await expect(catalogButton).toHaveAttribute("aria-label", "返回游戏目录");
@@ -164,7 +167,24 @@ test.describe("注册与游戏目录", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.getByRole("button", { name: "匿名注册" }).click();
     await page.getByRole("button", { name: "开始游戏" }).click();
+    await expect(page.getByTestId("dog-loadout-modal")).toBeVisible();
+    const loadoutModalLayout = await page.evaluate(() => {
+      const modal = document.querySelector<HTMLElement>('[data-testid="dog-loadout-modal"]');
+      const panel = document.querySelector<HTMLElement>('[data-testid="dog-loadout-panel"]');
+      return {
+        position: modal === null ? "" : getComputedStyle(modal).position,
+        overflowY: panel === null ? "" : getComputedStyle(panel).overflowY,
+        maxHeight: panel === null ? "" : getComputedStyle(panel).maxHeight,
+      };
+    });
+    expect(loadoutModalLayout.position).toBe("fixed");
+    expect(loadoutModalLayout.overflowY).toBe("auto");
+    expect(loadoutModalLayout.maxHeight).not.toBe("none");
     await confirmDogLoadout(page);
+    await expect(page.getByTestId("dog-loadout-thumbnail")).toHaveCount(3);
+    await expect(page.locator(".dog-loadout-thumbnail__name")).toHaveCount(3);
+    await expect(page.locator(".dog-loadout-thumbnail__name").first()).toBeVisible();
+    await expect(page.getByRole("button", { name: "变更" })).toBeVisible();
 
     const layout = await page.evaluate(() => {
       const serializeRect = (element: Element) => {
@@ -190,6 +210,8 @@ test.describe("注册与游戏目录", () => {
       const selectableBlock = document.querySelector<HTMLElement>(
         '[data-testid="dog-block"]:not([disabled])',
       );
+      const summary = document.querySelector<HTMLElement>('[data-testid="dog-loadout-summary"]');
+      const changeButton = document.querySelector<HTMLElement>('[data-testid="dog-edit-loadout"]');
       return {
         viewportWidth: window.innerWidth,
         viewportHeight: window.innerHeight,
@@ -204,6 +226,8 @@ test.describe("注册与游戏目录", () => {
         boardWidth: rect?.width ?? 0,
         boardBackgroundImage: board === null ? "" : getComputedStyle(board).backgroundImage,
         tray: getRect('[data-testid="dog-tray"]'),
+        loadoutSummary: summary === null ? null : serializeRect(summary),
+        loadoutChangeButton: changeButton === null ? null : serializeRect(changeButton),
         traySlots: traySlots.map(serializeRect),
         levelPicker: getRect('[data-testid="level-picker"]'),
         soundButton: getRect('[data-view="game-entry"] [data-action="toggle-sound"]'),
@@ -229,6 +253,12 @@ test.describe("注册与游戏目录", () => {
     expect(layout.tray).not.toBeNull();
     expect(layout.tray?.top).toBeGreaterThanOrEqual(0);
     expect(layout.tray?.bottom).toBeLessThanOrEqual(layout.viewportHeight);
+    expect(layout.loadoutSummary).not.toBeNull();
+    expect(layout.loadoutChangeButton).not.toBeNull();
+    expect(layout.loadoutSummary?.bottom).toBeLessThanOrEqual(layout.tray?.top ?? 0);
+    expect(layout.loadoutChangeButton?.right).toBeLessThanOrEqual(
+      (layout.loadoutSummary?.right ?? 0) + 1,
+    );
     expect(layout.traySlots).toHaveLength(7);
     expect(layout.traySlots.every((slot) => slot.width > 0 && slot.height > 0)).toBe(true);
     expect(

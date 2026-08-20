@@ -334,6 +334,7 @@ describe("狗了个狗首关", () => {
     const root = document.createElement("div");
     const results: GameResult[] = [];
     const game = startTestGame(root, {
+      loadout: ["triple-removal", "tray-capacity", "wildcard"],
       onResult: (result) => results.push(result),
     });
 
@@ -355,6 +356,11 @@ describe("狗了个狗首关", () => {
 
       await vi.runAllTimersAsync();
       expect(game.getState().inputLocked).toBe(false);
+      if (isTerminal) {
+        expect(root.querySelector<HTMLButtonElement>('[data-testid="dog-edit-loadout"]')?.disabled).toBe(
+          true,
+        );
+      }
     }
 
     expect(game.getState().status).toBe("won");
@@ -469,6 +475,7 @@ describe("狗了个狗首关", () => {
     const root = document.createElement("div");
     const results: GameResult[] = [];
     const game = startTestGame(root, {
+      loadout: ["triple-removal", "tray-capacity", "wildcard"],
       onResult: (result) => results.push(result),
     });
 
@@ -510,6 +517,9 @@ describe("狗了个狗首关", () => {
     await vi.runAllTimersAsync();
 
     expect(game.getState().inputLocked).toBe(false);
+    expect(root.querySelector<HTMLButtonElement>('[data-testid="dog-edit-loadout"]')?.disabled).toBe(
+      true,
+    );
     expect(results).toEqual([
       expect.objectContaining({
         gameId: "dog-lege-dog",
@@ -542,7 +552,13 @@ describe("狗了个狗活动道具组变更", () => {
 
     game.selectBlock(before.session.selectableBlockIds[0] ?? "");
     expect(game.getState().session.tray).toHaveLength(1);
+    expect(root.querySelector<HTMLButtonElement>('[data-testid="dog-edit-loadout"]')?.disabled).toBe(
+      true,
+    );
     await vi.runAllTimersAsync();
+    expect(root.querySelector<HTMLButtonElement>('[data-testid="dog-edit-loadout"]')?.disabled).toBe(
+      false,
+    );
 
     root.querySelector<HTMLButtonElement>('[data-action="edit-loadout"]')?.click();
     expect(

@@ -258,6 +258,13 @@ describe("狗了个狗道具组选择", () => {
     root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
 
     expect(root.querySelector('[data-testid="dog-board"]')).not.toBeNull();
+    expect(root.querySelector('[data-testid="dog-loadout-modal"]')).not.toBeNull();
+    expect(root.querySelector('[data-testid="dog-loadout-modal"]')?.getAttribute("role")).toBe(
+      "dialog",
+    );
+    expect(root.querySelector('[data-testid="dog-loadout-modal"]')?.getAttribute("aria-modal")).toBe(
+      "true",
+    );
     expect(root.querySelector('[data-testid="dog-loadout-panel"]')).not.toBeNull();
     expect(root.querySelectorAll('[data-testid="dog-loadout-option"]')).toHaveLength(5);
     expect(root.querySelector('[data-testid="dog-block"]:not([disabled])')).toBeNull();
@@ -280,7 +287,14 @@ describe("狗了个狗道具组选择", () => {
 
     root.querySelector<HTMLButtonElement>('[data-action="confirm-loadout"]')?.click();
 
+    expect(root.querySelector('[data-testid="dog-loadout-modal"]')).toBeNull();
     expect(root.querySelector('[data-testid="dog-loadout-panel"]')).toBeNull();
+    const loadoutSlot = root.querySelector('[data-testid="dog-loadout-slot"]');
+    const loadoutSummary = loadoutSlot?.querySelector('[data-testid="dog-loadout-summary"]');
+    expect(loadoutSlot?.querySelectorAll('[data-testid="dog-loadout-thumbnail"]')).toHaveLength(3);
+    expect(loadoutSlot?.nextElementSibling?.getAttribute("data-testid")).toBe("dog-tray-region");
+    expect(loadoutSummary?.lastElementChild?.getAttribute("data-action")).toBe("edit-loadout");
+    expect(loadoutSummary?.lastElementChild?.textContent).toContain("变更");
     expect(root.querySelector('[data-testid="dog-block"]:not([disabled])')).not.toBeNull();
     expect(store.snapshot().state?.games[GAME_ID].loadout).toEqual([
       "triple-removal",

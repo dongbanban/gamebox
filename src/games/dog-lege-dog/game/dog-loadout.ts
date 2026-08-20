@@ -112,13 +112,15 @@ export function renderDogLoadoutEditor({
   changeTarget = "current",
 }: DogLoadoutEditorRenderOptions): string {
   const isChange = mode === "change";
+  const isNextChange = changeTarget === "next";
   const canConfirm = isValidDogLoadout(draft) && (!isChange || !areDogLoadoutsEqual(current, draft));
   const title = isChange ? "更换道具组" : "选择本关道具";
   const intro = isChange
-    ? changeTarget === "next"
+    ? isNextChange
       ? `新道具组将在第 ${levelNumber} 关生效。新组合至少替换一种道具。`
       : `当前道具组将应用于第 ${levelNumber} 关。新组合至少替换一种道具。`
     : `本关棋盘已生成。选择 ${DOG_LOADOUT_SIZE} 种不同道具后确认。`;
+  const titleId = `dog-loadout-title-${mode}`;
   const options = DOG_ITEM_DEFINITIONS.map((item) => {
     const selected = draft.includes(item.id);
     return `
@@ -145,7 +147,7 @@ export function renderDogLoadoutEditor({
     ? `
         <div class="dog-loadout-confirmation" data-testid="dog-loadout-confirmation" role="alert">
           <strong>确认更换道具组？</strong>
-          <p>${changeTarget === "next"
+          <p>${isNextChange
             ? `确认后进入第 ${levelNumber} 关，已完成关卡、奖励与解锁保持不变。`
             : `确认后只重置第 ${levelNumber} 关局内状态，棋盘与 runSeed 保持不变。`}</p>
           <div class="dog-loadout-confirmation__actions">
@@ -164,18 +166,21 @@ export function renderDogLoadoutEditor({
       `;
 
   return `
-    <section class="dog-loadout" data-testid="dog-loadout-panel" data-mode="${mode}">
-      <div class="dog-loadout__heading">
-        <div>
-          <p class="eyebrow">DOG · LOADOUT</p>
-          <h3>${title}</h3>
-          <p>${intro}</p>
+    <div class="dog-loadout-modal" data-testid="dog-loadout-modal" role="dialog" aria-modal="true" aria-labelledby="${titleId}">
+      <div class="dog-loadout-modal__backdrop" aria-hidden="true"></div>
+      <section class="dog-loadout" data-testid="dog-loadout-panel" data-mode="${mode}">
+        <div class="dog-loadout__heading">
+          <div>
+            <p class="eyebrow">DOG · LOADOUT</p>
+            <h3 id="${titleId}">${title}</h3>
+            <p>${intro}</p>
+          </div>
+          <span class="dog-loadout__count" data-testid="dog-loadout-count">${draft.length}/${DOG_LOADOUT_SIZE}</span>
         </div>
-        <span class="dog-loadout__count" data-testid="dog-loadout-count">${draft.length}/${DOG_LOADOUT_SIZE}</span>
-      </div>
-      <div class="dog-loadout__options">${options}</div>
-      ${confirmation}
-    </section>
+        <div class="dog-loadout__options">${options}</div>
+        ${confirmation}
+      </section>
+    </div>
   `;
 }
 
@@ -184,15 +189,18 @@ export function renderDogLoadoutSummary(
   inputLocked = false,
 ): string {
   return `
-    <section class="dog-loadout-summary" data-testid="dog-loadout-summary">
-      <div>
-        <p class="eyebrow">DOG · LOADOUT</p>
-        <h3>当前道具组</h3>
-        <div class="dog-loadout-summary__items">
-          ${loadout.map((itemId) => `<span data-loadout-id="${itemId}">${getDogItemDefinition(itemId).name}</span>`).join("")}
-        </div>
+    <section class="dog-loadout-summary" data-testid="dog-loadout-summary" aria-label="当前道具组">
+      <span class="dog-loadout-summary__label">道具组</span>
+      <div class="dog-loadout-summary__items">
+        ${loadout.map((itemId) => {
+          const item = getDogItemDefinition(itemId);
+          return `<span class="dog-loadout-thumbnail" data-testid="dog-loadout-thumbnail" data-loadout-id="${itemId}" role="img" aria-label="${item.name}">
+            <span class="dog-loadout-thumbnail__icon" aria-hidden="true">${item.icon}</span>
+            <span class="dog-loadout-thumbnail__name">${item.name}</span>
+          </span>`;
+        }).join("")}
       </div>
-      <button class="text-button" type="button" data-action="edit-loadout" data-testid="dog-edit-loadout" ${inputLocked ? "disabled" : ""}>更换道具组</button>
+      <button class="text-button" type="button" data-action="edit-loadout" data-testid="dog-edit-loadout" ${inputLocked ? "disabled" : ""}>变更</button>
     </section>
   `;
 }
