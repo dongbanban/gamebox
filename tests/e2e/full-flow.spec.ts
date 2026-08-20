@@ -32,6 +32,21 @@ test.describe("狗了个狗完整浏览器闭环", () => {
     );
     await expect(page.getByText("通关奖励")).toBeVisible();
     await expect(page.getByText("累计积分")).toBeVisible();
+    const resultVisuals = await page.evaluate(() => {
+      const eyebrow = document.querySelector<HTMLElement>(
+        ".game-result-card--won .eyebrow",
+      );
+      const catalogButton = document.querySelector<HTMLElement>(
+        ".game-result-card--won [data-action=\"catalog\"]",
+      );
+      return {
+        eyebrowColor: eyebrow === null ? "" : getComputedStyle(eyebrow).color,
+        catalogBorderColor:
+          catalogButton === null ? "" : getComputedStyle(catalogButton).borderTopColor,
+      };
+    });
+    expect(resultVisuals.eyebrowColor).toBe("rgb(63, 148, 195)");
+    expect(resultVisuals.catalogBorderColor).toBe("rgb(63, 148, 195)");
     expect(
       await page.evaluate(() =>
         window.dispatchEvent(new Event("beforeunload", { cancelable: true })),

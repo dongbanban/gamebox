@@ -163,7 +163,6 @@ export class GameboxApp {
             ${renderDogBrandMark()}
             <span class="brand-lockup__name">GAMEBOX</span>
           </div>
-          <p class="eyebrow">浏览器小游戏合集 · 01</p>
           <h1 id="register-title">开始你的第一局</h1>
           <p class="register-panel__intro">
             一次点击创建本地匿名身份，游戏进度只保存在当前浏览器。

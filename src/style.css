@@ -143,6 +143,18 @@ button:focus-visible {
   flex: none;
 }
 
+.register-panel .brand-lockup__mark--dog {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+}
+
+.register-panel .brand-lockup__mark--dog img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .brand-lockup--compact {
   margin-bottom: 24px;
 }
@@ -472,6 +484,10 @@ h2 {
   color: #39825c;
 }
 
+.game-result-card--won .eyebrow {
+  color: var(--sky-deep);
+}
+
 .game-result-card--lost h1 {
   color: var(--coral-dark);
 }
@@ -527,6 +543,10 @@ h2 {
 .game-result-card__actions--retry .icon-button {
   width: 56px;
   height: 56px;
+}
+
+.game-result-card__actions .icon-button {
+  border-color: var(--sky-deep);
 }
 
 .dog-game {
@@ -775,7 +795,12 @@ h2 {
 .dog-block__glyph {
   display: block;
   line-height: 1;
-  filter: drop-shadow(0 1px 0 rgba(255, 253, 248, 0.6));
+}
+
+.dog-block__glyph img {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .dog-tray {

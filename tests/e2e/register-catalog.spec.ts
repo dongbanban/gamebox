@@ -255,9 +255,9 @@ test.describe("注册与游戏目录", () => {
         '[data-testid="dog-tray-slot"][data-pattern-type]',
       );
       const filledGlyph = filledSlot?.querySelector<HTMLElement>(".dog-block__glyph") ?? null;
-      const matchingBlock = [...document.querySelectorAll<HTMLElement>('[data-testid="dog-block"]')].find(
-        (block) => block.dataset.patternType === filledSlot?.dataset.patternType,
-      );
+      const matchingBlock = [
+        ...document.querySelectorAll<HTMLElement>('[data-testid="dog-block"]:not([disabled])'),
+      ].find((block) => block.dataset.patternType === filledSlot?.dataset.patternType);
       const slotStyle = filledSlot === null ? null : getComputedStyle(filledSlot);
       const blockStyle = matchingBlock === undefined ? null : getComputedStyle(matchingBlock);
       return {
@@ -355,6 +355,66 @@ test.describe("注册与游戏目录", () => {
 
     expect(desktopLayout.boardWidth).toBeLessThanOrEqual(1040);
     expect(Math.abs(desktopLayout.boardCenter - desktopLayout.frameCenter)).toBeLessThanOrEqual(1);
+  });
+
+  test("棋盘狗图标不显示白色下沿，暂存槽图片不溢出", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.getByRole("button", { name: "匿名注册" }).click();
+    await page.getByRole("button", { name: "开始游戏" }).click();
+    await page.locator('[data-testid="dog-block"]:not([disabled])').first().click();
+
+    const visuals = await page.evaluate(() => {
+      const boardGlyph = document.querySelector<HTMLElement>(
+        ".dog-board .dog-block__glyph",
+      );
+      const boardImage = boardGlyph?.querySelector<HTMLImageElement>("img");
+      const filledSlot = document.querySelector<HTMLElement>(
+        '[data-testid="dog-tray-slot"][data-pattern-type]',
+      );
+      const trayGlyph = filledSlot?.querySelector<HTMLElement>(".dog-block__glyph");
+      const trayImage = trayGlyph?.querySelector<HTMLImageElement>("img");
+      const slotRect = filledSlot?.getBoundingClientRect();
+      const imageRect = trayImage?.getBoundingClientRect();
+      const renderedBlocks = [
+        ...document.querySelectorAll<HTMLElement>('[data-testid="dog-block"]'),
+      ].map((block) => ({
+        left: Number.parseFloat(block.style.getPropertyValue("--block-left")),
+        top: Number.parseFloat(block.style.getPropertyValue("--block-top")),
+        width: Number.parseFloat(block.style.getPropertyValue("--block-width")),
+        height: Number.parseFloat(block.style.getPropertyValue("--block-height")),
+      }));
+      const board = document.querySelector<HTMLElement>('[data-testid="dog-board"]');
+      const boardWidth = Number.parseFloat(
+        board?.style.getPropertyValue("--board-pixel-width") ?? "0",
+      );
+      const boardHeight = Number.parseFloat(
+        board?.style.getPropertyValue("--board-pixel-height") ?? "0",
+      );
+
+      return {
+        boardGlyphFilter: boardGlyph === null ? "" : getComputedStyle(boardGlyph).filter,
+        boardImageDisplay: boardImage == null ? "" : getComputedStyle(boardImage).display,
+        trayImageDisplay: trayImage == null ? "" : getComputedStyle(trayImage).display,
+        trayImageBottom: imageRect?.bottom ?? 0,
+        traySlotBottom: slotRect?.bottom ?? 0,
+        minBlockLeft: Math.min(...renderedBlocks.map((block) => block.left)),
+        minBlockTop: Math.min(...renderedBlocks.map((block) => block.top)),
+        minBlockRightGap: Math.min(
+          ...renderedBlocks.map((block) => boardWidth - block.left - block.width),
+        ),
+        minBlockBottomGap: Math.min(
+          ...renderedBlocks.map((block) => boardHeight - block.top - block.height),
+        ),
+      };
+    });
+    expect(visuals.boardGlyphFilter).toBe("none");
+    expect(visuals.boardImageDisplay).toBe("block");
+    expect(visuals.trayImageDisplay).toBe("block");
+    expect(visuals.trayImageBottom).toBeLessThanOrEqual(visuals.traySlotBottom);
+    expect(visuals.minBlockLeft).toBeGreaterThanOrEqual(12);
+    expect(visuals.minBlockTop).toBeGreaterThanOrEqual(12);
+    expect(visuals.minBlockRightGap).toBeGreaterThanOrEqual(12);
+    expect(visuals.minBlockBottomGap).toBeGreaterThanOrEqual(12);
   });
 
   test("活动棋盘使用 48px 方块与同尺寸底层网格", async ({ page }) => {

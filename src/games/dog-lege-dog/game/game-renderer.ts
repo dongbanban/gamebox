@@ -7,6 +7,7 @@ import type { DogLegeDogGameState, DogVisualFeedback } from "@/games/dog-lege-do
 export const DOG_BLOCK_VISUAL_SIZE_PX = 48;
 export const DOG_LOGICAL_UNIT_VISUAL_WIDTH_PX = DOG_BLOCK_VISUAL_SIZE_PX / BLOCK_WIDTH;
 export const DOG_LOGICAL_UNIT_VISUAL_HEIGHT_PX = DOG_BLOCK_VISUAL_SIZE_PX / BLOCK_HEIGHT;
+export const DOG_BOARD_SAFE_MARGIN_PX = DOG_LOGICAL_UNIT_VISUAL_WIDTH_PX;
 /** Backward-compatible square-unit alias for layout consumers. */
 export const DOG_LOGICAL_UNIT_VISUAL_SIZE_PX = DOG_LOGICAL_UNIT_VISUAL_WIDTH_PX;
 
@@ -193,11 +194,13 @@ function renderBlock(
   const blockHeight = BLOCK_HEIGHT * DOG_LOGICAL_UNIT_VISUAL_HEIGHT_PX;
   const left = clampVisualBlockPosition(
     block.x * DOG_LOGICAL_UNIT_VISUAL_WIDTH_PX,
-    boardPixelWidth - blockWidth,
+    DOG_BOARD_SAFE_MARGIN_PX,
+    boardPixelWidth - blockWidth - DOG_BOARD_SAFE_MARGIN_PX,
   );
   const top = clampVisualBlockPosition(
     block.y * DOG_LOGICAL_UNIT_VISUAL_HEIGHT_PX,
-    boardPixelHeight - blockHeight,
+    DOG_BOARD_SAFE_MARGIN_PX,
+    boardPixelHeight - blockHeight - DOG_BOARD_SAFE_MARGIN_PX,
   );
   const selectable = !inputLocked && selectableBlockIds.includes(block.id);
 
@@ -218,8 +221,12 @@ function renderBlock(
   `;
 }
 
-function clampVisualBlockPosition(position: number, maxPosition: number): number {
-  return Math.min(Math.max(position, 0), maxPosition);
+function clampVisualBlockPosition(
+  position: number,
+  minPosition: number,
+  maxPosition: number,
+): number {
+  return Math.min(Math.max(position, minPosition), maxPosition);
 }
 
 function renderTray(session: GameSessionSnapshot, feedback: DogVisualFeedback): string {

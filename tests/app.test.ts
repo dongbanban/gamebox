@@ -321,6 +321,11 @@ describe("注册与游戏目录 UI", () => {
       }),
     });
 
+    expect(root.querySelector('[data-view="register"]')?.textContent).not.toContain(
+      "浏览器小游戏合集 · 01",
+    );
+    expect(root.querySelector(".register-panel .brand-lockup__mark--dog img")).not.toBeNull();
+
     root.querySelector<HTMLButtonElement>('[data-action="register"]')?.click();
 
     const catalogText = root.querySelector('[data-view="catalog"]')?.textContent ?? "";

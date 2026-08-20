@@ -13,6 +13,7 @@ import {
 import { renderDogPatternAsset } from "@/games/dog-lege-dog/assets/game-assets";
 import {
   DOG_BLOCK_VISUAL_SIZE_PX,
+  DOG_BOARD_SAFE_MARGIN_PX,
   DOG_LOGICAL_UNIT_VISUAL_SIZE_PX,
 } from "@/games/dog-lege-dog/game/game-renderer";
 
@@ -154,7 +155,7 @@ describe("狗了个狗首关", () => {
     expect(root.innerHTML).toBe("");
   });
 
-  it("按 12px 逻辑单位映射 9×12 棋盘面积与方块 left/top 偏移", () => {
+  it("按 12px 逻辑单位映射棋盘，并为视觉方块保留边界", () => {
     const root = document.createElement("div");
     const game = startDogLegeDogGame(root);
     const { board, blocks } = game.getState().level;
@@ -164,11 +165,21 @@ describe("狗了个狗首关", () => {
         `[data-testid="dog-block"][data-block-id="${block.id}"]`,
       );
       expect(element).not.toBeNull();
-      expect(Number.parseFloat(element?.style.getPropertyValue("--block-left") ?? "NaN")).toBe(
-        block.x * DOG_LOGICAL_UNIT_VISUAL_SIZE_PX,
+      const left = Number.parseFloat(element?.style.getPropertyValue("--block-left") ?? "NaN");
+      const top = Number.parseFloat(element?.style.getPropertyValue("--block-top") ?? "NaN");
+      const blockWidth = block.width * DOG_LOGICAL_UNIT_VISUAL_SIZE_PX;
+      const blockHeight = block.height * DOG_LOGICAL_UNIT_VISUAL_SIZE_PX;
+      expect(left).toBe(
+        Math.min(
+          Math.max(block.x * DOG_LOGICAL_UNIT_VISUAL_SIZE_PX, DOG_BOARD_SAFE_MARGIN_PX),
+          board.width * DOG_LOGICAL_UNIT_VISUAL_SIZE_PX - blockWidth - DOG_BOARD_SAFE_MARGIN_PX,
+        ),
       );
-      expect(Number.parseFloat(element?.style.getPropertyValue("--block-top") ?? "NaN")).toBe(
-        block.y * DOG_LOGICAL_UNIT_VISUAL_SIZE_PX,
+      expect(top).toBe(
+        Math.min(
+          Math.max(block.y * DOG_LOGICAL_UNIT_VISUAL_SIZE_PX, DOG_BOARD_SAFE_MARGIN_PX),
+          board.height * DOG_LOGICAL_UNIT_VISUAL_SIZE_PX - blockHeight - DOG_BOARD_SAFE_MARGIN_PX,
+        ),
       );
     }
 
