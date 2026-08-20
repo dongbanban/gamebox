@@ -74,7 +74,6 @@ export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameSta
               .join("")}
           </div>
         </div>
-        ${renderFeedback(state.feedback)}
       </div>
       ${renderTray(state.session, state.feedback)}
       <div class="dog-animation-layer" data-testid="dog-animation-layer"></div>
@@ -96,7 +95,6 @@ function updateDogLegeDogGame(
   const boardElement = gameRoot.querySelector<HTMLElement>('[data-testid="dog-board"]');
   const boardScaler = gameRoot.querySelector<HTMLElement>(".dog-board-scaler");
   const statusElement = gameRoot.querySelector<HTMLElement>('[data-testid="dog-status"]');
-  const boardFrame = gameRoot.querySelector<HTMLElement>('.dog-board-frame');
   const tray = gameRoot.querySelector<HTMLElement>('[data-testid="dog-tray-region"]');
   const traySlots = tray?.querySelector<HTMLOListElement>('[data-testid="dog-tray"]');
 
@@ -136,12 +134,6 @@ function updateDogLegeDogGame(
   }
   boardScaler?.style.setProperty("--board-pixel-width", `${boardPixelWidth}px`);
   boardScaler?.style.setProperty("--board-pixel-height", `${boardPixelHeight}px`);
-
-  boardFrame?.querySelector<HTMLElement>('[data-testid="dog-feedback"]')?.remove();
-  const boardFeedback = renderFeedback(state.feedback);
-  if (boardFrame !== null && boardFeedback !== "") {
-    boardFrame.insertAdjacentHTML("beforeend", boardFeedback);
-  }
 
   const trayCount = tray?.querySelector<HTMLElement>('.dog-tray__heading span');
   if (trayCount !== null && trayCount !== undefined) {
@@ -272,14 +264,6 @@ function renderStatusMessage(status: GameSessionSnapshot["status"]): string {
   }
 
   return "";
-}
-
-function renderFeedback(feedback: DogVisualFeedback): string {
-  if (feedback !== "won") {
-    return "";
-  }
-
-  return '<p class="dog-feedback dog-feedback--won" data-testid="dog-feedback" role="status">通关反馈</p>';
 }
 
 function renderMatchFeedback(feedback: DogVisualFeedback): string {

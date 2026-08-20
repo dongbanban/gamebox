@@ -524,18 +524,23 @@ function updateSoundButton(root: HTMLElement, soundEnabled: boolean): void {
 
 function renderResultActions(result: GameResult): string {
   const isRetryResult = result.actions.includes("retry");
-  const orderedActions = isRetryResult
-    ? (["catalog", "retry"] as const).filter((action) => result.actions.includes(action))
+  const hasCatalogAction = result.actions.includes("catalog");
+  const orderedActions: readonly GameResultAction[] = hasCatalogAction
+    ? ["catalog", ...result.actions.filter((action) => action !== "catalog")]
     : result.actions;
   const actions = orderedActions.map((action) => renderResultAction(action, result)).filter(Boolean);
+  const splitClassName =
+    hasCatalogAction && orderedActions.length === 2
+      ? " game-result-card__actions--split"
+      : "";
   const retryClassName = isRetryResult ? " game-result-card__actions--retry" : "";
-  return `<div class="game-result-card__actions${retryClassName}">${actions.join("")}</div>`;
+  return `<div class="game-result-card__actions${splitClassName}${retryClassName}">${actions.join("")}</div>`;
 }
 
 function renderResultAction(action: GameResultAction, result: GameResult): string {
   if (action === "next-level") {
     return `
-      <button class="primary-button primary-button--wide" type="button" data-action="next-level" data-game-id="${result.gameId}" data-level-number="${result.levelNumber + 1}">
+      <button class="primary-button primary-button--wide primary-button--next" type="button" data-action="next-level" data-game-id="${result.gameId}" data-level-number="${result.levelNumber + 1}">
         进入下一关
       </button>
     `;

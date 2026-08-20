@@ -313,6 +313,8 @@ describe("狗了个狗首关", () => {
     }
 
     expect(game.getState().status).toBe("won");
+    expect(root.querySelector('[data-testid="dog-feedback"]')).toBeNull();
+    expect(root.querySelector('.dog-board-frame [role="status"]')).toBeNull();
     expect(results).toEqual([
       expect.objectContaining({
         gameId: "dog-lege-dog",

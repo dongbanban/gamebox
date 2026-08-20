@@ -145,6 +145,15 @@ describe("通用游戏定义与结果契约", () => {
     expect(root.textContent).toContain("通关奖励");
     expect(root.textContent).toContain("25");
     expect(root.querySelector('[data-action="next-level"]')).not.toBeNull();
+    const wonActions = root.querySelector<HTMLElement>(
+      ".game-result-card__actions--split",
+    );
+    const wonCatalogAction = root.querySelector<HTMLElement>('[data-action="catalog"]');
+    const nextLevelAction = root.querySelector<HTMLElement>('[data-action="next-level"]');
+    expect(wonActions).not.toBeNull();
+    expect([...wonActions?.children ?? []]).toEqual([wonCatalogAction, nextLevelAction]);
+    expect(wonCatalogAction?.classList.contains("icon-button")).toBe(true);
+    expect(nextLevelAction?.classList.contains("primary-button--next")).toBe(true);
     expect(dispatchBeforeUnload().defaultPrevented).toBe(false);
 
     root.querySelector<HTMLButtonElement>('[data-action="next-level"]')?.click();
