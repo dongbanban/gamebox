@@ -566,6 +566,8 @@ describe("狗了个狗活动道具组变更", () => {
         "aria-pressed",
       ),
     ).toBe("true");
+    expect(root.querySelector('[data-action="cancel-loadout"]')?.textContent).toBe("取消");
+    expect(root.querySelector('[data-action="confirm-loadout"]')?.textContent).toContain("确认");
     expect(root.querySelector<HTMLButtonElement>('[data-action="confirm-loadout"]')?.disabled).toBe(true);
     root.querySelector<HTMLButtonElement>('[data-action="cancel-loadout"]')?.click();
     expect(root.querySelector('[data-testid="dog-loadout-panel"]')).toBeNull();

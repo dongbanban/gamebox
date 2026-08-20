@@ -611,17 +611,12 @@ h2 {
   font-size: 20px;
 }
 
-.dog-loadout__heading p:not(.eyebrow) {
+.dog-loadout__heading p {
   max-width: 42em;
   margin: 0;
   color: var(--ink-muted);
   font-size: 13px;
   line-height: 1.5;
-}
-
-.dog-loadout__heading .eyebrow,
-.dog-loadout-summary .eyebrow {
-  margin-bottom: 6px;
 }
 
 .dog-loadout__count {
@@ -636,19 +631,19 @@ h2 {
 
 .dog-loadout__options {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
   margin-top: 16px;
 }
 
 .dog-loadout-option {
   display: flex;
   min-width: 0;
-  min-height: 132px;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 13px;
+  min-height: 92px;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
   border: 1px solid rgba(22, 68, 93, 0.12);
   border-radius: 16px;
   background: rgba(255, 253, 248, 0.86);
@@ -674,19 +669,21 @@ h2 {
 
 .dog-loadout-option__icon {
   display: inline-grid;
-  width: 34px;
-  height: 34px;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
   place-items: center;
-  border-radius: 11px;
+  border-radius: 14px;
   background: var(--yellow);
   color: var(--ink);
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 900;
 }
 
 .dog-loadout-option__body {
   display: flex;
   min-width: 0;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: 4px;
 }
@@ -704,7 +701,7 @@ h2 {
 }
 
 .dog-loadout-option__check {
-  align-self: flex-end;
+  flex: 0 0 auto;
   min-height: 16px;
   color: var(--sky-deep);
   font-weight: 900;
@@ -742,15 +739,9 @@ h2 {
   align-items: center;
   gap: 12px;
   margin-top: 14px;
-  padding: 10px 12px;
-}
-
-.dog-loadout-summary__label {
-  flex: 0 0 auto;
-  color: var(--ink-muted);
-  font-size: 12px;
-  font-weight: 800;
-  white-space: nowrap;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .dog-loadout-summary__items {
@@ -763,42 +754,38 @@ h2 {
 
 .dog-loadout-thumbnail {
   display: inline-flex;
-  min-width: 0;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
   align-items: center;
-  gap: 6px;
-  padding: 3px 8px 3px 3px;
-  border-radius: 999px;
-  background: #dceff9;
-  color: var(--sky-deep);
-  font-size: 11px;
-  font-weight: 800;
+  justify-content: center;
 }
 
-.dog-loadout-thumbnail__icon {
+.dog-loadout-thumbnail__placeholder {
   display: inline-grid;
-  width: 24px;
-  height: 24px;
-  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
   place-items: center;
-  border-radius: 8px;
+  border-radius: 14px;
   background: var(--yellow);
   color: var(--ink);
-  font-size: 12px;
+  font-size: 18px;
   font-weight: 900;
-}
-
-.dog-loadout-thumbnail__name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .dog-loadout-summary .text-button {
   flex: 0 0 auto;
   margin-left: auto;
-  padding: 6px 10px;
-  border-radius: 10px;
+  padding: 8px 0;
+  border-bottom: 0;
+  color: var(--sky-deep);
   white-space: nowrap;
+}
+
+.dog-loadout-summary .text-button:hover {
+  border-bottom: 0;
+  color: var(--sky-deep);
+  text-decoration: underline;
 }
 
 .game-result-card__loadout-action {
@@ -1506,34 +1493,26 @@ h2 {
 
   .dog-loadout-summary {
     margin: 0;
-    gap: 6px;
-    padding: 7px 8px;
-  }
-
-  .dog-loadout-summary__label {
-    font-size: 11px;
+    gap: 8px;
+    padding: 0;
   }
 
   .dog-loadout-thumbnail {
-    gap: 4px;
-    padding: 2px 5px 2px 2px;
+    width: 48px;
+    height: 48px;
+    padding: 0;
   }
 
-  .dog-loadout-thumbnail__name {
-    max-width: 8em;
-    font-size: 10px;
-  }
-
-  .dog-loadout-thumbnail__icon {
-    width: 25px;
-    height: 25px;
-    border-radius: 8px;
+  .dog-loadout-thumbnail__placeholder {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
   }
 
   .dog-loadout-summary .text-button {
-    min-height: 30px;
-    padding: 5px 8px;
-    font-size: 11px;
+    min-height: 32px;
+    padding: 8px 0;
+    font-size: 13px;
   }
 
   .dog-loadout__heading,
@@ -1542,15 +1521,22 @@ h2 {
   }
 
   .dog-loadout__options {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     gap: 7px;
     margin-top: 10px;
   }
 
   .dog-loadout-option {
-    min-height: 104px;
+    min-height: 76px;
     gap: 6px;
     padding: 9px;
+  }
+
+  .dog-loadout-option__icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    font-size: 18px;
   }
 
   .dog-loadout-option__body strong {

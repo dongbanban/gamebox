@@ -44,6 +44,13 @@ describe("狗了个狗道具组", () => {
       levelNumber: 1,
       confirming: false,
     });
+    const changeEditor = renderDogLoadoutEditor({
+      mode: "change",
+      draft: ["triple-removal", "tray-capacity", "wildcard"],
+      current: ["triple-removal", "tray-capacity", "wildcard"],
+      levelNumber: 1,
+      confirming: false,
+    });
     const summary = renderDogLoadoutSummary([
       "triple-removal",
       "tray-capacity",
@@ -52,8 +59,17 @@ describe("狗了个狗道具组", () => {
 
     expect(editor).toContain('data-testid="dog-loadout-modal"');
     expect(editor).toContain('role="dialog"');
+    expect(editor).not.toContain("DOG · LOADOUT");
+    expect(editor).toContain(">清空</button>");
+    expect(editor).toMatch(/data-action="confirm-loadout"[^>]*>\s*确认\s*<\/button>/);
+    expect(changeEditor).toContain(">取消</button>");
+    expect(changeEditor).toMatch(/data-action="confirm-loadout"[^>]*>\s*确认\s*<\/button>/);
     expect(summary.match(/data-testid="dog-loadout-thumbnail"/g)).toHaveLength(3);
     expect(summary).toContain('role="img" aria-label="道具三消移除"');
+    expect(summary).toContain(">道</span>");
+    expect(summary).not.toContain("dog-loadout-summary__label");
+    expect(summary).not.toContain("dog-loadout-thumbnail__name");
+    expect(summary).toContain("dog-loadout-thumbnail__placeholder");
     expect(summary).toContain('data-action="edit-loadout"');
     expect(summary).toContain(">变更</button>");
   });

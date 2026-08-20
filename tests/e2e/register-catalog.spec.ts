@@ -180,10 +180,24 @@ test.describe("注册与游戏目录", () => {
     expect(loadoutModalLayout.position).toBe("fixed");
     expect(loadoutModalLayout.overflowY).toBe("auto");
     expect(loadoutModalLayout.maxHeight).not.toBe("none");
+    const loadoutOptionLayout = await page.evaluate(() => {
+      const option = document.querySelector<HTMLElement>('[data-testid="dog-loadout-option"]');
+      const optionIcon = document.querySelector<HTMLElement>('.dog-loadout-option__icon');
+      return {
+        direction: option === null ? "" : getComputedStyle(option).flexDirection,
+        icon: optionIcon === null ? null : {
+          width: optionIcon.getBoundingClientRect().width,
+          height: optionIcon.getBoundingClientRect().height,
+        },
+      };
+    });
+    expect(loadoutOptionLayout.direction).toBe("row");
+    expect(loadoutOptionLayout.icon?.width).toBe(48);
+    expect(loadoutOptionLayout.icon?.height).toBe(48);
     await confirmDogLoadout(page);
     await expect(page.getByTestId("dog-loadout-thumbnail")).toHaveCount(3);
-    await expect(page.locator(".dog-loadout-thumbnail__name")).toHaveCount(3);
-    await expect(page.locator(".dog-loadout-thumbnail__name").first()).toBeVisible();
+    await expect(page.locator(".dog-loadout-thumbnail__name")).toHaveCount(0);
+    await expect(page.locator(".dog-loadout-thumbnail__placeholder").first()).toHaveText("道");
     await expect(page.getByRole("button", { name: "变更" })).toBeVisible();
 
     const layout = await page.evaluate(() => {
@@ -212,6 +226,7 @@ test.describe("注册与游戏目录", () => {
       );
       const summary = document.querySelector<HTMLElement>('[data-testid="dog-loadout-summary"]');
       const changeButton = document.querySelector<HTMLElement>('[data-testid="dog-edit-loadout"]');
+      const thumbnail = document.querySelector<HTMLElement>('[data-testid="dog-loadout-thumbnail"]');
       return {
         viewportWidth: window.innerWidth,
         viewportHeight: window.innerHeight,
@@ -228,6 +243,12 @@ test.describe("注册与游戏目录", () => {
         tray: getRect('[data-testid="dog-tray"]'),
         loadoutSummary: summary === null ? null : serializeRect(summary),
         loadoutChangeButton: changeButton === null ? null : serializeRect(changeButton),
+        loadoutThumbnail: thumbnail === null ? null : serializeRect(thumbnail),
+        loadoutSummaryBackground: summary === null ? "" : getComputedStyle(summary).backgroundColor,
+        loadoutSummaryBorderWidth: summary === null ? "" : getComputedStyle(summary).borderTopWidth,
+        loadoutChangeButtonColor: changeButton === null ? "" : getComputedStyle(changeButton).color,
+        loadoutChangeButtonBackground: changeButton === null ? "" : getComputedStyle(changeButton).backgroundColor,
+        loadoutChangeButtonBorderWidth: changeButton === null ? "" : getComputedStyle(changeButton).borderBottomWidth,
         traySlots: traySlots.map(serializeRect),
         levelPicker: getRect('[data-testid="level-picker"]'),
         soundButton: getRect('[data-view="game-entry"] [data-action="toggle-sound"]'),
@@ -255,6 +276,14 @@ test.describe("注册与游戏目录", () => {
     expect(layout.tray?.bottom).toBeLessThanOrEqual(layout.viewportHeight);
     expect(layout.loadoutSummary).not.toBeNull();
     expect(layout.loadoutChangeButton).not.toBeNull();
+    expect(layout.loadoutSummaryBackground).toBe("rgba(0, 0, 0, 0)");
+    expect(layout.loadoutSummaryBorderWidth).toBe("0px");
+    expect(layout.loadoutChangeButtonColor).toBe("rgb(63, 148, 195)");
+    expect(layout.loadoutChangeButtonBackground).toBe("rgba(0, 0, 0, 0)");
+    expect(layout.loadoutChangeButtonBorderWidth).toBe("0px");
+    expect(layout.loadoutThumbnail).not.toBeNull();
+    expect(layout.loadoutThumbnail?.width).toBe(48);
+    expect(layout.loadoutThumbnail?.height).toBe(48);
     expect(layout.loadoutSummary?.bottom).toBeLessThanOrEqual(layout.tray?.top ?? 0);
     expect(layout.loadoutChangeButton?.right).toBeLessThanOrEqual(
       (layout.loadoutSummary?.right ?? 0) + 1,

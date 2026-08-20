@@ -265,6 +265,9 @@ describe("狗了个狗道具组选择", () => {
     expect(root.querySelector('[data-testid="dog-loadout-modal"]')?.getAttribute("aria-modal")).toBe(
       "true",
     );
+    expect(root.querySelector('[data-testid="dog-loadout-modal"] .eyebrow')).toBeNull();
+    expect(root.querySelector('[data-action="cancel-loadout"]')?.textContent).toBe("清空");
+    expect(root.querySelector('[data-action="confirm-loadout"]')?.textContent).toContain("确认");
     expect(root.querySelector('[data-testid="dog-loadout-panel"]')).not.toBeNull();
     expect(root.querySelectorAll('[data-testid="dog-loadout-option"]')).toHaveLength(5);
     expect(root.querySelector('[data-testid="dog-block"]:not([disabled])')).toBeNull();
@@ -292,6 +295,12 @@ describe("狗了个狗道具组选择", () => {
     const loadoutSlot = root.querySelector('[data-testid="dog-loadout-slot"]');
     const loadoutSummary = loadoutSlot?.querySelector('[data-testid="dog-loadout-summary"]');
     expect(loadoutSlot?.querySelectorAll('[data-testid="dog-loadout-thumbnail"]')).toHaveLength(3);
+    expect(loadoutSummary?.querySelector('.dog-loadout-summary__label')).toBeNull();
+    expect(
+      [...loadoutSummary?.querySelectorAll<HTMLElement>('.dog-loadout-thumbnail__placeholder') ?? []].map(
+        (icon) => icon.textContent,
+      ),
+    ).toEqual(["道", "暂", "万"]);
     expect(loadoutSlot?.nextElementSibling?.getAttribute("data-testid")).toBe("dog-tray-region");
     expect(loadoutSummary?.lastElementChild?.getAttribute("data-action")).toBe("edit-loadout");
     expect(loadoutSummary?.lastElementChild?.textContent).toContain("变更");

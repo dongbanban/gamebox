@@ -158,9 +158,9 @@ export function renderDogLoadoutEditor({
       `
     : `
         <div class="dog-loadout-editor__actions">
-          <button class="text-button" type="button" data-action="cancel-loadout">${isChange ? "取消" : "清空选择"}</button>
+          <button class="text-button" type="button" data-action="cancel-loadout">${isChange ? "取消" : "清空"}</button>
           <button class="primary-button" type="button" data-action="confirm-loadout" data-testid="dog-loadout-confirm" ${canConfirm ? "" : "disabled"}>
-            ${isChange ? "继续确认更换" : "确认道具组"}
+            确认
           </button>
         </div>
       `;
@@ -171,7 +171,6 @@ export function renderDogLoadoutEditor({
       <section class="dog-loadout" data-testid="dog-loadout-panel" data-mode="${mode}">
         <div class="dog-loadout__heading">
           <div>
-            <p class="eyebrow">DOG · LOADOUT</p>
             <h3 id="${titleId}">${title}</h3>
             <p>${intro}</p>
           </div>
@@ -190,13 +189,11 @@ export function renderDogLoadoutSummary(
 ): string {
   return `
     <section class="dog-loadout-summary" data-testid="dog-loadout-summary" aria-label="当前道具组">
-      <span class="dog-loadout-summary__label">道具组</span>
       <div class="dog-loadout-summary__items">
         ${loadout.map((itemId) => {
           const item = getDogItemDefinition(itemId);
           return `<span class="dog-loadout-thumbnail" data-testid="dog-loadout-thumbnail" data-loadout-id="${itemId}" role="img" aria-label="${item.name}">
-            <span class="dog-loadout-thumbnail__icon" aria-hidden="true">${item.icon}</span>
-            <span class="dog-loadout-thumbnail__name">${item.name}</span>
+            <span class="dog-loadout-thumbnail__placeholder" aria-hidden="true">${item.name.slice(0, 1)}</span>
           </span>`;
         }).join("")}
       </div>
