@@ -36,8 +36,15 @@ describe("狗了个狗首关", () => {
 
     const assets = DOG_PATTERN_TYPES.map((patternType) => renderDogPatternAsset(patternType));
     expect(new Set(assets)).toHaveLength(10);
-    expect(assets.every((asset) => asset.includes("<svg") && asset.includes("<image"))).toBe(true);
-    expect(assets.every((asset) => asset.includes('href="assets/dog-icons-square/'))).toBe(true);
+    expect(assets.every((asset) => asset.includes("<img") && !asset.includes("<image"))).toBe(true);
+    expect(assets.every((asset) => asset.includes('src="assets/dog-icons-square/'))).toBe(true);
+  });
+
+  it("以直接图片节点渲染龇牙狗，避免 Safari 嵌套 SVG 丢失牙齿", () => {
+    const asset = renderDogPatternAsset("龇牙狗");
+
+    expect(asset).toContain("<img");
+    expect(asset).not.toContain("<image");
   });
 
   it("通过公共启动与状态 seam 暴露稳定的不规则棋盘", () => {
@@ -118,7 +125,7 @@ describe("狗了个狗首关", () => {
     expect(firstBlock?.style.getPropertyValue("--block-width")).toBe("48px");
     expect(firstBlock?.style.getPropertyValue("--block-height")).toBe("48px");
     expect(root.querySelectorAll('[data-testid="dog-block"]')).toHaveLength(90);
-    expect(root.querySelectorAll('[data-testid="dog-block"] svg')).toHaveLength(90);
+    expect(root.querySelectorAll('[data-testid="dog-block"] img')).toHaveLength(90);
     expect(parseFloat(firstBlock?.style.getPropertyValue("--block-width") ?? "0")).toBeGreaterThan(0);
     expect(parseFloat(firstBlock?.style.getPropertyValue("--block-height") ?? "0")).toBeGreaterThan(0);
     expect(root.querySelector(".dog-game__stats")).toBeNull();
@@ -268,7 +275,7 @@ describe("狗了个狗首关", () => {
     );
     expect(
       [...root.querySelectorAll<HTMLElement>('[data-testid="dog-tray-slot"][data-pattern-type]')].every(
-        (slot) => slot.className.includes("dog-block--") && slot.querySelector("svg") !== null,
+        (slot) => slot.className.includes("dog-block--") && slot.querySelector("img") !== null,
       ),
     ).toBe(true);
     expect(root.querySelector('[data-testid="dog-status"]')?.textContent).not.toContain("选择没有遮挡");

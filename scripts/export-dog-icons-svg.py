@@ -202,11 +202,12 @@ def svg_for_crop(crop: Image.Image, title: str) -> str:
     return (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         f'<svg xmlns="http://www.w3.org/2000/svg" '
+        f'xmlns:xlink="http://www.w3.org/1999/xlink" '
         f'viewBox="0 0 {width} {height}" width="{width}" height="{height}" role="img" '
         f'aria-labelledby="title">\n'
         f'  <title id="title">{title}</title>\n'
         f'  <image width="{width}" height="{height}" preserveAspectRatio="xMidYMid meet" '
-        f'href="data:image/png;base64,{encoded}"/>\n'
+        f'xlink:href="data:image/png;base64,{encoded}"/>\n'
         '</svg>\n'
     )
 

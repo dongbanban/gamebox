@@ -135,7 +135,7 @@ button:focus-visible {
   background: var(--sky-pale);
 }
 
-.brand-lockup__mark--dog svg {
+.brand-lockup__mark--dog img {
   display: block;
   width: 114.2%;
   height: 114.2%;

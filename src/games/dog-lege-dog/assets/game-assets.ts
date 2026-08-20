@@ -70,8 +70,6 @@ export function renderDogPatternAsset(patternType: DogPatternType): string {
   const presentation = DOG_PATTERN_PRESENTATIONS[patternType];
 
   return `
-    <svg viewBox="0 0 340 388" width="100%" height="100%" aria-hidden="true" focusable="false">
-      <image href="${presentation.assetPath}" width="340" height="388" preserveAspectRatio="xMidYMid meet" />
-    </svg>
+    <img src="${presentation.assetPath}" width="100%" height="100%" alt="" aria-hidden="true" />
   `;
 }

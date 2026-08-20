@@ -340,7 +340,7 @@ describe("注册与游戏目录 UI", () => {
     expect(root.querySelector(".catalog-item__level")?.textContent).toContain("最高解锁关卡");
     expect(root.querySelector(".catalog-item__actions")).not.toBeNull();
     expect(root.querySelector(".status-dot")).toBeNull();
-    expect(root.querySelector(".catalog-header .brand-lockup__mark--dog svg")).not.toBeNull();
+    expect(root.querySelector(".catalog-header .brand-lockup__mark--dog img")).not.toBeNull();
 
     root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
 
