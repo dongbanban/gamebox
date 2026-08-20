@@ -86,6 +86,7 @@ export interface DogLevelReplay {
   readonly attempt: number;
   readonly levelNumber: number;
   readonly seed: string;
+  readonly runSeed?: string;
   readonly levelSeed: string;
   readonly testSeed: string;
   readonly generatorVersion: number;
@@ -116,6 +117,7 @@ export interface DogLevelGeometry {
 export interface DogLegeDogLevel {
   readonly number: number;
   readonly seed: string;
+  readonly runSeed: string;
   readonly generatorVersion: number;
   readonly rewardConfigVersion: number;
   readonly maxLayers: number;

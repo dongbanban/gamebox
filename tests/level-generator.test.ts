@@ -94,7 +94,7 @@ describe("LevelGenerator", () => {
 
   it("首关与后续关卡都通过同一个生成器 seam 提供", () => {
     const generator = new LevelGenerator();
-    const firstLevel = getDogLegeDogLevel(FIRST_LEVEL.number);
+    const firstLevel = getDogLegeDogLevel(FIRST_LEVEL.number, FIRST_LEVEL.runSeed);
     const generatedFirstLevel = generator.generate({
       levelNumber: FIRST_LEVEL.number,
       seed: DEFAULT_LEVEL_SEED,
@@ -109,8 +109,8 @@ describe("LevelGenerator", () => {
     expect(firstLevel).toEqual(FIRST_LEVEL);
     expect(firstLevel).toEqual(generatedFirstLevel);
     expect(firstLevel.generation.replay.mode).toBe("generated");
-    expect(getDogLegeDogLevel(FIRST_LEVEL.number)).toEqual(firstLevel);
-    expect(getDogLegeDogLevel(secondLevel.number)).toEqual(secondLevel);
+    expect(getDogLegeDogLevel(FIRST_LEVEL.number, FIRST_LEVEL.runSeed)).toEqual(firstLevel);
+    expect(getDogLegeDogLevel(secondLevel.number, DEFAULT_LEVEL_SEED)).toEqual(secondLevel);
   });
 
   it("首关 replay 返回相同的不规则棋盘", () => {
@@ -253,6 +253,47 @@ describe("LevelGenerator", () => {
       mode: "generated",
     });
     expect(generator.replay(level.generation.replay)).toEqual(level);
+  });
+
+  it("首关由 runSeed 驱动，重复 seed 可复现且不同 seed 可变化", () => {
+    const generator = new LevelGenerator();
+    const firstRequest = {
+      levelNumber: FIRST_LEVEL.number,
+      runSeed: "first-run-seed-a",
+      generatorVersion: LEVEL_GENERATOR_VERSION,
+    } as const;
+
+    const first = generator.generate(firstRequest);
+    const repeated = generator.generate(firstRequest);
+    const sameRunSeedWithDifferentTestSeed = generator.generate({
+      ...firstRequest,
+      testSeed: "diagnostic-seed-only",
+    });
+    const different = generator.generate({
+      ...firstRequest,
+      runSeed: "first-run-seed-b",
+    });
+
+    expect(first.runSeed).toBe(firstRequest.runSeed);
+    expect(first).toEqual(repeated);
+    expect(first.generation.replay.runSeed).toBe(firstRequest.runSeed);
+    expect(generator.replay(first.generation.replay)).toEqual(first);
+    expect(levelShape(sameRunSeedWithDifferentTestSeed)).toEqual(levelShape(first));
+    expect(different.runSeed).toBe("first-run-seed-b");
+    expect(levelShape(different)).not.toEqual(levelShape(first));
+
+    function levelShape(level: typeof first) {
+      return {
+        templateId: level.board.templateId,
+        patternTypes: level.patternTypes,
+        blocks: level.blocks.map(({ x, y, z, patternType }) => ({
+          x,
+          y,
+          z,
+          patternType,
+        })),
+      };
+    }
   });
 
   it("全部固定检查点统一生成不规则棋盘与阶段图案数量", () => {

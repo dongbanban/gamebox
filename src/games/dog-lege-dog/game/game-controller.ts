@@ -7,6 +7,7 @@ import type {
 import { FIRST_LEVEL, type DogLegeDogLevel } from "@/games/dog-lege-dog/levels/first-level";
 import { DOG_GAME_ID, DOG_GAME_RESULT_DISPLAY } from "@/games/dog-lege-dog/game/game-config";
 import { getDogLegeDogLevel } from "@/games/dog-lege-dog/levels/level-provider";
+import { createRunSeed } from "@/games/dog-lege-dog/levels/level-random";
 import { animateBlockFlight, type CancellableAnimation } from "@/games/dog-lege-dog/assets/animation-effects";
 import { GameSession, type GameSessionSnapshot } from "@/games/dog-lege-dog/game/game-session";
 import { createParticleEffects } from "@/games/dog-lege-dog/assets/particle-effects";
@@ -43,7 +44,10 @@ export function createDogLegeDogGame(
   root: HTMLElement,
   options: DogLegeDogGameOptions = {},
 ): DogLegeDogGame {
-  const level = getDogLegeDogLevel(options.levelNumber ?? FIRST_LEVEL.number);
+  const level = getDogLegeDogLevel(
+    options.levelNumber ?? FIRST_LEVEL.number,
+    options.runSeed ?? createRunSeed(),
+  );
   const runtime: DogGameRuntime = {
     session: new GameSession(level),
     started: false,

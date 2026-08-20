@@ -73,6 +73,7 @@ export {
   type SolvabilityResult,
   type SolvabilitySearchOptions,
 } from "@/games/dog-lege-dog/levels/level-generator";
+export { createRunSeed } from "@/games/dog-lege-dog/levels/level-random";
 
 export { createDogLegeDogGame, startDogLegeDogGame } from "@/games/dog-lege-dog/game/game-controller";
 export type {

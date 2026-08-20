@@ -17,6 +17,7 @@ import { SeededRandom } from "@/games/dog-lege-dog/levels/level-random";
 import type { DogShapeTemplate } from "@/games/dog-lege-dog/levels/level-shapes";
 
 const MAX_BLOCKS_PER_LOWER_BLOCK = 4;
+const MAX_STRUCTURAL_PLACEMENT_ATTEMPTS = 8;
 const LAYER_OFFSETS = [
   { x: 0, y: 0 },
   { x: 2, y: 0 },
@@ -204,6 +205,7 @@ export function createFirstLevelBlockPlacements(
     blockCount,
     maxLayers,
     random,
+    true,
   );
   return assignPlacementsToRemovalPlan(
     structuralPlacements,
@@ -323,30 +325,43 @@ function createStructuralBlockPlacements(
   blockCount: number,
   maxLayers: number,
   random: SeededRandom,
+  keepVisualSafeInset = false,
 ): readonly BlockPlacement[] {
   const layerCounts = distributeBlocks(blockCount, maxLayers);
-  const placements: BlockPlacement[] = [];
+  let failedLayer = 0;
 
-  for (let z = 0; z < maxLayers; z += 1) {
-    const desiredCount = layerCounts[z];
-    const selected = selectStructuralLayerPlacements(
-      template,
-      z,
-      desiredCount,
-      placements,
-      random,
-    );
+  for (let attempt = 0; attempt < MAX_STRUCTURAL_PLACEMENT_ATTEMPTS; attempt += 1) {
+    const placements: BlockPlacement[] = [];
+    let complete = true;
 
-    if (selected.length !== desiredCount) {
-      throw new Error(
-        `LevelGenerator could not place layer ${z} for template ${template.id}`,
+    for (let z = 0; z < maxLayers; z += 1) {
+      const desiredCount = layerCounts[z];
+      const selected = selectStructuralLayerPlacements(
+        template,
+        z,
+        desiredCount,
+        placements,
+        random,
+        keepVisualSafeInset,
       );
+
+      if (selected.length !== desiredCount) {
+        failedLayer = z;
+        complete = false;
+        break;
+      }
+
+      placements.push(...selected);
     }
 
-    placements.push(...selected);
+    if (complete) {
+      return placements;
+    }
   }
 
-  return placements;
+  throw new Error(
+    `LevelGenerator could not place layer ${failedLayer} for template ${template.id}`,
+  );
 }
 
 function getLayerOffsetOrder(z: number): readonly (typeof LAYER_OFFSETS)[number][] {
@@ -369,6 +384,7 @@ function selectStructuralLayerPlacements(
   desiredCount: number,
   previousPlacements: readonly BlockPlacement[],
   random: SeededRandom,
+  keepVisualSafeInset: boolean,
 ): BlockPlacement[] {
   // The 9-column board has less horizontal room. Let every layer use all
   // quarter-block phases; overlap and alignment limits remain enforced below.
@@ -377,7 +393,12 @@ function selectStructuralLayerPlacements(
     ...new Map(
       candidateOffsets
         .flatMap((candidateOffset) =>
-          getCandidateAnchors(template, candidateOffset.x, candidateOffset.y),
+          getCandidateAnchors(
+            template,
+            candidateOffset.x,
+            candidateOffset.y,
+            keepVisualSafeInset,
+          ),
         )
         .map((candidate) => [`${candidate.x}:${candidate.y}`, candidate]),
     ).values(),
@@ -614,12 +635,22 @@ function getCandidateAnchors(
   template: DogShapeTemplate,
   offsetX: number,
   offsetY: number,
+  keepVisualSafeInset = false,
 ): readonly Omit<BlockPlacement, "z">[] {
   const playable = new Set(template.playableCells.map(cellKey));
   const candidates: Omit<BlockPlacement, "z">[] = [];
 
   for (let y = offsetY; y <= template.height - BLOCK_HEIGHT; y += BLOCK_HEIGHT) {
     for (let x = offsetX; x <= template.width - BLOCK_WIDTH; x += BLOCK_WIDTH) {
+      if (
+        keepVisualSafeInset &&
+        (x < BLOCK_WIDTH ||
+          y < BLOCK_HEIGHT ||
+          x + BLOCK_WIDTH > template.width - BLOCK_WIDTH ||
+          y + BLOCK_HEIGHT > template.height - BLOCK_HEIGHT)
+      ) {
+        continue;
+      }
       if (isPlayablePlacement(x, y, playable)) {
         candidates.push({ x, y });
       }

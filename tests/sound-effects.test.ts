@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { mountApp } from "@/app";
-import { FIRST_LEVEL } from "@/games/dog-lege-dog";
+import { DEFAULT_LEVEL_SEED, FIRST_LEVEL } from "@/games/dog-lege-dog";
 import { ProgressStore, type StorageLike } from "@/progress-store";
 
 class MemoryStorage implements StorageLike {
@@ -104,6 +104,7 @@ describe("游戏公开音效行为", () => {
         storage: new MemoryStorage(),
         userIdFactory: () => "123e4567-e89b-12d3-a456-426614174000",
       }),
+      runSeedFactory: () => DEFAULT_LEVEL_SEED,
     });
 
     root.querySelector<HTMLButtonElement>('[data-action="register"]')?.click();

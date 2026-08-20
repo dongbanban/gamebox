@@ -33,6 +33,7 @@ export interface GameLaunchContext {
   readonly onSoundToggle?: (soundEnabled: boolean) => void;
   readonly soundEnabled?: boolean;
   readonly levelNumber?: number;
+  readonly runSeed?: string;
 }
 
 export type GameLauncher = (

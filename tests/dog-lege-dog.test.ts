@@ -5,11 +5,12 @@ import { resolveAssetUrl } from "@/asset-url";
 import type { GameResult } from "@/catalog";
 import { BLOCK_FLIGHT_DURATION_MS } from "@/games/dog-lege-dog/assets/animation-effects";
 import {
+  DEFAULT_LEVEL_SEED,
   DOG_PATTERN_TYPES,
   FIRST_LEVEL,
-  FIRST_LEVEL_SEED,
   startDogLegeDogGame,
 } from "@/games/dog-lege-dog";
+import type { GameLaunchContext } from "@/game-contracts";
 import { renderDogPatternAsset } from "@/games/dog-lege-dog/assets/game-assets";
 import {
   DOG_BLOCK_VISUAL_SIZE_PX,
@@ -64,22 +65,20 @@ describe("狗了个狗首关", () => {
   it("通过公共启动与状态 seam 暴露稳定的不规则棋盘", () => {
     const firstRoot = document.createElement("div");
     const secondRoot = document.createElement("div");
-    const firstGame = startDogLegeDogGame(firstRoot);
-    const secondGame = startDogLegeDogGame(secondRoot);
+    const firstGame = startTestGame(firstRoot);
+    const secondGame = startTestGame(secondRoot);
     const state = firstGame.getState();
 
     expect(state.gameId).toBe("dog-lege-dog");
     expect(state.status).toBe("ready");
     expect(state.level.number).toBe(1);
-    expect(state.level.seed).toBe(FIRST_LEVEL_SEED);
+    expect(state.level.seed).toBe(FIRST_LEVEL.seed);
     expect(state.level.board.shape).toBe("irregular");
     expect(state.level.board.logicalCellSize).toBe(4);
     expect(state.level.board.width / state.level.board.logicalCellSize).toBe(9);
     expect(state.level.board.height / state.level.board.logicalCellSize).toBe(12);
     expect(state.level.blocks).toHaveLength(90);
-    expect(new Set(state.level.blocks.map((block) => block.patternType))).toEqual(
-      new Set(["打工狗", "单身狗", "舔狗", "看门狗", "疯狗", "拆家狗"]),
-    );
+    expect(new Set(state.level.blocks.map((block) => block.patternType))).toHaveLength(6);
     expect(new Set(state.level.blocks.map((block) => block.z))).toEqual(new Set([0, 1, 2]));
     expect(state.level.blocks.every((block) => block.width === 4 && block.height === 4)).toBe(true);
     expect(
@@ -90,11 +89,26 @@ describe("狗了个狗首关", () => {
     ).toBe(true);
     expect(new Set(state.level.blocks.map((block) => block.id))).toHaveLength(90);
     expect(state).toEqual(secondGame.getState());
+    firstGame.destroy();
+    secondGame.destroy();
+  });
+
+  it("每次未指定 runSeed 的启动都会创建新的首关尝试", () => {
+    const firstRoot = document.createElement("div");
+    const secondRoot = document.createElement("div");
+    const firstGame = startDogLegeDogGame(firstRoot);
+    const secondGame = startDogLegeDogGame(secondRoot);
+
+    expect(firstGame.getState().level.runSeed).not.toBe(secondGame.getState().level.runSeed);
+    expect(firstGame.getState().level).not.toEqual(secondGame.getState().level);
+
+    firstGame.destroy();
+    secondGame.destroy();
   });
 
   it("保持方块在不规则棋盘内，且同层没有正面积重叠", () => {
     const root = document.createElement("div");
-    const game = startDogLegeDogGame(root);
+    const game = startTestGame(root);
     const { board, blocks } = game.getState().level;
 
     for (const block of blocks) {
@@ -125,7 +139,7 @@ describe("狗了个狗首关", () => {
 
   it("渲染真实首关棋盘，并支持销毁游戏", () => {
     const root = document.createElement("div");
-    const game = startDogLegeDogGame(root);
+    const game = startTestGame(root);
 
     const board = root.querySelector<HTMLElement>('[data-testid="dog-board"]');
     const firstBlock = root.querySelector<HTMLElement>('[data-testid="dog-block"]');
@@ -157,7 +171,7 @@ describe("狗了个狗首关", () => {
 
   it("按 12px 逻辑单位映射棋盘，并为视觉方块保留边界", () => {
     const root = document.createElement("div");
-    const game = startDogLegeDogGame(root);
+    const game = startTestGame(root);
     const { board, blocks } = game.getState().level;
 
     for (const block of blocks) {
@@ -197,7 +211,7 @@ describe("狗了个狗首关", () => {
 
   it("渲染方块的跨层可见盒保持逻辑四分之一或二分之一覆盖比例", () => {
     const root = document.createElement("div");
-    const game = startDogLegeDogGame(root);
+    const game = startTestGame(root);
     const level = game.getState().level;
     const renderedBlocks = new Map(
       [...root.querySelectorAll<HTMLElement>('[data-testid="dog-block"]')].map((element) => [
@@ -319,7 +333,7 @@ describe("狗了个狗首关", () => {
     vi.useFakeTimers();
     const root = document.createElement("div");
     const results: GameResult[] = [];
-    const game = startDogLegeDogGame(root, {
+    const game = startTestGame(root, {
       onResult: (result) => results.push(result),
     });
 
@@ -367,7 +381,7 @@ describe("狗了个狗首关", () => {
   it("可在多个方块飞入暂存槽期间继续操作，并保留各自飞行动画", async () => {
     vi.useFakeTimers();
     const root = document.createElement("div");
-    const game = startDogLegeDogGame(root);
+    const game = startTestGame(root);
     const firstBlockId = game.getState().session.selectableBlockIds[0];
     if (firstBlockId === undefined) {
       throw new Error("Expected first-level selectable block");
@@ -409,7 +423,7 @@ describe("狗了个狗首关", () => {
   it("三消只显示显眼动画，不渲染中间文案，并在动画后开放下一次操作", async () => {
     vi.useFakeTimers();
     const root = document.createElement("div");
-    const game = startDogLegeDogGame(root);
+    const game = startTestGame(root);
 
     let matched = false;
     for (const blockId of game.getState().level.solutionPath) {
@@ -454,7 +468,7 @@ describe("狗了个狗首关", () => {
     vi.useFakeTimers();
     const root = document.createElement("div");
     const results: GameResult[] = [];
-    const game = startDogLegeDogGame(root, {
+    const game = startTestGame(root, {
       onResult: (result) => results.push(result),
     });
 
@@ -513,3 +527,10 @@ describe("狗了个狗首关", () => {
     game.destroy();
   });
 });
+
+function startTestGame(root: HTMLElement, options: GameLaunchContext = {}) {
+  return startDogLegeDogGame(root, {
+    runSeed: DEFAULT_LEVEL_SEED,
+    ...options,
+  });
+}

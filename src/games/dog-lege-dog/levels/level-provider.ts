@@ -2,6 +2,7 @@ import {
   DEFAULT_LEVEL_SEED,
   LEVEL_GENERATOR_VERSION,
 } from "@/games/dog-lege-dog/game/game-config";
+import { createRunSeed } from "@/games/dog-lege-dog/levels/level-random";
 import {
   GeneratedLevelGenerator,
 } from "@/games/dog-lege-dog/levels/level-generation-engine";
@@ -107,6 +108,13 @@ export class DogLevelProvider {
 
 export const DEFAULT_LEVEL_PROVIDER = new DogLevelProvider();
 
-export function getDogLegeDogLevel(levelNumber: number): DogLegeDogLevel {
-  return DEFAULT_LEVEL_PROVIDER.getLevel(levelNumber);
+export function getDogLegeDogLevel(
+  levelNumber: number,
+  runSeed?: string,
+): DogLegeDogLevel {
+  return DEFAULT_LEVEL_PROVIDER.getLevel({
+    levelNumber,
+    runSeed: runSeed ?? createRunSeed(),
+    generatorVersion: LEVEL_GENERATOR_VERSION,
+  });
 }

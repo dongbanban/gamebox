@@ -1,9 +1,9 @@
 /** @vitest-environment jsdom */
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { mountApp } from "@/app";
+import { mountApp as mountGameboxApp, type MountAppOptions } from "@/app";
 import type { GameDefinition, GameLaunchContext } from "@/catalog";
-import { FIRST_LEVEL, FIRST_LEVEL_SEED } from "@/games/dog-lege-dog";
+import { DEFAULT_LEVEL_SEED, FIRST_LEVEL, FIRST_LEVEL_SEED } from "@/games/dog-lege-dog";
 import { GAME_ID, ProgressStore, type StorageLike } from "@/progress-store";
 
 class DamagedStorage implements StorageLike {
@@ -58,6 +58,7 @@ describe("通用游戏定义与结果契约", () => {
     } as const;
     let launchContext: GameLaunchContext | undefined;
     const launchedLevels: number[] = [];
+    const launchedSeeds: string[] = [];
     const testGame: GameDefinition = {
       id: "test-game",
       name: "测试游戏",
@@ -69,6 +70,7 @@ describe("通用游戏定义与结果契约", () => {
       launch: (_mount, context) => {
         launchContext = context;
         launchedLevels.push(context?.levelNumber ?? -1);
+        launchedSeeds.push(context?.runSeed ?? "");
         return { destroy: vi.fn() };
       },
     };
@@ -77,7 +79,11 @@ describe("通用游戏定义与结果契约", () => {
       userIdFactory: () => "123e4567-e89b-12d3-a456-426614174000",
     });
 
-    const app = mountApp(root, { store, catalog: [testGame] });
+    const app = mountApp(root, {
+      store,
+      catalog: [testGame],
+      runSeedFactory: () => `test-run-${launchedSeeds.length + 1}`,
+    });
     root.querySelector<HTMLButtonElement>('[data-action="register"]')?.click();
 
     expect(root.querySelector(".catalog-item__heading h2")?.textContent).toBe("测试游戏");
@@ -93,6 +99,7 @@ describe("通用游戏定义与结果契约", () => {
 
     root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
     expect(dispatchBeforeUnload().defaultPrevented).toBe(true);
+    expect(launchContext?.runSeed).toBe("test-run-1");
     launchContext?.onResultConfirmed?.({
       gameId: testGame.id,
       levelNumber: 1,
@@ -123,6 +130,7 @@ describe("通用游戏定义与结果契约", () => {
 
     root.querySelector<HTMLButtonElement>('[data-action="retry"]')?.click();
     expect(dispatchBeforeUnload().defaultPrevented).toBe(true);
+    expect(launchContext?.runSeed).toBe("test-run-2");
     launchContext?.onResultConfirmed?.({
       gameId: testGame.id,
       levelNumber: 1,
@@ -158,6 +166,7 @@ describe("通用游戏定义与结果契约", () => {
 
     root.querySelector<HTMLButtonElement>('[data-action="next-level"]')?.click();
     expect(launchedLevels).toEqual([1, 1, 2]);
+    expect(launchedSeeds).toEqual(["test-run-1", "test-run-2", "test-run-3"]);
     expect(root.querySelector('[data-view="game-entry"]')).not.toBeNull();
 
     app.destroy();
@@ -258,6 +267,13 @@ function dispatchBeforeUnload(): BeforeUnloadEvent {
   const event = new Event("beforeunload", { cancelable: true }) as BeforeUnloadEvent;
   window.dispatchEvent(event);
   return event;
+}
+
+function mountApp(root: HTMLElement, options: MountAppOptions = {}) {
+  return mountGameboxApp(root, {
+    ...options,
+    runSeedFactory: options.runSeedFactory ?? (() => DEFAULT_LEVEL_SEED),
+  });
 }
 
 function readActiveGameSnapshot(root: HTMLElement): {

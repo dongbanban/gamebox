@@ -6,7 +6,10 @@ import type {
   DogLevelReplayMode,
   DogLegeDogLevel,
 } from "@/games/dog-lege-dog/levels/level-types";
-import type { LevelGeneratorRequest } from "@/games/dog-lege-dog/levels/level-generator-contracts";
+import type {
+  LevelGeneratorRequest,
+  NormalizedLevelGeneratorRequest,
+} from "@/games/dog-lege-dog/levels/level-generator-contracts";
 import { freezeDogLegeDogLevel } from "@/games/dog-lege-dog/levels/level-immutability";
 import { DOG_REWARD_CONFIG_VERSION } from "@/games/dog-lege-dog/levels/level-reward";
 
@@ -14,6 +17,7 @@ export interface GeneratedLevelCandidate {
   readonly attempt: number;
   readonly number: number;
   readonly seed: string;
+  readonly runSeed: string;
   readonly generatorVersion: number;
   readonly rewardConfigVersion: number;
   readonly maxLayers: number;
@@ -40,6 +44,7 @@ export function finalizeCandidate(
     attempt: candidate.attempt,
     levelNumber: candidate.number,
     seed: baseSeed,
+    runSeed: candidate.runSeed,
     levelSeed: candidate.seed,
     testSeed,
     generatorVersion: candidate.generatorVersion,
@@ -63,7 +68,7 @@ export function finalizeCandidate(
 }
 
 export function createGenerationFailure(
-  request: LevelGeneratorRequest,
+  request: NormalizedLevelGeneratorRequest,
   levelSeed: string,
   testSeed: string,
   attempt: number,
@@ -75,6 +80,7 @@ export function createGenerationFailure(
     attempt,
     levelNumber: request.levelNumber,
     seed: request.seed,
+    runSeed: request.runSeed,
     levelSeed,
     testSeed,
     generatorVersion: request.generatorVersion,
@@ -89,25 +95,39 @@ export function normalizeRequest(
   requestOrLevelNumber: LevelGeneratorRequest | number,
   seed: string,
   generatorVersion: number,
-): LevelGeneratorRequest {
+): NormalizedLevelGeneratorRequest {
   if (typeof requestOrLevelNumber === "number") {
     return {
       levelNumber: requestOrLevelNumber,
       seed,
+      runSeed: seed,
       generatorVersion,
     };
   }
 
-  return requestOrLevelNumber;
+  const runSeed = requestOrLevelNumber.runSeed ?? requestOrLevelNumber.seed ?? "";
+  return {
+    levelNumber: requestOrLevelNumber.levelNumber,
+    seed: runSeed,
+    runSeed,
+    testSeed: requestOrLevelNumber.testSeed,
+    generatorVersion: requestOrLevelNumber.generatorVersion,
+  };
 }
 
-export function validateRequest(request: LevelGeneratorRequest): void {
+export function validateRequest(
+  request: LevelGeneratorRequest | NormalizedLevelGeneratorRequest,
+): void {
   validateLevelNumber(request.levelNumber);
-  if (typeof request.seed !== "string" || request.seed.length === 0) {
-    throw new Error("LevelGenerator seed must be a non-empty string");
+  const runSeed = request.runSeed ?? request.seed;
+  if (typeof runSeed !== "string" || runSeed.length === 0) {
+    throw new Error("LevelGenerator runSeed must be a non-empty string");
   }
 
-  if (request.testSeed !== undefined && request.testSeed.length === 0) {
+  if (
+    request.testSeed !== undefined &&
+    (typeof request.testSeed !== "string" || request.testSeed.length === 0)
+  ) {
     throw new Error("LevelGenerator test seed must be a non-empty string");
   }
 
@@ -123,7 +143,7 @@ export function validateReplay(replay: DogLevelReplay): void {
 
   validateRequest({
     levelNumber: replay.levelNumber,
-    seed: replay.seed,
+    seed: replay.runSeed ?? replay.seed,
     testSeed: replay.testSeed,
     generatorVersion: replay.generatorVersion,
   });
@@ -137,7 +157,7 @@ export function validateReplay(replay: DogLevelReplay): void {
   if (replay.rewardConfigVersion !== DOG_REWARD_CONFIG_VERSION) {
     throw new Error("LevelGenerator replay reward config version is unsupported");
   }
-  if (replay.randomSeed.length === 0) {
+  if (typeof replay.randomSeed !== "string" || replay.randomSeed.length === 0) {
     throw new Error("LevelGenerator replay random seed must be non-empty");
   }
 }

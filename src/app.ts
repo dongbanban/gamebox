@@ -16,6 +16,7 @@ import { renderDogPatternAsset } from "@/games/dog-lege-dog/assets/game-assets";
 export interface MountAppOptions {
   store?: ProgressStore;
   catalog?: readonly GameDefinition[];
+  runSeedFactory?: () => string;
 }
 
 interface ActiveLevel {
@@ -27,6 +28,7 @@ export class GameboxApp {
   private readonly root: HTMLElement;
   private readonly store: ProgressStore;
   private readonly catalog: readonly GameDefinition[];
+  private readonly runSeedFactory: (() => string) | undefined;
   private activeGame: GameLaunchHandle | null = null;
   private activeLevel: ActiveLevel | null = null;
   private nextLevelTarget: ActiveLevel | null = null;
@@ -37,6 +39,7 @@ export class GameboxApp {
     this.root = root;
     this.store = options.store ?? new ProgressStore();
     this.catalog = options.catalog ?? GAME_CATALOG;
+    this.runSeedFactory = options.runSeedFactory;
     replaceHistoryWithCatalog();
     this.root.addEventListener("click", this.handleClick);
     window.addEventListener("popstate", this.handlePopState);
@@ -290,6 +293,7 @@ export class GameboxApp {
         onResultConfirmed: this.handleGameResultConfirmed,
         soundEnabled: state.settings.soundEnabled,
         levelNumber,
+        runSeed: this.runSeedFactory?.(),
       });
       this.enableLeaveProtection();
     } catch {
