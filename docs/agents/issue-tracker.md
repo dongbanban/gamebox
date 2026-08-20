@@ -31,6 +31,17 @@ Used by `/wayfinder`. The **map** is a file with one **child** file per ticket.
 
 ## Ticket 验收
 
+默认采用“聚焦检查逐票、完整 QA 分批”策略，避免每个 ticket 重复支付构建、E2E 与随机回归成本。
+
+- 文档-only 改动：可标记“未运行测试”。
+- 普通实现 ticket：完成前运行 `pnpm test:focused`。该命令只运行受影响核心 Vitest，排除随机回归与生成器压力套件，不运行 Chromium E2E 或构建；没有可定位核心测试时，记录“无可定位聚焦测试，待批量 QA”。
+- UI-only 改动：优先运行 `pnpm test:ui`；不再额外叠加 `pnpm test:focused` 或 `pnpm test:affected`。
+- 每 3–5 个 ticket、一个功能阶段结束、进入高风险 ticket 前、合并前或发布前，统一运行 `pnpm test:qa`。
+- 生成器、可解性/难度、公共契约、进度、导航、游戏启动、测试基础设施、跨模块或无法确认影响范围的改动，完成当前 ticket 前直接运行完整 QA；响应式或浏览器兼容改动追加 `pnpm test:e2e:cross-browser`。
+- ticket 专属 spec 更严格时，以 spec 为准。
+
+批量 QA 结果可由一个 ticket 记录完整命令与结果，其余 ticket 记录同一批次的关联 ticket/记录位置；失败时先修复，再重跑受影响批次。每个 ticket 仍记录实际聚焦检查与批量 QA 状态。
+
 UI 文案、DOM、渲染器、样式、视觉资源或游戏音效改动优先运行：
 
 ```bash
@@ -39,13 +50,13 @@ pnpm test:ui
 
 该命令只跑 app、狗了个狗渲染/交互与音效单测，不触发随机回归、浏览器 E2E 或构建。`pnpm test:affected` 检测到纯 UI 改动时会自动委托给同一命令；已经手动运行 `test:ui` 后不要再叠加 `test:affected`。
 
-普通实现 ticket 完成前运行：
+需要按当前 diff 同时检查相关 E2E 与构建、但尚未触发完整 QA 时运行：
 
 ```bash
 pnpm test:affected
 ```
 
-该命令读取当前 Git 改动与未跟踪文件；纯 UI 改动直接运行 `pnpm test:ui` 并结束，避免重复的相关测试、E2E 与构建；其他改动才按 Vitest import graph 运行受影响核心测试、按源码/样式/E2E 文件范围选择 Chromium 流程，并在末尾运行一次 `pnpm build`。`build` 已包含 `tsc --noEmit`，不再重复运行独立 typecheck；任一步失败立即停止。
+该命令读取当前 Git 改动与未跟踪文件；纯 UI 改动直接运行 `pnpm test:ui` 并结束，其他改动按 Vitest import graph 运行受影响核心测试、按源码/样式/E2E 文件范围选择 Chromium 流程，并在末尾运行一次 `pnpm build`。它不属于普通 ticket 默认门槛，也不与 `pnpm test:qa` 叠加。`build` 已包含 `tsc --noEmit`，不再重复运行独立 typecheck；任一步失败立即停止。
 
 以下范围必须追加全量测试：
 
@@ -59,7 +70,7 @@ pnpm test:affected
 pnpm test:qa
 ```
 
-当前 `test:core` 尚未排除 `tests/e2e/**`，`test:affected` 的生成器匹配仍使用目录整理前路径；两项由 ticket 19 跟踪。ticket 19 完成前，全量验证分别运行排除 E2E 的核心 Vitest、`pnpm test:random` 与 `pnpm test:e2e`，生成器改动必须显式运行随机回归。
+当前 `test:core` 尚未排除 `tests/e2e/**`，`test:affected` 的生成器匹配仍使用目录整理前路径；两项由新方案 ticket 11 跟踪。ticket 11 完成前，全量验证分别运行排除 E2E 的核心 Vitest、`pnpm test:random` 与 `pnpm test:e2e`，生成器改动必须显式运行随机回归。旧 hardening ticket 19 已归档，不再作为实现入口。
 
 响应式或浏览器兼容改动追加：
 

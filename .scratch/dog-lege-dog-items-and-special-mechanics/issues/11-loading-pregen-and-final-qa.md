@@ -1,6 +1,6 @@
 # 11 — 生成加载、后台预生成与最终 QA
 
-**What to build:** 将已验证的随机生成接入进入关卡、重开、重试和下一关流程，避免生成期间展示无效棋盘或阻塞玩家操作，并完成全链路 QA。
+**What to build:** 将已验证的随机生成接入进入关卡、重开、重试和下一关流程，避免生成期间展示无效棋盘或阻塞玩家操作；吸收旧 hardening ticket 19 的共享 QA 契约，并完成全链路 QA。
 
 **Blocked by:** 10 — 多机制生成、求解、难度与道具次数规则必须先稳定；12 — 难度曲线与前期关卡重平衡必须完成。
 
@@ -15,3 +15,14 @@
 - [ ] 完成视觉 QA：冻结特效、幻化 mask、飞行中揭示真实图案、检测仪原位揭示、万能方块高亮、火把融化、三消补充动画；不新增必须显示的文字状态。
 - [ ] 沿用现有动画基线进行校验：方块飞行约 240ms、三消效果约 620ms、道具初始反馈约 360ms；胜负结算不被并发输入打断。
 - [ ] 完成随机回归、生成器/核心测试、UI 测试、端到端测试及跨浏览器测试；ticket 记录实际命令与结果，生成器/跨模块验证使用 `pnpm test:qa`，UI 改动使用 `pnpm test:ui`，响应式改动追加 `pnpm test:e2e:cross-browser`。
+
+## Shared QA Contract
+
+以下条目承接旧 hardening ticket 19；本 ticket 完成后，ticket 19 不再作为独立实现入口。
+
+- [ ] `test:core` 明确排除 `tests/e2e/**` 与随机回归；`pnpm test:qa` 按核心 Vitest → 随机回归 → Chromium E2E 顺序执行，任一步失败立即退出。
+- [ ] `test:affected` 的生成器路径匹配适配当前 `src/games/dog-lege-dog/levels/` 目录与 `@/*` import graph；生成器、特殊机制、可解性或难度改动不会漏跑随机回归。
+- [ ] 测试共用内存 storage、不可用 storage、几何 oracle、首关/随机尝试通关驱动、浏览器对话框、道具组流程与关卡流程助手，不保留行为相同的重复实现。
+- [ ] 随机回归使用版本化固定 `testSeed` 生成 1–100 个连续前缀并固定覆盖关键关卡；每个尝试显式记录 `runSeed`，失败报告包含 `testSeed`、`runSeed`、关卡号、生成器版本与单关重放入口。
+- [ ] 相同 `runSeed` 与生成器版本完整复现关卡；不同 `runSeed` 验证随机尝试确实可变化；公共进度不保存棋盘、暂存槽、次数、半局状态或 `runSeed`。
+- [ ] `pnpm test:e2e:cross-browser` 覆盖 Safari（Playwright WebKit）与移动 Chromium；`pnpm build:pages`、`git diff --check` 与实际测试数/失败修复记录同步更新。

@@ -4,7 +4,8 @@
 
 ```bash
 pnpm test:ui           # UI 单测：app + 狗了个狗渲染/交互/音效，快速反馈
-pnpm test:affected     # 按 Git 改动选择快速 UI 或受影响验证
+pnpm test:focused      # 普通 ticket：受影响核心单测，不含随机回归/E2E/build
+pnpm test:affected     # 按 Git 改动执行受影响测试、E2E 与 build
 pnpm test              # 核心 Vitest 测试
 pnpm test:random       # 固定 seed 驱动的 1–100 连续前缀、检查点、100–1000 压力档
 pnpm test:e2e          # Chromium 浏览器流程
@@ -16,7 +17,9 @@ pnpm build:pages       # 生成 GitHub Pages /gamebox/ 路径产物
 
 UI 文案、DOM、渲染器、样式、视觉资源或游戏音效改动运行 `pnpm test:ui`；该命令不触发随机回归、浏览器 E2E 或构建。`test:ui` 已包含 `app`、`dog-lege-dog` 与 `sound-effects` 三组单测。
 
-普通实现 ticket 运行 `pnpm test:affected`。命令会先识别纯 UI 改动并只运行 `pnpm test:ui`，避免重复触发相关测试、E2E 与构建；其他改动才依据 Vitest import graph 选择核心测试，并按影响范围追加随机回归、Chromium E2E，最后只运行一次 `build`，其内部已包含 `tsc --noEmit`。已经手动运行 `test:ui` 后，不要再叠加 `test:affected`。
+默认采用“聚焦检查逐票、完整 QA 分批”：普通实现 ticket 完成前运行 `pnpm test:focused`。该命令按 Vitest import graph 选择受影响核心测试，排除随机回归与生成器压力套件，不运行 Chromium E2E 或构建；UI-only 改动优先运行 `pnpm test:ui`，不再叠加 `test:focused` 或 `test:affected`。每 3–5 个 ticket、一个功能阶段结束、进入高风险 ticket 前、合并前或发布前统一运行 `pnpm test:qa`。批量结果可由一个 ticket 记录，其余 ticket 关联该记录。
+
+`pnpm test:affected` 仅用于需要按当前 diff 同时检查相关 E2E 与构建、但尚未触发完整 QA 的场景。命令会识别纯 UI 改动并只运行 `pnpm test:ui`；其他改动按影响范围追加随机回归、Chromium E2E，最后运行一次 `build`，其内部已包含 `tsc --noEmit`。它不属于普通 ticket 默认门槛，也不与 `pnpm test:qa` 叠加。
 
 测试失败后立即停止后续步骤，避免错误后的重复全量运行。
 
@@ -26,6 +29,8 @@ UI 文案、DOM、渲染器、样式、视觉资源或游戏音效改动运行 `
 - 关卡生成器、可解性搜索、难度筛选或随机回归改动
 - 合并前、发布前或无法确认影响范围
 
+生成器、可解性/难度、公共契约、进度、导航、游戏启动、测试基础设施或跨模块改动，完成当前 ticket 前直接运行完整 QA。ticket 专属 spec 更严格时，以 spec 为准。
+
 响应式或浏览器兼容改动追加：
 
 ```bash
@@ -34,12 +39,12 @@ pnpm test:e2e:cross-browser
 
 `pnpm test:qa` 与 `pnpm test:affected` 是互斥验证层；发布前只需追加 `pnpm build:pages`，不重复运行两套测试。
 
-当前已知限制由 ticket 19 跟踪：
+当前已知限制由新方案 ticket 11 跟踪；旧 hardening ticket 19 已归档：
 
 - `test:core` 尚未排除 `tests/e2e/**`，`pnpm test:qa` 会在 Vitest 收集 Playwright spec 时退出。
 - `scripts/test-affected.mjs` 的生成器影响匹配仍针对目录整理前路径，`levels/` 下改动可能漏跑随机回归。
 
-ticket 19 完成前需要全量验证时，分别运行：
+ticket 11 完成前需要全量验证时，分别运行：
 
 ```bash
 pnpm exec vitest run --exclude tests/random-regression.test.ts --exclude 'tests/e2e/**'
@@ -71,7 +76,7 @@ GitHub Pages 优先使用仓库 Variables 中的 `ASSET_CDN_BASE_URL`；未设�
 
 `public/audio/levelmusicloop-tigrun.ogg` 来自 [Party and Gameover loop](https://opengameart.org/content/party-and-gameover-loop) 中的 `happy_theme_0.ogg`，作者 gilzoide，页面标注为 CC0；项目在首次用户交互后本地循环播放该轻快主题，背景音量低于选取/三消反馈，音效开关同时控制音乐与交互音效。
 
-随机回归未显式提供 seed 时使用固定 `random-regression-default-v1`，并由该 seed 确定连续前缀长度。失败报告包含 `testSeed`、关卡号、关卡 seed、生成器版本。按报告单关重放：
+随机回归未显式提供 seed 时使用固定 `random-regression-default-v1`，并由该 seed 确定连续前缀长度。失败报告包含 `testSeed`、`runSeed`、关卡号、关卡 seed、生成器版本。按报告单关重放：
 
 ```bash
 DOG_RANDOM_TEST_SEED=<testSeed> \

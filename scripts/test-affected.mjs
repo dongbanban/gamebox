@@ -1,6 +1,7 @@
 import { execFileSync, spawnSync } from "node:child_process";
 
 const root = process.cwd();
+const focusedOnly = process.argv.includes("--focused");
 const changedFiles = collectChangedFiles();
 
 if (changedFiles.length === 0) {
@@ -26,7 +27,7 @@ const vitestTargets = changedFiles.filter(
 );
 
 if (vitestTargets.length > 0) {
-  runOrExit("pnpm", [
+  const vitestArgs = [
     "exec",
     "vitest",
     "related",
@@ -35,9 +36,25 @@ if (vitestTargets.length > 0) {
     "--passWithNoTests",
     "--exclude",
     "tests/random-regression.test.ts",
-  ]);
+  ];
+
+  if (focusedOnly) {
+    vitestArgs.push(
+      "--exclude",
+      "tests/level-generator.test.ts",
+      "--exclude",
+      "tests/generation-failure.test.ts",
+    );
+  }
+
+  runOrExit("pnpm", vitestArgs);
 } else {
   console.log("没有受影响的核心 Vitest 文件，跳过核心 Vitest。");
+}
+
+if (focusedOnly) {
+  console.log("聚焦验证完成：跳过随机回归、Chromium E2E 与构建，等待批量 QA。\n");
+  process.exit(0);
 }
 
 if (requiresRandomRegression(changedFiles)) {

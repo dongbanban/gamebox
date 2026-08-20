@@ -23,4 +23,4 @@
 - 新增 Playwright 完整闭环、存储异常、跨浏览器 smoke；默认 Chromium，`PLAYWRIGHT_CROSS_BROWSER=1` 扩展 Safari（Playwright WebKit）与移动 Chromium。
 - 验证通过：`pnpm typecheck`、`pnpm test`（46 tests）、`pnpm test:random`（默认 seed，3 tests）、`DOG_STRESS_LEVEL_COUNT=1000` 压力测试、`pnpm exec playwright test --project=chromium`（12 tests）、`pnpm build`、`git diff --check`。
 - 跨浏览器配置当前运行 Chromium、Safari（Playwright WebKit）与移动 Chromium；运行 WebKit 前需先安装 Playwright WebKit。
-- 当前全量命令与跨阶段随机采样的后续收敛见 hardening ticket 19：`test:core` 尚未排除 Playwright spec，默认 seed 仍固定，常规集合仍是连续前缀。
+- 后续全量命令边界、`runSeed` 回放与最终 QA 收敛已迁移到新 feature effort ticket 11；常规回归继续使用固定 `testSeed` 与连续前缀，不新增跨阶段随机采样档。旧 hardening ticket 19 已归档。

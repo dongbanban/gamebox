@@ -1,8 +1,10 @@
 # 狗了个狗 MVP 逻辑修复与结构收敛
 
-Status: ready-for-agent
+Status: done
 
-当前状态：ticket 01–18 已完成；剩余范围收敛到 ticket 19 的随机回归、测试命令边界、共享测试辅助逻辑与最终 QA。下方 Problem Statement 保留项目启动时问题基线，Solution 与 Implementation Decisions 记录已落地方向及剩余契约。
+Lifecycle: historical；最终 QA 余项已迁移到 `.scratch/dog-lege-dog-items-and-special-mechanics/issues/11-loading-pregen-and-final-qa.md`。
+
+当前状态：旧 hardening ticket 01–18 已完成，原 ticket 19 已被新方案替代。随机回归、测试命令边界、共享测试辅助逻辑与最终 QA 由新 feature effort 的 ticket 11 继续承接。下方 Problem Statement 保留项目启动时问题基线，Solution 与 Implementation Decisions 记录历史落地方向。
 
 ## Problem Statement
 
@@ -188,7 +190,7 @@ Status: ready-for-agent
 - 音效测试通过游戏公开 seam 观察首次用户交互、静音切换、设置持久化与四类反馈不会阻塞游戏；不得断言振荡器或 gain 节点调用次数。
 - 测试辅助代码统一复用内存 storage、不可用 storage、几何重叠 oracle、首关通关驱动与浏览器流程助手。
 - 随机回归输出 test seed、关卡号、关卡 seed、生成器版本与重放命令；失败用输出信息单关重放。
-- UI-only 文案、DOM、渲染器或样式改动运行 `pnpm test:ui`；普通实现运行 `pnpm test:affected`；跨模块、生成器、合并前或发布前目标命令为 `pnpm test:qa`，不重复叠加两层。当前 `test:core` 误收集 Playwright spec、`test:affected` 仍匹配旧生成器路径，两项由 ticket 19 收敛；完成前用分离命令验证。跨浏览器 smoke 保留 Safari（Playwright WebKit）与移动 Chromium 配置。
+- UI-only 文案、DOM、渲染器或样式改动运行 `pnpm test:ui`；普通实现运行 `pnpm test:affected`；跨模块、生成器、合并前或发布前目标命令为 `pnpm test:qa`，不重复叠加两层。`test:core` 误收集 Playwright spec、`test:affected` 仍匹配旧生成器路径，这些余项已迁移到新 feature effort 的 ticket 11；完成前用分离命令验证。跨浏览器 smoke 保留 Safari（Playwright WebKit）与移动 Chromium 配置。
 - 性能回归至少记录高难关一次选择产生的状态读取次数与关卡生成时间；断言面向可接受上限，不锁定内部函数调用次数。
 
 ## Out of Scope

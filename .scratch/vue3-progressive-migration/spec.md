@@ -203,7 +203,7 @@ Status: ready-for-agent
 
 - 当前 hardening spec 曾把“引入 UI 框架”列为范围外。开始实现前应新增 ADR，明确本 spec 只覆盖应用 shell，并说明为何现在重新打开该决定。
 - 当前工作树存在游戏 renderer、应用测试、游戏测试与 E2E 的未提交改动。迁移实现开始前应先提交、转移或完成这些改动；不得覆盖用户工作。
-- 测试基础设施 ticket 19 是推荐前置项。至少应先修复权威 QA 命令边界，确保生产切换有单条可信验证入口。
+- 新 feature effort ticket 11 是推荐前置项。至少应先修复权威 QA 命令边界，确保生产切换有单条可信验证入口；旧 hardening ticket 19 已归档。
 - 迁移按小提交执行。每个提交必须可构建；生产切换独立成单提交；原生 shell 删除晚于生产切换，保证回滚简单。
 - 推荐工作量：工具链与前置 1–2 天，Vue shell 并行实现 3–5 天，契约、E2E 与切换 2–3 天，清理与文档约 1 天。总计约 7–11 个熟悉项目的单人工作日。
 - 后续若棋盘 UI 变化频繁、原生 renderer 成为维护瓶颈，或性能测量证明全量 DOM 更新存在问题，可另立 spec：抽取无 DOM 的游戏 runtime，让旧 renderer 与 Vue renderer 暂时实现同一 seam，再用共享游戏 contract 验证后切换。Canvas、音频与 Web Animations 仍应保留命令式 adapter。
