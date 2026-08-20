@@ -53,6 +53,8 @@ describe("狗了个狗首关", () => {
     expect(state.level.seed).toBe(FIRST_LEVEL_SEED);
     expect(state.level.board.shape).toBe("irregular");
     expect(state.level.board.logicalCellSize).toBe(4);
+    expect(state.level.board.width / state.level.board.logicalCellSize).toBe(9);
+    expect(state.level.board.height / state.level.board.logicalCellSize).toBe(12);
     expect(state.level.blocks).toHaveLength(90);
     expect(new Set(state.level.blocks.map((block) => block.patternType))).toEqual(
       new Set(["打工狗", "单身狗", "舔狗", "看门狗", "疯狗", "拆家狗"]),
@@ -109,8 +111,8 @@ describe("狗了个狗首关", () => {
     expect(board).not.toBeNull();
     expect(board?.dataset.surfaceShape).toBe("rectangle");
     expect(board?.style.clipPath).toBe("");
-    expect(board?.style.getPropertyValue("--board-pixel-width")).toBe("576px");
-    expect(board?.style.getPropertyValue("--board-pixel-height")).toBe("480px");
+    expect(board?.style.getPropertyValue("--board-pixel-width")).toBe("432px");
+    expect(board?.style.getPropertyValue("--board-pixel-height")).toBe("576px");
     expect(DOG_BLOCK_VISUAL_SIZE_PX).toBe(48);
     expect(DOG_LOGICAL_UNIT_VISUAL_SIZE_PX).toBe(12);
     expect(firstBlock?.style.getPropertyValue("--block-width")).toBe("48px");
@@ -132,7 +134,7 @@ describe("狗了个狗首关", () => {
     expect(root.innerHTML).toBe("");
   });
 
-  it("按 12px 逻辑单位映射棋盘面积与方块 left/top 偏移", () => {
+  it("按 12px 逻辑单位映射 9×12 棋盘面积与方块 left/top 偏移", () => {
     const root = document.createElement("div");
     const game = startDogLegeDogGame(root);
     const { board, blocks } = game.getState().level;
@@ -150,8 +152,8 @@ describe("狗了个狗首关", () => {
       );
     }
 
-    expect(board.width * DOG_LOGICAL_UNIT_VISUAL_SIZE_PX).toBe(576);
-    expect(board.height * DOG_LOGICAL_UNIT_VISUAL_SIZE_PX).toBe(480);
+    expect(board.width * DOG_LOGICAL_UNIT_VISUAL_SIZE_PX).toBe(432);
+    expect(board.height * DOG_LOGICAL_UNIT_VISUAL_SIZE_PX).toBe(576);
     game.destroy();
   });
 

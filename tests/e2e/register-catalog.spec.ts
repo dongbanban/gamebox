@@ -391,6 +391,8 @@ test.describe("注册与游戏目录", () => {
 
     expect(layout.blockWidth).toBeCloseTo(48, 1);
     expect(layout.blockHeight).toBeCloseTo(48, 1);
+    expect(layout.columns).toBe(9);
+    expect(layout.rows).toBe(12);
     expect(layout.boardContentWidth / layout.columns).toBeCloseTo(48, 1);
     expect(layout.boardContentHeight / layout.rows).toBeCloseTo(48, 1);
     expect(layout.scale).toBeLessThan(1);

@@ -329,21 +329,13 @@ function createStructuralBlockPlacements(
 
   for (let z = 0; z < maxLayers; z += 1) {
     const desiredCount = layerCounts[z];
-    let selected: BlockPlacement[] = [];
-
-    for (const offset of getLayerOffsetOrder(z)) {
-      selected = selectStructuralLayerPlacements(
-        template,
-        z,
-        desiredCount,
-        offset,
-        placements,
-        random,
-      );
-      if (selected.length === desiredCount) {
-        break;
-      }
-    }
+    const selected = selectStructuralLayerPlacements(
+      template,
+      z,
+      desiredCount,
+      placements,
+      random,
+    );
 
     if (selected.length !== desiredCount) {
       throw new Error(
@@ -375,11 +367,12 @@ function selectStructuralLayerPlacements(
   template: DogShapeTemplate,
   z: number,
   desiredCount: number,
-  offset: (typeof LAYER_OFFSETS)[number],
   previousPlacements: readonly BlockPlacement[],
   random: SeededRandom,
 ): BlockPlacement[] {
-  const candidateOffsets = z === 0 ? getLayerOffsetOrder(z) : [offset];
+  // The 9-column board has less horizontal room. Let every layer use all
+  // quarter-block phases; overlap and alignment limits remain enforced below.
+  const candidateOffsets = getLayerOffsetOrder(z);
   const candidates = random.shuffle([
     ...new Map(
       candidateOffsets

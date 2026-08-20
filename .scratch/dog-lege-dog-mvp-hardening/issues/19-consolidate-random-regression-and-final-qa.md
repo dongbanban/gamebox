@@ -8,7 +8,7 @@
 
 ## Current Baseline
 
-- 关卡生成器版本为 `6`。第 1 关与后续关卡统一使用确定性生成管线；关卡号、base seed、`testSeed`、生成器版本可重放棋盘、图案、区域分布与层叠关系。
+- 关卡生成器版本为 `7`。第 1 关与后续关卡统一使用确定性生成管线；当前棋盘为 9 列 × 12 行方块格；关卡号、base seed、`testSeed`、生成器版本可重放棋盘、图案、区域分布与层叠关系。
 - 随机回归已有失败报告、单关重放、1–100 连续前缀、固定第 1/5/10/15/30/100 关检查点、默认 100 关与可配置 100–1000 关压力档。
 - 未提供 `DOG_RANDOM_TEST_SEED` 时仍使用固定 `random-regression-default-v1`；常规随机集仍是从第 1 关开始的连续前缀，不是跨阶段采样。
 - `pnpm test:core` 当前只排除 `tests/random-regression.test.ts`，会误收集 `tests/e2e/*.spec.ts`；因此 `pnpm test:qa` 尚不能作为单条权威全量命令。

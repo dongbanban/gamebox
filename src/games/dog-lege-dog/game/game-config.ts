@@ -1,7 +1,7 @@
 import type { DogPatternType } from "@/games/dog-lege-dog/levels/level-types";
 
 const GAME_ID = "dog-lege-dog" as const;
-const GENERATOR_VERSION = 6 as const;
+const GENERATOR_VERSION = 7 as const;
 
 export const DOG_GAME_RESULT_DISPLAY = Object.freeze({
   won: Object.freeze({
@@ -34,7 +34,7 @@ export const DOG_LEGE_DOG_CONFIG = Object.freeze({
     "疯狗",
     "拆家狗",
   ] as readonly DogPatternType[]),
-  firstLevelTemplateId: "irregular-first-level-v1" as const,
+  firstLevelTemplateId: "irregular-first-level-v2" as const,
 });
 
 export const DOG_GAME_ID = DOG_LEGE_DOG_CONFIG.id;
