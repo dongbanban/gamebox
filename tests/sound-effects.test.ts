@@ -79,6 +79,7 @@ describe("游戏公开音效行为", () => {
 
     root.querySelector<HTMLButtonElement>('[data-action="register"]')?.click();
     root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
+    confirmDogLoadout(root);
     const soundButton = root.querySelector<HTMLButtonElement>('[data-action="toggle-sound"]');
     expect(soundButton?.dataset.soundEnabled).toBe("true");
 
@@ -109,6 +110,7 @@ describe("游戏公开音效行为", () => {
 
     root.querySelector<HTMLButtonElement>('[data-action="register"]')?.click();
     root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
+    confirmDogLoadout(root);
     root.querySelector<HTMLButtonElement>('[data-action="toggle-sound"]')?.click();
 
     for (const blockId of FIRST_LEVEL.solutionPath) {
@@ -125,3 +127,10 @@ describe("游戏公开音效行为", () => {
     app.destroy();
   });
 });
+
+function confirmDogLoadout(root: HTMLElement): void {
+  for (const itemId of ["triple-removal", "tray-capacity", "wildcard"]) {
+    root.querySelector<HTMLButtonElement>(`[data-loadout-id="${itemId}"]`)?.click();
+  }
+  root.querySelector<HTMLButtonElement>('[data-action="confirm-loadout"]')?.click();
+}

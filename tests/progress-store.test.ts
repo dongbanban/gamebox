@@ -102,6 +102,37 @@ describe("ProgressStore", () => {
     expect(store.snapshot().persistence).toBe("persistent");
   });
 
+  it("保存并恢复不透明道具组，不写入局内状态", () => {
+    const storage = new MemoryStorage();
+    const store = new ProgressStore({
+      storage,
+      userIdFactory: () => userId,
+    });
+    store.register();
+
+    store.setGameLoadout(GAME_ID, ["triple-removal", "torch", "detector"]);
+
+    expect(store.snapshot().state?.games[GAME_ID].loadout).toEqual([
+      "triple-removal",
+      "torch",
+      "detector",
+    ]);
+    expect(JSON.parse(storage.getItem("gamebox.state") ?? "null")).toMatchObject({
+      games: {
+        [GAME_ID]: {
+          loadout: ["triple-removal", "torch", "detector"],
+        },
+      },
+    });
+
+    const restoredStore = new ProgressStore({ storage });
+    expect(restoredStore.snapshot().state?.games[GAME_ID].loadout).toEqual([
+      "triple-removal",
+      "torch",
+      "detector",
+    ]);
+  });
+
   it("loads a valid user so a returning user can skip registration", () => {
     const storage = new MemoryStorage();
     storage.setItem(

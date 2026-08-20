@@ -75,6 +75,19 @@ export {
 } from "@/games/dog-lege-dog/levels/level-generator";
 export { createRunSeed } from "@/games/dog-lege-dog/levels/level-random";
 
+export {
+  DOG_ITEM_DEFINITIONS,
+  DOG_ITEM_IDS,
+  DOG_LOADOUT_SIZE,
+  areDogLoadoutsEqual,
+  getDogItemDefinition,
+  isDogItemId,
+  isValidDogLoadout,
+  normalizeDogLoadout,
+  type DogItemDefinition,
+  type DogItemId,
+} from "@/games/dog-lege-dog/game/dog-loadout";
+
 export { createDogLegeDogGame, startDogLegeDogGame } from "@/games/dog-lege-dog/game/game-controller";
 export type {
   DogLegeDogGame,

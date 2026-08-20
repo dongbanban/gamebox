@@ -16,15 +16,23 @@ import {
   fitDogBoardToFrame,
   renderDogLegeDogGame,
 } from "@/games/dog-lege-dog/game/game-renderer";
+import {
+  areDogLoadoutsEqual,
+  isDogItemId,
+  isValidDogLoadout,
+  normalizeDogLoadout,
+} from "@/games/dog-lege-dog/game/dog-loadout";
 import type {
+  DogLoadoutEditorState,
   DogLegeDogGame,
   DogLegeDogGameOptions,
   DogLegeDogGameState,
   DogVisualFeedback,
 } from "@/games/dog-lege-dog/game/game-types";
+import type { DogItemId } from "@/games/dog-lege-dog/game/dog-loadout";
 
 interface DogGameRuntime {
-  readonly session: GameSession;
+  session: GameSession;
   started: boolean;
   destroyed: boolean;
   hasInteracted: boolean;
@@ -38,6 +46,8 @@ interface DogGameRuntime {
   activeFlights: Set<CancellableAnimation>;
   matchFeedbackActive: boolean;
   matchAnimation: Promise<void> | null;
+  loadout: readonly DogItemId[] | null;
+  loadoutEditor: DogLoadoutEditorState | null;
 }
 
 export function createDogLegeDogGame(
@@ -48,12 +58,17 @@ export function createDogLegeDogGame(
     options.levelNumber ?? FIRST_LEVEL.number,
     options.runSeed ?? createRunSeed(),
   );
+  const managesLoadout =
+    options.loadout !== undefined || options.onLoadoutConfirmed !== undefined;
+  const initialLoadout = managesLoadout
+    ? normalizeDogLoadout(options.loadout)
+    : null;
   const runtime: DogGameRuntime = {
     session: new GameSession(level),
     started: false,
     destroyed: false,
     hasInteracted: false,
-    inputLocked: false,
+    inputLocked: managesLoadout && initialLoadout === null,
     feedback: "idle",
     soundEnabled: options.soundEnabled ?? true,
     resultConfirmed: false,
@@ -63,6 +78,11 @@ export function createDogLegeDogGame(
     activeFlights: new Set(),
     matchFeedbackActive: false,
     matchAnimation: null,
+    loadout: initialLoadout,
+    loadoutEditor:
+      managesLoadout && initialLoadout === null
+        ? { mode: "initial", draft: [], confirming: false }
+        : null,
   };
   const gameContentRoot =
     root.querySelector<HTMLElement>("[data-game-content]") ?? root;
@@ -187,7 +207,10 @@ export function createDogLegeDogGame(
 
     if (didMatch) {
       void ensureMatchFeedback();
+      return;
     }
+
+    renderStartedGame();
   }
 
   function ensureMatchFeedback(): Promise<void> {
@@ -279,7 +302,32 @@ export function createDogLegeDogGame(
     }
 
     const actionElement = target.closest<HTMLElement>("[data-action]");
-    if (actionElement?.dataset.action === "toggle-sound") {
+    const action = actionElement?.dataset.action;
+    if (action === "toggle-loadout") {
+      toggleLoadout(actionElement?.dataset.loadoutId);
+      return;
+    }
+    if (action === "edit-loadout") {
+      openLoadoutEditor();
+      return;
+    }
+    if (action === "cancel-loadout") {
+      cancelLoadoutEditor();
+      return;
+    }
+    if (action === "confirm-loadout") {
+      requestLoadoutConfirmation();
+      return;
+    }
+    if (action === "cancel-loadout-confirmation") {
+      cancelLoadoutConfirmation();
+      return;
+    }
+    if (action === "apply-loadout-change") {
+      applyLoadoutChange();
+      return;
+    }
+    if (action === "toggle-sound") {
       soundEffects.initialize();
       runtime.soundEnabled = !runtime.soundEnabled;
       soundEffects.setEnabled(runtime.soundEnabled);
@@ -298,6 +346,132 @@ export function createDogLegeDogGame(
       commitBlockSelection(blockId, false);
     }
   };
+
+  function toggleLoadout(itemId: string | undefined): void {
+    if (runtime.loadoutEditor === null || itemId === undefined || !isDogItemId(itemId)) {
+      return;
+    }
+
+    const draft = runtime.loadoutEditor.draft;
+    const nextDraft = draft.includes(itemId)
+      ? draft.filter((selectedItemId) => selectedItemId !== itemId)
+      : draft.length < 3
+        ? [...draft, itemId]
+        : draft;
+    runtime.loadoutEditor = {
+      ...runtime.loadoutEditor,
+      draft: nextDraft,
+      confirming: false,
+    };
+    renderStartedGame();
+  }
+
+  function openLoadoutEditor(): void {
+    if (
+      runtime.loadout === null ||
+      runtime.inputLocked ||
+      runtime.activeFlights.size > 0 ||
+      runtime.matchAnimation !== null ||
+      runtime.session.getState().status !== "playing"
+    ) {
+      return;
+    }
+
+    runtime.inputLocked = true;
+    runtime.loadoutEditor = {
+      mode: "change",
+      draft: [...runtime.loadout],
+      confirming: false,
+    };
+    renderStartedGame();
+  }
+
+  function cancelLoadoutEditor(): void {
+    if (runtime.loadoutEditor === null) {
+      return;
+    }
+
+    if (runtime.loadoutEditor.mode === "initial") {
+      runtime.loadoutEditor = {
+        ...runtime.loadoutEditor,
+        draft: [],
+        confirming: false,
+      };
+      renderStartedGame();
+      return;
+    }
+
+    runtime.loadoutEditor = null;
+    runtime.inputLocked = false;
+    renderStartedGame();
+  }
+
+  function requestLoadoutConfirmation(): void {
+    const editor = runtime.loadoutEditor;
+    if (editor === null || !isValidDogLoadout(editor.draft)) {
+      return;
+    }
+
+    if (editor.mode === "change") {
+      if (areDogLoadoutsEqual(runtime.loadout, editor.draft)) {
+        cancelLoadoutEditor();
+        return;
+      }
+
+      runtime.loadoutEditor = { ...editor, confirming: true };
+      renderStartedGame();
+      return;
+    }
+
+    commitLoadout(editor.draft, editor.mode);
+  }
+
+  function cancelLoadoutConfirmation(): void {
+    if (runtime.loadoutEditor === null || !runtime.loadoutEditor.confirming) {
+      return;
+    }
+
+    runtime.loadoutEditor = {
+      ...runtime.loadoutEditor,
+      confirming: false,
+    };
+    renderStartedGame();
+  }
+
+  function applyLoadoutChange(): void {
+    const editor = runtime.loadoutEditor;
+    if (editor === null || editor.mode !== "change" || !editor.confirming) {
+      return;
+    }
+
+    commitLoadout(editor.draft, editor.mode);
+  }
+
+  function commitLoadout(draft: readonly DogItemId[], mode: "initial" | "change"): void {
+    if (!isValidDogLoadout(draft)) {
+      return;
+    }
+
+    try {
+      options.onLoadoutConfirmed?.([...draft]);
+    } catch {
+      return;
+    }
+
+    runtime.loadout = [...draft];
+    runtime.loadoutEditor = null;
+    runtime.inputLocked = false;
+    if (mode === "change") {
+      runtime.session = new GameSession(level);
+      runtime.hasInteracted = false;
+      runtime.resultConfirmed = false;
+      runtime.resultPresented = false;
+      runtime.feedback = "idle";
+      runtime.matchFeedbackActive = false;
+      runtime.matchAnimation = null;
+    }
+    renderStartedGame();
+  }
 
   root.addEventListener("pointerup", handlePointerUp);
   root.addEventListener("click", handleClick);
@@ -382,8 +556,20 @@ function createGameState(
     level: sessionState.level,
     session: sessionState,
     inputLocked: runtime.inputLocked,
+    loadoutLocked:
+      runtime.inputLocked ||
+      runtime.activeFlights.size > 0 ||
+      runtime.matchAnimation !== null,
     feedback: runtime.feedback,
     soundEnabled: runtime.soundEnabled,
+    loadout: runtime.loadout,
+    loadoutEditor:
+      runtime.loadoutEditor === null
+        ? null
+        : Object.freeze({
+            ...runtime.loadoutEditor,
+            draft: Object.freeze([...runtime.loadoutEditor.draft]),
+          }),
     debug: { elapsedMs: getElapsedMs(runtime.startedAt, runtime.endedAt) },
   };
 }

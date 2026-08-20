@@ -559,6 +559,181 @@ h2 {
   box-shadow: var(--shadow);
 }
 
+.dog-loadout,
+.dog-loadout-summary {
+  margin-top: 20px;
+  padding: 20px;
+  border: 1px solid rgba(79, 155, 192, 0.18);
+  border-radius: 20px;
+  background: #f2fbff;
+}
+
+.dog-loadout__heading,
+.dog-loadout-summary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.dog-loadout__heading h3,
+.dog-loadout-summary h3 {
+  margin: 0 0 6px;
+  color: var(--ink);
+  font-size: 20px;
+}
+
+.dog-loadout__heading p:not(.eyebrow) {
+  max-width: 42em;
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.dog-loadout__heading .eyebrow,
+.dog-loadout-summary .eyebrow {
+  margin-bottom: 6px;
+}
+
+.dog-loadout__count {
+  flex: 0 0 auto;
+  padding: 8px 11px;
+  border-radius: 999px;
+  background: #dceff9;
+  color: var(--sky-deep);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.dog-loadout__options {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.dog-loadout-option {
+  display: flex;
+  min-width: 0;
+  min-height: 132px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 13px;
+  border: 1px solid rgba(22, 68, 93, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 253, 248, 0.86);
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.dog-loadout-option:hover {
+  border-color: var(--sky-deep);
+  transform: translateY(-2px);
+}
+
+.dog-loadout-option--selected {
+  border-color: var(--sky-deep);
+  background: #dff3fc;
+  box-shadow: inset 0 0 0 2px rgba(79, 155, 192, 0.14);
+}
+
+.dog-loadout-option__icon {
+  display: inline-grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 11px;
+  background: var(--yellow);
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.dog-loadout-option__body {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dog-loadout-option__body strong {
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.dog-loadout-option__body span,
+.dog-loadout-option__body small {
+  color: var(--ink-muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.dog-loadout-option__check {
+  align-self: flex-end;
+  min-height: 16px;
+  color: var(--sky-deep);
+  font-weight: 900;
+}
+
+.dog-loadout-editor__actions,
+.dog-loadout-confirmation__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.dog-loadout-confirmation {
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid rgba(238, 128, 105, 0.35);
+  border-radius: 14px;
+  background: rgba(238, 128, 105, 0.1);
+}
+
+.dog-loadout-confirmation strong {
+  color: var(--coral-dark);
+}
+
+.dog-loadout-confirmation p {
+  margin: 6px 0 0;
+  color: var(--ink-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.dog-loadout-summary {
+  align-items: center;
+  padding: 14px 16px;
+}
+
+.dog-loadout-summary__items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.dog-loadout-summary__items span {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #dceff9;
+  color: var(--sky-deep);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.game-result-card__loadout-action {
+  margin: -8px auto 22px;
+}
+
 .dog-game__header {
   display: flex;
   align-items: center;
@@ -1234,6 +1409,70 @@ h2 {
     overflow: hidden;
     padding: 5px;
     border-radius: 18px;
+  }
+
+  .dog-game:has(.dog-loadout) {
+    overflow-y: auto;
+  }
+
+  .dog-loadout,
+  .dog-loadout-summary {
+    margin-top: 10px;
+    padding: 12px;
+  }
+
+  .dog-loadout-summary {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    z-index: 5;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .dog-loadout-summary > div {
+    display: none;
+  }
+
+  .dog-loadout-summary .text-button {
+    min-height: 32px;
+    padding: 5px 8px;
+    border-radius: 10px;
+    background: rgba(242, 251, 255, 0.94);
+    font-size: 11px;
+  }
+
+  .dog-loadout__heading,
+  .dog-loadout-summary {
+    gap: 10px;
+  }
+
+  .dog-loadout__options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+    margin-top: 10px;
+  }
+
+  .dog-loadout-option {
+    min-height: 104px;
+    gap: 6px;
+    padding: 9px;
+  }
+
+  .dog-loadout-option__body strong {
+    font-size: 12px;
+  }
+
+  .dog-loadout-option__body span,
+  .dog-loadout-option__body small {
+    font-size: 10px;
+  }
+
+  .dog-loadout-editor__actions,
+  .dog-loadout-confirmation__actions {
+    gap: 8px;
   }
 
   .dog-game__header {

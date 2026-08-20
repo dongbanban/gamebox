@@ -19,6 +19,7 @@ export interface GameProgress {
   highestUnlockedLevel: number;
   totalScore: number;
   completedLevels: readonly number[];
+  loadout: readonly string[] | null;
 }
 
 export interface AppState {
@@ -128,6 +129,8 @@ export class ProgressStore {
             (left, right) => left - right,
           )
         : [...currentProgress.completedLevels],
+      loadout:
+        currentProgress.loadout === null ? null : [...currentProgress.loadout],
     };
 
     this.state = {
@@ -146,6 +149,29 @@ export class ProgressStore {
       reward: firstCompletion ? completion.reward : 0,
       progress: cloneGameProgress(nextProgress),
     };
+  }
+
+  setGameLoadout(gameId: string, loadout: readonly string[]): AppState {
+    if (this.state === null) {
+      throw new Error("Cannot save a game loadout before registration");
+    }
+
+    assertLoadoutInput(gameId, loadout);
+    const currentProgress = this.state.games[gameId] ?? createInitialGameProgress();
+    const nextProgress: GameProgress = {
+      ...currentProgress,
+      completedLevels: [...currentProgress.completedLevels],
+      loadout: [...loadout],
+    };
+    this.state = {
+      ...this.state,
+      games: {
+        ...this.state.games,
+        [gameId]: nextProgress,
+      },
+    };
+    this.persist();
+    return cloneState(this.state) as AppState;
   }
 
   setSoundEnabled(soundEnabled: boolean): void {
@@ -244,6 +270,7 @@ export function createInitialGameProgress(): GameProgress {
     highestUnlockedLevel: 1,
     totalScore: 0,
     completedLevels: [],
+    loadout: null,
   };
 }
 
@@ -370,7 +397,25 @@ function normalizeGameProgress(value: unknown): GameProgress | null {
     highestUnlockedLevel: value.highestUnlockedLevel,
     totalScore: value.totalScore,
     completedLevels: [...completedLevels],
+    loadout: normalizeLoadout(value.loadout),
   };
+}
+
+function normalizeLoadout(value: unknown): readonly string[] | null {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  if (
+    !Array.isArray(value) ||
+    value.length === 0 ||
+    !value.every((itemId) => typeof itemId === "string" && itemId.trim() !== "") ||
+    new Set(value).size !== value.length
+  ) {
+    return null;
+  }
+
+  return [...value];
 }
 
 function isRecord(value: unknown): value is Record<string, any> {
@@ -415,5 +460,19 @@ function assertCompletionInput(completion: LevelCompletion): void {
 
   if (!Number.isSafeInteger(completion.reward) || completion.reward < 0) {
     throw new Error("Level completion requires a non-negative integer reward");
+  }
+}
+
+function assertLoadoutInput(gameId: string, loadout: readonly string[]): void {
+  if (gameId.trim() === "") {
+    throw new Error("Cannot save a game loadout without a game id");
+  }
+
+  if (
+    loadout.length === 0 ||
+    !loadout.every((itemId) => typeof itemId === "string" && itemId.trim() !== "") ||
+    new Set(loadout).size !== loadout.length
+  ) {
+    throw new Error("Game loadout requires unique non-empty item ids");
   }
 }

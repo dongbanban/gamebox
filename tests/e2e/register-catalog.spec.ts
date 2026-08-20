@@ -37,6 +37,9 @@ test.describe("注册与游戏目录", () => {
     expect(decodeURIComponent(coverSource ?? "")).not.toContain("GAMEBOX · 01");
 
     await page.getByRole("button", { name: "开始游戏" }).click();
+    await expect(page.getByTestId("dog-loadout-panel")).toBeVisible();
+    await expect(page.getByTestId("dog-loadout-option")).toHaveCount(5);
+    await confirmDogLoadout(page);
     await expect(page.getByRole("heading", { name: "狗了个狗" })).toHaveCount(0);
     const catalogButton = page.locator('[data-view="game-entry"] [data-action="catalog"]');
     await expect(catalogButton).toHaveAttribute("aria-label", "返回游戏目录");
@@ -98,6 +101,7 @@ test.describe("注册与游戏目录", () => {
   test("浏览器后退在活动关卡中确认，取消后继续并确认后返回目录", async ({ page }) => {
     await page.getByRole("button", { name: "匿名注册" }).click();
     await page.getByRole("button", { name: "开始游戏" }).click();
+    await confirmDogLoadout(page);
     await page.locator('[data-testid="dog-block"]:not([disabled])').first().click();
     const savedState = await page.evaluate(() => window.localStorage.getItem("gamebox.state"));
 
@@ -124,6 +128,7 @@ test.describe("注册与游戏目录", () => {
   test("刷新活动关卡返回目录且不保存半局", async ({ page }) => {
     await page.getByRole("button", { name: "匿名注册" }).click();
     await page.getByRole("button", { name: "开始游戏" }).click();
+    await confirmDogLoadout(page);
     await page.locator('[data-testid="dog-block"]:not([disabled])').first().click();
     const savedState = await page.evaluate(() => window.localStorage.getItem("gamebox.state"));
 
@@ -139,6 +144,7 @@ test.describe("注册与游戏目录", () => {
   test("关闭活动关卡后重新打开不恢复半局", async ({ page }) => {
     await page.getByRole("button", { name: "匿名注册" }).click();
     await page.getByRole("button", { name: "开始游戏" }).click();
+    await confirmDogLoadout(page);
     await page.locator('[data-testid="dog-block"]:not([disabled])').first().click();
     const savedState = await page.evaluate(() => window.localStorage.getItem("gamebox.state"));
 
@@ -158,6 +164,7 @@ test.describe("注册与游戏目录", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.getByRole("button", { name: "匿名注册" }).click();
     await page.getByRole("button", { name: "开始游戏" }).click();
+    await confirmDogLoadout(page);
 
     const layout = await page.evaluate(() => {
       const serializeRect = (element: Element) => {
@@ -341,6 +348,12 @@ test.describe("注册与游戏目录", () => {
     expect(tinyLayout.trayBottom).toBeLessThanOrEqual(568);
 
     await page.setViewportSize({ width: 1440, height: 900 });
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+        ),
+    );
     const desktopLayout = await page.evaluate(() => {
       const board = document.querySelector<HTMLElement>('[data-testid="dog-board"]');
       const frame = document.querySelector<HTMLElement>('.dog-board-frame');
@@ -352,7 +365,6 @@ test.describe("注册与游戏目录", () => {
         frameCenter: frameRect === undefined ? 0 : frameRect.left + frameRect.width / 2,
       };
     });
-
     expect(desktopLayout.boardWidth).toBeLessThanOrEqual(1040);
     expect(Math.abs(desktopLayout.boardCenter - desktopLayout.frameCenter)).toBeLessThanOrEqual(1);
   });
@@ -361,6 +373,7 @@ test.describe("注册与游戏目录", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.getByRole("button", { name: "匿名注册" }).click();
     await page.getByRole("button", { name: "开始游戏" }).click();
+    await confirmDogLoadout(page);
     await page.locator('[data-testid="dog-block"]:not([disabled])').first().click();
 
     const visuals = await page.evaluate(() => {
@@ -421,6 +434,7 @@ test.describe("注册与游戏目录", () => {
     await page.setViewportSize({ width: 430, height: 932 });
     await page.getByRole("button", { name: "匿名注册" }).click();
     await page.getByRole("button", { name: "开始游戏" }).click();
+    await confirmDogLoadout(page);
 
     const layout = await page.evaluate(() => {
       const board = document.querySelector<HTMLElement>('[data-testid="dog-board"]');
@@ -468,4 +482,14 @@ async function acceptBeforeUnload<T>(page: Page, action: () => Promise<T>): Prom
   expect(dialog.type()).toBe("beforeunload");
   await dialog.accept();
   return actionPromise;
+}
+
+async function confirmDogLoadout(page: Page): Promise<void> {
+  for (const itemId of ["triple-removal", "tray-capacity", "wildcard"]) {
+    await page.locator(
+      `[data-testid="dog-loadout-option"][data-loadout-id="${itemId}"]`,
+    ).click();
+  }
+  await page.getByTestId("dog-loadout-confirm").click();
+  await expect(page.getByTestId("dog-loadout-summary")).toBeVisible();
 }

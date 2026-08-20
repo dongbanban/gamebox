@@ -12,6 +12,15 @@ import {
   type StoreSnapshot,
 } from "@/progress-store";
 import { renderDogPatternAsset } from "@/games/dog-lege-dog/assets/game-assets";
+import { DOG_GAME_ID } from "@/games/dog-lege-dog/game/game-config";
+import { createRunSeed } from "@/games/dog-lege-dog/levels/level-random";
+import {
+  areDogLoadoutsEqual,
+  isDogItemId,
+  isValidDogLoadout,
+  renderDogLoadoutEditor,
+  type DogItemId,
+} from "@/games/dog-lege-dog/game/dog-loadout";
 
 export interface MountAppOptions {
   store?: ProgressStore;
@@ -24,6 +33,11 @@ interface ActiveLevel {
   readonly levelNumber: number;
 }
 
+interface ResultViewState {
+  readonly result: GameResult;
+  readonly completion?: LevelCompletionResult;
+}
+
 export class GameboxApp {
   private readonly root: HTMLElement;
   private readonly store: ProgressStore;
@@ -34,6 +48,11 @@ export class GameboxApp {
   private nextLevelTarget: ActiveLevel | null = null;
   private pendingCompletion: LevelCompletionResult | null = null;
   private leaveProtectionEnabled = false;
+  private activeRunSeed: string | undefined;
+  private resultRunSeed: string | undefined;
+  private resultState: ResultViewState | null = null;
+  private resultLoadoutDraft: readonly DogItemId[] = [];
+  private resultLoadoutConfirming = false;
 
   constructor(root: HTMLElement, options: MountAppOptions = {}) {
     this.root = root;
@@ -46,6 +65,8 @@ export class GameboxApp {
   }
 
   render(): void {
+    this.resultState = null;
+    this.resultRunSeed = undefined;
     this.disposeActiveGame();
     const snapshot = this.store.snapshot();
     if (snapshot.state === null) {
@@ -91,6 +112,37 @@ export class GameboxApp {
       this.store.setSoundEnabled(soundEnabled);
       this.activeGame?.setSoundEnabled?.(soundEnabled);
       updateSoundButton(this.root, soundEnabled);
+      return;
+    }
+
+    if (action === "edit-loadout") {
+      this.openResultLoadoutEditor();
+      return;
+    }
+
+    if (action === "toggle-loadout") {
+      this.toggleResultLoadout(actionElement?.dataset.loadoutId);
+      return;
+    }
+
+    if (action === "cancel-loadout") {
+      this.closeResultLoadoutEditor();
+      return;
+    }
+
+    if (action === "confirm-loadout") {
+      this.requestResultLoadoutConfirmation();
+      return;
+    }
+
+    if (action === "cancel-loadout-confirmation") {
+      this.resultLoadoutConfirming = false;
+      this.renderResultLoadoutEditor();
+      return;
+    }
+
+    if (action === "apply-loadout-change") {
+      this.applyResultLoadoutChange();
       return;
     }
 
@@ -233,7 +285,11 @@ export class GameboxApp {
     `;
   }
 
-  private renderGameEntry(gameId: string | undefined, requestedLevelNumber?: number): void {
+  private renderGameEntry(
+    gameId: string | undefined,
+    requestedLevelNumber?: number,
+    requestedRunSeed?: string,
+  ): void {
     const game = this.catalog.find((item) => item.id === gameId);
     const snapshot = this.store.snapshot();
     const state = snapshot.state;
@@ -261,6 +317,8 @@ export class GameboxApp {
     }
 
     this.disposeActiveGame();
+    this.resultState = null;
+    this.resultRunSeed = undefined;
     setGameHistory(game.id, levelNumber);
     this.root.innerHTML = `
       <main class="game-entry-view" data-view="game-entry" data-game-id="${game.id}" data-level-number="${levelNumber}">
@@ -287,13 +345,16 @@ export class GameboxApp {
     }
 
     this.activeLevel = { gameId: game.id, levelNumber };
+    this.activeRunSeed = requestedRunSeed ?? this.runSeedFactory?.() ?? createRunSeed();
     try {
       this.activeGame = game.launch(gameMount, {
         onResult: this.handleGameResult,
         onResultConfirmed: this.handleGameResultConfirmed,
+        onLoadoutConfirmed: (loadout) => this.handleLoadoutConfirmed(game.id, loadout),
         soundEnabled: state.settings.soundEnabled,
         levelNumber,
-        runSeed: this.runSeedFactory?.(),
+        runSeed: this.activeRunSeed,
+        loadout: progress.loadout,
       });
       this.enableLeaveProtection();
     } catch {
@@ -336,7 +397,15 @@ export class GameboxApp {
     }
   };
 
+  private readonly handleLoadoutConfirmed = (
+    gameId: string,
+    loadout: readonly string[],
+  ): void => {
+    this.store.setGameLoadout(gameId, loadout);
+  };
+
   private readonly handleGameResult = (result: GameResult): void => {
+    this.resultRunSeed = this.activeRunSeed;
     if (result.status === "won") {
       const completion =
         this.pendingCompletion ?? this.store.recordLevelCompletion(result);
@@ -349,6 +418,7 @@ export class GameboxApp {
   };
 
   private renderWinResult(result: GameResult, completion: LevelCompletionResult): void {
+    this.resultState = { result, completion };
     const snapshot = this.store.snapshot();
     const persistenceMessage =
       snapshot.persistence === "persistent"
@@ -365,6 +435,7 @@ export class GameboxApp {
             <div><dt>累计积分</dt><dd>${completion.progress.totalScore}</dd></div>
             <div><dt>下一关</dt><dd>第 ${result.levelNumber + 1} 关</dd></div>
           </dl>
+          ${renderLoadoutChangeAction(result)}
           ${renderResultActions(result)}
     `);
     this.nextLevelTarget = {
@@ -374,11 +445,13 @@ export class GameboxApp {
   }
 
   private renderLossResult(result: GameResult): void {
+    this.resultState = { result };
     this.renderGameResult(result, "lost", `
           <p class="eyebrow">${result.display.eyebrow}</p>
           <h1 id="game-result-title">${result.display.title}</h1>
           <p class="game-result-card__intro">第 ${result.levelNumber} 关${result.display.description}</p>
           ${renderPersistenceNotice(this.store.snapshot().warning)}
+          ${renderLoadoutChangeAction(result)}
           ${renderResultActions(result)}
     `);
     this.nextLevelTarget = null;
@@ -430,8 +503,139 @@ export class GameboxApp {
     this.activeGame?.destroy();
     this.activeGame = null;
     this.activeLevel = null;
+    this.activeRunSeed = undefined;
     this.nextLevelTarget = null;
     this.pendingCompletion = null;
+  }
+
+  private openResultLoadoutEditor(): void {
+    const resultState = this.resultState;
+    const loadout = resultState?.result.gameId === DOG_GAME_ID
+      ? this.store.snapshot().state?.games[DOG_GAME_ID]?.loadout
+      : null;
+    if (
+      resultState === null ||
+      resultState === undefined ||
+      resultState.result.gameId !== DOG_GAME_ID ||
+      !isValidDogLoadout(loadout)
+    ) {
+      return;
+    }
+
+    this.resultLoadoutDraft = [...loadout];
+    this.resultLoadoutConfirming = false;
+    this.renderResultLoadoutEditor();
+  }
+
+  private toggleResultLoadout(itemId: string | undefined): void {
+    if (!this.resultState || itemId === undefined || !isDogItemId(itemId)) {
+      return;
+    }
+
+    const draft = this.resultLoadoutDraft;
+    this.resultLoadoutDraft = draft.includes(itemId)
+      ? draft.filter((selectedItemId) => selectedItemId !== itemId)
+      : draft.length < 3
+        ? [...draft, itemId]
+        : draft;
+    this.resultLoadoutConfirming = false;
+    this.renderResultLoadoutEditor();
+  }
+
+  private closeResultLoadoutEditor(): void {
+    this.root.querySelector('[data-testid="dog-result-loadout-editor"]')?.remove();
+    this.resultLoadoutDraft = [];
+    this.resultLoadoutConfirming = false;
+  }
+
+  private requestResultLoadoutConfirmation(): void {
+    const current = this.store.snapshot().state?.games[DOG_GAME_ID]?.loadout;
+    if (
+      !this.resultState ||
+      !isValidDogLoadout(current) ||
+      !isValidDogLoadout(this.resultLoadoutDraft)
+    ) {
+      return;
+    }
+
+    if (areDogLoadoutsEqual(current, this.resultLoadoutDraft)) {
+      this.closeResultLoadoutEditor();
+      return;
+    }
+
+    this.resultLoadoutConfirming = true;
+    this.renderResultLoadoutEditor();
+  }
+
+  private applyResultLoadoutChange(): void {
+    const resultState = this.resultState;
+    const current = this.store.snapshot().state?.games[DOG_GAME_ID]?.loadout;
+    if (
+      resultState === null ||
+      resultState === undefined ||
+      resultState.result.gameId !== DOG_GAME_ID ||
+      !this.resultLoadoutConfirming ||
+      !isValidDogLoadout(current) ||
+      !isValidDogLoadout(this.resultLoadoutDraft) ||
+      areDogLoadoutsEqual(current, this.resultLoadoutDraft)
+    ) {
+      return;
+    }
+
+    this.store.setGameLoadout(DOG_GAME_ID, this.resultLoadoutDraft);
+    const result = resultState.result;
+    const nextLevelNumber = result.status === "won" ? result.levelNumber + 1 : result.levelNumber;
+    const runSeed = result.status === "lost" ? this.resultRunSeed : undefined;
+    this.resultState = null;
+    this.resultRunSeed = undefined;
+    this.resultLoadoutDraft = [];
+    this.resultLoadoutConfirming = false;
+    this.renderGameEntry(result.gameId, nextLevelNumber, runSeed);
+  }
+
+  private renderResultLoadoutEditor(): void {
+    const resultState = this.resultState;
+    if (resultState === null || resultState.result.gameId !== DOG_GAME_ID) {
+      return;
+    }
+
+    let editorRoot = this.root.querySelector<HTMLElement>(
+      '[data-testid="dog-result-loadout-editor"]',
+    );
+    if (editorRoot === null) {
+      const resultCard = this.root.querySelector<HTMLElement>(".game-result-card");
+      if (resultCard === null) {
+        return;
+      }
+
+      resultCard.insertAdjacentHTML(
+        "beforeend",
+        '<div data-testid="dog-result-loadout-editor"></div>',
+      );
+      editorRoot = resultCard.querySelector<HTMLElement>(
+        '[data-testid="dog-result-loadout-editor"]',
+      );
+    }
+    if (editorRoot === null) {
+      return;
+    }
+
+    const current = this.store.snapshot().state?.games[DOG_GAME_ID]?.loadout;
+    if (!isValidDogLoadout(current)) {
+      return;
+    }
+
+    editorRoot.innerHTML = renderDogLoadoutEditor({
+      mode: "change",
+      draft: this.resultLoadoutDraft,
+      current,
+      levelNumber:
+        resultState.result.status === "won"
+          ? resultState.result.levelNumber + 1
+          : resultState.result.levelNumber,
+      confirming: this.resultLoadoutConfirming,
+      changeTarget: resultState.result.status === "won" ? "next" : "current",
+    });
   }
 
   private enableLeaveProtection(): void {
@@ -538,6 +742,18 @@ function renderResultActions(result: GameResult): string {
       : "";
   const retryClassName = isRetryResult ? " game-result-card__actions--retry" : "";
   return `<div class="game-result-card__actions${splitClassName}${retryClassName}">${actions.join("")}</div>`;
+}
+
+function renderLoadoutChangeAction(result: GameResult): string {
+  if (result.gameId !== DOG_GAME_ID) {
+    return "";
+  }
+
+  return `
+    <button class="text-button game-result-card__loadout-action" type="button" data-action="edit-loadout">
+      更换道具组
+    </button>
+  `;
 }
 
 function renderResultAction(action: GameResultAction, result: GameResult): string {

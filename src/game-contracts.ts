@@ -30,10 +30,12 @@ export interface GameResult {
 export interface GameLaunchContext {
   readonly onResult?: (result: GameResult) => void;
   readonly onResultConfirmed?: (result: GameResult) => void;
+  readonly onLoadoutConfirmed?: (loadout: readonly string[]) => void;
   readonly onSoundToggle?: (soundEnabled: boolean) => void;
   readonly soundEnabled?: boolean;
   readonly levelNumber?: number;
   readonly runSeed?: string;
+  readonly loadout?: readonly string[] | null;
 }
 
 export type GameLauncher = (

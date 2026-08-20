@@ -3,6 +3,10 @@ import { BLOCK_HEIGHT, BLOCK_WIDTH } from "@/games/dog-lege-dog/levels/level-typ
 import { getDogPatternClassName, renderDogPatternAsset } from "@/games/dog-lege-dog/assets/game-assets";
 import type { GameSessionSnapshot } from "@/games/dog-lege-dog/game/game-session";
 import type { DogLegeDogGameState, DogVisualFeedback } from "@/games/dog-lege-dog/game/game-types";
+import {
+  renderDogLoadoutEditor,
+  renderDogLoadoutSummary,
+} from "@/games/dog-lege-dog/game/dog-loadout";
 
 export const DOG_BLOCK_VISUAL_SIZE_PX = 48;
 export const DOG_LOGICAL_UNIT_VISUAL_WIDTH_PX = DOG_BLOCK_VISUAL_SIZE_PX / BLOCK_WIDTH;
@@ -76,6 +80,7 @@ export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameSta
           </div>
         </div>
       </div>
+      <div data-testid="dog-loadout-slot">${renderLoadoutArea(state)}</div>
       ${renderTray(state.session, state.feedback)}
       <div class="dog-animation-layer" data-testid="dog-animation-layer"></div>
     </section>
@@ -98,6 +103,7 @@ function updateDogLegeDogGame(
   const statusElement = gameRoot.querySelector<HTMLElement>('[data-testid="dog-status"]');
   const tray = gameRoot.querySelector<HTMLElement>('[data-testid="dog-tray-region"]');
   const traySlots = tray?.querySelector<HTMLOListElement>('[data-testid="dog-tray"]');
+  const loadoutSlot = gameRoot.querySelector<HTMLElement>('[data-testid="dog-loadout-slot"]');
 
   gameRoot.dataset.inputLocked = String(state.inputLocked);
   gameRoot.dataset.feedback = state.feedback;
@@ -144,6 +150,10 @@ function updateDogLegeDogGame(
     traySlots.innerHTML = renderTraySlots(state.session);
   }
 
+  if (loadoutSlot !== null) {
+    loadoutSlot.innerHTML = renderLoadoutArea(state);
+  }
+
   const matchEffect = tray?.querySelector<HTMLElement>('[data-testid="dog-match-effect"]');
   if (state.feedback === "match") {
     if (matchEffect === null && tray !== null && tray !== undefined) {
@@ -154,6 +164,20 @@ function updateDogLegeDogGame(
   }
 
   fitDogBoardToFrame(gameRoot);
+}
+
+function renderLoadoutArea(state: DogLegeDogGameState): string {
+  if (state.loadoutEditor !== null) {
+    return renderDogLoadoutEditor({
+      mode: state.loadoutEditor.mode,
+      draft: state.loadoutEditor.draft,
+      current: state.loadout,
+      levelNumber: state.level.number,
+      confirming: state.loadoutEditor.confirming,
+    });
+  }
+
+  return state.loadout === null ? "" : renderDogLoadoutSummary(state.loadout, state.loadoutLocked);
 }
 
 export function fitDogBoardToFrame(root: HTMLElement): void {

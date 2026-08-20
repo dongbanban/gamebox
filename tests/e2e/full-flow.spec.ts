@@ -155,6 +155,22 @@ test.describe("狗了个狗完整浏览器闭环", () => {
 async function enterGame(page: Page): Promise<void> {
   await page.getByRole("button", { name: "开始游戏" }).click();
   await expect(page.getByTestId("dog-game")).toBeVisible();
+  await confirmDogLoadout(page);
+}
+
+async function confirmDogLoadout(page: Page): Promise<void> {
+  const panel = page.getByTestId("dog-loadout-panel");
+  if (!(await panel.isVisible().catch(() => false))) {
+    return;
+  }
+
+  for (const itemId of ["triple-removal", "tray-capacity", "wildcard"]) {
+    await page.locator(
+      `[data-testid="dog-loadout-option"][data-loadout-id="${itemId}"]`,
+    ).click();
+  }
+  await page.getByTestId("dog-loadout-confirm").click();
+  await expect(page.getByTestId("dog-loadout-summary")).toBeVisible();
 }
 
 async function getBlockIds(page: Page): Promise<(string | null)[]> {

@@ -528,6 +528,59 @@ describe("狗了个狗首关", () => {
   });
 });
 
+describe("狗了个狗活动道具组变更", () => {
+  it("稳定状态更换组合需要二次确认，并沿用同一 runSeed 与棋盘后重置局内状态", async () => {
+    vi.useFakeTimers();
+    const root = document.createElement("div");
+    const confirmedLoadouts: string[][] = [];
+    const game = startDogLegeDogGame(root, {
+      runSeed: "stable-loadout-run",
+      loadout: ["triple-removal", "tray-capacity", "wildcard"],
+      onLoadoutConfirmed: (loadout) => confirmedLoadouts.push([...loadout]),
+    });
+    const before = game.getState();
+
+    game.selectBlock(before.session.selectableBlockIds[0] ?? "");
+    expect(game.getState().session.tray).toHaveLength(1);
+    await vi.runAllTimersAsync();
+
+    root.querySelector<HTMLButtonElement>('[data-action="edit-loadout"]')?.click();
+    expect(
+      root.querySelector<HTMLButtonElement>('[data-loadout-id="triple-removal"]')?.getAttribute(
+        "aria-pressed",
+      ),
+    ).toBe("true");
+    expect(root.querySelector<HTMLButtonElement>('[data-action="confirm-loadout"]')?.disabled).toBe(true);
+    root.querySelector<HTMLButtonElement>('[data-action="cancel-loadout"]')?.click();
+    expect(root.querySelector('[data-testid="dog-loadout-panel"]')).toBeNull();
+    expect(game.getState().session.tray).toHaveLength(1);
+
+    root.querySelector<HTMLButtonElement>('[data-action="edit-loadout"]')?.click();
+
+    root.querySelector<HTMLButtonElement>('[data-loadout-id="triple-removal"]')?.click();
+    root.querySelector<HTMLButtonElement>('[data-loadout-id="torch"]')?.click();
+    root.querySelector<HTMLButtonElement>('[data-action="confirm-loadout"]')?.click();
+
+    expect(root.querySelector('[data-testid="dog-loadout-confirmation"]')).not.toBeNull();
+    expect(confirmedLoadouts).toEqual([]);
+
+    root.querySelector<HTMLButtonElement>('[data-action="apply-loadout-change"]')?.click();
+
+    const after = game.getState();
+    expect(confirmedLoadouts).toEqual([
+      ["tray-capacity", "wildcard", "torch"],
+    ]);
+    expect(after.level).toEqual(before.level);
+    expect(after.session.remainingBlocks).toEqual(before.session.remainingBlocks);
+    expect(after.session.tray).toEqual([]);
+    expect(after.session.status).toBe("playing");
+    expect(after.loadout).toEqual(["tray-capacity", "wildcard", "torch"]);
+    expect(after.loadoutEditor).toBeNull();
+
+    game.destroy();
+  });
+});
+
 function startTestGame(root: HTMLElement, options: GameLaunchContext = {}) {
   return startDogLegeDogGame(root, {
     runSeed: DEFAULT_LEVEL_SEED,
