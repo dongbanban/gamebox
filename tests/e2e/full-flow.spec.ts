@@ -183,7 +183,10 @@ async function clickBlock(page: Page, blockId: string): Promise<void> {
   await page.locator(`[data-testid="dog-block"][data-block-id="${blockId}"]`).click();
   await page.waitForFunction(() => {
     const game = document.querySelector<HTMLElement>('[data-testid="dog-game"]');
-    return game === null || game.dataset.inputLocked === "false";
+    return game === null || (
+      game.dataset.inputLocked === "false" &&
+      document.querySelector('[data-testid="dog-flight"]') === null
+    );
   });
 }
 
@@ -251,7 +254,10 @@ async function winCurrentLevel(page: Page): Promise<void> {
     await block.click();
     await page.waitForFunction(() => {
       const game = document.querySelector<HTMLElement>('[data-testid="dog-game"]');
-      return game === null || game.dataset.inputLocked === "false";
+      return game === null || (
+        game.dataset.inputLocked === "false" &&
+        document.querySelector('[data-testid="dog-flight"]') === null
+      );
     });
   }
 

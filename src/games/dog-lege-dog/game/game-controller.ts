@@ -12,15 +12,23 @@ import {
 } from "@/games/dog-lege-dog/levels/first-level";
 import { renderDogPatternAsset } from "@/games/dog-lege-dog/assets/game-assets";
 import { DOG_GAME_ID, DOG_GAME_RESULT_DISPLAY } from "@/games/dog-lege-dog/game/game-config";
-import { DOG_ILLUSION_MECHANISM_TYPE } from "@/games/dog-lege-dog/game/special-mechanisms";
+import {
+  DOG_ILLUSION_MECHANISM_TYPE,
+  getDogIllusionDisguisedPattern,
+} from "@/games/dog-lege-dog/game/special-mechanisms";
 import { getDogLegeDogLevel } from "@/games/dog-lege-dog/levels/level-provider";
 import { createRunSeed } from "@/games/dog-lege-dog/levels/level-random";
 import {
   animateBlockFlight,
+  animateDogIllusionReveal,
   animateDogItemEffect,
   type CancellableAnimation,
 } from "@/games/dog-lege-dog/assets/animation-effects";
-import { GameSession, type GameSessionSnapshot } from "@/games/dog-lege-dog/game/game-session";
+import {
+  GameSession,
+  type GameSessionSelectionResult,
+  type GameSessionSnapshot,
+} from "@/games/dog-lege-dog/game/game-session";
 import {
   DogItemRuntime,
   type DogItemActionResult,
@@ -141,7 +149,7 @@ export function createDogLegeDogGame(
     const sourceRect = sourceElement?.getBoundingClientRect() ?? null;
     const isIllusion = sourceBlock?.specialMechanism?.type === DOG_ILLUSION_MECHANISM_TYPE;
     const patternMarkup = isIllusion
-      ? renderDogPatternAsset(sourceBlock.patternType)
+      ? renderDogPatternAsset(getDogIllusionDisguisedPattern(sourceBlock))
       : sourceElement?.querySelector<HTMLElement>(".dog-block__glyph")?.outerHTML ?? "";
     if (isIllusion && shouldAnimate && runtime.started && sourceBlock !== undefined) {
       return commitAnimatedIllusionSelection(
@@ -203,7 +211,7 @@ export function createDogLegeDogGame(
       root,
       patternMarkup,
       patternType: sourceBlock?.patternType ?? patternType,
-      revealsIllusion: isIllusion,
+      isIllusion,
       source: sourceRect,
       target: target?.getBoundingClientRect() ?? null,
     });
@@ -241,13 +249,13 @@ export function createDogLegeDogGame(
       root,
       patternMarkup,
       patternType: block.patternType,
-      revealsIllusion: true,
+      isIllusion: true,
       source: sourceRect,
       target: target?.getBoundingClientRect() ?? null,
     });
     runtime.activeFlights.add(flight);
     renderStartedGame(pending.snapshot);
-    void finishAnimatedSelection(flight, null, false, true);
+    void finishAnimatedSelection(flight, null, false, true, blockId);
     return pending.snapshot;
   }
 
@@ -255,7 +263,8 @@ export function createDogLegeDogGame(
     flight: CancellableAnimation,
     result: GameResult | null,
     didMatch: boolean,
-    revealsIllusion: boolean,
+    isIllusion: boolean,
+    illusionBlockId: string | null = null,
   ): Promise<void> {
     await flight.promise;
     runtime.activeFlights.delete(flight);
@@ -263,33 +272,48 @@ export function createDogLegeDogGame(
       return;
     }
 
-    let resolvedResult = result;
-    let resolvedDidMatch = didMatch;
-    if (revealsIllusion) {
+    if (isIllusion) {
       const selection = runtime.session.completeBlockSelection();
-      resolvedDidMatch = selection.removedCount > 0;
-      resolvedResult = createResult(level, selection.snapshot.status);
-      if (resolvedResult !== null) {
-        runtime.endedAt = Date.now();
-        confirmResult(resolvedResult, false);
-      }
-
-      if (resolvedDidMatch) {
-        runtime.matchFeedbackActive = true;
-        runtime.feedback = "match";
-        soundEffects.play("match");
-        renderStartedGame(selection.snapshot);
-      } else if (resolvedResult !== null) {
-        runtime.feedback = resolvedResult.status;
-        soundEffects.play(resolvedResult.status);
-        renderStartedGame(selection.snapshot);
-      } else {
-        runtime.inputLocked = false;
-        renderStartedGame(selection.snapshot);
-        return;
-      }
+      renderStartedGame(selection.snapshot);
+      const reveal = animateDogIllusionReveal({
+        root,
+        blockId: illusionBlockId ?? "",
+      });
+      runtime.activeFlights.add(reveal);
+      void finishIllusionReveal(reveal, selection);
+      return;
     }
 
+    await finishResolvedSelection(result, didMatch);
+  }
+
+  async function finishIllusionReveal(
+    reveal: CancellableAnimation,
+    selection: GameSessionSelectionResult,
+  ): Promise<void> {
+    await reveal.promise;
+    runtime.activeFlights.delete(reveal);
+    if (runtime.destroyed) {
+      return;
+    }
+
+    const result = createResult(level, selection.snapshot.status);
+    if (result !== null) {
+      runtime.endedAt = Date.now();
+      confirmResult(result, false);
+    }
+    if (selection.removedCount > 0) {
+      runtime.matchFeedbackActive = true;
+      runtime.feedback = "match";
+      soundEffects.play("match");
+    }
+    await finishResolvedSelection(result, selection.removedCount > 0);
+  }
+
+  async function finishResolvedSelection(
+    resolvedResult: GameResult | null,
+    resolvedDidMatch: boolean,
+  ): Promise<void> {
     if (resolvedResult !== null) {
       if (resolvedDidMatch) {
         await ensureMatchFeedback();
@@ -322,6 +346,7 @@ export function createDogLegeDogGame(
       return;
     }
 
+    runtime.inputLocked = false;
     renderStartedGame();
   }
 

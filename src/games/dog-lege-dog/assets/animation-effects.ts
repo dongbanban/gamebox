@@ -1,11 +1,12 @@
 export const BLOCK_FLIGHT_DURATION_MS = 240;
+export const DOG_ILLUSION_REVEAL_DURATION_MS = 420;
 export const DOG_ITEM_FEEDBACK_DURATION_MS = 360;
 
 export interface BlockFlightOptions {
   readonly root: HTMLElement;
   readonly patternMarkup: string;
   readonly patternType?: string;
-  readonly revealsIllusion?: boolean;
+  readonly isIllusion?: boolean;
   readonly source: DOMRect | null;
   readonly target: DOMRect | null;
 }
@@ -24,15 +25,15 @@ export function animateBlockFlight(options: BlockFlightOptions): CancellableAnim
   }
 
   const flight = document.createElement("div");
-  flight.className = options.revealsIllusion
+  flight.className = options.isIllusion
     ? "dog-flying-block dog-flying-block--illusion"
     : "dog-flying-block";
   flight.dataset.testid = "dog-flight";
   if (options.patternType !== undefined) {
     flight.dataset.patternType = options.patternType;
   }
-  if (options.revealsIllusion) {
-    flight.dataset.illusionReveal = "true";
+  if (options.isIllusion) {
+    flight.dataset.illusionFlight = "true";
   }
   flight.innerHTML = options.patternMarkup;
   layer.append(flight);
@@ -82,6 +83,31 @@ export function animateBlockFlight(options: BlockFlightOptions): CancellableAnim
   animation?.addEventListener("cancel", lifecycle.cancel, { once: true });
 
   return lifecycle;
+}
+
+export interface DogIllusionRevealOptions {
+  readonly root: HTMLElement;
+  readonly blockId: string;
+}
+
+export function animateDogIllusionReveal(
+  options: DogIllusionRevealOptions,
+): CancellableAnimation {
+  const traySlot = [...options.root.querySelectorAll<HTMLElement>(
+    '[data-testid="dog-tray-slot"][data-block-id]',
+  )].find((slot) => slot.dataset.blockId === options.blockId) ?? null;
+
+  traySlot?.classList.add("dog-tray__slot--illusion-reveal");
+  if (traySlot !== null) {
+    traySlot.dataset.illusionReveal = "true";
+  }
+
+  return createAnimationLifecycle(DOG_ILLUSION_REVEAL_DURATION_MS, () => {
+    traySlot?.classList.remove("dog-tray__slot--illusion-reveal");
+    if (traySlot?.dataset.illusionReveal === "true") {
+      delete traySlot.dataset.illusionReveal;
+    }
+  });
 }
 
 export interface DogItemEffectOptions {

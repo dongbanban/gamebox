@@ -412,14 +412,22 @@ function renderTraySlots(
       return '<li class="dog-tray__slot" data-testid="dog-tray-slot" aria-label="空暂存槽"></li>';
     }
 
+    const displayPatternType = getDogIllusionDisguisedPattern(block);
+    const isIllusion = block.specialMechanism?.type === DOG_ILLUSION_MECHANISM_TYPE;
     const mechanismClass = getSpecialMechanismClass(block.specialMechanism?.type);
     const mechanismAttributes = renderSpecialMechanismAttributes(block.specialMechanism);
+    const glyphClass = isIllusion
+      ? "dog-block__glyph dog-block__glyph--fuzzy"
+      : "dog-block__glyph";
+    const illusionStyle = isIllusion
+      ? `style="--dog-illusion-image: url(${getDogPatternAssetUrl(displayPatternType)});"`
+      : "";
     const targetAttributes = itemTargetType === "block"
       ? 'data-item-targetable="true" role="button" tabindex="0"'
       : "";
     return `
-      <li class="dog-tray__slot dog-tray__slot--filled dog-block--${getDogPatternClassName(block.patternType)}${mechanismClass}" data-testid="dog-tray-slot" data-block-id="${block.id}" data-pattern-type="${block.patternType}" ${mechanismAttributes} ${targetAttributes} aria-label="${itemTargetType === "block" ? "选择道具目标" : block.patternType}">
-        <span class="dog-block__glyph">${renderDogPatternAsset(block.patternType)}</span>
+      <li class="dog-tray__slot dog-tray__slot--filled dog-block--${getDogPatternClassName(displayPatternType)}${mechanismClass}" data-testid="dog-tray-slot" data-block-id="${block.id}" data-pattern-type="${block.patternType}" ${mechanismAttributes} ${targetAttributes} ${illusionStyle} aria-label="${itemTargetType === "block" ? "选择道具目标" : block.patternType}">
+        <span class="${glyphClass}">${renderDogPatternAsset(displayPatternType)}</span>
       </li>
     `;
   }).join("");

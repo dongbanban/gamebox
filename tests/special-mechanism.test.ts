@@ -1,7 +1,10 @@
 // @vitest-environment jsdom
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { BLOCK_FLIGHT_DURATION_MS } from "@/games/dog-lege-dog/assets/animation-effects";
+import {
+  BLOCK_FLIGHT_DURATION_MS,
+  DOG_ILLUSION_REVEAL_DURATION_MS,
+} from "@/games/dog-lege-dog/assets/animation-effects";
 import { getDogPatternAssetUrl } from "@/games/dog-lege-dog/assets/game-assets";
 import {
   BLOCK_HEIGHT,
@@ -196,6 +199,13 @@ describe("狗了个狗特殊机制", () => {
     expect(pending.selected).toBe(true);
     expect(pending.snapshot.status).toBe("playing");
     expect(pending.snapshot.tray).toEqual([WORKING_DOG, WORKING_DOG, WORKING_DOG]);
+    expect(pending.snapshot.trayBlocks[2]).toMatchObject({
+      id: "illusion",
+      patternType: WORKING_DOG,
+      specialMechanism: {
+        type: DOG_ILLUSION_MECHANISM_TYPE,
+      },
+    });
 
     const completed = session.completeBlockSelection();
 
@@ -335,12 +345,15 @@ describe("狗了个狗特殊机制", () => {
       id: illusion.id,
       patternType: illusion.patternType,
     });
-    expect(selectedTrayBlock).not.toHaveProperty("specialMechanism");
+    expect(selectedTrayBlock).toHaveProperty("specialMechanism");
     expect(root.querySelector<HTMLElement>('[data-testid="dog-flight"]')?.dataset.patternType).toBe(
       illusion.patternType,
     );
     expect(
-      root.querySelector<HTMLElement>('[data-testid="dog-flight"]')?.dataset.illusionReveal,
+      root.querySelector<HTMLElement>('[data-testid="dog-flight"]')?.querySelector("img")?.getAttribute("src"),
+    ).toBe(getDogPatternAssetUrl(disguisedPatternType as DogPatternType));
+    expect(
+      root.querySelector<HTMLElement>('[data-testid="dog-flight"]')?.dataset.illusionFlight,
     ).toBe("true");
     root.querySelector<HTMLButtonElement>(
       '[data-action="use-item"][data-item-id="tray-capacity"]',
@@ -358,10 +371,29 @@ describe("狗了个狗特殊机制", () => {
     }
 
     await vi.advanceTimersByTimeAsync(BLOCK_FLIGHT_DURATION_MS);
+    expect(game.getState().inputLocked).toBe(true);
+    expect(root.querySelector('[data-testid="dog-flight"]')).toBeNull();
+    expect(game.getState().session.trayBlocks.at(-1)).not.toHaveProperty("specialMechanism");
+    expect(
+      root.querySelector<HTMLElement>(
+        `[data-testid="dog-tray-slot"][data-block-id="${illusion.id}"]`,
+      )?.classList.contains("dog-tray__slot--illusion-reveal"),
+    ).toBe(true);
+    expect(
+      root.querySelector<HTMLElement>(
+        `[data-testid="dog-tray-slot"][data-block-id="${illusion.id}"]`,
+      )?.dataset.illusionReveal,
+    ).toBe("true");
+
+    await vi.advanceTimersByTimeAsync(DOG_ILLUSION_REVEAL_DURATION_MS);
     await vi.runAllTimersAsync();
 
     expect(game.getState().inputLocked).toBe(false);
-    expect(root.querySelector('[data-testid="dog-flight"]')).toBeNull();
+    expect(
+      root.querySelector<HTMLElement>(
+        `[data-testid="dog-tray-slot"][data-block-id="${illusion.id}"]`,
+      )?.classList.contains("dog-tray__slot--illusion-reveal"),
+    ).toBe(false);
     game.destroy();
   });
 });

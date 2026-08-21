@@ -11,7 +11,6 @@ import { freezeDogLegeDogLevel } from "@/games/dog-lege-dog/levels/level-immutab
 import {
   insertDogTrayBlock,
   insertDogBlockIntoTray,
-  prepareDogTrayBlock,
   resolveDogTrayMatches,
 } from "@/games/dog-lege-dog/levels/level-rules";
 import {
@@ -322,10 +321,7 @@ export class GameSession {
 
     insertDogTrayBlock(
       trayBlocks,
-      prepareDogTrayBlock(
-        toTrayBlock(this.pendingSelection.block),
-        this.specialMechanismHandlers,
-      ),
+      toTrayBlock(this.pendingSelection.block),
     );
     return trayBlocks;
   }
