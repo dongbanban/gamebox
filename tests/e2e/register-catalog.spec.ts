@@ -331,7 +331,9 @@ test.describe("注册与游戏目录", () => {
     expect(layout.selectableBlock?.height).toBeGreaterThan(18);
     expect(layout.catalogButton?.left).toBeLessThan(layout.brandLogo?.left ?? Number.POSITIVE_INFINITY);
 
-    const selectableBlock = page.locator('[data-testid="dog-block"]:not([disabled])').first();
+    const selectableBlock = page.locator(
+      '[data-testid="dog-block"]:not([disabled]):not([data-special-mechanism])',
+    ).first();
     await selectableBlock.click();
     await expect(page.locator('[data-testid="dog-tray-slot"][data-pattern-type]')).toHaveCount(1);
     const visualSemantics = await page.evaluate(() => {
@@ -349,7 +351,9 @@ test.describe("注册与游戏目录", () => {
       );
       const filledGlyph = filledSlot?.querySelector<HTMLElement>(".dog-block__glyph") ?? null;
       const matchingBlock = [
-        ...document.querySelectorAll<HTMLElement>('[data-testid="dog-block"]:not([disabled])'),
+        ...document.querySelectorAll<HTMLElement>(
+          '[data-testid="dog-block"]:not([disabled]):not([data-special-mechanism])',
+        ),
       ].find((block) => block.dataset.patternType === filledSlot?.dataset.patternType);
       const slotStyle = filledSlot === null ? null : getComputedStyle(filledSlot);
       const blockStyle = matchingBlock === undefined ? null : getComputedStyle(matchingBlock);
