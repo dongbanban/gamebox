@@ -841,6 +841,7 @@ h2 {
   padding: 8px 0;
   border-bottom: 0;
   color: var(--sky-deep);
+  font-size: 16px;
   white-space: nowrap;
 }
 
@@ -2657,7 +2658,7 @@ h2 {
   .dog-loadout-summary .text-button {
     min-height: 32px;
     padding: 8px 0;
-    font-size: 13px;
+    font-size: 16px;
   }
 
   .dog-loadout__heading,
