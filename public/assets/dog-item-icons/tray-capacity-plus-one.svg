@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 329 402" width="329" height="402" role="img" aria-labelledby="title desc">
+  <title id="title">暂存槽容量加一</title>
+  <desc id="desc">让暂存槽增加一个位置的道具图标</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#a7d12a" />
+      <stop offset="1" stop-color="#83b91f" />
+    </linearGradient>
+    <linearGradient id="tray" x1="0" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#f5f1dc" />
+      <stop offset="1" stop-color="#cbd7c5" />
+    </linearGradient>
+    <linearGradient id="badge" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffe46a" />
+      <stop offset="1" stop-color="#f6a925" />
+    </linearGradient>
+  </defs>
+
+  <rect width="329" height="402" fill="url(#bg)" />
+  <g fill="none" stroke="#07191e" stroke-width="8" stroke-linecap="round">
+    <path d="M44 111 26 93" />
+    <path d="M62 70 54 47" />
+    <path d="M279 176 302 164" />
+    <path d="M282 97 299 78" />
+  </g>
+  <g fill="#ffe15c" stroke="#07191e" stroke-width="6" stroke-linejoin="round">
+    <path d="m24 88 13-11 12 14-13 11z" />
+    <path d="m296 74 13-5 3 16-14 7z" />
+  </g>
+
+  <path d="M36 183c0-13 10-22 24-22h209c14 0 24 9 25 22l-18 136c-2 15-13 24-29 24H82c-16 0-27-9-29-24Z" fill="url(#tray)" stroke="#07191e" stroke-width="12" stroke-linejoin="round" />
+  <path d="M39 183c4 17 17 26 34 26h183c18 0 30-9 35-26" fill="none" stroke="#07191e" stroke-width="11" stroke-linecap="round" />
+  <path d="M59 211h211" fill="none" stroke="#6d9d51" stroke-width="6" stroke-linecap="round" opacity="0.65" />
+
+  <g stroke="#07191e" stroke-width="8" stroke-linejoin="round">
+    <rect x="56" y="231" width="43" height="58" rx="11" fill="#3d9fcc" />
+    <rect x="106" y="231" width="43" height="58" rx="11" fill="#ec6b61" />
+    <rect x="156" y="231" width="43" height="58" rx="11" fill="#f3c52d" />
+    <rect x="206" y="231" width="43" height="58" rx="11" fill="#75b9a4" />
+    <rect x="256" y="231" width="28" height="58" rx="10" fill="#ffd75b" />
+  </g>
+  <g fill="none" stroke="#07191e" stroke-width="7" stroke-linecap="round">
+    <path d="M67 254c5-8 14-8 20 0" />
+    <path d="M117 254c5-8 14-8 20 0" />
+    <path d="M167 254c5-8 14-8 20 0" />
+    <path d="M217 254c5-8 14-8 20 0" />
+  </g>
+
+  <g transform="rotate(8 230 91)">
+    <rect x="164" y="36" width="128" height="111" rx="30" fill="url(#badge)" stroke="#07191e" stroke-width="11" />
+    <path d="M194 91h67M227 58v66" fill="none" stroke="#07191e" stroke-width="12" stroke-linecap="round" />
+    <text x="267" y="120" fill="#07191e" font-family="Arial Black, DejaVu Sans, sans-serif" font-size="52" font-weight="900" text-anchor="middle">1</text>
+  </g>
+
+  <path d="M76 310h177" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round" opacity="0.52" />
+  <path d="M92 326h92" fill="none" stroke="#6d9d51" stroke-width="7" stroke-linecap="round" opacity="0.55" />
+</svg>

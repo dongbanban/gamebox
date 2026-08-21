@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 329 402" width="329" height="402" role="img" aria-labelledby="title desc">
+  <title id="title">万能方块</title>
+  <desc id="desc">可转化为任意图案的万能方块道具图标</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffc62d" />
+      <stop offset="1" stop-color="#f5a91f" />
+    </linearGradient>
+    <linearGradient id="top" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffe568" />
+      <stop offset="1" stop-color="#f29b28" />
+    </linearGradient>
+    <linearGradient id="left" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3c9dd0" />
+      <stop offset="1" stop-color="#23659f" />
+    </linearGradient>
+    <linearGradient id="right" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f87861" />
+      <stop offset="1" stop-color="#d84650" />
+    </linearGradient>
+  </defs>
+
+  <rect width="329" height="402" fill="url(#bg)" />
+  <path d="M55 345c48 24 166 28 221-4" fill="none" stroke="#07191e" stroke-width="12" stroke-linecap="round" opacity="0.23" />
+
+  <g fill="none" stroke="#07191e" stroke-width="8" stroke-linecap="round">
+    <path d="M41 147 24 130" />
+    <path d="M278 155 299 139" />
+    <path d="M70 71 55 53" />
+    <path d="M252 77 266 57" />
+  </g>
+  <g fill="#f7e789" stroke="#07191e" stroke-width="6" stroke-linejoin="round">
+    <path d="m20 126 12-12 13 13-13 13z" />
+    <path d="m294 135 14-8 5 16-14 9z" />
+  </g>
+
+  <path d="M165 52 276 113 166 176 53 114Z" fill="url(#top)" stroke="#07191e" stroke-width="12" stroke-linejoin="round" />
+  <path d="M53 114 166 176v162L53 276Z" fill="url(#left)" stroke="#07191e" stroke-width="12" stroke-linejoin="round" />
+  <path d="m166 176 110-63v162l-110 63Z" fill="url(#right)" stroke="#07191e" stroke-width="12" stroke-linejoin="round" />
+
+  <path d="M104 123 165 91l62 33-61 35Z" fill="#fff0a1" opacity="0.42" />
+  <path d="M76 143v119M101 157v112M232 151v111M256 137v112" fill="none" stroke="#8de0e2" stroke-width="6" stroke-linecap="round" opacity="0.44" />
+
+  <path d="m166 186 14 38 38 13-38 13-14 42-14-42-40-13 40-13Z" fill="#fff6d7" stroke="#07191e" stroke-width="10" stroke-linejoin="round" />
+  <path d="m166 215 6 17 17 6-17 6-6 19-7-19-17-6 17-6Z" fill="#ffd141" stroke="#07191e" stroke-width="6" stroke-linejoin="round" />
+
+  <circle cx="93" cy="232" r="13" fill="#f8e6a0" stroke="#07191e" stroke-width="7" />
+  <circle cx="236" cy="219" r="13" fill="#6fd6de" stroke="#07191e" stroke-width="7" />
+  <path d="m196 302 19 11-20 11" fill="none" stroke="#ffe36d" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

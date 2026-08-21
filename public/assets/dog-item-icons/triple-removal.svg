@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 329 402" width="329" height="402" role="img" aria-labelledby="title desc">
+  <title id="title">三消移除</title>
+  <desc id="desc">补齐三个相同图案并一次移除的道具图标</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ed9aab" />
+      <stop offset="1" stop-color="#dc7d9c" />
+    </linearGradient>
+    <linearGradient id="blue-tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#51b9d1" />
+      <stop offset="1" stop-color="#2d7eb6" />
+    </linearGradient>
+    <linearGradient id="teal-tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5bc7b1" />
+      <stop offset="1" stop-color="#229b9d" />
+    </linearGradient>
+    <linearGradient id="purple-tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#9d8ddb" />
+      <stop offset="1" stop-color="#6757aa" />
+    </linearGradient>
+  </defs>
+
+  <rect width="329" height="402" fill="url(#bg)" />
+
+  <g fill="none" stroke="#07191e" stroke-width="8" stroke-linecap="round">
+    <path d="M55 117 34 101" />
+    <path d="M274 106 293 91" />
+    <path d="M48 292 29 308" />
+    <path d="M278 291 297 306" />
+  </g>
+  <g fill="#ffdb4f" stroke="#07191e" stroke-width="6" stroke-linejoin="round">
+    <path d="m27 96 10-16 15 12-10 16z" />
+    <path d="m290 87 14-7 4 17-14 8z" />
+  </g>
+
+  <g transform="rotate(-13 86 220)">
+    <rect x="32" y="165" width="108" height="108" rx="24" fill="url(#blue-tile)" stroke="#07191e" stroke-width="11" />
+    <path d="M86 191c-8 12-24 17-24 31 0 10 9 14 17 7 4 13 17 13 21 0 8 7 17 3 17-7 0-14-16-19-24-31Z" fill="#ffd144" stroke="#07191e" stroke-width="7" stroke-linejoin="round" />
+    <circle cx="75" cy="223" r="4" fill="#07191e" />
+    <circle cx="98" cy="223" r="4" fill="#07191e" />
+  </g>
+
+  <g transform="rotate(2 165 139)">
+    <rect x="111" y="69" width="108" height="108" rx="24" fill="url(#teal-tile)" stroke="#07191e" stroke-width="11" />
+    <path d="M165 95c-8 12-24 17-24 31 0 10 9 14 17 7 4 13 17 13 21 0 8 7 17 3 17-7 0-14-16-19-24-31Z" fill="#ffd144" stroke="#07191e" stroke-width="7" stroke-linejoin="round" />
+    <circle cx="154" cy="127" r="4" fill="#07191e" />
+    <circle cx="177" cy="127" r="4" fill="#07191e" />
+  </g>
+
+  <g transform="rotate(13 243 220)">
+    <rect x="189" y="165" width="108" height="108" rx="24" fill="url(#purple-tile)" stroke="#07191e" stroke-width="11" />
+    <path d="M243 191c-8 12-24 17-24 31 0 10 9 14 17 7 4 13 17 13 21 0 8 7 17 3 17-7 0-14-16-19-24-31Z" fill="#ffd144" stroke="#07191e" stroke-width="7" stroke-linejoin="round" />
+    <circle cx="232" cy="223" r="4" fill="#07191e" />
+    <circle cx="255" cy="223" r="4" fill="#07191e" />
+  </g>
+
+  <path d="m164 213 12 29 29 12-29 12-12 31-12-31-30-12 30-12Z" fill="#fff3c4" stroke="#07191e" stroke-width="10" stroke-linejoin="round" />
+  <path d="m164 232 5 12 12 5-12 5-5 14-5-14-12-5 12-5Z" fill="#ef6b63" stroke="#07191e" stroke-width="6" stroke-linejoin="round" />
+  <g fill="none" stroke="#fff3c4" stroke-width="8" stroke-linecap="round">
+    <path d="M106 307h-28" />
+    <path d="M222 307h28" />
+    <path d="M164 348v22" />
+  </g>
+</svg>
