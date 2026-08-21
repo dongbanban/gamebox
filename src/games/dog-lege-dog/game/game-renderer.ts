@@ -9,6 +9,7 @@ import {
 } from "@/games/dog-lege-dog/assets/game-assets";
 import type { GameSessionSnapshot } from "@/games/dog-lege-dog/game/game-session";
 import {
+  DOG_FREEZE_MECHANISM_TYPE,
   DOG_ILLUSION_MECHANISM_TYPE,
   getDogIllusionDisguisedPattern,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
@@ -20,6 +21,7 @@ import {
   DOG_ITEM_DEFINITIONS,
   renderDogLoadoutEditor,
   renderDogLoadoutSummary,
+  type DogItemId,
   type DogItemTargetType,
 } from "@/games/dog-lege-dog/game/dog-loadout";
 import { getDogItemUses } from "@/games/dog-lege-dog/game/dog-item-runtime";
@@ -103,6 +105,7 @@ export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameSta
                   selectableBlockIds,
                   state.inputLocked,
                   state.items?.selectedItemTargetType ?? null,
+                  state.items?.selectedItemId ?? null,
                 ),
               )
               .join("")}
@@ -110,7 +113,12 @@ export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameSta
         </div>
       </div>
       <div class="dog-loadout-slot" data-testid="dog-loadout-slot">${renderLoadoutArea(state)}</div>
-      ${renderTray(state.session, state.feedback, state.items?.selectedItemTargetType ?? null)}
+      ${renderTray(
+        state.session,
+        state.feedback,
+        state.items?.selectedItemTargetType ?? null,
+        state.items?.selectedItemId ?? null,
+      )}
       <div class="dog-animation-layer" data-testid="dog-animation-layer"></div>
     </section>
   `;
@@ -165,6 +173,7 @@ function updateDogLegeDogGame(
           selectableBlockIds,
           state.inputLocked,
           state.items?.selectedItemTargetType ?? null,
+          state.items?.selectedItemId ?? null,
         ),
       )
       .join("");
@@ -178,6 +187,7 @@ function updateDogLegeDogGame(
     traySlots.innerHTML = renderTraySlots(
       state.session,
       state.items?.selectedItemTargetType ?? null,
+      state.items?.selectedItemId ?? null,
     );
   }
 
@@ -265,6 +275,7 @@ function renderBlock(
   selectableBlockIds: readonly string[],
   inputLocked: boolean,
   itemTargetType: DogItemTargetType | null,
+  itemTargetId: DogItemId | null,
 ): string {
   const displayPatternType = getDogIllusionDisguisedPattern(block);
   const className = getDogPatternClassName(displayPatternType);
@@ -289,7 +300,11 @@ function renderBlock(
     DOG_BOARD_SAFE_MARGIN_PX,
     boardPixelHeight - blockHeight - DOG_BOARD_SAFE_MARGIN_PX,
   );
-  const selectingBlockTarget = itemTargetType === "block";
+  const selectingBlockTarget = isItemTargetable(
+    block.specialMechanism,
+    itemTargetType,
+    itemTargetId,
+  );
   const selectable = selectingBlockTarget || (!inputLocked && selectableBlockIds.includes(block.id));
   const targetAttributes = selectingBlockTarget ? 'data-item-targetable="true"' : "";
 
@@ -324,11 +339,12 @@ function renderTray(
   session: GameSessionSnapshot,
   feedback: DogVisualFeedback,
   itemTargetType: DogItemTargetType | null,
+  itemTargetId: DogItemId | null,
 ): string {
   return `
     <section class="dog-tray" data-testid="dog-tray-region" aria-label="暂存槽">
       ${renderMatchFeedback(feedback)}
-      <ol class="dog-tray__slots" data-testid="dog-tray" data-tray-capacity="${session.trayCapacity}" style="--dog-tray-columns: ${session.trayCapacity};">${renderTraySlots(session, itemTargetType)}</ol>
+      <ol class="dog-tray__slots" data-testid="dog-tray" data-tray-capacity="${session.trayCapacity}" style="--dog-tray-columns: ${session.trayCapacity};">${renderTraySlots(session, itemTargetType, itemTargetId)}</ol>
       <p class="dog-game__status dog-game__status--${session.status}" data-testid="dog-status" role="status">${renderStatusMessage(session.status)}</p>
       <div class="dog-effects-layer" data-testid="dog-effects-layer">
         <canvas class="dog-effects-canvas" data-testid="dog-effects-canvas"></canvas>
@@ -405,6 +421,7 @@ export function renderDogSpecialMechanismModal(level: DogLegeDogLevel): string {
 function renderTraySlots(
   session: GameSessionSnapshot,
   itemTargetType: DogItemTargetType | null = null,
+  itemTargetId: DogItemId | null = null,
 ): string {
   return Array.from({ length: session.trayCapacity }, (_, index) => {
     const block = session.trayBlocks[index];
@@ -422,15 +439,40 @@ function renderTraySlots(
     const illusionStyle = isIllusion
       ? `style="--dog-illusion-image: url(${getDogPatternAssetUrl(displayPatternType)});"`
       : "";
-    const targetAttributes = itemTargetType === "block"
+    const selectingBlockTarget = isItemTargetable(
+      block.specialMechanism,
+      itemTargetType,
+      itemTargetId,
+    );
+    const targetAttributes = selectingBlockTarget
       ? 'data-item-targetable="true" role="button" tabindex="0"'
       : "";
     return `
-      <li class="dog-tray__slot dog-tray__slot--filled dog-block--${getDogPatternClassName(displayPatternType)}${mechanismClass}" data-testid="dog-tray-slot" data-block-id="${block.id}" data-pattern-type="${block.patternType}" ${mechanismAttributes} ${targetAttributes} ${illusionStyle} aria-label="${itemTargetType === "block" ? "选择道具目标" : block.patternType}">
+      <li class="dog-tray__slot dog-tray__slot--filled dog-block--${getDogPatternClassName(displayPatternType)}${mechanismClass}" data-testid="dog-tray-slot" data-block-id="${block.id}" data-pattern-type="${block.patternType}" ${mechanismAttributes} ${targetAttributes} ${illusionStyle} aria-label="${selectingBlockTarget ? "选择道具目标" : block.patternType}">
         <span class="${glyphClass}">${renderDogPatternAsset(displayPatternType)}</span>
       </li>
     `;
   }).join("");
+}
+
+function isItemTargetable(
+  mechanism: DogLegeDogLevel["blocks"][number]["specialMechanism"],
+  itemTargetType: DogItemTargetType | null,
+  itemTargetId: DogItemId | null,
+): boolean {
+  if (itemTargetType !== "block") {
+    return false;
+  }
+
+  if (itemTargetId === "torch") {
+    return mechanism?.type === DOG_FREEZE_MECHANISM_TYPE;
+  }
+
+  if (itemTargetId === "detector") {
+    return mechanism?.type === DOG_ILLUSION_MECHANISM_TYPE;
+  }
+
+  return true;
 }
 
 function getSpecialMechanismClass(type: string | undefined): string {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  DOG_FREEZE_MECHANISM_TYPE,
   FIRST_LEVEL,
   GameSession,
   type DogBlock,
@@ -171,6 +172,130 @@ describe("DogItemRuntime", () => {
     expect(runtime.getState().items[0]?.remainingUses).toBe(1);
     expect(session.getState().tray).toEqual([]);
   });
+
+  it("火把只接受冻结方块目标，取消与无效目标不扣次", () => {
+    const session = new GameSession(
+      createLevel([
+        createBlock("freeze", WORKING_DOG, {
+          type: DOG_FREEZE_MECHANISM_TYPE,
+          state: { status: "frozen", completedTriples: 0 },
+        }),
+        createBlock("ordinary", SINGLE_DOG),
+      ]),
+    );
+    const runtime = new DogItemRuntime({
+      level: session.getState().level,
+      session,
+      loadout: ["torch"],
+    });
+
+    expect(runtime.getState().items[0]).toMatchObject({
+      id: "torch",
+      targetType: "block",
+      available: true,
+      remainingUses: 1,
+    });
+    expect(runtime.begin("torch")).toMatchObject({
+      accepted: true,
+      success: false,
+      requiresTarget: true,
+    });
+    expect(runtime.confirmTarget({ type: "block", blockId: "ordinary" })).toMatchObject({
+      accepted: false,
+      success: false,
+    });
+    expect(runtime.getState().items[0]?.remainingUses).toBe(1);
+    expect(runtime.cancel().phase).toBe("idle");
+    expect(session.getState().remainingBlocks.find((block) => block.id === "freeze"))
+      .toHaveProperty("specialMechanism.type", DOG_FREEZE_MECHANISM_TYPE);
+  });
+
+  it("火把成功融化棋盘冻结方块后扣次并锁定至动画完成", () => {
+    const session = new GameSession(
+      createLevel([
+        createBlock("freeze", WORKING_DOG, {
+          type: DOG_FREEZE_MECHANISM_TYPE,
+          state: { status: "frozen", completedTriples: 0 },
+        }),
+        createBlock("ordinary", SINGLE_DOG),
+      ]),
+    );
+    const runtime = new DogItemRuntime({
+      level: session.getState().level,
+      session,
+      loadout: ["torch"],
+    });
+
+    runtime.begin("torch");
+    const action = runtime.confirmTarget({ type: "block", blockId: "freeze" });
+
+    expect(action).toMatchObject({
+      accepted: true,
+      success: true,
+      itemId: "torch",
+      effect: {
+        type: "melt",
+        blockId: "freeze",
+        location: "board",
+      },
+    });
+    expect(runtime.getState()).toMatchObject({ phase: "animating" });
+    expect(runtime.getState().items[0]).toMatchObject({ remainingUses: 0, available: false });
+    expect(session.getState().remainingBlocks.find((block) => block.id === "freeze"))
+      .toHaveProperty("specialMechanism.type", DOG_FREEZE_MECHANISM_TYPE);
+
+    runtime.completeAnimation();
+
+    expect(runtime.getState().phase).toBe("idle");
+    expect(session.getState().remainingBlocks.find((block) => block.id === "freeze"))
+      .not.toHaveProperty("specialMechanism");
+  });
+
+  it("火把融化暂存槽冻结方块并立即三消", () => {
+    const session = new GameSession({
+      level: createLevel([createBlock("remaining", SINGLE_DOG)]),
+      initialTrayBlocks: [
+        {
+          id: "freeze",
+          patternType: WORKING_DOG,
+          specialMechanism: {
+            type: DOG_FREEZE_MECHANISM_TYPE,
+            state: { status: "frozen", completedTriples: 0 },
+          },
+        },
+        { id: "working-1", patternType: WORKING_DOG },
+        { id: "working-2", patternType: WORKING_DOG },
+      ],
+    });
+    const runtime = new DogItemRuntime({
+      level: session.getState().level,
+      session,
+      loadout: ["torch"],
+    });
+
+    runtime.begin("torch");
+    const action = runtime.confirmTarget({ type: "tray-block", blockId: "freeze" });
+
+    expect(action).toMatchObject({
+      accepted: true,
+      success: true,
+      effect: {
+        type: "melt",
+        blockId: "freeze",
+        location: "tray",
+      },
+    });
+    expect(session.getState().tray).toHaveLength(3);
+
+    runtime.completeAnimation();
+
+    expect(session.getState().tray).toEqual([]);
+    expect(runtime.getLastCompletedEffect()).toMatchObject({
+      type: "melt",
+      removedCount: 3,
+      tripleCount: 1,
+    });
+  });
 });
 
 function createTargetDefinition(): DogItemRuntimeDefinition {
@@ -196,7 +321,11 @@ function createLevel(blocks: readonly DogBlock[]): DogLegeDogLevel {
   };
 }
 
-function createBlock(id: string, patternType: DogPatternType): DogBlock {
+function createBlock(
+  id: string,
+  patternType: DogPatternType,
+  specialMechanism?: DogBlock["specialMechanism"],
+): DogBlock {
   return {
     id,
     x: 0,
@@ -206,5 +335,6 @@ function createBlock(id: string, patternType: DogPatternType): DogBlock {
     height: 4,
     rotation: 0,
     patternType,
+    ...(specialMechanism === undefined ? {} : { specialMechanism }),
   };
 }

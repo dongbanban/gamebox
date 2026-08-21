@@ -16,6 +16,7 @@ import {
 import {
   createDogSpecialMechanismHandlerMap,
   DOG_SPECIAL_MECHANISM_HANDLERS,
+  DOG_FREEZE_MECHANISM_TYPE,
   DOG_ILLUSION_MECHANISM_TYPE,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
 
@@ -54,6 +55,18 @@ export interface GameSessionSelectionResult extends GameSessionSnapshot {
   readonly snapshot: GameSessionSnapshot;
   readonly tripleCount: number;
   readonly meltedBlockIds: readonly string[];
+}
+
+export type GameSessionMeltLocation = "board" | "tray";
+
+export interface GameSessionMeltResult extends GameSessionSnapshot {
+  readonly melted: boolean;
+  readonly location: GameSessionMeltLocation;
+  readonly blockId: string;
+  readonly removedCount: number;
+  readonly tripleCount: number;
+  readonly meltedBlockIds: readonly string[];
+  readonly snapshot: GameSessionSnapshot;
 }
 
 export class GameSession {
@@ -171,6 +184,55 @@ export class GameSession {
 
     this.trayCapacity += 1;
     return true;
+  }
+
+  canMeltFrozenBlock(blockId: string, location: GameSessionMeltLocation): boolean {
+    if (this.status !== "playing" || this.pendingSelection !== null) {
+      return false;
+    }
+
+    const block = location === "board"
+      ? this.remainingBlocks.get(blockId)
+      : this.tray.find((candidate) => candidate.id === blockId);
+    return block?.specialMechanism?.type === DOG_FREEZE_MECHANISM_TYPE;
+  }
+
+  meltFrozenBlock(
+    blockId: string,
+    location: GameSessionMeltLocation,
+  ): GameSessionMeltResult {
+    if (!this.canMeltFrozenBlock(blockId, location)) {
+      return this.createMeltResult(false, blockId, location, 0, 0, []);
+    }
+
+    if (location === "board") {
+      const block = this.remainingBlocks.get(blockId);
+      if (block === undefined) {
+        return this.createMeltResult(false, blockId, location, 0, 0, []);
+      }
+
+      this.remainingBlocks.set(blockId, removeSpecialMechanism(block));
+      this.updateResult();
+      return this.createMeltResult(true, blockId, location, 0, 0, [blockId]);
+    }
+
+    const trayIndex = this.tray.findIndex((candidate) => candidate.id === blockId);
+    const block = trayIndex < 0 ? undefined : this.tray[trayIndex];
+    if (block === undefined) {
+      return this.createMeltResult(false, blockId, location, 0, 0, []);
+    }
+
+    this.tray[trayIndex] = removeSpecialMechanism(block);
+    const resolution = resolveDogTrayMatches(this.tray, this.specialMechanismHandlers);
+    this.updateResult();
+    return this.createMeltResult(
+      true,
+      blockId,
+      location,
+      resolution.removedCount,
+      resolution.tripleCount,
+      [blockId, ...resolution.meltedBlockIds],
+    );
   }
 
   selectBlock(blockId: string): GameSessionSelectionResult {
@@ -294,6 +356,65 @@ export class GameSession {
     return Object.freeze(result);
   }
 
+  private createMeltResult(
+    melted: boolean,
+    blockId: string,
+    location: GameSessionMeltLocation,
+    removedCount: number,
+    tripleCount: number,
+    meltedBlockIds: readonly string[],
+  ): GameSessionMeltResult {
+    const snapshot = this.getState();
+    const result = {
+      ...snapshot,
+    } as GameSessionMeltResult;
+    Object.defineProperties(result, {
+      melted: {
+        configurable: false,
+        enumerable: false,
+        value: melted,
+        writable: false,
+      },
+      location: {
+        configurable: false,
+        enumerable: false,
+        value: location,
+        writable: false,
+      },
+      blockId: {
+        configurable: false,
+        enumerable: false,
+        value: blockId,
+        writable: false,
+      },
+      removedCount: {
+        configurable: false,
+        enumerable: false,
+        value: removedCount,
+        writable: false,
+      },
+      tripleCount: {
+        configurable: false,
+        enumerable: false,
+        value: tripleCount,
+        writable: false,
+      },
+      meltedBlockIds: {
+        configurable: false,
+        enumerable: false,
+        value: Object.freeze([...meltedBlockIds]),
+        writable: false,
+      },
+      snapshot: {
+        configurable: false,
+        enumerable: false,
+        value: snapshot,
+        writable: false,
+      },
+    });
+    return Object.freeze(result);
+  }
+
   private updateResult(): void {
     if (this.pendingSelection !== null) {
       this.status = "playing";
@@ -349,6 +470,11 @@ function toTrayBlock(block: DogBlock): DogTrayBlock {
       ? {}
       : { specialMechanism: block.specialMechanism }),
   };
+}
+
+function removeSpecialMechanism<T extends DogBlock | DogTrayBlock>(block: T): T {
+  const { specialMechanism: _specialMechanism, ...meltedBlock } = block;
+  return meltedBlock as T;
 }
 
 function isLevel(value: DogLegeDogLevel | GameSessionOptions): value is DogLegeDogLevel {

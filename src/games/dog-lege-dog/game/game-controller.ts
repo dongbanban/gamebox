@@ -22,6 +22,8 @@ import {
   animateBlockFlight,
   animateDogIllusionReveal,
   animateDogItemEffect,
+  animateDogTorchMeltEffect,
+  renderDogMeltEffect,
   type CancellableAnimation,
 } from "@/games/dog-lege-dog/assets/animation-effects";
 import {
@@ -445,14 +447,6 @@ export function createDogLegeDogGame(
     meltedBlockIds: readonly string[],
     fallbackRects: ReadonlyMap<string, DOMRect>,
   ): void {
-    const layer = rootElement.querySelector<HTMLElement>(
-      '[data-testid="dog-animation-layer"]',
-    );
-    if (layer === null) {
-      return;
-    }
-
-    const layerRect = layer.getBoundingClientRect();
     const traySlots = [...rootElement.querySelectorAll<HTMLElement>(
       '[data-testid="dog-tray-slot"][data-block-id]',
     )];
@@ -463,24 +457,14 @@ export function createDogLegeDogGame(
         continue;
       }
 
-      const effect = document.createElement("div");
-      effect.className = "dog-melt-effect";
-      effect.dataset.meltBlockId = blockId;
-      effect.setAttribute("aria-hidden", "true");
-      effect.innerHTML = `
-        <span class="dog-melt-effect__flake">❄</span>
-        <span class="dog-melt-effect__drop dog-melt-effect__drop--1"></span>
-        <span class="dog-melt-effect__drop dog-melt-effect__drop--2"></span>
-        <span class="dog-melt-effect__drop dog-melt-effect__drop--3"></span>
-        <span class="dog-melt-effect__drop dog-melt-effect__drop--4"></span>
-      `;
-      Object.assign(effect.style, {
-        left: `${targetRect.left - layerRect.left}px`,
-        top: `${targetRect.top - layerRect.top}px`,
-        width: `${targetRect.width || 48}px`,
-        height: `${targetRect.height || 48}px`,
+      const effect = renderDogMeltEffect({
+        root: rootElement,
+        blockId,
+        target: targetRect,
       });
-      layer.append(effect);
+      if (effect === null) {
+        continue;
+      }
 
       const remove = (): void => effect.remove();
       const handleAnimationEnd = (event: AnimationEvent): void => {
@@ -604,7 +588,7 @@ export function createDogLegeDogGame(
       runtime.itemRuntime === null ||
       itemId === undefined ||
       !isDogItemId(itemId) ||
-      runtime.inputLocked ||
+      isGameInputLocked() ||
       runtime.activeFlights.size > 0 ||
       runtime.matchAnimation !== null
     ) {
@@ -621,14 +605,15 @@ export function createDogLegeDogGame(
       return;
     }
 
+    const targetRect = findItemTargetElement(root, target)?.getBoundingClientRect() ?? null;
     const action = runtime.itemRuntime.confirmTarget(target);
-    applyItemAction(action);
+    applyItemAction(action, targetRect);
   }
 
-  function applyItemAction(action: DogItemActionResult): void {
+  function applyItemAction(action: DogItemActionResult, targetRect: DOMRect | null = null): void {
     renderStartedGame();
     if (action.accepted && action.success && action.itemId !== null) {
-      startItemAnimation(action.itemId, action.snapshot.visualFeedback);
+      startItemAnimation(action.itemId, action.snapshot.visualFeedback, action.effect, targetRect);
     }
   }
 
@@ -658,16 +643,21 @@ export function createDogLegeDogGame(
   function startItemAnimation(
     itemId: DogItemId,
     visualFeedback: DogItemRuntimeSnapshot["visualFeedback"],
+    effect: DogItemActionResult["effect"],
+    targetRect: DOMRect | null,
   ): void {
     if (runtime.itemAnimation !== null) {
       return;
     }
 
-    const animation = animateDogItemEffect({
-      root,
-      itemId,
-      visualFeedback,
-    });
+    const animation = effect?.type === "melt"
+      ? animateDogTorchMeltEffect({
+          root,
+          blockId: effect.blockId,
+          location: effect.location,
+          target: targetRect,
+        })
+      : animateDogItemEffect({ root, itemId, visualFeedback });
     runtime.itemAnimation = animation;
     void finishItemAnimation(animation);
   }
@@ -679,7 +669,40 @@ export function createDogLegeDogGame(
     }
 
     runtime.itemAnimation = null;
-    runtime.itemRuntime?.completeAnimation();
+    const itemRuntime = runtime.itemRuntime;
+    itemRuntime?.completeAnimation();
+    const completedEffect = itemRuntime?.getLastCompletedEffect();
+    const result = createResult(level, runtime.session.getState().status);
+    if (result !== null) {
+      runtime.endedAt = Date.now();
+      runtime.inputLocked = true;
+      confirmResult(result, false);
+    }
+    if (completedEffect !== undefined && completedEffect !== null && completedEffect.removedCount > 0) {
+      runtime.matchFeedbackActive = true;
+      runtime.feedback = "match";
+      renderStartedGame();
+      await ensureMatchFeedback();
+      if (runtime.destroyed) {
+        return;
+      }
+    }
+    if (result !== null) {
+      runtime.feedback = result.status;
+      renderStartedGame();
+      await particleEffects.play(result.status);
+      if (runtime.destroyed) {
+        return;
+      }
+      runtime.inputLocked = false;
+      runtime.feedback = "idle";
+      runtime.matchFeedbackActive = false;
+      renderStartedGame();
+      presentResult(result);
+      return;
+    }
+
+    runtime.inputLocked = false;
     renderStartedGame();
   }
 
@@ -1002,6 +1025,20 @@ function getBlockId(event: Event): string | undefined {
   }
 
   return target.closest<HTMLElement>('[data-testid="dog-block"]')?.dataset.blockId;
+}
+
+function findItemTargetElement(
+  root: HTMLElement,
+  target: DogItemTarget,
+): HTMLElement | null {
+  if (target.type === "pattern") {
+    return null;
+  }
+
+  const testId = target.type === "tray-block" ? "dog-tray-slot" : "dog-block";
+  return [...root.querySelectorAll<HTMLElement>(`[data-testid="${testId}"]`)].find(
+    (element) => element.dataset.blockId === target.blockId,
+  ) ?? null;
 }
 
 function getElapsedMs(startedAt: number | null, endedAt: number | null): number {

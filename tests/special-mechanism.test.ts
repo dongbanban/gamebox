@@ -3,6 +3,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   BLOCK_FLIGHT_DURATION_MS,
+  DOG_TORCH_MELT_DURATION_MS,
   DOG_ILLUSION_REVEAL_DURATION_MS,
 } from "@/games/dog-lege-dog/assets/animation-effects";
 import { getDogPatternAssetUrl } from "@/games/dog-lege-dog/assets/game-assets";
@@ -79,6 +80,73 @@ describe("狗了个狗特殊机制", () => {
     expect(finalTriple.removedCount).toBe(3);
     expect(finalTriple.snapshot.tray).toEqual([]);
     expect(finalTriple.snapshot.status).toBe("won");
+  });
+
+  it("火把融化棋盘冻结方块后保留原位置并移除冻结状态", () => {
+    const freezeBlock = createBlock("freeze", 4, 8, WORKING_DOG, {
+      type: DOG_FREEZE_MECHANISM_TYPE,
+      state: { status: "frozen", completedTriples: 0 },
+    });
+    const session = new GameSession(
+      createLevel([freezeBlock, createBlock("remaining", 12, 8, SINGLE_DOG)]),
+    );
+
+    const result = session.meltFrozenBlock("freeze", "board");
+
+    expect(result).toMatchObject({
+      melted: true,
+      location: "board",
+      removedCount: 0,
+      tripleCount: 0,
+    });
+    expect(result.snapshot.remainingBlocks).toHaveLength(2);
+    expect(result.snapshot.remainingBlocks.find((block) => block.id === "freeze")).not.toHaveProperty(
+      "specialMechanism",
+    );
+    expect(result.snapshot.remainingBlocks.find((block) => block.id === "freeze")).toMatchObject({
+      x: 4,
+      y: 8,
+      patternType: WORKING_DOG,
+    });
+    expect(session.canMeltFrozenBlock("freeze", "board")).toBe(false);
+  });
+
+  it("火把融化暂存槽冻结方块后立即结算同图案三消", () => {
+    const session = new GameSession({
+      level: createLevel([createBlock("remaining", 12, 8, SINGLE_DOG)]),
+      initialTrayBlocks: [
+        {
+          id: "freeze",
+          patternType: WORKING_DOG,
+          specialMechanism: {
+            type: DOG_FREEZE_MECHANISM_TYPE,
+            state: { status: "frozen", completedTriples: 0 },
+          },
+        },
+        { id: "working-1", patternType: WORKING_DOG },
+        { id: "working-2", patternType: WORKING_DOG },
+      ],
+    });
+
+    const result = session.meltFrozenBlock("freeze", "tray");
+
+    expect(result).toMatchObject({
+      melted: true,
+      location: "tray",
+      removedCount: 3,
+      tripleCount: 1,
+    });
+    expect(result.snapshot.tray).toEqual([]);
+    expect(result.snapshot.trayBlocks).toEqual([]);
+  });
+
+  it("火把不能融化普通方块或不存在目标", () => {
+    const session = new GameSession(createLevel([createBlock("ordinary", 4, 8, WORKING_DOG)]));
+    const initial = session.getState();
+
+    expect(session.meltFrozenBlock("ordinary", "board").melted).toBe(false);
+    expect(session.meltFrozenBlock("missing", "tray").melted).toBe(false);
+    expect(session.getState()).toEqual(initial);
   });
 
   it("生成器按关卡配置生成冻结机制，固定 runSeed 可完整复现", () => {
@@ -293,6 +361,94 @@ describe("狗了个狗特殊机制", () => {
     expect(meltEffect?.querySelector(".dog-melt-effect__flake")).not.toBeNull();
     expect(meltEffect?.querySelectorAll(".dog-melt-effect__drop")).toHaveLength(4);
 
+    game.destroy();
+  });
+
+  it("火把目标选择只暴露冻结方块，取消不扣次数", () => {
+    const root = document.createElement("div");
+    const game = startDogLegeDogGame(root, {
+      runSeed: "freeze-visual-seed",
+      loadout: ["tray-capacity", "wildcard", "torch"],
+    });
+    const torchButton = root.querySelector<HTMLButtonElement>(
+      '[data-action="use-item"][data-item-id="torch"]',
+    );
+    const freezeBlocks = root.querySelectorAll<HTMLElement>(
+      '[data-testid="dog-block"][data-special-mechanism="freeze"]',
+    );
+    const ordinaryBlock = root.querySelector<HTMLElement>(
+      '[data-testid="dog-block"]:not([data-special-mechanism])',
+    );
+
+    expect(torchButton?.disabled).toBe(false);
+    expect(freezeBlocks.length).toBeGreaterThan(0);
+    torchButton?.click();
+
+    expect(game.getState().items?.phase).toBe("targeting");
+    const activeFreezeBlocks = root.querySelectorAll<HTMLElement>(
+      '[data-testid="dog-block"][data-special-mechanism="freeze"]',
+    );
+    expect(root.querySelectorAll('[data-item-targetable="true"]')).toHaveLength(
+      activeFreezeBlocks.length,
+    );
+    expect(
+      [...activeFreezeBlocks].every((block) => block.dataset.itemTargetable === "true"),
+    ).toBe(true);
+    expect(ordinaryBlock?.dataset.itemTargetable).toBeUndefined();
+
+    root.querySelector<HTMLButtonElement>('[data-action="cancel-item-target"]')?.click();
+
+    expect(game.getState().items?.phase).toBe("idle");
+    expect(game.getState().items?.items.find((item) => item.id === "torch"))
+      .toMatchObject({ remainingUses: 1 });
+    game.destroy();
+  });
+
+  it("火把融化棋盘冻结方块时显示融化特效并锁定至动画结束", async () => {
+    vi.useFakeTimers();
+    const root = document.createElement("div");
+    const game = startDogLegeDogGame(root, {
+      runSeed: "freeze-visual-seed",
+      loadout: ["tray-capacity", "wildcard", "torch"],
+    });
+    const freezeBlock = root.querySelector<HTMLElement>(
+      '[data-testid="dog-block"][data-special-mechanism="freeze"]',
+    );
+    if (freezeBlock === null) {
+      throw new Error("Expected generated freeze block");
+    }
+
+    root.querySelector<HTMLButtonElement>('[data-item-id="torch"]')?.click();
+    root
+      .querySelector<HTMLElement>(
+        `[data-testid="dog-block"][data-block-id="${freezeBlock.dataset.blockId}"]`,
+      )
+      ?.click();
+
+    expect(game.getState().inputLocked).toBe(true);
+    expect(game.getState().items?.items.find((item) => item.id === "torch"))
+      .toMatchObject({ remainingUses: 0 });
+    expect(
+      root.querySelector<HTMLElement>('[data-testid="dog-melt-effect"][data-item-id="torch"]'),
+    ).not.toBeNull();
+    expect(
+      root.querySelector<HTMLElement>(
+        `[data-testid="dog-block"][data-block-id="${freezeBlock.dataset.blockId}"]`,
+      )?.dataset.specialMechanism,
+    ).toBe(DOG_FREEZE_MECHANISM_TYPE);
+
+    await vi.advanceTimersByTimeAsync(DOG_TORCH_MELT_DURATION_MS - 1);
+    expect(game.getState().inputLocked).toBe(true);
+    await vi.advanceTimersByTimeAsync(1);
+    await Promise.resolve();
+
+    expect(game.getState().inputLocked).toBe(false);
+    expect(root.querySelector('[data-testid="dog-melt-effect"][data-item-id="torch"]')).toBeNull();
+    expect(
+      root.querySelector<HTMLElement>(
+        `[data-testid="dog-block"][data-block-id="${freezeBlock.dataset.blockId}"]`,
+      )?.dataset.specialMechanism,
+    ).toBeUndefined();
     game.destroy();
   });
 

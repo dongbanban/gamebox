@@ -2085,6 +2085,38 @@ h2 {
   animation-delay: 320ms;
 }
 
+.dog-melt-effect--torch {
+  border-color: rgba(255, 247, 207, 0.98);
+  background:
+    linear-gradient(135deg, rgba(255, 250, 226, 0.84), rgba(255, 173, 77, 0.46) 48%, rgba(255, 255, 255, 0.08)),
+    repeating-linear-gradient(118deg, rgba(255, 244, 184, 0.5) 0 2px, transparent 2px 8px);
+  box-shadow:
+    0 0 0 4px rgba(255, 157, 61, 0.46),
+    0 0 22px 8px rgba(255, 127, 36, 0.54),
+    inset 0 0 18px rgba(255, 255, 255, 0.86);
+  animation-duration: 360ms;
+}
+
+.dog-melt-effect--torch::after {
+  content: "🔥";
+  filter: drop-shadow(0 0 5px rgba(255, 126, 36, 0.9));
+  animation-duration: 280ms;
+}
+
+.dog-melt-effect--torch::before,
+.dog-melt-effect--torch .dog-melt-effect__flake,
+.dog-melt-effect--torch .dog-melt-effect__drop {
+  animation-duration: 360ms;
+}
+
+.dog-melt-effect--torch .dog-melt-effect__flake {
+  color: #fff8d8;
+  text-shadow:
+    0 0 4px #ff9b3d,
+    0 0 13px #ffd166,
+    0 0 24px #ffffff;
+}
+
 @keyframes dog-freeze-melt {
   0% {
     opacity: 1;

@@ -1,6 +1,8 @@
 import {
   GAME_SESSION_MAX_TRAY_CAPACITY,
   GameSession,
+  type GameSessionMeltLocation,
+  type GameSessionMeltResult,
 } from "@/games/dog-lege-dog/game/game-session";
 import type {
   DogLegeDogLevel,
@@ -19,6 +21,18 @@ export type DogItemTarget =
   | { readonly type: "tray-block"; readonly blockId: string }
   | { readonly type: "pattern"; readonly patternType: DogPatternType };
 
+export type DogItemEffect = {
+  readonly type: "melt";
+} & Pick<
+  GameSessionMeltResult,
+  "blockId" | "location" | "removedCount" | "tripleCount" | "meltedBlockIds"
+>;
+
+export interface DogItemAnimationCompletion {
+  readonly success: boolean;
+  readonly effect?: DogItemEffect;
+}
+
 export interface DogItemAvailabilityContext {
   readonly level: DogLegeDogLevel;
   readonly session: GameSession;
@@ -34,6 +48,8 @@ export interface DogItemExecutionResult {
   readonly success: boolean;
   readonly visualFeedback: DogItemVisualFeedback;
   readonly commit?: () => boolean;
+  readonly commitAfterAnimation?: () => DogItemAnimationCompletion;
+  readonly effect?: DogItemEffect;
 }
 
 export interface DogItemRuntimeDefinition {
@@ -70,6 +86,7 @@ export interface DogItemActionResult {
   readonly success: boolean;
   readonly requiresTarget: boolean;
   readonly itemId: DogItemId | null;
+  readonly effect: DogItemEffect | null;
   readonly snapshot: DogItemRuntimeSnapshot;
 }
 
@@ -90,6 +107,8 @@ export class DogItemRuntime {
   private phase: DogItemRuntimePhase = "idle";
   private selectedItemId: DogItemId | null = null;
   private visualFeedback: DogItemVisualFeedback | null = null;
+  private pendingAnimationCommit: (() => DogItemAnimationCompletion) | null = null;
+  private completedEffect: DogItemEffect | null = null;
 
   constructor(options: DogItemRuntimeOptions) {
     this.level = options.level;
@@ -226,10 +245,28 @@ export class DogItemRuntime {
       return this.getState();
     }
 
+    const pendingAnimationCommit = this.pendingAnimationCommit;
+    this.pendingAnimationCommit = null;
+    this.completedEffect = null;
+    if (pendingAnimationCommit !== null) {
+      try {
+        const completion = pendingAnimationCommit();
+        if (completion.success) {
+          this.completedEffect = completion.effect ?? null;
+        }
+      } catch {
+        this.completedEffect = null;
+      }
+    }
+
     this.phase = "idle";
     this.selectedItemId = null;
     this.visualFeedback = null;
     return this.getState();
+  }
+
+  getLastCompletedEffect(): DogItemEffect | null {
+    return this.completedEffect;
   }
 
   private execute(
@@ -275,10 +312,12 @@ export class DogItemRuntime {
     }
 
     this.remainingUses.set(itemId, remainingUses - 1);
+    this.pendingAnimationCommit = result.commitAfterAnimation ?? null;
+    this.completedEffect = null;
     this.phase = "animating";
     this.selectedItemId = itemId;
     this.visualFeedback = result.visualFeedback;
-    return this.createActionResult(true, true, false, itemId);
+    return this.createActionResult(true, true, false, itemId, result.effect ?? null);
   }
 
   private canUse(
@@ -311,12 +350,14 @@ export class DogItemRuntime {
     success: boolean,
     requiresTarget: boolean,
     itemId: DogItemId | null,
+    effect: DogItemEffect | null = null,
   ): DogItemActionResult {
     return Object.freeze({
       accepted,
       success,
       requiresTarget,
       itemId,
+      effect,
       snapshot: this.getState(),
     });
   }
@@ -351,7 +392,58 @@ const DOG_ITEM_BEHAVIORS: Readonly<Record<DogItemId, DogItemBehavior>> = {
     }),
   },
   wildcard: createUnavailableBehavior("wildcard"),
-  torch: createUnavailableBehavior("torch"),
+  torch: {
+    canUse: ({ session, target }) => {
+      if (target === undefined) {
+        return hasMeltableFrozenBlock(session);
+      }
+
+      const meltTarget = getMeltTarget(target);
+      return meltTarget !== undefined && session.canMeltFrozenBlock(
+        meltTarget.blockId,
+        meltTarget.location,
+      );
+    },
+    execute: ({ session, target }) => {
+      const meltTarget = target === undefined ? undefined : getMeltTarget(target);
+      if (meltTarget === undefined) {
+        return { success: false, visualFeedback: "torch" };
+      }
+
+      if (!session.canMeltFrozenBlock(meltTarget.blockId, meltTarget.location)) {
+        return { success: false, visualFeedback: "torch" };
+      }
+
+      return {
+        success: true,
+        visualFeedback: "torch",
+        effect: {
+          type: "melt",
+          blockId: meltTarget.blockId,
+          location: meltTarget.location,
+          removedCount: 0,
+          tripleCount: 0,
+          meltedBlockIds: [meltTarget.blockId],
+        },
+        commitAfterAnimation: () => {
+          const completed = session.meltFrozenBlock(meltTarget.blockId, meltTarget.location);
+          return {
+            success: completed.melted,
+            effect: completed.melted
+              ? {
+                  type: "melt",
+                  blockId: completed.blockId,
+                  location: completed.location,
+                  removedCount: completed.removedCount,
+                  tripleCount: completed.tripleCount,
+                  meltedBlockIds: completed.meltedBlockIds,
+                }
+              : undefined,
+          };
+        },
+      };
+    },
+  },
   detector: createUnavailableBehavior("detector"),
 };
 
@@ -388,6 +480,29 @@ function matchesTargetType(
   }
 
   return false;
+}
+
+function hasMeltableFrozenBlock(session: GameSession): boolean {
+  const state = session.getState();
+  return state.remainingBlocks.some(
+    (block) => session.canMeltFrozenBlock(block.id, "board"),
+  ) || state.trayBlocks.some(
+    (block) => session.canMeltFrozenBlock(block.id, "tray"),
+  );
+}
+
+function getMeltTarget(
+  target: DogItemTarget,
+): { readonly blockId: string; readonly location: GameSessionMeltLocation } | undefined {
+  if (target.type === "block") {
+    return { blockId: target.blockId, location: "board" };
+  }
+
+  if (target.type === "tray-block") {
+    return { blockId: target.blockId, location: "tray" };
+  }
+
+  return undefined;
 }
 
 function normalizeUses(value: number): number {

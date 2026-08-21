@@ -1,6 +1,7 @@
 export const BLOCK_FLIGHT_DURATION_MS = 240;
 export const DOG_ILLUSION_REVEAL_DURATION_MS = 420;
 export const DOG_ITEM_FEEDBACK_DURATION_MS = 360;
+export const DOG_TORCH_MELT_DURATION_MS = DOG_ITEM_FEEDBACK_DURATION_MS;
 
 export interface BlockFlightOptions {
   readonly root: HTMLElement;
@@ -136,6 +137,84 @@ export function animateDogItemEffect(options: DogItemEffectOptions): Cancellable
     effect.remove();
   });
   return lifecycle;
+}
+
+export interface DogTorchMeltEffectOptions {
+  readonly root: HTMLElement;
+  readonly blockId: string;
+  readonly location: "board" | "tray";
+  readonly target: DOMRect | null;
+}
+
+export function animateDogTorchMeltEffect(
+  options: DogTorchMeltEffectOptions,
+): CancellableAnimation {
+  const effect = renderDogMeltEffect({
+    root: options.root,
+    blockId: options.blockId,
+    location: options.location,
+    itemId: "torch",
+    torch: true,
+    target: options.target,
+  });
+  if (effect === null) {
+    return createAnimationLifecycle(DOG_TORCH_MELT_DURATION_MS, () => undefined);
+  }
+
+  return createAnimationLifecycle(DOG_TORCH_MELT_DURATION_MS, () => {
+    effect.remove();
+  });
+}
+
+export interface DogMeltEffectRenderOptions {
+  readonly root: HTMLElement;
+  readonly blockId: string;
+  readonly target: DOMRect | null;
+  readonly itemId?: string;
+  readonly location?: "board" | "tray";
+  readonly torch?: boolean;
+}
+
+export function renderDogMeltEffect(
+  options: DogMeltEffectRenderOptions,
+): HTMLElement | null {
+  const layer = options.root.querySelector<HTMLElement>(
+    '[data-testid="dog-animation-layer"]',
+  );
+  if (layer === null) {
+    return null;
+  }
+
+  const effect = document.createElement("div");
+  effect.className = options.torch
+    ? "dog-melt-effect dog-melt-effect--torch"
+    : "dog-melt-effect";
+  if (options.itemId !== undefined) {
+    effect.dataset.itemId = options.itemId;
+    effect.dataset.testid = "dog-melt-effect";
+  }
+  effect.dataset.meltBlockId = options.blockId;
+  if (options.location !== undefined) {
+    effect.dataset.meltLocation = options.location;
+  }
+  effect.setAttribute("aria-hidden", "true");
+  effect.innerHTML = `
+    <span class="dog-melt-effect__flake">❄</span>
+    <span class="dog-melt-effect__drop dog-melt-effect__drop--1"></span>
+    <span class="dog-melt-effect__drop dog-melt-effect__drop--2"></span>
+    <span class="dog-melt-effect__drop dog-melt-effect__drop--3"></span>
+    <span class="dog-melt-effect__drop dog-melt-effect__drop--4"></span>
+  `;
+  const layerRect = layer.getBoundingClientRect();
+  const target = options.target;
+  Object.assign(effect.style, {
+    left: `${(target?.left ?? layerRect.left) - layerRect.left}px`,
+    top: `${(target?.top ?? layerRect.top) - layerRect.top}px`,
+    width: `${target?.width || 48}px`,
+    height: `${target?.height || 48}px`,
+  });
+  layer.append(effect);
+  return effect;
 }
 
 function createAnimationLifecycle(

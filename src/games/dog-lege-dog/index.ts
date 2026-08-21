@@ -3,6 +3,8 @@ export {
   GAME_SESSION_MAX_TRAY_CAPACITY,
   GAME_SESSION_TRAY_CAPACITY,
   GameSession,
+  type GameSessionMeltLocation,
+  type GameSessionMeltResult,
   type GameSessionPendingSelectionResult,
   type GameSessionOptions,
   type GameSessionSelectionResult,
@@ -117,6 +119,8 @@ export {
 export {
   DOG_ITEM_RUNTIME_DEFINITIONS,
   DogItemRuntime,
+  type DogItemAnimationCompletion,
+  type DogItemEffect,
   getDogItemUses,
   type DogItemActionResult,
   type DogItemAvailabilityContext,
