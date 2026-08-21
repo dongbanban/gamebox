@@ -182,7 +182,7 @@ export function renderDogLoadoutEditor({
           <strong>确认更换道具组？</strong>
           <p>${isNextChange
             ? `确认后进入第 ${levelNumber} 关，已完成关卡、奖励与解锁保持不变。`
-            : `确认后只重置第 ${levelNumber} 关局内状态，棋盘与 runSeed 保持不变。`}</p>
+            : "确认后将重置本关局内状态"}</p>
           <div class="dog-loadout-confirmation__actions">
             <button class="text-button" type="button" data-action="cancel-loadout-confirmation">返回修改</button>
             <button class="primary-button" type="button" data-action="apply-loadout-change">确认更换</button>

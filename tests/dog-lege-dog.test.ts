@@ -696,6 +696,9 @@ describe("狗了个狗活动道具组变更", () => {
     root.querySelector<HTMLButtonElement>('[data-action="confirm-loadout"]')?.click();
 
     expect(root.querySelector('[data-testid="dog-loadout-confirmation"]')).not.toBeNull();
+    expect(root.querySelector('[data-testid="dog-loadout-confirmation"] p')?.textContent).toBe(
+      "确认后将重置本关局内状态",
+    );
     expect(confirmedLoadouts).toEqual([]);
 
     root.querySelector<HTMLButtonElement>('[data-action="apply-loadout-change"]')?.click();
