@@ -1,3 +1,5 @@
+import type { DogPatternType } from "@/games/dog-lege-dog/levels/level-types";
+
 export const DOG_LOADOUT_SIZE = 3 as const;
 
 export const DOG_ITEM_IDS = Object.freeze([
@@ -126,6 +128,11 @@ export interface DogLoadoutSummaryItemState {
   readonly available: boolean;
 }
 
+export interface DogLoadoutSummaryTargetState {
+  readonly targetType: DogItemTargetType | null;
+  readonly patterns: readonly DogPatternType[];
+}
+
 export function renderDogLoadoutEditor({
   mode,
   draft,
@@ -212,7 +219,35 @@ export function renderDogLoadoutSummary(
   loadout: readonly DogItemId[],
   inputLocked = false,
   itemStates: readonly DogLoadoutSummaryItemState[] = [],
+  targetState?: DogLoadoutSummaryTargetState,
 ): string {
+  const targetType = targetState?.targetType ?? null;
+  const patternTargets = targetType === "pattern" || targetType === "tray-pattern"
+    ? `
+        <div class="dog-item-pattern-targets" data-testid="dog-item-pattern-targets">
+          ${targetState?.patterns.map((patternType) => `
+            <button
+              class="dog-item-pattern-target"
+              type="button"
+              data-action="select-item-pattern"
+              data-pattern-type="${patternType}"
+            >${patternType}</button>
+          `).join("") ?? ""}
+        </div>
+      `
+    : "";
+  const targetPrompt = targetType === null
+    ? ""
+    : `
+        <div class="dog-item-targeting" data-testid="dog-item-targeting" role="status">
+          <div>
+            <span>选择道具目标</span>
+            ${patternTargets}
+          </div>
+          <button class="text-button" type="button" data-action="cancel-item-target">取消</button>
+        </div>
+      `;
+
   return `
     <section class="dog-loadout-summary" data-testid="dog-loadout-summary" aria-label="当前道具组">
       <div class="dog-loadout-summary__items">
@@ -225,13 +260,26 @@ export function renderDogLoadoutSummary(
           const usageBadge = remainingUses === undefined
             ? ""
             : `<span class="dog-loadout-thumbnail__uses" data-testid="dog-loadout-thumbnail-uses" aria-hidden="true">${remainingUses}</span>`;
-          return `<span class="dog-loadout-thumbnail${available ? "" : " dog-loadout-thumbnail--unavailable"}" data-testid="dog-loadout-thumbnail" data-loadout-id="${itemId}" data-item-available="${available}" role="img" aria-label="${item.name}${remainingLabel}">
+          return `<button
+            class="dog-loadout-thumbnail${available ? "" : " dog-loadout-thumbnail--unavailable"}"
+            type="button"
+            data-action="use-item"
+            data-item-id="${itemId}"
+            data-item-target-type="${item.targetType}"
+            data-item-feedback="${item.visualFeedback}"
+            data-testid="dog-loadout-thumbnail"
+            data-loadout-id="${itemId}"
+            data-item-available="${available}"
+            aria-label="${item.name}${remainingLabel}"
+            ${available ? "" : "disabled"}
+          >
             <span class="dog-loadout-thumbnail__placeholder" aria-hidden="true">${item.name.slice(0, 1)}</span>
             ${usageBadge}
-          </span>`;
+          </button>`;
         }).join("")}
       </div>
       <button class="text-button" type="button" data-action="edit-loadout" data-testid="dog-edit-loadout" ${inputLocked ? "disabled" : ""}>变更</button>
+      ${targetPrompt}
     </section>
   `;
 }

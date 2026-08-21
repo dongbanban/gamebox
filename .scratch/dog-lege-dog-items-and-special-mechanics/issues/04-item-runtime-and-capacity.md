@@ -21,4 +21,6 @@
 
 - 2026-08-21：完成游戏侧 `DogItemRuntime`、具体道具注册协议、目标选择/取消、原子提交、次数生命周期、输入锁、视觉反馈及暂存槽容量 `7 → 8`；重试、换组、新关均创建新尝试并清除容量加成。
 - 2026-08-21：补充运行时、GameSession、UI、三消锁、容量生命周期及移动端布局测试；棋盘适配同时按宽高缩放，保持道具面板加入后移动端可视区域与摘要间距。
+- 2026-08-21：完成本次 UI 收口：移除运行时详情道具区，顶部缩略图直接承载使用入口、次数角标与不可用置灰；目标提示/取消保留在摘要区域；暂存槽保持单行并按容量缩放槽块。
 - 2026-08-21：验证通过：`pnpm test:focused`（94 tests）、`pnpm test:ui`（44 tests）、排除 E2E 的核心 Vitest（117 tests）、`pnpm test:random`（3 tests，含默认 100 关压力档）、`pnpm build`、`pnpm test:e2e`（17/17）、`pnpm test:e2e:cross-browser`（6/6）、`pnpm typecheck`、`git diff --check`。
+- 2026-08-21：本次收口复核通过：受影响 Vitest（26 tests）、`pnpm test:focused`（94 tests）、`pnpm test:ui`（44 tests）、排除 E2E 的核心 Vitest（118 tests）、`pnpm test:random`（3 tests）、`pnpm test:e2e`（18/18）、`pnpm test:e2e:cross-browser`（6/6）、`pnpm build`、`git diff --check`。`pnpm test:qa` 仍受仓库已知 `test:core` 误收集 `tests/e2e/**` 影响，按约定拆分验证均通过。

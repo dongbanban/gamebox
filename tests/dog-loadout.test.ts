@@ -72,6 +72,12 @@ describe("狗了个狗道具组", () => {
       { id: "tray-capacity", remainingUses: 1, available: true },
       { id: "wildcard", remainingUses: 2, available: false },
     ]);
+    const targetingSummary = renderDogLoadoutSummary(
+      ["triple-removal", "tray-capacity", "wildcard"],
+      true,
+      [],
+      { targetType: "pattern", patterns: ["打工狗"] },
+    );
 
     expect(editor).toContain('data-testid="dog-loadout-modal"');
     expect(editor).toContain('role="dialog"');
@@ -82,7 +88,10 @@ describe("狗了个狗道具组", () => {
     expect(changeEditor).toContain(">取消</button>");
     expect(changeEditor).toMatch(/data-action="confirm-loadout"[^>]*>\s*确认\s*<\/button>/);
     expect(summary.match(/data-testid="dog-loadout-thumbnail"/g)).toHaveLength(3);
-    expect(summary).toContain('role="img" aria-label="道具三消移除，剩余 0 次"');
+    expect(summary.match(/data-action="use-item"/g)).toHaveLength(3);
+    expect(summary).toContain('data-item-id="tray-capacity"');
+    expect(summary).toContain('aria-label="道具三消移除，剩余 0 次"');
+    expect(summary).not.toContain('role="img"');
     expect(summary).toContain(">道</span>");
     expect(summary).not.toContain("dog-loadout-summary__label");
     expect(summary).not.toContain("dog-loadout-thumbnail__name");
@@ -90,8 +99,14 @@ describe("狗了个狗道具组", () => {
     expect(summary.match(/data-testid="dog-loadout-thumbnail-uses"/g)).toHaveLength(3);
     expect(summary).toContain('data-item-available="false"');
     expect(summary).toContain("dog-loadout-thumbnail--unavailable");
+    expect(summary.match(/disabled/g)).toHaveLength(2);
+    expect(summary).not.toContain("dog-item-panel");
     expect(summary).toContain(">1</span>");
     expect(summary).toContain('data-action="edit-loadout"');
     expect(summary).toContain(">变更</button>");
+    expect(targetingSummary).not.toContain("dog-item-panel");
+    expect(targetingSummary).toContain('data-testid="dog-item-targeting"');
+    expect(targetingSummary).toContain('data-action="select-item-pattern"');
+    expect(targetingSummary).toContain('data-action="cancel-item-target"');
   });
 });

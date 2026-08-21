@@ -1,6 +1,5 @@
 import type {
   DogLegeDogLevel,
-  DogPatternType,
 } from "@/games/dog-lege-dog/levels/first-level";
 import { BLOCK_HEIGHT, BLOCK_WIDTH } from "@/games/dog-lege-dog/levels/level-types";
 import { getDogPatternClassName, renderDogPatternAsset } from "@/games/dog-lege-dog/assets/game-assets";
@@ -16,7 +15,6 @@ import {
   type DogItemTargetType,
 } from "@/games/dog-lege-dog/game/dog-loadout";
 import { getDogItemUses } from "@/games/dog-lege-dog/game/dog-item-runtime";
-import type { DogItemRuntimeSnapshot } from "@/games/dog-lege-dog/game/dog-item-runtime";
 
 export const DOG_BLOCK_VISUAL_SIZE_PX = 48;
 export const DOG_LOGICAL_UNIT_VISUAL_WIDTH_PX = DOG_BLOCK_VISUAL_SIZE_PX / BLOCK_WIDTH;
@@ -201,75 +199,16 @@ function renderLoadoutArea(state: DogLegeDogGameState): string {
     return "";
   }
 
-  const targetPatterns = state.items.selectedItemTargetType === "tray-pattern"
+  const targetType = state.items.phase === "targeting" ? state.items.selectedItemTargetType : null;
+  const targetPatterns = targetType === "tray-pattern"
     ? [...new Set(state.session.tray)]
     : state.level.patternTypes;
-  return `${renderDogLoadoutSummary(state.loadout, state.loadoutLocked, state.items.items)}${renderDogItemPanel(state.items, state.loadoutLocked, targetPatterns)}`;
-}
-
-function renderDogItemPanel(
-  items: DogItemRuntimeSnapshot,
-  controlsLocked: boolean,
-  targetPatterns: readonly DogPatternType[],
-): string {
-  const controls = items.items.map((item) => {
-    const available = item.available && !controlsLocked;
-    return `
-    <button
-      class="dog-item-button${available ? "" : " dog-item-button--disabled"}"
-      type="button"
-      data-action="use-item"
-      data-item-id="${item.id}"
-      data-item-target-type="${item.targetType}"
-      data-item-feedback="${item.visualFeedback}"
-      aria-label="${item.name}，剩余 ${item.remainingUses} 次"
-      ${available ? "" : "disabled"}
-    >
-      <span class="dog-item-button__icon" aria-hidden="true">${item.icon}</span>
-      <span class="dog-item-button__body">
-        <strong>${item.name}</strong>
-        <small data-testid="dog-item-uses">剩余 ${item.remainingUses} 次</small>
-      </span>
-    </button>
-  `;
-  }).join("");
-  const patternTargets = items.phase === "targeting" &&
-    (items.selectedItemTargetType === "pattern" || items.selectedItemTargetType === "tray-pattern")
-    ? `
-        <div class="dog-item-pattern-targets" data-testid="dog-item-pattern-targets">
-          ${targetPatterns.map((patternType) => `
-            <button
-              class="dog-item-pattern-target"
-              type="button"
-              data-action="select-item-pattern"
-              data-pattern-type="${patternType}"
-            >${patternType}</button>
-          `).join("")}
-        </div>
-      `
-    : "";
-  const targetPrompt = items.phase === "targeting"
-    ? `
-        <div class="dog-item-targeting" data-testid="dog-item-targeting" role="status">
-          <div>
-            <span>选择道具目标</span>
-            ${patternTargets}
-          </div>
-          <button class="text-button" type="button" data-action="cancel-item-target">取消</button>
-        </div>
-      `
-    : "";
-
-  return `
-    <section class="dog-item-panel" data-testid="dog-item-panel" aria-label="本关道具">
-      <div class="dog-item-panel__heading">
-        <h3>道具</h3>
-        <span>${items.phase === "idle" ? "可主动使用" : "操作已锁定"}</span>
-      </div>
-      <div class="dog-item-panel__items">${controls}</div>
-      ${targetPrompt}
-    </section>
-  `;
+  return renderDogLoadoutSummary(
+    state.loadout,
+    state.loadoutLocked,
+    state.items.items,
+    { targetType, patterns: targetPatterns },
+  );
 }
 
 export function fitDogBoardToFrame(root: HTMLElement): void {

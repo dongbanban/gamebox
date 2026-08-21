@@ -553,9 +553,8 @@ describe("狗了个狗首关", () => {
 
     expect(capacityButton).not.toBeNull();
     expect(capacityButton?.disabled).toBe(false);
-    expect(capacityButton?.querySelector('[data-testid="dog-item-uses"]')?.textContent).toContain(
-      "剩余 1 次",
-    );
+    expect(capacityButton?.getAttribute("data-testid")).toBe("dog-loadout-thumbnail");
+    expect(root.querySelector('[data-testid="dog-item-panel"]')).toBeNull();
     expect(
       root.querySelector('[data-testid="dog-loadout-thumbnail"][data-loadout-id="tray-capacity"]'),
     ).not.toBeNull();
