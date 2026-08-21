@@ -227,7 +227,11 @@ function renderLoadoutArea(state: DogLegeDogGameState): string {
 
   const targetType = state.items.phase === "targeting" ? state.items.selectedItemTargetType : null;
   const targetPatterns = targetType === "tray-pattern"
-    ? [...new Set(state.session.tray)]
+    ? [...new Set(
+        state.session.trayBlocks
+          .filter((block) => block.specialMechanism === undefined)
+          .map((block) => block.patternType),
+      )]
     : state.level.patternTypes;
   return renderDogLoadoutSummary(
     state.loadout,
@@ -356,7 +360,6 @@ function renderTray(
 
 interface DogSpecialMechanismPresentation {
   readonly name: string;
-  readonly icon: string;
   readonly description: string;
 }
 
@@ -364,12 +367,10 @@ const DOG_SPECIAL_MECHANISM_PRESENTATIONS: Readonly<Record<string, DogSpecialMec
   Object.freeze({
     freeze: Object.freeze({
       name: "冻结方块",
-      icon: "❄",
       description: "冻结方块进入暂存槽后暂不参与三消；其他图案完成 2 次三消后自动融化。火把可将其解冻为普通方块，万能方块可直接消除。",
     }),
     illusion: Object.freeze({
       name: "幻化方块",
-      icon: "✦",
       description: "幻化方块点击后飞入暂存槽，飞行过程中显现真实图案并按真实图案参与三消。",
     }),
   });
@@ -387,12 +388,14 @@ export function renderDogSpecialMechanismModal(level: DogLegeDogLevel): string {
     : mechanismTypes.map((type) => {
       const presentation = DOG_SPECIAL_MECHANISM_PRESENTATIONS[type] ?? {
         name: type,
-        icon: "✦",
         description: "本关包含特殊规则，请结合棋盘上的视觉提示操作。",
       };
+      const mechanismBlock = level.blocks.find(
+        (block) => block.specialMechanism?.type === type,
+      );
       return `
         <li class="dog-special-mechanism-card" data-testid="dog-special-mechanism" data-special-mechanism="${type}">
-          <span class="dog-special-mechanism-card__icon" aria-hidden="true">${presentation.icon}</span>
+          ${mechanismBlock === undefined ? "" : renderSpecialMechanismThumbnail(mechanismBlock)}
           <div>
             <strong>${presentation.name}</strong>
             <p>${presentation.description}</p>
@@ -416,6 +419,28 @@ export function renderDogSpecialMechanismModal(level: DogLegeDogLevel): string {
         <ul class="dog-special-mechanism-modal__list">${mechanismCards}</ul>
       </section>
     </div>
+  `;
+}
+
+function renderSpecialMechanismThumbnail(
+  block: DogLegeDogLevel["blocks"][number],
+): string {
+  const displayPatternType = getDogIllusionDisguisedPattern(block);
+  const isIllusion = block.specialMechanism?.type === DOG_ILLUSION_MECHANISM_TYPE;
+  const glyphClass = isIllusion
+    ? "dog-block__glyph dog-block__glyph--fuzzy"
+    : "dog-block__glyph";
+  const illusionStyle = isIllusion
+    ? ` style="--dog-illusion-image: url(${getDogPatternAssetUrl(displayPatternType)});"`
+    : "";
+
+  return `
+    <span
+      class="dog-special-mechanism-card__thumbnail dog-block dog-block--${getDogPatternClassName(displayPatternType)}${getSpecialMechanismClass(block.specialMechanism?.type)} dog-block--mechanism-preview"
+      data-testid="dog-special-mechanism-thumbnail"
+      ${renderSpecialMechanismAttributes(block.specialMechanism)}
+      aria-hidden="true"${illusionStyle}
+    ><span class="${glyphClass}">${renderDogPatternAsset(displayPatternType)}</span></span>
   `;
 }
 

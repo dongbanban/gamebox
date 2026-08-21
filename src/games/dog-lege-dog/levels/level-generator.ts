@@ -14,6 +14,7 @@ import {
 } from "@/games/dog-lege-dog/levels/level-difficulty";
 import {
   findSolvability,
+  findSolvabilityFromState,
 } from "@/games/dog-lege-dog/levels/level-solvability";
 import type {
   SolvabilityResult,
@@ -57,6 +58,7 @@ export {
   DOG_SHAPE_TEMPLATES,
   calculateDifficultyMetrics,
   findSolvability,
+  findSolvabilityFromState,
   getBlockCount,
   getDifficultyTarget,
   getMaxLayers,
@@ -102,6 +104,7 @@ export type {
 export type {
   SolvabilityResult,
   SolvabilitySearchOptions,
+  SolvabilityStateOptions,
 } from "@/games/dog-lege-dog/levels/level-solvability";
 
 export class LevelGenerator {

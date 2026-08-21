@@ -9,6 +9,7 @@ import {
   FIRST_LEVEL,
   type DogBlock,
   type DogLegeDogLevel,
+  type DogPatternType,
 } from "@/games/dog-lege-dog/levels/first-level";
 import { renderDogPatternAsset } from "@/games/dog-lege-dog/assets/game-assets";
 import { DOG_GAME_ID, DOG_GAME_RESULT_DISPLAY } from "@/games/dog-lege-dog/game/game-config";
@@ -23,6 +24,7 @@ import {
   animateDogDetectorReveal,
   animateDogIllusionReveal,
   animateDogItemEffect,
+  animateDogTripleRemovalEffect,
   animateDogTorchMeltEffect,
   renderDogMeltEffect,
   type CancellableAnimation,
@@ -608,15 +610,30 @@ export function createDogLegeDogGame(
       return;
     }
 
-    const targetRect = findItemTargetElement(root, target)?.getBoundingClientRect() ?? null;
+    const targetRect = target.type === "pattern"
+      ? findTrayTarget(root, target.patternType)?.getBoundingClientRect() ?? null
+      : findItemTargetElement(root, target)?.getBoundingClientRect() ?? null;
+    const tripleSourceRects = target.type === "pattern"
+      ? captureTripleRemovalSourceRects(root, target.patternType)
+      : new Map<string, DOMRect>();
     const action = runtime.itemRuntime.confirmTarget(target);
-    applyItemAction(action, targetRect);
+    applyItemAction(action, targetRect, tripleSourceRects);
   }
 
-  function applyItemAction(action: DogItemActionResult, targetRect: DOMRect | null = null): void {
+  function applyItemAction(
+    action: DogItemActionResult,
+    targetRect: DOMRect | null = null,
+    tripleSourceRects: ReadonlyMap<string, DOMRect> = new Map(),
+  ): void {
     renderStartedGame();
     if (action.accepted && action.success && action.itemId !== null) {
-      startItemAnimation(action.itemId, action.snapshot.visualFeedback, action.effect, targetRect);
+      startItemAnimation(
+        action.itemId,
+        action.snapshot.visualFeedback,
+        action.effect,
+        targetRect,
+        tripleSourceRects,
+      );
     }
   }
 
@@ -648,12 +665,22 @@ export function createDogLegeDogGame(
     visualFeedback: DogItemRuntimeSnapshot["visualFeedback"],
     effect: DogItemActionResult["effect"],
     targetRect: DOMRect | null,
+    tripleSourceRects: ReadonlyMap<string, DOMRect>,
   ): void {
     if (runtime.itemAnimation !== null) {
       return;
     }
 
-    const animation = effect?.type === "melt"
+    const animation = effect?.type === "triple-removal"
+      ? animateDogTripleRemovalEffect({
+          root,
+          itemId,
+          patternType: effect.patternType,
+          blockIds: effect.blockIds,
+          sourceRects: tripleSourceRects,
+          target: targetRect,
+        })
+      : effect?.type === "melt"
       ? animateDogTorchMeltEffect({
           root,
           blockId: effect.blockId,
@@ -690,7 +717,10 @@ export function createDogLegeDogGame(
       runtime.inputLocked = true;
       confirmResult(result, false);
     }
-    if (completedEffect?.type === "melt" && completedEffect.removedCount > 0) {
+    if (
+      (completedEffect?.type === "melt" || completedEffect?.type === "triple-removal") &&
+      completedEffect.removedCount > 0
+    ) {
       runtime.matchFeedbackActive = true;
       runtime.feedback = "match";
       renderStartedGame();
@@ -1051,6 +1081,23 @@ function findItemTargetElement(
   return [...root.querySelectorAll<HTMLElement>(`[data-testid="${testId}"]`)].find(
     (element) => element.dataset.blockId === target.blockId,
   ) ?? null;
+}
+
+function captureTripleRemovalSourceRects(
+  root: HTMLElement,
+  patternType: DogPatternType,
+): ReadonlyMap<string, DOMRect> {
+  const rects = new Map<string, DOMRect>();
+  for (const block of root.querySelectorAll<HTMLElement>(
+    '[data-testid="dog-block"][data-pattern-type]',
+  )) {
+    if (block.dataset.patternType !== patternType || block.dataset.blockId === undefined) {
+      continue;
+    }
+
+    rects.set(block.dataset.blockId, block.getBoundingClientRect());
+  }
+  return rects;
 }
 
 function getElapsedMs(startedAt: number | null, endedAt: number | null): number {

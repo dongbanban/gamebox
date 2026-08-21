@@ -1,3 +1,5 @@
+import type { DogPatternType } from "@/games/dog-lege-dog/levels/level-types";
+
 export const BLOCK_FLIGHT_DURATION_MS = 240;
 export const DOG_ILLUSION_REVEAL_DURATION_MS = 420;
 export const DOG_ITEM_FEEDBACK_DURATION_MS = 360;
@@ -152,6 +154,69 @@ export interface DogItemEffectOptions {
   readonly root: HTMLElement;
   readonly itemId: string;
   readonly visualFeedback: string | null;
+}
+
+export interface DogTripleRemovalEffectOptions {
+  readonly root: HTMLElement;
+  readonly itemId: string;
+  readonly patternType: DogPatternType;
+  readonly blockIds: readonly string[];
+  readonly sourceRects: ReadonlyMap<string, DOMRect>;
+  readonly target: DOMRect | null;
+}
+
+export function animateDogTripleRemovalEffect(
+  options: DogTripleRemovalEffectOptions,
+): CancellableAnimation {
+  const layer = options.root.querySelector<HTMLElement>(
+    '[data-testid="dog-animation-layer"]',
+  );
+  if (layer === null) {
+    return createAnimationLifecycle(DOG_ITEM_FEEDBACK_DURATION_MS, () => undefined);
+  }
+
+  const effect = document.createElement("div");
+  effect.className = "dog-item-effect dog-triple-removal-effect";
+  effect.dataset.testid = "dog-item-effect";
+  effect.dataset.itemId = options.itemId;
+  effect.dataset.itemFeedback = "triple-removal";
+  effect.dataset.patternType = options.patternType;
+  effect.dataset.blockIds = options.blockIds.join(",");
+  const supplement = document.createElement("div");
+  supplement.dataset.testid = "dog-triple-removal-effect";
+  supplement.className = "dog-triple-removal-effect__supplement";
+  const layerRect = layer.getBoundingClientRect();
+  const target = options.target;
+  const targetLeft = (target?.left ?? layerRect.left) - layerRect.left;
+  const targetTop = (target?.top ?? layerRect.top) - layerRect.top;
+  for (const blockId of options.blockIds) {
+    const source = options.sourceRects.get(blockId);
+    const sourceElement = document.createElement("span");
+    sourceElement.className = "dog-triple-removal-effect__flight";
+    sourceElement.dataset.blockId = blockId;
+    sourceElement.textContent = "✦";
+    const sourceLeft = (source?.left ?? layerRect.left) - layerRect.left;
+    const sourceTop = (source?.top ?? layerRect.top) - layerRect.top;
+    Object.assign(sourceElement.style, {
+      left: `${sourceLeft}px`,
+      top: `${sourceTop}px`,
+      width: `${source?.width || 48}px`,
+      height: `${source?.height || 48}px`,
+      "--dog-triple-removal-target-x": `${targetLeft - sourceLeft}px`,
+      "--dog-triple-removal-target-y": `${targetTop - sourceTop}px`,
+    });
+    supplement.append(sourceElement);
+  }
+  const spark = document.createElement("span");
+  spark.className = "dog-item-effect__spark";
+  spark.setAttribute("aria-hidden", "true");
+  spark.textContent = "✦";
+  effect.append(supplement, spark);
+  layer.append(effect);
+
+  return createAnimationLifecycle(DOG_ITEM_FEEDBACK_DURATION_MS, () => {
+    effect.remove();
+  });
 }
 
 export function animateDogItemEffect(options: DogItemEffectOptions): CancellableAnimation {

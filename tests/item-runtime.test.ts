@@ -148,6 +148,201 @@ describe("DogItemRuntime", () => {
     expect(runtime.getState().phase).toBe("idle");
   });
 
+  it("暂存槽只有冻结同款时不把特殊方块当作普通目标", () => {
+    const session = new GameSession({
+      level: createLevel([createBlock("working", WORKING_DOG)]),
+      initialTrayBlocks: [
+        {
+          id: "frozen-working",
+          patternType: WORKING_DOG,
+          specialMechanism: {
+            type: DOG_FREEZE_MECHANISM_TYPE,
+            state: { status: "frozen", completedTriples: 0 },
+          },
+        },
+      ],
+    });
+    const runtime = new DogItemRuntime({
+      level: session.getState().level,
+      session,
+      loadout: ["triple-removal"],
+    });
+
+    expect(session.getTripleRemovalTargetPatterns()).toEqual([]);
+    expect(runtime.getState().items[0]).toMatchObject({
+      available: false,
+      remainingUses: 1,
+    });
+    expect(runtime.begin("triple-removal")).toMatchObject({
+      accepted: false,
+      success: false,
+    });
+    expect(session.getState().trayBlocks[0]).toHaveProperty(
+      "specialMechanism.type",
+      DOG_FREEZE_MECHANISM_TYPE,
+    );
+  });
+
+  it("槽内已有 1 个图案时自动补 2 个并一次三消", () => {
+    const session = new GameSession({
+      level: createLevel([
+        createBlock("working-1", WORKING_DOG),
+        createBlock("working-2", WORKING_DOG),
+      ]),
+      initialTray: [WORKING_DOG],
+    });
+    const runtime = new DogItemRuntime({
+      level: session.getState().level,
+      session,
+      loadout: ["triple-removal"],
+    });
+
+    expect(runtime.getState().items[0]).toMatchObject({
+      available: true,
+      remainingUses: 1,
+    });
+    expect(runtime.begin("triple-removal")).toMatchObject({
+      accepted: true,
+      success: false,
+      requiresTarget: true,
+    });
+
+    const action = runtime.confirmTarget({ type: "pattern", patternType: WORKING_DOG });
+
+    expect(action).toMatchObject({
+      accepted: true,
+      success: true,
+      itemId: "triple-removal",
+      effect: {
+        type: "triple-removal",
+        patternType: WORKING_DOG,
+        blockIds: ["working-1", "working-2"],
+        removedCount: 3,
+        tripleCount: 1,
+      },
+    });
+    expect(session.getState().remainingBlocks).toHaveLength(2);
+    expect(session.getState().tray).toEqual([WORKING_DOG]);
+    expect(session.getState().status).toBe("playing");
+    expect(runtime.getState().phase).toBe("animating");
+    expect(runtime.getState().items[0]?.remainingUses).toBe(0);
+
+    runtime.completeAnimation();
+
+    expect(runtime.getState().phase).toBe("idle");
+    expect(session.getState().remainingBlocks).toEqual([]);
+    expect(session.getState().tray).toEqual([]);
+    expect(session.getState().status).toBe("won");
+    expect(runtime.getLastCompletedEffect()).toMatchObject({
+      type: "triple-removal",
+      removedCount: 3,
+      tripleCount: 1,
+    });
+  });
+
+  it("槽内已有 2 个非相邻图案时自动补 1 个并只移除完整三消", () => {
+    const session = new GameSession({
+      level: createLevel([
+        createBlock("working-board", WORKING_DOG),
+        createBlock("single-1", SINGLE_DOG),
+        createBlock("single-2", SINGLE_DOG),
+      ]),
+      initialTray: [WORKING_DOG, SINGLE_DOG, WORKING_DOG],
+    });
+    const runtime = new DogItemRuntime({
+      level: session.getState().level,
+      session,
+      loadout: ["triple-removal"],
+    });
+
+    runtime.begin("triple-removal");
+    const action = runtime.confirmTarget({ type: "pattern", patternType: WORKING_DOG });
+
+    expect(action).toMatchObject({
+      accepted: true,
+      success: true,
+      effect: {
+        type: "triple-removal",
+        blockIds: ["working-board"],
+        removedCount: 3,
+        tripleCount: 1,
+      },
+    });
+    runtime.completeAnimation();
+    expect(session.getState().tray).toEqual([SINGLE_DOG]);
+    expect(session.getState().remainingBlocks.map((block) => block.id)).toEqual([
+      "single-1",
+      "single-2",
+    ]);
+  });
+
+  it("多个同类补充方案均可解时按关卡稳定顺序选择", () => {
+    const session = new GameSession({
+      level: createLevel([
+        createBlock("working-b", WORKING_DOG, undefined, { x: 20 }),
+        createBlock("working-a", WORKING_DOG, undefined, { x: 0, z: 1 }),
+        createBlock("working-c", WORKING_DOG, undefined, { x: 40 }),
+        createBlock("working-d", WORKING_DOG, undefined, { x: 60 }),
+        createBlock("single-cover", SINGLE_DOG),
+        createBlock("single-1", SINGLE_DOG),
+        createBlock("single-2", SINGLE_DOG),
+      ]),
+      initialTray: [WORKING_DOG, WORKING_DOG],
+    });
+    const runtime = new DogItemRuntime({
+      level: session.getState().level,
+      session,
+      loadout: ["triple-removal"],
+    });
+
+    runtime.begin("triple-removal");
+    const action = runtime.confirmTarget({ type: "pattern", patternType: WORKING_DOG });
+
+    expect(action).toMatchObject({
+      accepted: true,
+      success: true,
+      effect: { blockIds: ["working-a"] },
+    });
+  });
+
+  it("补齐后无道具路径不存在时失败且保持局面与次数原子不变", () => {
+    const session = new GameSession({
+      level: createLevel([
+        createBlock("working-1", WORKING_DOG),
+        createBlock("working-2", WORKING_DOG),
+        createBlock("orphan-1", SINGLE_DOG),
+        createBlock("orphan-2", SINGLE_DOG),
+        createBlock("orphan-3", SINGLE_DOG),
+      ]),
+      initialTray: [
+        WORKING_DOG,
+        LICKING_DOG,
+        GUARD_DOG,
+        "拆家狗",
+        "龇牙狗",
+        "社恐狗",
+      ],
+    });
+    const runtime = new DogItemRuntime({
+      level: session.getState().level,
+      session,
+      loadout: ["triple-removal"],
+    });
+    const initial = session.getState();
+
+    expect(runtime.getState().items[0]).toMatchObject({
+      available: false,
+      remainingUses: 1,
+    });
+    expect(runtime.begin("triple-removal")).toMatchObject({
+      accepted: false,
+      success: false,
+    });
+    expect(runtime.getState().phase).toBe("idle");
+    expect(runtime.getState().items[0]?.remainingUses).toBe(1);
+    expect(session.getState()).toEqual(initial);
+  });
+
   it("执行提交失败时不扣次数，并保持目标选择状态等待重试或取消", () => {
     const session = new GameSession(createLevel([createBlock("remaining", WORKING_DOG)]));
     const definition: DogItemRuntimeDefinition = {

@@ -422,7 +422,7 @@ describe("狗了个狗首关", () => {
     );
     expect(root.querySelectorAll('[data-testid="dog-flight"]')).toHaveLength(2);
 
-    await vi.runAllTimersAsync();
+    await vi.advanceTimersByTimeAsync(DOG_ITEM_FEEDBACK_DURATION_MS);
 
     expect(root.querySelectorAll('[data-testid="dog-flight"]')).toHaveLength(0);
     game.destroy();
@@ -588,6 +588,20 @@ describe("狗了个狗首关", () => {
     expect(
       root.querySelector('[data-testid="dog-special-mechanism"][data-special-mechanism="freeze"]'),
     ).not.toBeNull();
+    expect(root.querySelectorAll('[data-testid="dog-special-mechanism-thumbnail"]')).toHaveLength(2);
+    const freezeThumbnail = root.querySelector<HTMLElement>(
+      '[data-testid="dog-special-mechanism-thumbnail"][data-special-mechanism="freeze"]',
+    );
+    const illusionThumbnail = root.querySelector<HTMLElement>(
+      '[data-testid="dog-special-mechanism-thumbnail"][data-special-mechanism="illusion"]',
+    );
+    expect(freezeThumbnail?.classList.contains("dog-block--mechanism-preview")).toBe(true);
+    expect(freezeThumbnail?.classList.contains("dog-block--special-freeze")).toBe(true);
+    expect(freezeThumbnail?.querySelector("img")).not.toBeNull();
+    expect(illusionThumbnail?.classList.contains("dog-block--mechanism-preview")).toBe(true);
+    expect(illusionThumbnail?.classList.contains("dog-block--special-illusion")).toBe(true);
+    expect(illusionThumbnail?.querySelector(".dog-block__glyph--fuzzy")).not.toBeNull();
+    expect(root.querySelectorAll(".dog-special-mechanism-card__icon")).toHaveLength(0);
     expect(root.querySelector('[data-testid="dog-special-mechanism-modal"]')?.textContent).toContain(
       "冻结方块",
     );
@@ -624,6 +638,62 @@ describe("狗了个狗首关", () => {
       remainingUses: 0,
       available: false,
     });
+    game.destroy();
+  });
+
+  it("道具三消移除自动补齐棋盘方块并在动画期间锁定输入", async () => {
+    vi.useFakeTimers();
+    const root = document.createElement("div");
+    const game = startTestGame(root, {
+      loadout: ["triple-removal", "tray-capacity", "wildcard"],
+    });
+    let targetPattern: string | undefined;
+
+    for (const blockId of game.getState().level.solutionPath) {
+      const state = game.getState();
+      const tripleRemoval = state.items?.items.find((item) => item.id === "triple-removal");
+      const targetBlock = state.session.trayBlocks.find(
+        (block) => block.specialMechanism === undefined,
+      );
+      if (tripleRemoval?.available && targetBlock !== undefined) {
+        targetPattern = targetBlock.patternType;
+        break;
+      }
+
+      if (state.session.status !== "playing") {
+        break;
+      }
+      game.selectBlock(blockId);
+      await vi.runAllTimersAsync();
+    }
+
+    expect(targetPattern).toBeDefined();
+    const itemButton = root.querySelector<HTMLButtonElement>(
+      '[data-action="use-item"][data-item-id="triple-removal"]',
+    );
+    expect(itemButton?.disabled).toBe(false);
+    itemButton?.click();
+
+    expect(game.getState().items?.phase).toBe("targeting");
+    expect(game.getState().inputLocked).toBe(true);
+    const targetButton = root.querySelector<HTMLButtonElement>(
+      `[data-action="select-item-pattern"][data-pattern-type="${targetPattern}"]`,
+    );
+    expect(targetButton).not.toBeNull();
+    targetButton?.click();
+
+    expect(game.getState().items?.phase).toBe("animating");
+    expect(game.getState().inputLocked).toBe(true);
+    expect(game.getState().session.status).toBe("playing");
+    expect(root.querySelector('[data-testid="dog-item-effect"][data-item-id="triple-removal"]'))
+      .not.toBeNull();
+    expect(root.querySelector('[data-testid="dog-triple-removal-effect"]')).not.toBeNull();
+
+    await vi.runAllTimersAsync();
+
+    expect(game.getState().items?.phase).toBe("idle");
+    expect(game.getState().inputLocked).toBe(false);
+    expect(root.querySelector('[data-testid="dog-item-effect"]')).toBeNull();
     game.destroy();
   });
 

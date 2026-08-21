@@ -10,6 +10,8 @@ export {
   type GameSessionSelectionResult,
   type GameSessionSnapshot,
   type GameSessionStatus,
+  type GameSessionTripleRemovalPlan,
+  type GameSessionTripleRemovalResult,
 } from "@/games/dog-lege-dog/game/game-session";
 
 export {
@@ -62,6 +64,7 @@ export {
   DOG_REWARD_CONFIG_VERSION,
   findSolvablePath,
   findSolvability,
+  findSolvabilityFromState,
   getDifficultyTarget,
   getLevelDifficultyMetrics,
   LEVEL_GENERATOR_VERSION,
@@ -82,6 +85,7 @@ export {
   type DogLevelRewardConfig,
   type SolvabilityResult,
   type SolvabilitySearchOptions,
+  type SolvabilityStateOptions,
 } from "@/games/dog-lege-dog/levels/level-generator";
 export { createRunSeed } from "@/games/dog-lege-dog/levels/level-random";
 export {

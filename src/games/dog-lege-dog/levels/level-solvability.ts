@@ -23,6 +23,12 @@ export interface SolvabilitySearchOptions {
   readonly specialMechanismHandlers?: readonly DogSpecialMechanismHandler[];
 }
 
+export interface SolvabilityStateOptions extends SolvabilitySearchOptions {
+  readonly remainingBlockIds: readonly string[];
+  readonly initialTray: readonly DogTrayBlock[];
+  readonly trayCapacity?: number;
+}
+
 export interface PathVerification {
   readonly status: Exclude<DogSolvabilityStatus, "budget-exhausted">;
   readonly solvable: boolean;
@@ -101,6 +107,121 @@ export function findSolvability(
     0,
   );
   return normalizeSolvabilityResult(level, searchResult, handlers);
+}
+
+export function findSolvabilityFromState(
+  level: DogLevelGeometry & { readonly solutionPath?: readonly string[] },
+  options: SolvabilityStateOptions,
+): SolvabilityResult {
+  const handlers = createDogSpecialMechanismHandlerMap(
+    options.specialMechanismHandlers ?? DOG_SPECIAL_MECHANISM_HANDLERS,
+  );
+  const trayCapacity = resolveTrayCapacity(options.trayCapacity);
+  const graph = createBlockGraph(level.blocks);
+  const remainingIds = new Set(options.remainingBlockIds);
+  if (remainingIds.size !== options.remainingBlockIds.length) {
+    return createSolvabilityResult(
+      "unsolvable",
+      [],
+      options.initialTray.length,
+      "solvability state contains duplicate remaining block ids",
+    );
+  }
+
+  let remainingMask = 0n;
+  for (const [index, block] of level.blocks.entries()) {
+    if (remainingIds.has(block.id)) {
+      remainingMask |= blockMask(index);
+    }
+  }
+  if (remainingIds.size !== countBits(remainingMask)) {
+    return createSolvabilityResult(
+      "unsolvable",
+      [],
+      options.initialTray.length,
+      "solvability state contains an unknown remaining block id",
+    );
+  }
+
+  const higherBlockCounts = [...graph.higherBlockCounts];
+  for (let index = 0; index < level.blocks.length; index += 1) {
+    if ((remainingMask & blockMask(index)) !== 0n) {
+      continue;
+    }
+
+    for (const lowerIndex of graph.lowerBlockIndicesByHigher[index]) {
+      higherBlockCounts[lowerIndex] -= 1;
+    }
+  }
+  if (higherBlockCounts.some((count) => count < 0)) {
+    return createSolvabilityResult(
+      "unsolvable",
+      [],
+      options.initialTray.length,
+      "solvability state contains inconsistent layer counts",
+    );
+  }
+
+  const tray = cloneTray(options.initialTray);
+  if (tray.length >= trayCapacity && remainingMask !== 0n) {
+    return createSolvabilityResult(
+      "unsolvable",
+      [],
+      tray.length,
+      "solvability state already fills the tray before clearing the board",
+    );
+  }
+
+  const preferredPath = (level.solutionPath ?? [])
+    .filter((blockId) => remainingIds.has(blockId));
+  const preferredRank = createPreferredRank(preferredPath, graph);
+  const preferredVerification = verifyStateContinuation(
+    level,
+    graph,
+    remainingMask,
+    higherBlockCounts,
+    tray,
+    preferredPath,
+    handlers,
+    trayCapacity,
+  );
+  if (preferredVerification !== undefined) {
+    return preferredVerification;
+  }
+
+  const greedyResult = findGreedyContinuation(
+    level,
+    graph,
+    remainingMask,
+    higherBlockCounts,
+    tray,
+    handlers,
+    preferredRank,
+    [],
+    0,
+    trayCapacity,
+  );
+  if (greedyResult !== undefined) {
+    return greedyResult;
+  }
+
+  return searchSolvableContinuation(
+    level,
+    graph,
+    remainingMask,
+    higherBlockCounts,
+    tray,
+    handlers,
+    preferredRank,
+    {
+      completedStates: new Map<string, SolvabilityMemoEntry>(),
+      branchAttempts: 0,
+      branchBudget: resolveBranchBudget(options),
+    },
+    [],
+    0,
+    trayCapacity,
+  );
 }
 
 export function verifyRemovalPath(
@@ -358,6 +479,7 @@ function searchSolvableContinuation(
   context: SolvabilitySearchContext,
   path: readonly string[],
   pathDepth: number,
+  trayCapacity = 7,
 ): SolvabilityResult {
   if (remainingMask === 0n) {
     if (tray.some((block) => block.specialMechanism !== undefined)) {
@@ -445,7 +567,7 @@ function searchSolvableContinuation(
       handlers,
     );
     trayPeakPressure = Math.max(trayPeakPressure, nextTray.length);
-    if (nextTray.length >= 7 && nextRemainingMask !== 0n) {
+    if (nextTray.length >= trayCapacity && nextRemainingMask !== 0n) {
       continue;
     }
 
@@ -464,6 +586,7 @@ function searchSolvableContinuation(
       context,
       [...path, level.blocks[selectedIndex].id],
       pathDepth + 1,
+      trayCapacity,
     );
     trayPeakPressure = Math.max(trayPeakPressure, result.trayPeakPressure);
     if (result.status !== "unsolvable") {
@@ -527,6 +650,7 @@ function findGreedyContinuation(
   preferredRank: ReadonlyMap<number, number>,
   initialPath: readonly string[],
   initialPathDepth: number,
+  trayCapacity = 7,
 ): SolvabilityResult | undefined {
   let remainingMask = initialRemainingMask;
   const higherBlockCounts = [...initialHigherBlockCounts];
@@ -556,7 +680,7 @@ function findGreedyContinuation(
     trayPeakPressure = Math.max(trayPeakPressure, tray.length);
     path.push(level.blocks[selectedIndex].id);
     pathDepth += 1;
-    if (tray.length >= 7 && remainingMask !== 0n) {
+    if (tray.length >= trayCapacity && remainingMask !== 0n) {
       return undefined;
     }
 
@@ -566,6 +690,49 @@ function findGreedyContinuation(
   }
 
   if (tray.some((block) => block.specialMechanism !== undefined)) {
+    return undefined;
+  }
+
+  return createSolvabilityResult("solvable", path, trayPeakPressure);
+}
+
+function verifyStateContinuation(
+  level: DogLevelGeometry,
+  graph: BlockGraph,
+  initialRemainingMask: bigint,
+  initialHigherBlockCounts: readonly number[],
+  initialTray: readonly DogTrayBlock[],
+  path: readonly string[],
+  handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
+  trayCapacity: number,
+): SolvabilityResult | undefined {
+  let remainingMask = initialRemainingMask;
+  const higherBlockCounts = [...initialHigherBlockCounts];
+  const tray = cloneTray(initialTray);
+  let trayPeakPressure = tray.length;
+
+  for (const blockId of path) {
+    const blockIndex = graph.indexById.get(blockId);
+    if (
+      blockIndex === undefined ||
+      (remainingMask & blockMask(blockIndex)) === 0n ||
+      higherBlockCounts[blockIndex] !== 0
+    ) {
+      return undefined;
+    }
+
+    remainingMask &= ~blockMask(blockIndex);
+    insertDogBlockIntoTray(tray, toTrayBlock(level.blocks[blockIndex]), handlers);
+    trayPeakPressure = Math.max(trayPeakPressure, tray.length);
+    if (tray.length >= trayCapacity && remainingMask !== 0n) {
+      return undefined;
+    }
+    for (const lowerIndex of graph.lowerBlockIndicesByHigher[blockIndex]) {
+      higherBlockCounts[lowerIndex] -= 1;
+    }
+  }
+
+  if (remainingMask !== 0n || tray.some((block) => block.specialMechanism !== undefined)) {
     return undefined;
   }
 
@@ -666,6 +833,15 @@ function toTrayBlock(block: DogLevelGeometry["blocks"][number]): DogTrayBlock {
   };
 }
 
+function cloneTray(tray: readonly DogTrayBlock[]): DogTrayBlock[] {
+  return tray.map((block) => ({
+    ...block,
+    ...(block.specialMechanism === undefined
+      ? {}
+      : { specialMechanism: { ...block.specialMechanism, state: { ...block.specialMechanism.state } } }),
+  }));
+}
+
 function serializeMechanism(block: DogTrayBlock): string {
   if (block.specialMechanism === undefined) {
     return "ordinary";
@@ -689,6 +865,28 @@ export function resolveBranchBudget(options: SolvabilitySearchOptions): number {
   }
 
   return options.branchBudget;
+}
+
+function resolveTrayCapacity(value: number | undefined): number {
+  if (value === undefined) {
+    return 7;
+  }
+
+  if (!Number.isSafeInteger(value) || value < 1) {
+    throw new Error("solvability tray capacity must be a positive integer");
+  }
+
+  return value;
+}
+
+function countBits(value: bigint): number {
+  let remaining = value;
+  let count = 0;
+  while (remaining !== 0n) {
+    remaining &= remaining - 1n;
+    count += 1;
+  }
+  return count;
 }
 
 function createPathVerification(

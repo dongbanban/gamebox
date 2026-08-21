@@ -22,6 +22,14 @@ export type DogItemTarget =
   | { readonly type: "pattern"; readonly patternType: DogPatternType };
 
 export type DogItemEffect =
+  | {
+      readonly type: "triple-removal";
+      readonly patternType: DogPatternType;
+      readonly blockIds: readonly string[];
+      readonly removedCount: number;
+      readonly tripleCount: number;
+      readonly meltedBlockIds?: readonly string[];
+    }
   | ({
       readonly type: "melt";
     } & Pick<
@@ -385,7 +393,57 @@ interface DogItemBehavior {
 }
 
 const DOG_ITEM_BEHAVIORS: Readonly<Record<DogItemId, DogItemBehavior>> = {
-  "triple-removal": createUnavailableBehavior("triple-removal"),
+  "triple-removal": {
+    canUse: ({ session, target }) => {
+      const patternType = getPatternTarget(target);
+      if (patternType !== undefined) {
+        return session.canRemoveTriple(patternType);
+      }
+
+      return session.getTripleRemovalTargetPatterns().some((candidatePatternType) =>
+        session.canRemoveTriple(candidatePatternType),
+      );
+    },
+    execute: ({ session, target }) => {
+      const patternType = getPatternTarget(target);
+      const plan = patternType === undefined
+        ? null
+        : session.getTripleRemovalPlan(patternType);
+      if (plan === null) {
+        return { success: false, visualFeedback: "triple-removal" };
+      }
+
+      let completed: ReturnType<GameSession["removeTriple"]> | null = null;
+      return {
+        success: true,
+        visualFeedback: "triple-removal",
+        effect: {
+          type: "triple-removal" as const,
+          patternType: plan.patternType,
+          blockIds: plan.blockIds,
+          removedCount: plan.removedCount,
+          tripleCount: plan.tripleCount,
+        },
+        commit: () => true,
+        commitAfterAnimation: () => {
+          completed = session.removeTriple(plan.patternType);
+          return {
+            success: completed.removed,
+            effect: completed.removed
+              ? {
+                  type: "triple-removal" as const,
+                  patternType: completed.patternType,
+                  blockIds: completed.blockIds,
+                  removedCount: completed.removedCount,
+                  tripleCount: completed.tripleCount,
+                  meltedBlockIds: completed.meltedBlockIds,
+                }
+              : undefined,
+          };
+        },
+      };
+    },
+  },
   "tray-capacity": {
     canUse: ({ session }) =>
       session.getState().status === "playing" &&
@@ -542,6 +600,12 @@ function getDetectorTarget(
   target: DogItemTarget,
 ): { readonly blockId: string } | undefined {
   return target.type === "block" ? { blockId: target.blockId } : undefined;
+}
+
+function getPatternTarget(
+  target: DogItemTarget | undefined,
+): DogPatternType | undefined {
+  return target?.type === "pattern" ? target.patternType : undefined;
 }
 
 function getMeltTarget(
