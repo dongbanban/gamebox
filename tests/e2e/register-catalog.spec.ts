@@ -197,7 +197,10 @@ test.describe("注册与游戏目录", () => {
     await confirmDogLoadout(page);
     await expect(page.getByTestId("dog-loadout-thumbnail")).toHaveCount(3);
     await expect(page.locator(".dog-loadout-thumbnail__name")).toHaveCount(0);
-    await expect(page.locator(".dog-loadout-thumbnail__placeholder").first()).toHaveText("道");
+    await expect(page.locator(".dog-loadout-thumbnail__icon img").first()).toHaveAttribute(
+      "src",
+      "assets/dog-item-icons/triple-removal.svg",
+    );
     await expect(page.getByRole("button", { name: "变更" })).toBeVisible();
 
     const layout = await page.evaluate(() => {
@@ -227,8 +230,8 @@ test.describe("注册与游戏目录", () => {
       const summary = document.querySelector<HTMLElement>('[data-testid="dog-loadout-summary"]');
       const changeButton = document.querySelector<HTMLElement>('[data-testid="dog-edit-loadout"]');
       const thumbnail = document.querySelector<HTMLElement>('[data-testid="dog-loadout-thumbnail"]');
-      const placeholders = [
-        ...document.querySelectorAll<HTMLElement>('.dog-loadout-thumbnail__placeholder'),
+      const itemIcons = [
+        ...document.querySelectorAll<HTMLElement>('.dog-loadout-thumbnail__icon'),
       ];
       return {
         viewportWidth: window.innerWidth,
@@ -247,12 +250,12 @@ test.describe("注册与游戏目录", () => {
         loadoutSummary: summary === null ? null : serializeRect(summary),
         loadoutChangeButton: changeButton === null ? null : serializeRect(changeButton),
         loadoutThumbnail: thumbnail === null ? null : serializeRect(thumbnail),
-        loadoutPlaceholders: placeholders.map((placeholder) => {
-          const style = getComputedStyle(placeholder);
-          const placeholderRect = placeholder.getBoundingClientRect();
+        loadoutItemIcons: itemIcons.map((itemIcon) => {
+          const style = getComputedStyle(itemIcon);
+          const itemIconRect = itemIcon.getBoundingClientRect();
           return {
-            width: placeholderRect.width,
-            height: placeholderRect.height,
+            width: itemIconRect.width,
+            height: itemIconRect.height,
             backgroundColor: style.backgroundColor,
             color: style.color,
           };
@@ -292,14 +295,14 @@ test.describe("注册与游戏目录", () => {
     expect(layout.loadoutSummary?.top).toBeCloseTo(layout.boardBottom + 8, 1);
     expect(layout.loadoutSummaryBackground).toBe("rgba(0, 0, 0, 0)");
     expect(layout.loadoutSummaryBorderWidth).toBe("0px");
-    expect(layout.loadoutPlaceholders).toHaveLength(3);
+    expect(layout.loadoutItemIcons).toHaveLength(3);
     expect(
-      layout.loadoutPlaceholders.every(
-        (placeholder) =>
-          placeholder.width === 48 &&
-          placeholder.height === 48 &&
-          placeholder.backgroundColor === "rgb(63, 148, 195)" &&
-          placeholder.color === "rgb(255, 253, 248)",
+      layout.loadoutItemIcons.every(
+        (itemIcon) =>
+          itemIcon.width === 48 &&
+          itemIcon.height === 48 &&
+          itemIcon.backgroundColor === "rgb(255, 209, 102)" &&
+          itemIcon.color === "rgb(255, 253, 248)",
       ),
     ).toBe(true);
     expect(layout.loadoutChangeButtonColor).toBe("rgb(63, 148, 195)");

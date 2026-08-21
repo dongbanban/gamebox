@@ -1,4 +1,5 @@
 import type { DogPatternType } from "@/games/dog-lege-dog/levels/level-types";
+import { renderDogItemAsset } from "@/games/dog-lege-dog/assets/item-assets";
 
 export const DOG_LOADOUT_SIZE = 3 as const;
 
@@ -164,7 +165,7 @@ export function renderDogLoadoutEditor({
         data-loadout-id="${item.id}"
         aria-pressed="${selected}"
       >
-        <span class="dog-loadout-option__icon" aria-hidden="true">${item.icon}</span>
+        <span class="dog-loadout-option__icon" aria-hidden="true">${renderDogItemAsset(item.id)}</span>
         <span class="dog-loadout-option__body">
           <strong>${item.name}</strong>
           <span>${item.description}</span>
@@ -273,7 +274,7 @@ export function renderDogLoadoutSummary(
             aria-label="${item.name}${remainingLabel}"
             ${available ? "" : "disabled"}
           >
-            <span class="dog-loadout-thumbnail__placeholder" aria-hidden="true">${item.name.slice(0, 1)}</span>
+            <span class="dog-loadout-thumbnail__icon" aria-hidden="true">${renderDogItemAsset(item.id)}</span>
             ${usageBadge}
           </button>`;
         }).join("")}

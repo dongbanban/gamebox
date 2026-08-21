@@ -297,10 +297,14 @@ describe("狗了个狗道具组选择", () => {
     expect(loadoutSlot?.querySelectorAll('[data-testid="dog-loadout-thumbnail"]')).toHaveLength(3);
     expect(loadoutSummary?.querySelector('.dog-loadout-summary__label')).toBeNull();
     expect(
-      [...loadoutSummary?.querySelectorAll<HTMLElement>('.dog-loadout-thumbnail__placeholder') ?? []].map(
-        (icon) => icon.textContent,
+      [...loadoutSummary?.querySelectorAll<HTMLImageElement>('.dog-loadout-thumbnail__icon img') ?? []].map(
+        (icon) => icon.getAttribute("src"),
       ),
-    ).toEqual(["道", "暂", "万"]);
+    ).toEqual([
+      "assets/dog-item-icons/triple-removal.svg",
+      "assets/dog-item-icons/tray-capacity-plus-one.svg",
+      "assets/dog-item-icons/wildcard.svg",
+    ]);
     expect(loadoutSlot?.nextElementSibling?.getAttribute("data-testid")).toBe("dog-tray-region");
     expect(loadoutSummary?.lastElementChild?.getAttribute("data-action")).toBe("edit-loadout");
     expect(loadoutSummary?.lastElementChild?.textContent).toContain("变更");
