@@ -223,7 +223,8 @@ export function renderDogLoadoutSummary(
   targetState?: DogLoadoutSummaryTargetState,
 ): string {
   const targetType = targetState?.targetType ?? null;
-  const patternTargets = targetType === "pattern" || targetType === "tray-pattern"
+  const isPatternTarget = targetType === "pattern" || targetType === "tray-pattern";
+  const patternTargets = isPatternTarget
     ? `
         <div class="dog-item-pattern-targets" data-testid="dog-item-pattern-targets">
           ${targetState?.patterns.map((patternType) => `
@@ -237,17 +238,14 @@ export function renderDogLoadoutSummary(
         </div>
       `
     : "";
-  const targetPrompt = targetType === null
-    ? ""
-    : `
+  const targetPrompt = isPatternTarget
+    ? `
         <div class="dog-item-targeting" data-testid="dog-item-targeting" role="status">
-          <div>
-            <span>选择道具目标</span>
-            ${patternTargets}
-          </div>
-          <button class="text-button" type="button" data-action="cancel-item-target">取消</button>
+          <span class="dog-item-targeting__label">选择道具目标</span>
+          ${patternTargets}
         </div>
-      `;
+      `
+    : "";
 
   return `
     <section class="dog-loadout-summary" data-testid="dog-loadout-summary" aria-label="当前道具组">
@@ -279,7 +277,12 @@ export function renderDogLoadoutSummary(
           </button>`;
         }).join("")}
       </div>
-      <button class="text-button" type="button" data-action="edit-loadout" data-testid="dog-edit-loadout" ${inputLocked ? "disabled" : ""}>变更</button>
+      <div class="dog-loadout-summary__actions" data-testid="dog-loadout-actions">
+        ${targetType === null
+          ? ""
+          : '<button class="text-button dog-loadout-summary__cancel" type="button" data-action="cancel-item-target">取消</button>'}
+        <button class="text-button dog-loadout-summary__edit" type="button" data-action="edit-loadout" data-testid="dog-edit-loadout" ${inputLocked ? "disabled" : ""}>变更</button>
+      </div>
       ${targetPrompt}
     </section>
   `;

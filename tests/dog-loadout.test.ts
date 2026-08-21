@@ -108,8 +108,20 @@ describe("狗了个狗道具组", () => {
     expect(summary).toContain('data-action="edit-loadout"');
     expect(summary).toContain(">变更</button>");
     expect(targetingSummary).not.toContain("dog-item-panel");
+    expect(targetingSummary).toMatch(
+      /<div class="dog-loadout-summary__actions"[^>]*>[\s\S]*data-action="cancel-item-target"[\s\S]*data-action="edit-loadout"[\s\S]*<\/div>/,
+    );
     expect(targetingSummary).toContain('data-testid="dog-item-targeting"');
     expect(targetingSummary).toContain('data-action="select-item-pattern"');
-    expect(targetingSummary).toContain('data-action="cancel-item-target"');
+
+    const blockTargetingSummary = renderDogLoadoutSummary(
+      ["triple-removal", "tray-capacity", "wildcard"],
+      true,
+      [],
+      { targetType: "block", patterns: [] },
+    );
+    expect(blockTargetingSummary).not.toContain("选择道具目标");
+    expect(blockTargetingSummary).not.toContain("dog-item-targeting");
+    expect(blockTargetingSummary).toContain('data-action="cancel-item-target"');
   });
 });

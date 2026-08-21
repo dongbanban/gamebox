@@ -828,9 +828,16 @@ h2 {
   line-height: 1;
 }
 
+.dog-loadout-summary__actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
 .dog-loadout-summary .text-button {
   flex: 0 0 auto;
-  margin-left: auto;
   padding: 8px 0;
   border-bottom: 0;
   color: var(--sky-deep);
@@ -841,6 +848,31 @@ h2 {
   border-bottom: 0;
   color: var(--sky-deep);
   text-decoration: underline;
+}
+
+.dog-loadout-summary__actions .text-button {
+  margin-left: 0;
+}
+
+.dog-loadout-summary__edit:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  text-decoration: none;
+}
+
+.dog-loadout-summary .dog-loadout-summary__cancel {
+  padding: 6px 10px;
+  border: 1px solid rgba(79, 155, 192, 0.34);
+  border-radius: 999px;
+  background: rgba(251, 254, 255, 0.74);
+  color: var(--ink-muted);
+}
+
+.dog-loadout-summary .dog-loadout-summary__cancel:hover {
+  border-color: var(--sky-deep);
+  background: rgba(217, 244, 255, 0.9);
+  color: var(--sky-deep);
+  text-decoration: none;
 }
 
 .dog-loadout-summary > .dog-item-targeting {
@@ -856,25 +888,21 @@ h2 {
 }
 
 .dog-item-targeting {
-  margin-top: 8px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  background: rgba(255, 209, 102, 0.28);
+  margin-top: 2px;
+  padding: 0;
   color: var(--ink-muted);
   font-size: 11px;
 }
 
-.dog-item-targeting .text-button {
-  padding: 4px 0;
-  border-bottom: 0;
-  color: var(--sky-deep);
+.dog-item-targeting__label {
+  flex: 0 0 auto;
 }
 
 .dog-item-pattern-targets {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  margin-top: 6px;
+  margin-top: 0;
 }
 
 .dog-item-pattern-target {
@@ -1851,6 +1879,31 @@ h2 {
   box-shadow:
     4px 5px 0 rgba(22, 68, 93, 0.2),
     inset 0 0 0 1px rgba(22, 68, 93, 0.12);
+}
+
+.dog-tray__slot--item-targetable {
+  position: relative;
+  z-index: 4;
+  cursor: pointer;
+  border-color: rgba(53, 198, 239, 0.96);
+  box-shadow:
+    0 0 0 3px rgba(77, 213, 255, 0.34),
+    0 0 18px rgba(64, 204, 255, 0.72),
+    4px 5px 0 rgba(22, 68, 93, 0.2),
+    inset 0 0 0 2px rgba(239, 254, 255, 0.96),
+    inset 0 0 14px rgba(121, 225, 255, 0.44);
+}
+
+.dog-tray__slot--item-targetable:hover,
+.dog-tray__slot--item-targetable:focus-visible {
+  outline: 0;
+  transform: translateY(-2px) scale(1.035);
+  box-shadow:
+    0 0 0 4px rgba(77, 213, 255, 0.42),
+    0 0 24px rgba(64, 204, 255, 0.88),
+    4px 5px 0 rgba(22, 68, 93, 0.2),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.98),
+    inset 0 0 16px rgba(121, 225, 255, 0.54);
 }
 
 .dog-tray__slot .dog-block__glyph {

@@ -385,6 +385,13 @@ describe("狗了个狗特殊机制", () => {
     torchButton?.click();
 
     expect(game.getState().items?.phase).toBe("targeting");
+    expect(root.querySelector('[data-testid="dog-item-targeting"]')).toBeNull();
+    expect(
+      root.querySelector('[data-testid="dog-loadout-actions"] [data-action="edit-loadout"]'),
+    ).not.toBeNull();
+    expect(
+      root.querySelector('[data-testid="dog-loadout-actions"] [data-action="cancel-item-target"]'),
+    ).not.toBeNull();
     const activeFreezeBlocks = root.querySelectorAll<HTMLElement>(
       '[data-testid="dog-block"][data-special-mechanism="freeze"]',
     );
@@ -401,6 +408,57 @@ describe("狗了个狗特殊机制", () => {
     expect(game.getState().items?.phase).toBe("idle");
     expect(game.getState().items?.items.find((item) => item.id === "torch"))
       .toMatchObject({ remainingUses: 1 });
+    game.destroy();
+  });
+
+  it("火把目标选择高亮暂存槽冻结方块", async () => {
+    vi.useFakeTimers();
+    const root = document.createElement("div");
+    const game = startDogLegeDogGame(root, {
+      runSeed: "freeze-visual-seed",
+      loadout: ["tray-capacity", "wildcard", "torch"],
+    });
+    const level = game.getState().level;
+    const freezeBlock = level.blocks.find(
+      (block) => block.specialMechanism?.type === DOG_FREEZE_MECHANISM_TYPE,
+    );
+    if (freezeBlock === undefined) {
+      throw new Error("Expected generated freeze block");
+    }
+    const freezePathIndex = level.solutionPath.indexOf(freezeBlock.id);
+    if (freezePathIndex < 0) {
+      throw new Error("Expected freeze block in solution path");
+    }
+
+    for (const blockId of level.solutionPath.slice(0, freezePathIndex + 1)) {
+      game.selectBlock(blockId);
+      await vi.runAllTimersAsync();
+    }
+
+    const trayFreezeBlocks = game.getState().session.trayBlocks.filter(
+      (block) => block.specialMechanism?.type === DOG_FREEZE_MECHANISM_TYPE,
+    );
+    expect(trayFreezeBlocks.length).toBeGreaterThan(0);
+
+    root.querySelector<HTMLButtonElement>('[data-item-id="torch"]')?.click();
+
+    const targetableTraySlots = root.querySelectorAll<HTMLElement>(
+      '[data-testid="dog-tray-slot"][data-item-targetable="true"]',
+    );
+    expect(targetableTraySlots).toHaveLength(trayFreezeBlocks.length);
+    expect(
+      [...targetableTraySlots].every((slot) =>
+        slot.classList.contains("dog-tray__slot--item-targetable"),
+      ),
+    ).toBe(true);
+    expect(
+      [...root.querySelectorAll<HTMLElement>('[data-testid="dog-tray-slot"]')]
+        .filter((slot) => slot.dataset.itemTargetable !== "true")
+        .every((slot) => !slot.classList.contains("dog-tray__slot--item-targetable")),
+    ).toBe(true);
+
+    root.querySelector<HTMLButtonElement>('[data-action="cancel-item-target"]')?.click();
+    expect(game.getState().items?.phase).toBe("idle");
     game.destroy();
   });
 

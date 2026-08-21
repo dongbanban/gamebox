@@ -447,8 +447,9 @@ function renderTraySlots(
     const targetAttributes = selectingBlockTarget
       ? 'data-item-targetable="true" role="button" tabindex="0"'
       : "";
+    const targetClass = selectingBlockTarget ? " dog-tray__slot--item-targetable" : "";
     return `
-      <li class="dog-tray__slot dog-tray__slot--filled dog-block--${getDogPatternClassName(displayPatternType)}${mechanismClass}" data-testid="dog-tray-slot" data-block-id="${block.id}" data-pattern-type="${block.patternType}" ${mechanismAttributes} ${targetAttributes} ${illusionStyle} aria-label="${selectingBlockTarget ? "选择道具目标" : block.patternType}">
+      <li class="dog-tray__slot dog-tray__slot--filled${targetClass} dog-block--${getDogPatternClassName(displayPatternType)}${mechanismClass}" data-testid="dog-tray-slot" data-block-id="${block.id}" data-pattern-type="${block.patternType}" ${mechanismAttributes} ${targetAttributes} ${illusionStyle} aria-label="${selectingBlockTarget ? "选择道具目标" : block.patternType}">
         <span class="${glyphClass}">${renderDogPatternAsset(displayPatternType)}</span>
       </li>
     `;

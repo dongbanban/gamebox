@@ -306,8 +306,8 @@ describe("狗了个狗道具组选择", () => {
       "assets/dog-item-icons/wildcard.svg",
     ]);
     expect(loadoutSlot?.nextElementSibling?.getAttribute("data-testid")).toBe("dog-tray-region");
-    expect(loadoutSummary?.lastElementChild?.getAttribute("data-action")).toBe("edit-loadout");
-    expect(loadoutSummary?.lastElementChild?.textContent).toContain("变更");
+    expect(loadoutSummary?.lastElementChild?.getAttribute("data-testid")).toBe("dog-loadout-actions");
+    expect(loadoutSummary?.querySelector('[data-action="edit-loadout"]')?.textContent).toContain("变更");
     expect(root.querySelector('[data-testid="dog-block"]:not([disabled])')).not.toBeNull();
     expect(store.snapshot().state?.games[GAME_ID].loadout).toEqual([
       "triple-removal",
