@@ -2,9 +2,14 @@ import type {
   DogLegeDogLevel,
 } from "@/games/dog-lege-dog/levels/first-level";
 import { BLOCK_HEIGHT, BLOCK_WIDTH } from "@/games/dog-lege-dog/levels/level-types";
-import { getDogPatternClassName, renderDogPatternAsset } from "@/games/dog-lege-dog/assets/game-assets";
+import {
+  getDogPatternAssetUrl,
+  getDogPatternClassName,
+  renderDogPatternAsset,
+} from "@/games/dog-lege-dog/assets/game-assets";
 import type { GameSessionSnapshot } from "@/games/dog-lege-dog/game/game-session";
 import {
+  DOG_ILLUSION_MECHANISM_TYPE,
   getDogIllusionDisguisedPattern,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
 import type {
@@ -265,6 +270,13 @@ function renderBlock(
   const className = getDogPatternClassName(displayPatternType);
   const mechanismClass = getSpecialMechanismClass(block.specialMechanism?.type);
   const mechanismAttributes = renderSpecialMechanismAttributes(block.specialMechanism);
+  const isIllusion = block.specialMechanism?.type === DOG_ILLUSION_MECHANISM_TYPE;
+  const glyphClass = isIllusion
+    ? "dog-block__glyph dog-block__glyph--fuzzy"
+    : "dog-block__glyph";
+  const illusionStyle = isIllusion
+    ? ` --dog-illusion-image: url(${getDogPatternAssetUrl(displayPatternType)});`
+    : "";
   const blockWidth = BLOCK_WIDTH * DOG_LOGICAL_UNIT_VISUAL_WIDTH_PX;
   const blockHeight = BLOCK_HEIGHT * DOG_LOGICAL_UNIT_VISUAL_HEIGHT_PX;
   const left = clampVisualBlockPosition(
@@ -295,8 +307,8 @@ function renderBlock(
       data-z="${block.z}"
       aria-label="${selectingBlockTarget ? "选择道具目标" : "可选择方块"}"
       ${selectable ? "" : "disabled"}
-      style="--block-left: ${left}px; --block-top: ${top}px; --block-width: ${blockWidth}px; --block-height: ${blockHeight}px; --block-z: ${block.z};"
-    ><span class="dog-block__glyph">${renderDogPatternAsset(displayPatternType)}</span></button>
+      style="--block-left: ${left}px; --block-top: ${top}px; --block-width: ${blockWidth}px; --block-height: ${blockHeight}px; --block-z: ${block.z};${illusionStyle}"
+    ><span class="${glyphClass}">${renderDogPatternAsset(displayPatternType)}</span></button>
   `;
 }
 

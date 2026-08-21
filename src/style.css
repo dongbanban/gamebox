@@ -1353,8 +1353,75 @@ h2 {
 }
 
 .dog-block--special-illusion .dog-block__glyph {
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
   opacity: 0.76;
   filter: saturate(0.72) contrast(0.94);
+}
+
+.dog-block--special-illusion .dog-block__glyph--fuzzy {
+  animation: dog-illusion-fuzzy-base 820ms steps(9, end) infinite;
+}
+
+.dog-block--special-illusion .dog-block__glyph--fuzzy::before,
+.dog-block--special-illusion .dog-block__glyph--fuzzy::after {
+  position: absolute;
+  z-index: 2;
+  inset: -10%;
+  display: block;
+  background-image: var(--dog-illusion-image);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  content: "";
+  pointer-events: none;
+  mask-image: repeating-linear-gradient(
+    to bottom,
+    #000 0 3px,
+    transparent 3px 5px
+  );
+  -webkit-mask-image: repeating-linear-gradient(
+    to bottom,
+    #000 0 3px,
+    transparent 3px 5px
+  );
+}
+
+.dog-block--special-illusion .dog-block__glyph--fuzzy::before {
+  opacity: 0.42;
+  filter: blur(0.2px) saturate(1.5) hue-rotate(-10deg);
+  mix-blend-mode: screen;
+  animation: dog-illusion-fuzzy-slice-a 720ms steps(8, end) infinite;
+}
+
+.dog-block--special-illusion .dog-block__glyph--fuzzy::after {
+  opacity: 0.34;
+  filter: blur(0.35px) saturate(1.65) hue-rotate(14deg);
+  mix-blend-mode: multiply;
+  animation: dog-illusion-fuzzy-slice-b 940ms steps(10, end) infinite;
+}
+
+.dog-block--special-illusion .dog-block__glyph--fuzzy > img {
+  position: relative;
+  z-index: 1;
+  filter: contrast(1.08) saturate(0.78);
+  animation: dog-illusion-fuzzy-image 880ms steps(9, end) infinite;
+}
+
+.dog-block--special-illusion:not(:disabled):hover .dog-block__glyph--fuzzy,
+.dog-block--special-illusion:focus-visible .dog-block__glyph--fuzzy {
+  animation-duration: 420ms;
+}
+
+.dog-block--special-illusion:not(:disabled):hover .dog-block__glyph--fuzzy::before,
+.dog-block--special-illusion:focus-visible .dog-block__glyph--fuzzy::before {
+  animation-duration: 360ms;
+}
+
+.dog-block--special-illusion:not(:disabled):hover .dog-block__glyph--fuzzy::after,
+.dog-block--special-illusion:focus-visible .dog-block__glyph--fuzzy::after {
+  animation-duration: 470ms;
 }
 
 @keyframes dog-illusion-pulse {
@@ -1403,6 +1470,117 @@ h2 {
   50% {
     opacity: 1;
     transform: rotate(180deg) scale(1.14);
+  }
+}
+
+@keyframes dog-illusion-fuzzy-base {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  14% {
+    transform: translate3d(-1px, 0.5px, 0) skewX(-1deg);
+  }
+
+  32% {
+    transform: translate3d(1px, -0.5px, 0) skewX(0.8deg);
+  }
+
+  55% {
+    transform: translate3d(-0.5px, 0, 0) skewX(1.4deg);
+  }
+
+  76% {
+    transform: translate3d(1.5px, 0.5px, 0) skewX(-0.7deg);
+  }
+}
+
+@keyframes dog-illusion-fuzzy-image {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  18% {
+    transform: translate3d(-1px, 0, 0) scale(1.015, 0.99);
+  }
+
+  42% {
+    transform: translate3d(1px, 0.5px, 0) scale(0.99, 1.01);
+  }
+
+  68% {
+    transform: translate3d(-0.5px, -0.5px, 0) scale(1.01, 0.985);
+  }
+}
+
+@keyframes dog-illusion-fuzzy-slice-a {
+  0%,
+  100% {
+    clip-path: inset(7% -12% 72% -12%);
+    transform: translate3d(-1.5px, 0, 0) skewX(-2deg);
+  }
+
+  16% {
+    clip-path: inset(39% -12% 43% -12%);
+    transform: translate3d(2px, 0.5px, 0) skewX(2deg);
+  }
+
+  33% {
+    clip-path: inset(69% -12% 12% -12%);
+    transform: translate3d(-2.5px, -0.5px, 0) skewX(-1deg);
+  }
+
+  51% {
+    clip-path: inset(22% -12% 59% -12%);
+    transform: translate3d(1px, 0, 0) skewX(1.5deg);
+  }
+
+  73% {
+    clip-path: inset(54% -12% 29% -12%);
+    transform: translate3d(-1px, 0.5px, 0) skewX(-2.5deg);
+  }
+}
+
+@keyframes dog-illusion-fuzzy-slice-b {
+  0%,
+  100% {
+    clip-path: inset(28% -12% 51% -12%);
+    transform: translate3d(1.5px, 0.5px, 0) skewX(1.5deg);
+  }
+
+  19% {
+    clip-path: inset(79% -12% 4% -12%);
+    transform: translate3d(-2px, 0, 0) skewX(-1.2deg);
+  }
+
+  38% {
+    clip-path: inset(5% -12% 78% -12%);
+    transform: translate3d(2.5px, -0.5px, 0) skewX(2.2deg);
+  }
+
+  59% {
+    clip-path: inset(47% -12% 35% -12%);
+    transform: translate3d(-1px, 0.5px, 0) skewX(-2deg);
+  }
+
+  81% {
+    clip-path: inset(63% -12% 19% -12%);
+    transform: translate3d(1px, 0, 0) skewX(1deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dog-block--special-illusion,
+  .dog-block--special-illusion::before,
+  .dog-block--special-illusion::after,
+  .dog-block--special-illusion .dog-block__glyph--fuzzy,
+  .dog-block--special-illusion .dog-block__glyph--fuzzy::before,
+  .dog-block--special-illusion .dog-block__glyph--fuzzy::after,
+  .dog-block--special-illusion .dog-block__glyph--fuzzy > img,
+  .dog-flying-block--illusion::before {
+    animation: none;
   }
 }
 

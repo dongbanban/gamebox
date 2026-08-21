@@ -2,6 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { BLOCK_FLIGHT_DURATION_MS } from "@/games/dog-lege-dog/assets/animation-effects";
+import { getDogPatternAssetUrl } from "@/games/dog-lege-dog/assets/game-assets";
 import {
   BLOCK_HEIGHT,
   BLOCK_WIDTH,
@@ -316,6 +317,10 @@ describe("狗了个狗特殊机制", () => {
     expect(boardBlock?.dataset.disguisedPatternType).toBe(disguisedPatternType);
     expect(boardBlock?.dataset.specialMechanismState).toBe("masked");
     expect(boardBlock?.classList.contains("dog-block--special-illusion")).toBe(true);
+    expect(boardBlock?.querySelector(".dog-block__glyph--fuzzy")).not.toBeNull();
+    expect(boardBlock?.style.getPropertyValue("--dog-illusion-image")).toContain(
+      getDogPatternAssetUrl(disguisedPatternType as DogPatternType),
+    );
 
     const beforeTrayLength = game.getState().session.tray.length;
     game.selectBlock(illusion.id);
