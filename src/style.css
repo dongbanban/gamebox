@@ -1300,6 +1300,112 @@ h2 {
   filter: none;
 }
 
+.dog-block--special-illusion {
+  border: 3px solid rgba(255, 244, 188, 0.98);
+  box-shadow:
+    0 0 0 3px rgba(255, 209, 102, 0.72),
+    0 0 16px 5px rgba(255, 209, 102, 0.54),
+    4px 5px 0 rgba(22, 68, 93, 0.2),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.88);
+  animation: dog-illusion-pulse 1600ms ease-in-out infinite;
+}
+
+.dog-block--special-illusion::before {
+  z-index: 2;
+  inset: -4px;
+  border: 2px solid rgba(255, 249, 214, 0.96);
+  border-radius: 13px;
+  background:
+    repeating-conic-gradient(
+      from 18deg,
+      rgba(255, 255, 255, 0.52) 0deg 10deg,
+      rgba(255, 209, 102, 0.08) 10deg 24deg
+    ),
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.24) 0 2px, transparent 2px 8px);
+  box-shadow:
+    0 0 0 2px rgba(255, 222, 133, 0.48),
+    0 0 14px 4px rgba(255, 209, 102, 0.42),
+    inset 0 0 12px rgba(255, 255, 255, 0.6);
+  content: "";
+  animation: dog-illusion-mask 1200ms linear infinite;
+}
+
+.dog-block--special-illusion::after {
+  position: absolute;
+  z-index: 3;
+  right: -5px;
+  bottom: -5px;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  color: #fff8d6;
+  content: "✦";
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1;
+  pointer-events: none;
+  text-shadow:
+    0 0 4px #f3b82e,
+    0 0 12px #ffe79a,
+    2px 3px 0 rgba(22, 68, 93, 0.28);
+  animation: dog-illusion-spark 1200ms ease-in-out infinite;
+}
+
+.dog-block--special-illusion .dog-block__glyph {
+  opacity: 0.76;
+  filter: saturate(0.72) contrast(0.94);
+}
+
+@keyframes dog-illusion-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 3px rgba(255, 209, 102, 0.62),
+      0 0 14px 4px rgba(255, 209, 102, 0.42),
+      4px 5px 0 rgba(22, 68, 93, 0.2),
+      inset 0 0 0 2px rgba(255, 255, 255, 0.82);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 5px rgba(255, 233, 157, 0.86),
+      0 0 22px 8px rgba(255, 209, 102, 0.68),
+      4px 5px 0 rgba(22, 68, 93, 0.2),
+      inset 0 0 0 3px rgba(255, 255, 255, 0.96);
+  }
+}
+
+@keyframes dog-illusion-mask {
+  0% {
+    opacity: 0.44;
+    transform: rotate(0deg) scale(0.98);
+  }
+
+  50% {
+    opacity: 0.86;
+    transform: rotate(5deg) scale(1.03);
+  }
+
+  100% {
+    opacity: 0.44;
+    transform: rotate(10deg) scale(0.98);
+  }
+}
+
+@keyframes dog-illusion-spark {
+  0%,
+  100% {
+    opacity: 0.62;
+    transform: rotate(0deg) scale(0.9);
+  }
+
+  50% {
+    opacity: 1;
+    transform: rotate(180deg) scale(1.14);
+  }
+}
+
 .dog-tray__slot.dog-block--special-freeze {
   overflow: visible;
   z-index: 2;
@@ -1846,6 +1952,38 @@ h2 {
     4px 5px 0 rgba(22, 68, 93, 0.2),
     0 10px 24px rgba(22, 68, 93, 0.2);
   will-change: transform, opacity;
+}
+
+.dog-flying-block--illusion {
+  border: 3px solid rgba(255, 244, 188, 0.98);
+  box-shadow:
+    0 0 0 3px rgba(255, 209, 102, 0.72),
+    0 0 18px 6px rgba(255, 209, 102, 0.56),
+    4px 5px 0 rgba(22, 68, 93, 0.2);
+}
+
+.dog-flying-block--illusion::before {
+  position: absolute;
+  z-index: 2;
+  inset: -4px;
+  border: 2px solid rgba(255, 249, 214, 0.96);
+  border-radius: 13px;
+  background: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.34) 0 2px, transparent 2px 8px);
+  content: "";
+  pointer-events: none;
+  animation: dog-illusion-flight-reveal 240ms ease-out both;
+}
+
+@keyframes dog-illusion-flight-reveal {
+  0% {
+    opacity: 0.92;
+    transform: scale(1) rotate(0deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.24) rotate(18deg);
+  }
 }
 
 .dog-flying-block .dog-block__glyph {

@@ -4,6 +4,9 @@ import type {
 import { BLOCK_HEIGHT, BLOCK_WIDTH } from "@/games/dog-lege-dog/levels/level-types";
 import { getDogPatternClassName, renderDogPatternAsset } from "@/games/dog-lege-dog/assets/game-assets";
 import type { GameSessionSnapshot } from "@/games/dog-lege-dog/game/game-session";
+import {
+  getDogIllusionDisguisedPattern,
+} from "@/games/dog-lege-dog/game/special-mechanisms";
 import type {
   DogLegeDogGameState,
   DogVisualFeedback,
@@ -258,7 +261,8 @@ function renderBlock(
   inputLocked: boolean,
   itemTargetType: DogItemTargetType | null,
 ): string {
-  const className = getDogPatternClassName(block.patternType);
+  const displayPatternType = getDogIllusionDisguisedPattern(block);
+  const className = getDogPatternClassName(displayPatternType);
   const mechanismClass = getSpecialMechanismClass(block.specialMechanism?.type);
   const mechanismAttributes = renderSpecialMechanismAttributes(block.specialMechanism);
   const blockWidth = BLOCK_WIDTH * DOG_LOGICAL_UNIT_VISUAL_WIDTH_PX;
@@ -292,7 +296,7 @@ function renderBlock(
       aria-label="${selectingBlockTarget ? "选择道具目标" : "可选择方块"}"
       ${selectable ? "" : "disabled"}
       style="--block-left: ${left}px; --block-top: ${top}px; --block-width: ${blockWidth}px; --block-height: ${blockHeight}px; --block-z: ${block.z};"
-    ><span class="dog-block__glyph">${renderDogPatternAsset(block.patternType)}</span></button>
+    ><span class="dog-block__glyph">${renderDogPatternAsset(displayPatternType)}</span></button>
   `;
 }
 
@@ -333,6 +337,11 @@ const DOG_SPECIAL_MECHANISM_PRESENTATIONS: Readonly<Record<string, DogSpecialMec
       name: "冻结方块",
       icon: "❄",
       description: "冻结方块进入暂存槽后暂不参与三消；其他图案完成 2 次三消后自动融化。火把可将其解冻为普通方块，万能方块可直接消除。",
+    }),
+    illusion: Object.freeze({
+      name: "幻化方块",
+      icon: "✦",
+      description: "幻化方块点击后飞入暂存槽，飞行过程中显现真实图案并按真实图案参与三消。",
     }),
   });
 
@@ -421,9 +430,13 @@ function renderSpecialMechanismAttributes(
 
   const status = mechanism.state.status;
   const completedTriples = mechanism.state.completedTriples;
+  const disguisedPatternType = mechanism.state.disguisedPatternType;
   return [
     `data-special-mechanism="${mechanism.type}"`,
     typeof status === "string" ? `data-special-mechanism-state="${status}"` : "",
+    typeof disguisedPatternType === "string"
+      ? `data-disguised-pattern-type="${disguisedPatternType}"`
+      : "",
     typeof completedTriples === "number"
       ? `data-special-mechanism-progress="${completedTriples}"`
       : "",

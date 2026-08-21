@@ -1,18 +1,20 @@
+import { DOG_LEVEL_SPECIAL_MECHANISM_DEFINITIONS } from "@/games/dog-lege-dog/game/game-config";
 import {
-  DOG_LEVEL_SPECIAL_MECHANISM_DEFINITIONS,
-} from "@/games/dog-lege-dog/game/game-config";
-import type {
-  DogBlock,
-  DogSpecialMechanism,
-  DogSpecialMechanismConfig,
-  DogSpecialMechanismHandler,
-  DogPatternType,
-  DogTrayBlock,
+  DOG_PATTERN_TYPES,
+  type DogBlock,
+  type DogPatternType,
+  type DogSpecialMechanism,
+  type DogSpecialMechanismConfig,
+  type DogSpecialMechanismHandler,
+  type DogSpecialMechanismStateValue,
+  type DogTrayBlock,
 } from "@/games/dog-lege-dog/levels/level-types";
 import type { SeededRandom } from "@/games/dog-lege-dog/levels/level-random";
 
 export const DOG_FREEZE_MECHANISM_TYPE = "freeze" as const;
 export const DOG_FREEZE_MELT_TRIPLE_COUNT = 2 as const;
+export const DOG_ILLUSION_MECHANISM_TYPE = "illusion" as const;
+export const DOG_ILLUSION_MASK_STATUS = "masked" as const;
 
 export const DOG_SPECIAL_MECHANISM_HANDLERS: readonly DogSpecialMechanismHandler[] =
   Object.freeze([
@@ -20,6 +22,12 @@ export const DOG_SPECIAL_MECHANISM_HANDLERS: readonly DogSpecialMechanismHandler
       type: DOG_FREEZE_MECHANISM_TYPE,
       isMatchable: () => false,
       onSuccessfulTriples: freezeAfterSuccessfulTriples,
+    }),
+    Object.freeze({
+      type: DOG_ILLUSION_MECHANISM_TYPE,
+      isMatchable: () => true,
+      onEnterTray: revealIllusionOnEnterTray,
+      onSuccessfulTriples: keepIllusionBlock,
     }),
   ]);
 
@@ -45,17 +53,61 @@ export function getDogSpecialMechanismConfigs(
 }
 
 export function createDogSpecialMechanism(type: string): DogSpecialMechanism {
-  if (type !== DOG_FREEZE_MECHANISM_TYPE) {
-    throw new Error(`狗了个狗 special mechanism is unsupported: ${type}`);
+  if (type === DOG_FREEZE_MECHANISM_TYPE) {
+    return Object.freeze({
+      type: DOG_FREEZE_MECHANISM_TYPE,
+      state: Object.freeze({
+        status: "frozen",
+        completedTriples: 0,
+      }),
+    });
+  }
+
+  if (type === DOG_ILLUSION_MECHANISM_TYPE) {
+    return Object.freeze({
+      type: DOG_ILLUSION_MECHANISM_TYPE,
+      state: Object.freeze({
+        status: DOG_ILLUSION_MASK_STATUS,
+        disguisedPatternType: null,
+      }),
+    });
+  }
+
+  throw new Error(`狗了个狗 special mechanism is unsupported: ${type}`);
+}
+
+export function createDogIllusionMechanism(
+  realPatternType: DogPatternType,
+  random: SeededRandom,
+): DogSpecialMechanism {
+  const candidates = DOG_PATTERN_TYPES.filter(
+    (patternType) => patternType !== realPatternType,
+  );
+  const disguisedPatternType = candidates[random.nextInt(candidates.length)];
+  if (disguisedPatternType === undefined) {
+    throw new Error("狗了个狗 illusion disguised pattern cannot be selected");
   }
 
   return Object.freeze({
-    type: DOG_FREEZE_MECHANISM_TYPE,
+    type: DOG_ILLUSION_MECHANISM_TYPE,
     state: Object.freeze({
-      status: "frozen",
-      completedTriples: 0,
+      status: DOG_ILLUSION_MASK_STATUS,
+      disguisedPatternType,
     }),
   });
+}
+
+export function getDogIllusionDisguisedPattern(
+  block: Pick<DogBlock, "patternType" | "specialMechanism">,
+): DogPatternType {
+  if (block.specialMechanism?.type !== DOG_ILLUSION_MECHANISM_TYPE) {
+    return block.patternType;
+  }
+
+  const disguisedPatternType = block.specialMechanism.state.disguisedPatternType;
+  return isDogPatternType(disguisedPatternType) && disguisedPatternType !== block.patternType
+    ? disguisedPatternType
+    : block.patternType;
 }
 
 export function createDogSpecialMechanismHandlerMap(
@@ -118,6 +170,17 @@ export function assignDogSpecialMechanisms(
     }
 
     assignedBlocks = selected.blocks;
+    if (configuration.type === DOG_ILLUSION_MECHANISM_TYPE) {
+      const selectedIndexSet = new Set(selected.indices);
+      assignedBlocks = assignedBlocks.map((block, index) =>
+        selectedIndexSet.has(index)
+          ? {
+              ...block,
+              specialMechanism: createDogIllusionMechanism(block.patternType, random),
+            }
+          : block,
+      );
+    }
     for (const index of selected.indices) {
       assignedIndices.add(index);
     }
@@ -202,6 +265,23 @@ function freezeAfterSuccessfulTriples(
       },
     },
   };
+}
+
+function revealIllusionOnEnterTray(block: DogTrayBlock): DogTrayBlock {
+  if (block.specialMechanism?.type !== DOG_ILLUSION_MECHANISM_TYPE) {
+    return block;
+  }
+
+  const { specialMechanism: _specialMechanism, ...revealedBlock } = block;
+  return revealedBlock;
+}
+
+function keepIllusionBlock(block: DogTrayBlock): DogTrayBlock {
+  return block;
+}
+
+function isDogPatternType(value: DogSpecialMechanismStateValue): value is DogPatternType {
+  return typeof value === "string" && DOG_PATTERN_TYPES.includes(value as DogPatternType);
 }
 
 function getCompletedTriples(mechanism: DogSpecialMechanism): number {

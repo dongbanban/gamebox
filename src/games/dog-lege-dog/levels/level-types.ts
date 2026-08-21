@@ -39,6 +39,7 @@ export interface DogTrayBlock {
 export interface DogSpecialMechanismHandler {
   readonly type: string;
   isMatchable(mechanism: DogSpecialMechanism): boolean;
+  onEnterTray?(block: DogTrayBlock): DogTrayBlock;
   onSuccessfulTriples(
     block: DogTrayBlock,
     tripleCount: number,

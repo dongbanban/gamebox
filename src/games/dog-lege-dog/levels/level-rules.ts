@@ -68,13 +68,32 @@ export function insertDogBlockIntoTray(
   block: DogTrayBlock,
   handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
 ): DogTrayMatchResolution {
+  const trayBlock = prepareDogTrayBlock(block, handlers);
+  insertDogTrayBlock(tray, trayBlock);
+
+  return resolveDogTrayMatches(tray, handlers);
+}
+
+export function insertDogTrayBlock(
+  tray: DogTrayBlock[],
+  block: DogTrayBlock,
+): void {
   insertAfterLastMatching(
     tray,
     block,
     (candidate) => candidate.patternType === block.patternType,
   );
+}
 
-  return resolveDogTrayMatches(tray, handlers);
+export function prepareDogTrayBlock(
+  block: DogTrayBlock,
+  handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
+): DogTrayBlock {
+  if (block.specialMechanism === undefined) {
+    return block;
+  }
+
+  return getHandler(block, handlers).onEnterTray?.(block) ?? block;
 }
 
 export function resolveDogTrayMatches(

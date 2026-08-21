@@ -9,12 +9,15 @@ import {
 import { createBlockGraph, type BlockGraph } from "@/games/dog-lege-dog/levels/level-graph";
 import { freezeDogLegeDogLevel } from "@/games/dog-lege-dog/levels/level-immutability";
 import {
+  insertDogTrayBlock,
   insertDogBlockIntoTray,
+  prepareDogTrayBlock,
   resolveDogTrayMatches,
 } from "@/games/dog-lege-dog/levels/level-rules";
 import {
   createDogSpecialMechanismHandlerMap,
   DOG_SPECIAL_MECHANISM_HANDLERS,
+  DOG_ILLUSION_MECHANISM_TYPE,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
 
 export const GAME_SESSION_BASE_TRAY_CAPACITY = 7 as const;
@@ -41,6 +44,11 @@ export interface GameSessionSnapshot {
   readonly selectableBlockIds: readonly string[];
 }
 
+export interface GameSessionPendingSelectionResult {
+  readonly selected: boolean;
+  readonly snapshot: GameSessionSnapshot;
+}
+
 export interface GameSessionSelectionResult extends GameSessionSnapshot {
   readonly selected: boolean;
   readonly removedCount: number;
@@ -56,6 +64,7 @@ export class GameSession {
   private readonly higherBlockCounts: number[];
   private readonly specialMechanismHandlers: ReadonlyMap<string, DogSpecialMechanismHandler>;
   private tray: DogTrayBlock[];
+  private pendingSelection: { readonly block: DogBlock } | null = null;
   private trayCapacity: number;
   private status: GameSessionStatus = "playing";
 
@@ -109,13 +118,23 @@ export class GameSession {
       throw new Error(`GameSession tray cannot contain more than ${this.trayCapacity} blocks`);
     }
 
+    if (
+      this.tray.some(
+        (block) => block.specialMechanism?.type === DOG_ILLUSION_MECHANISM_TYPE,
+      )
+    ) {
+      throw new Error("GameSession illusion blocks cannot start in the tray");
+    }
+
     resolveDogTrayMatches(this.tray, this.specialMechanismHandlers);
     this.updateResult();
   }
 
   getState(): GameSessionSnapshot {
     const remainingBlocks = Object.freeze([...this.remainingBlocks.values()]);
-    const trayBlocks = Object.freeze(this.tray.map(cloneTrayBlock));
+    const trayBlocks = Object.freeze(
+      this.getVisibleTrayBlocks().map(cloneTrayBlock),
+    );
 
     return Object.freeze({
       status: this.status,
@@ -129,7 +148,7 @@ export class GameSession {
   }
 
   canSelectBlock(blockId: string): boolean {
-    if (this.status !== "playing") {
+    if (this.status !== "playing" || this.pendingSelection !== null) {
       return false;
     }
 
@@ -143,7 +162,11 @@ export class GameSession {
   }
 
   increaseTrayCapacity(): boolean {
-    if (this.status !== "playing" || this.trayCapacity >= GAME_SESSION_MAX_TRAY_CAPACITY) {
+    if (
+      this.status !== "playing" ||
+      this.pendingSelection !== null ||
+      this.trayCapacity >= GAME_SESSION_MAX_TRAY_CAPACITY
+    ) {
       return false;
     }
 
@@ -152,32 +175,37 @@ export class GameSession {
   }
 
   selectBlock(blockId: string): GameSessionSelectionResult {
-    if (!this.canSelectBlock(blockId)) {
+    if (!this.startBlockSelection(blockId)) {
       return this.createSelectionResult(false, 0);
     }
 
-    const block = this.remainingBlocks.get(blockId);
-    if (block === undefined) {
+    return this.completeBlockSelection();
+  }
+
+  beginBlockSelection(blockId: string): GameSessionPendingSelectionResult {
+    if (!this.startBlockSelection(blockId)) {
+      return {
+        selected: false,
+        snapshot: this.getState(),
+      };
+    }
+
+    return {
+      selected: true,
+      snapshot: this.getState(),
+    };
+  }
+
+  completeBlockSelection(): GameSessionSelectionResult {
+    const pendingSelection = this.pendingSelection;
+    if (pendingSelection === null) {
       return this.createSelectionResult(false, 0);
     }
 
-    this.remainingBlocks.delete(blockId);
-    const blockIndex = this.graph.indexById.get(blockId);
-    if (blockIndex === undefined) {
-      return this.createSelectionResult(false, 0);
-    }
-
-    for (const lowerBlockIndex of this.graph.lowerBlockIndicesByHigher[blockIndex]) {
-      this.higherBlockCounts[lowerBlockIndex] -= 1;
-    }
-
+    this.pendingSelection = null;
     const resolution = insertDogBlockIntoTray(
       this.tray,
-      {
-        id: block.id,
-        patternType: block.patternType,
-        specialMechanism: block.specialMechanism,
-      },
+      toTrayBlock(pendingSelection.block),
       this.specialMechanismHandlers,
     );
     this.updateResult();
@@ -191,7 +219,7 @@ export class GameSession {
   }
 
   private getSelectableBlockIds(): string[] {
-    if (this.status !== "playing") {
+    if (this.status !== "playing" || this.pendingSelection !== null) {
       return [];
     }
 
@@ -201,6 +229,25 @@ export class GameSession {
         return blockIndex !== undefined && this.higherBlockCounts[blockIndex] === 0;
       })
       .map((block) => block.id);
+  }
+
+  private startBlockSelection(blockId: string): boolean {
+    if (!this.canSelectBlock(blockId)) {
+      return false;
+    }
+
+    const block = this.remainingBlocks.get(blockId);
+    const blockIndex = this.graph.indexById.get(blockId);
+    if (block === undefined || blockIndex === undefined) {
+      return false;
+    }
+
+    this.remainingBlocks.delete(blockId);
+    for (const lowerBlockIndex of this.graph.lowerBlockIndicesByHigher[blockIndex]) {
+      this.higherBlockCounts[lowerBlockIndex] -= 1;
+    }
+    this.pendingSelection = { block };
+    return true;
   }
 
   private createSelectionResult(
@@ -249,6 +296,11 @@ export class GameSession {
   }
 
   private updateResult(): void {
+    if (this.pendingSelection !== null) {
+      this.status = "playing";
+      return;
+    }
+
     if (
       this.remainingBlocks.size === 0 &&
       this.tray.every((block) => block.specialMechanism === undefined)
@@ -260,6 +312,22 @@ export class GameSession {
     if (this.tray.length >= this.trayCapacity) {
       this.status = "lost";
     }
+  }
+
+  private getVisibleTrayBlocks(): DogTrayBlock[] {
+    const trayBlocks = [...this.tray];
+    if (this.pendingSelection === null) {
+      return trayBlocks;
+    }
+
+    insertDogTrayBlock(
+      trayBlocks,
+      prepareDogTrayBlock(
+        toTrayBlock(this.pendingSelection.block),
+        this.specialMechanismHandlers,
+      ),
+    );
+    return trayBlocks;
   }
 }
 
@@ -275,6 +343,16 @@ function cloneTrayBlock(block: DogTrayBlock): DogTrayBlock {
       state: Object.freeze({ ...block.specialMechanism.state }),
     }),
   });
+}
+
+function toTrayBlock(block: DogBlock): DogTrayBlock {
+  return {
+    id: block.id,
+    patternType: block.patternType,
+    ...(block.specialMechanism === undefined
+      ? {}
+      : { specialMechanism: block.specialMechanism }),
+  };
 }
 
 function isLevel(value: DogLegeDogLevel | GameSessionOptions): value is DogLegeDogLevel {

@@ -4,7 +4,7 @@ import type {
 } from "@/games/dog-lege-dog/levels/level-types";
 
 const GAME_ID = "dog-lege-dog" as const;
-const GENERATOR_VERSION = 7 as const;
+const GENERATOR_VERSION = 8 as const;
 
 export const DOG_GAME_RESULT_DISPLAY = Object.freeze({
   won: Object.freeze({
@@ -41,6 +41,11 @@ export const DOG_LEGE_DOG_CONFIG = Object.freeze({
   specialMechanisms: Object.freeze([
     {
       type: "freeze",
+      min: 1,
+      max: 2,
+    },
+    {
+      type: "illusion",
       min: 1,
       max: 2,
     },

@@ -4,6 +4,8 @@ export const DOG_ITEM_FEEDBACK_DURATION_MS = 360;
 export interface BlockFlightOptions {
   readonly root: HTMLElement;
   readonly patternMarkup: string;
+  readonly patternType?: string;
+  readonly revealsIllusion?: boolean;
   readonly source: DOMRect | null;
   readonly target: DOMRect | null;
 }
@@ -22,8 +24,16 @@ export function animateBlockFlight(options: BlockFlightOptions): CancellableAnim
   }
 
   const flight = document.createElement("div");
-  flight.className = "dog-flying-block";
+  flight.className = options.revealsIllusion
+    ? "dog-flying-block dog-flying-block--illusion"
+    : "dog-flying-block";
   flight.dataset.testid = "dog-flight";
+  if (options.patternType !== undefined) {
+    flight.dataset.patternType = options.patternType;
+  }
+  if (options.revealsIllusion) {
+    flight.dataset.illusionReveal = "true";
+  }
   flight.innerHTML = options.patternMarkup;
   layer.append(flight);
 

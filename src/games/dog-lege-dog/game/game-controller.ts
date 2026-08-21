@@ -7,9 +7,12 @@ import type {
 import {
   DOG_PATTERN_TYPES,
   FIRST_LEVEL,
+  type DogBlock,
   type DogLegeDogLevel,
 } from "@/games/dog-lege-dog/levels/first-level";
+import { renderDogPatternAsset } from "@/games/dog-lege-dog/assets/game-assets";
 import { DOG_GAME_ID, DOG_GAME_RESULT_DISPLAY } from "@/games/dog-lege-dog/game/game-config";
+import { DOG_ILLUSION_MECHANISM_TYPE } from "@/games/dog-lege-dog/game/special-mechanisms";
 import { getDogLegeDogLevel } from "@/games/dog-lege-dog/levels/level-provider";
 import { createRunSeed } from "@/games/dog-lege-dog/levels/level-random";
 import {
@@ -134,8 +137,21 @@ export function createDogLegeDogGame(
     soundEffects.initialize();
 
     const sourceElement = findBlockElement(root, blockId);
+    const sourceBlock = level.blocks.find((block) => block.id === blockId);
     const sourceRect = sourceElement?.getBoundingClientRect() ?? null;
-    const patternMarkup = sourceElement?.querySelector<HTMLElement>(".dog-block__glyph")?.outerHTML ?? "";
+    const isIllusion = sourceBlock?.specialMechanism?.type === DOG_ILLUSION_MECHANISM_TYPE;
+    const patternMarkup = isIllusion
+      ? renderDogPatternAsset(sourceBlock.patternType)
+      : sourceElement?.querySelector<HTMLElement>(".dog-block__glyph")?.outerHTML ?? "";
+    if (isIllusion && shouldAnimate && runtime.started && sourceBlock !== undefined) {
+      return commitAnimatedIllusionSelection(
+        blockId,
+        sourceBlock,
+        sourceRect,
+        patternMarkup,
+      );
+    }
+
     const patternType = sourceElement?.dataset.patternType;
     const trayRectsBeforeSelection = captureTrayBlockRects(root);
     const selection = runtime.session.selectBlock(blockId);
@@ -166,8 +182,11 @@ export function createDogLegeDogGame(
       return nextState;
     }
 
-    runtime.inputLocked = didMatch || result !== null;
-    if (didMatch) {
+    runtime.inputLocked = isIllusion || didMatch || result !== null;
+    if (isIllusion) {
+      runtime.matchFeedbackActive = didMatch;
+      runtime.feedback = "idle";
+    } else if (didMatch) {
       runtime.matchFeedbackActive = true;
       runtime.feedback = "match";
     } else if (result !== null) {
@@ -176,11 +195,15 @@ export function createDogLegeDogGame(
       runtime.feedback = "idle";
     }
     soundEffects.play("select");
-    playFeedbackSounds(didMatch, result);
+    if (!isIllusion) {
+      playFeedbackSounds(didMatch, result);
+    }
     const target = findTrayTarget(root, patternType);
     const flight = animateBlockFlight({
       root,
       patternMarkup,
+      patternType: sourceBlock?.patternType ?? patternType,
+      revealsIllusion: isIllusion,
       source: sourceRect,
       target: target?.getBoundingClientRect() ?? null,
     });
@@ -191,15 +214,48 @@ export function createDogLegeDogGame(
       flight,
       result,
       didMatch,
+      false,
     );
 
     return nextState;
+  }
+
+  function commitAnimatedIllusionSelection(
+    blockId: string,
+    block: DogBlock,
+    sourceRect: DOMRect | null,
+    patternMarkup: string,
+  ): GameSessionSnapshot {
+    const pending = runtime.session.beginBlockSelection(blockId);
+    if (!pending.selected) {
+      return pending.snapshot;
+    }
+
+    runtime.hasInteracted = true;
+    runtime.inputLocked = true;
+    runtime.feedback = "idle";
+    runtime.matchFeedbackActive = false;
+    soundEffects.play("select");
+    const target = findTrayTarget(root, block.patternType);
+    const flight = animateBlockFlight({
+      root,
+      patternMarkup,
+      patternType: block.patternType,
+      revealsIllusion: true,
+      source: sourceRect,
+      target: target?.getBoundingClientRect() ?? null,
+    });
+    runtime.activeFlights.add(flight);
+    renderStartedGame(pending.snapshot);
+    void finishAnimatedSelection(flight, null, false, true);
+    return pending.snapshot;
   }
 
   async function finishAnimatedSelection(
     flight: CancellableAnimation,
     result: GameResult | null,
     didMatch: boolean,
+    revealsIllusion: boolean,
   ): Promise<void> {
     await flight.promise;
     runtime.activeFlights.delete(flight);
@@ -207,8 +263,35 @@ export function createDogLegeDogGame(
       return;
     }
 
-    if (result !== null) {
-      if (didMatch) {
+    let resolvedResult = result;
+    let resolvedDidMatch = didMatch;
+    if (revealsIllusion) {
+      const selection = runtime.session.completeBlockSelection();
+      resolvedDidMatch = selection.removedCount > 0;
+      resolvedResult = createResult(level, selection.snapshot.status);
+      if (resolvedResult !== null) {
+        runtime.endedAt = Date.now();
+        confirmResult(resolvedResult, false);
+      }
+
+      if (resolvedDidMatch) {
+        runtime.matchFeedbackActive = true;
+        runtime.feedback = "match";
+        soundEffects.play("match");
+        renderStartedGame(selection.snapshot);
+      } else if (resolvedResult !== null) {
+        runtime.feedback = resolvedResult.status;
+        soundEffects.play(resolvedResult.status);
+        renderStartedGame(selection.snapshot);
+      } else {
+        runtime.inputLocked = false;
+        renderStartedGame(selection.snapshot);
+        return;
+      }
+    }
+
+    if (resolvedResult !== null) {
+      if (resolvedDidMatch) {
         await ensureMatchFeedback();
         if (runtime.destroyed) {
           return;
@@ -220,9 +303,9 @@ export function createDogLegeDogGame(
         }
       }
 
-      runtime.feedback = result.status;
+      runtime.feedback = resolvedResult.status;
       renderStartedGame();
-      await particleEffects.play(result.status);
+      await particleEffects.play(resolvedResult.status);
       if (runtime.destroyed) {
         return;
       }
@@ -230,11 +313,11 @@ export function createDogLegeDogGame(
       runtime.feedback = "idle";
       runtime.matchFeedbackActive = false;
       renderStartedGame();
-      presentResult(result);
+      presentResult(resolvedResult);
       return;
     }
 
-    if (didMatch) {
+    if (resolvedDidMatch) {
       void ensureMatchFeedback();
       return;
     }

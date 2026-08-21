@@ -10,6 +10,7 @@ import {
 import {
   DEFAULT_LEVEL_SEED,
   DOG_PATTERN_TYPES,
+  DOG_ILLUSION_MECHANISM_TYPE,
   FIRST_LEVEL,
   startDogLegeDogGame,
 } from "@/games/dog-lege-dog";
@@ -347,11 +348,16 @@ describe("狗了个狗首关", () => {
       );
 
       expect(block?.disabled).toBe(false);
+      const selectedLevelBlock = game.getState().level.blocks.find(
+        (candidate) => candidate.id === blockId,
+      );
+      const isIllusion =
+        selectedLevelBlock?.specialMechanism?.type === DOG_ILLUSION_MECHANISM_TYPE;
       block?.dispatchEvent(new Event("pointerup", { bubbles: true, cancelable: true }));
       const isTerminal = game.getState().session.status !== "playing";
       const isMatchAnimating = game.getState().feedback === "match";
-      expect(game.getState().inputLocked).toBe(isTerminal || isMatchAnimating);
-      if (!isTerminal && !isMatchAnimating) {
+      expect(game.getState().inputLocked).toBe(isTerminal || isMatchAnimating || isIllusion);
+      if (!isTerminal && !isMatchAnimating && !isIllusion) {
         expect(root.querySelector('[data-testid="dog-block"]:not([disabled])')).not.toBeNull();
       }
       expect(game.getState().session.remainingBlocks.some((candidate) => candidate.id === blockId)).toBe(

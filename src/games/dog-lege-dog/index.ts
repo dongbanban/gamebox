@@ -3,6 +3,7 @@ export {
   GAME_SESSION_MAX_TRAY_CAPACITY,
   GAME_SESSION_TRAY_CAPACITY,
   GameSession,
+  type GameSessionPendingSelectionResult,
   type GameSessionOptions,
   type GameSessionSelectionResult,
   type GameSessionSnapshot,
@@ -88,8 +89,12 @@ export {
 export {
   DOG_FREEZE_MECHANISM_TYPE,
   DOG_FREEZE_MELT_TRIPLE_COUNT,
+  DOG_ILLUSION_MECHANISM_TYPE,
+  DOG_ILLUSION_MASK_STATUS,
   DOG_SPECIAL_MECHANISM_HANDLERS,
   createDogSpecialMechanism,
+  createDogIllusionMechanism,
+  getDogIllusionDisguisedPattern,
   getDogSpecialMechanismConfigs,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
 
