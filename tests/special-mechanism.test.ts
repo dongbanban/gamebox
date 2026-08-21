@@ -123,6 +123,48 @@ describe("狗了个狗特殊机制", () => {
 
     game.destroy();
   });
+
+  it("首关启动沿用生成器结果，不额外注入冻结方块", () => {
+    const runSeed = "restore-first-level-freeze-preview";
+    const generated = new LevelGenerator().generate({
+      levelNumber: 1,
+      runSeed,
+      generatorVersion: LEVEL_GENERATOR_VERSION,
+    });
+    const root = document.createElement("div");
+    const game = startDogLegeDogGame(root, {
+      runSeed,
+      loadout: ["triple-removal", "tray-capacity", "wildcard"],
+    });
+
+    expect(game.getState().level.blocks).toEqual(generated.blocks);
+
+    game.destroy();
+  });
+
+  it("冻结方块融化时在 UI 动画层显示冰壳消散效果", () => {
+    const root = document.createElement("div");
+    const game = startDogLegeDogGame(root, {
+      runSeed: "freeze-melt-ui-seed",
+      loadout: ["triple-removal", "tray-capacity", "wildcard"],
+    });
+    let meltEffect: HTMLElement | null = null;
+
+    for (const blockId of game.getState().level.solutionPath) {
+      game.selectBlock(blockId);
+      meltEffect = root.querySelector<HTMLElement>(".dog-melt-effect");
+      if (meltEffect !== null) {
+        break;
+      }
+    }
+
+    expect(meltEffect).not.toBeNull();
+    expect(meltEffect?.getAttribute("aria-hidden")).toBe("true");
+    expect(meltEffect?.querySelector(".dog-melt-effect__flake")).not.toBeNull();
+    expect(meltEffect?.querySelectorAll(".dog-melt-effect__drop")).toHaveLength(4);
+
+    game.destroy();
+  });
 });
 
 function selectAll(session: GameSession, blockIds: readonly string[]) {

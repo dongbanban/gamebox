@@ -283,7 +283,7 @@ function renderTraySlots(session: GameSessionSnapshot): string {
     const mechanismClass = getSpecialMechanismClass(block.specialMechanism?.type);
     const mechanismAttributes = renderSpecialMechanismAttributes(block.specialMechanism);
     return `
-      <li class="dog-tray__slot dog-tray__slot--filled dog-block--${getDogPatternClassName(block.patternType)}${mechanismClass}" data-testid="dog-tray-slot" data-pattern-type="${block.patternType}" ${mechanismAttributes} aria-label="${block.patternType}">
+      <li class="dog-tray__slot dog-tray__slot--filled dog-block--${getDogPatternClassName(block.patternType)}${mechanismClass}" data-testid="dog-tray-slot" data-block-id="${block.id}" data-pattern-type="${block.patternType}" ${mechanismAttributes} aria-label="${block.patternType}">
         <span class="dog-block__glyph">${renderDogPatternAsset(block.patternType)}</span>
       </li>
     `;

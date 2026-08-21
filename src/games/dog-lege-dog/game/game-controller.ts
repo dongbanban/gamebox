@@ -110,6 +110,7 @@ export function createDogLegeDogGame(
     const sourceRect = sourceElement?.getBoundingClientRect() ?? null;
     const patternMarkup = sourceElement?.querySelector<HTMLElement>(".dog-block__glyph")?.outerHTML ?? "";
     const patternType = sourceElement?.dataset.patternType;
+    const trayRectsBeforeSelection = captureTrayBlockRects(root);
     const selection = runtime.session.selectBlock(blockId);
     const nextState = selection.snapshot;
     if (!selection.selected) {
@@ -131,6 +132,7 @@ export function createDogLegeDogGame(
       runtime.matchFeedbackActive = false;
       runtime.inputLocked = false;
       renderStartedGame(nextState);
+      playMeltAnimations(root, selection.meltedBlockIds, trayRectsBeforeSelection);
       if (result !== null) {
         presentResult(result);
       }
@@ -157,6 +159,7 @@ export function createDogLegeDogGame(
     });
     runtime.activeFlights.add(flight);
     renderStartedGame(nextState);
+    playMeltAnimations(root, selection.meltedBlockIds, trayRectsBeforeSelection);
     void finishAnimatedSelection(
       flight,
       result,
@@ -281,6 +284,76 @@ export function createDogLegeDogGame(
     }
     if (result !== null) {
       soundEffects.play(result.status);
+    }
+  }
+
+  function captureTrayBlockRects(rootElement: HTMLElement): ReadonlyMap<string, DOMRect> {
+    const rects = new Map<string, DOMRect>();
+    for (const slot of rootElement.querySelectorAll<HTMLElement>(
+      '[data-testid="dog-tray-slot"][data-block-id]',
+    )) {
+      const blockId = slot.dataset.blockId;
+      if (blockId !== undefined) {
+        rects.set(blockId, slot.getBoundingClientRect());
+      }
+    }
+    return rects;
+  }
+
+  function playMeltAnimations(
+    rootElement: HTMLElement,
+    meltedBlockIds: readonly string[],
+    fallbackRects: ReadonlyMap<string, DOMRect>,
+  ): void {
+    const layer = rootElement.querySelector<HTMLElement>(
+      '[data-testid="dog-animation-layer"]',
+    );
+    if (layer === null) {
+      return;
+    }
+
+    const layerRect = layer.getBoundingClientRect();
+    const traySlots = [...rootElement.querySelectorAll<HTMLElement>(
+      '[data-testid="dog-tray-slot"][data-block-id]',
+    )];
+    for (const blockId of meltedBlockIds) {
+      const target = traySlots.find((slot) => slot.dataset.blockId === blockId);
+      const targetRect = target?.getBoundingClientRect() ?? fallbackRects.get(blockId);
+      if (targetRect === undefined) {
+        continue;
+      }
+
+      const effect = document.createElement("div");
+      effect.className = "dog-melt-effect";
+      effect.dataset.meltBlockId = blockId;
+      effect.setAttribute("aria-hidden", "true");
+      effect.innerHTML = `
+        <span class="dog-melt-effect__flake">❄</span>
+        <span class="dog-melt-effect__drop dog-melt-effect__drop--1"></span>
+        <span class="dog-melt-effect__drop dog-melt-effect__drop--2"></span>
+        <span class="dog-melt-effect__drop dog-melt-effect__drop--3"></span>
+        <span class="dog-melt-effect__drop dog-melt-effect__drop--4"></span>
+      `;
+      Object.assign(effect.style, {
+        left: `${targetRect.left - layerRect.left}px`,
+        top: `${targetRect.top - layerRect.top}px`,
+        width: `${targetRect.width || 48}px`,
+        height: `${targetRect.height || 48}px`,
+      });
+      layer.append(effect);
+
+      const remove = (): void => effect.remove();
+      const handleAnimationEnd = (event: AnimationEvent): void => {
+        if (event.animationName === "dog-freeze-melt") {
+          effect.removeEventListener("animationend", handleAnimationEnd);
+          remove();
+        }
+      };
+      effect.addEventListener("animationend", handleAnimationEnd);
+      window.setTimeout(() => {
+        effect.removeEventListener("animationend", handleAnimationEnd);
+        remove();
+      }, 1400);
     }
   }
 
