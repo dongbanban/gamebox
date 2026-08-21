@@ -457,6 +457,32 @@ test.describe("注册与游戏目录", () => {
     expect(desktopLayout.summaryTop).toBeCloseTo(desktopLayout.boardBottom + 8, 1);
   });
 
+  test("容量提升后暂存槽保持单行并按容量缩放槽块", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.getByRole("button", { name: "匿名注册" }).click();
+    await page.getByRole("button", { name: "开始游戏" }).click();
+    await confirmDogLoadout(page);
+
+    const beforeWidth = await page.locator('[data-testid="dog-tray-slot"]').first().evaluate(
+      (slot) => slot.getBoundingClientRect().width,
+    );
+    await page.locator('[data-action="use-item"][data-item-id="tray-capacity"]').click();
+    await expect(page.locator('[data-testid="dog-tray"][data-tray-capacity="8"]')).toBeVisible();
+
+    const afterLayout = await page.evaluate(() => {
+      const tray = document.querySelector<HTMLElement>('[data-testid="dog-tray"]');
+      const slots = [...document.querySelectorAll<HTMLElement>('[data-testid="dog-tray-slot"]')];
+      return {
+        gridColumns: tray === null ? [] : getComputedStyle(tray).gridTemplateColumns.trim().split(/\s+/),
+        slotWidth: slots[0]?.getBoundingClientRect().width ?? 0,
+        slotTops: slots.map((slot) => Math.round(slot.getBoundingClientRect().top)),
+      };
+    });
+    expect(afterLayout.gridColumns).toHaveLength(8);
+    expect(new Set(afterLayout.slotTops).size).toBe(1);
+    expect(afterLayout.slotWidth).toBeLessThan(beforeWidth);
+  });
+
   test("棋盘狗图标不显示白色下沿，暂存槽图片不溢出", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.getByRole("button", { name: "匿名注册" }).click();

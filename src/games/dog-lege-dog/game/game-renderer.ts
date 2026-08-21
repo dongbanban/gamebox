@@ -154,11 +154,13 @@ function updateDogLegeDogGame(
   boardScaler?.style.setProperty("--board-pixel-width", `${boardPixelWidth}px`);
   boardScaler?.style.setProperty("--board-pixel-height", `${boardPixelHeight}px`);
 
-  const trayCount = tray?.querySelector<HTMLElement>('.dog-tray__heading span');
+  const trayCount = tray?.querySelector<HTMLElement>('[data-testid="dog-tray-count"]');
   if (trayCount !== null && trayCount !== undefined) {
     trayCount.textContent = `${state.session.tray.length}/${state.session.trayCapacity}`;
   }
   if (traySlots !== null && traySlots !== undefined) {
+    traySlots.style.setProperty("--dog-tray-columns", String(state.session.trayCapacity));
+    traySlots.dataset.trayCapacity = String(state.session.trayCapacity);
     traySlots.innerHTML = renderTraySlots(
       state.session,
       state.items?.selectedItemTargetType ?? null,
@@ -202,7 +204,7 @@ function renderLoadoutArea(state: DogLegeDogGameState): string {
   const targetPatterns = state.items.selectedItemTargetType === "tray-pattern"
     ? [...new Set(state.session.tray)]
     : state.level.patternTypes;
-  return `${renderDogLoadoutSummary(state.loadout, state.loadoutLocked)}${renderDogItemPanel(state.items, state.loadoutLocked, targetPatterns)}`;
+  return `${renderDogLoadoutSummary(state.loadout, state.loadoutLocked, state.items.items)}${renderDogItemPanel(state.items, state.loadoutLocked, targetPatterns)}`;
 }
 
 function renderDogItemPanel(
@@ -363,11 +365,10 @@ function renderTray(
   return `
     <section class="dog-tray" data-testid="dog-tray-region" aria-label="暂存槽">
       <div class="dog-tray__heading">
-        <h3>暂存槽</h3>
-        <span>${session.tray.length}/${session.trayCapacity}</span>
+        <span data-testid="dog-tray-count">${session.tray.length}/${session.trayCapacity}</span>
       </div>
       ${renderMatchFeedback(feedback)}
-      <ol class="dog-tray__slots" data-testid="dog-tray" style="--dog-tray-columns: ${session.trayCapacity};">${renderTraySlots(session, itemTargetType)}</ol>
+      <ol class="dog-tray__slots" data-testid="dog-tray" data-tray-capacity="${session.trayCapacity}" style="--dog-tray-columns: ${session.trayCapacity};">${renderTraySlots(session, itemTargetType)}</ol>
       <p class="dog-game__status dog-game__status--${session.status}" data-testid="dog-status" role="status">${renderStatusMessage(session.status)}</p>
       <div class="dog-effects-layer" data-testid="dog-effects-layer">
         <canvas class="dog-effects-canvas" data-testid="dog-effects-canvas"></canvas>

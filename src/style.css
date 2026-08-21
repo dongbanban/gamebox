@@ -755,12 +755,18 @@ h2 {
 }
 
 .dog-loadout-thumbnail {
+  position: relative;
   display: inline-flex;
   width: 48px;
   height: 48px;
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
+}
+
+.dog-loadout-thumbnail--unavailable {
+  filter: grayscale(1);
+  opacity: 0.46;
 }
 
 .dog-loadout-thumbnail__placeholder {
@@ -773,6 +779,24 @@ h2 {
   color: #fffdf8;
   font-size: 18px;
   font-weight: 900;
+}
+
+.dog-loadout-thumbnail__uses {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  display: grid;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  place-items: center;
+  border: 2px solid #f2fbff;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fffdf8;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
 }
 
 .dog-loadout-summary .text-button {
@@ -1399,7 +1423,7 @@ h2 {
 .dog-tray__heading {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   margin-bottom: 10px;
   color: var(--ink-muted);
   font-size: 13px;

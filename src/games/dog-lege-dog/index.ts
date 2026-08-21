@@ -104,6 +104,7 @@ export {
   normalizeDogLoadout,
   type DogItemDefinition,
   type DogItemId,
+  type DogLoadoutSummaryItemState,
   type DogItemTargetType,
   type DogItemVisualFeedback,
 } from "@/games/dog-lege-dog/game/dog-loadout";

@@ -67,6 +67,10 @@ describe("狗了个狗道具组", () => {
       "triple-removal",
       "tray-capacity",
       "wildcard",
+    ], false, [
+      { id: "triple-removal", remainingUses: 0, available: false },
+      { id: "tray-capacity", remainingUses: 1, available: true },
+      { id: "wildcard", remainingUses: 2, available: false },
     ]);
 
     expect(editor).toContain('data-testid="dog-loadout-modal"');
@@ -78,11 +82,15 @@ describe("狗了个狗道具组", () => {
     expect(changeEditor).toContain(">取消</button>");
     expect(changeEditor).toMatch(/data-action="confirm-loadout"[^>]*>\s*确认\s*<\/button>/);
     expect(summary.match(/data-testid="dog-loadout-thumbnail"/g)).toHaveLength(3);
-    expect(summary).toContain('role="img" aria-label="道具三消移除"');
+    expect(summary).toContain('role="img" aria-label="道具三消移除，剩余 0 次"');
     expect(summary).toContain(">道</span>");
     expect(summary).not.toContain("dog-loadout-summary__label");
     expect(summary).not.toContain("dog-loadout-thumbnail__name");
     expect(summary).toContain("dog-loadout-thumbnail__placeholder");
+    expect(summary.match(/data-testid="dog-loadout-thumbnail-uses"/g)).toHaveLength(3);
+    expect(summary).toContain('data-item-available="false"');
+    expect(summary).toContain("dog-loadout-thumbnail--unavailable");
+    expect(summary).toContain(">1</span>");
     expect(summary).toContain('data-action="edit-loadout"');
     expect(summary).toContain(">变更</button>");
   });

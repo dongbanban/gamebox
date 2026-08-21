@@ -556,7 +556,22 @@ describe("狗了个狗首关", () => {
     expect(capacityButton?.querySelector('[data-testid="dog-item-uses"]')?.textContent).toContain(
       "剩余 1 次",
     );
+    expect(
+      root.querySelector('[data-testid="dog-loadout-thumbnail"][data-loadout-id="tray-capacity"]'),
+    ).not.toBeNull();
+    expect(
+      root.querySelector('[data-testid="dog-loadout-thumbnail"][data-loadout-id="tray-capacity"]')?.classList.contains("dog-loadout-thumbnail--unavailable"),
+    ).toBe(false);
+    expect(
+      root.querySelector('[data-testid="dog-loadout-thumbnail"][data-loadout-id="wildcard"]')?.classList.contains("dog-loadout-thumbnail--unavailable"),
+    ).toBe(true);
+    expect(
+      root.querySelector('[data-testid="dog-loadout-thumbnail"][data-loadout-id="tray-capacity"] [data-testid="dog-loadout-thumbnail-uses"]')?.textContent,
+    ).toBe("1");
     expect(root.querySelectorAll('[data-testid="dog-tray-slot"]')).toHaveLength(7);
+    expect(root.querySelector('[data-testid="dog-tray-region"] h3')).toBeNull();
+    expect(root.querySelector('[data-testid="dog-tray-count"]')?.textContent).toBe("0/7");
+    expect(root.querySelector('[data-testid="dog-tray"]')?.getAttribute("data-tray-capacity")).toBe("7");
 
     capacityButton?.click();
 
@@ -568,6 +583,10 @@ describe("狗了个狗首关", () => {
       )?.disabled,
     ).toBe(true);
     expect(root.querySelectorAll('[data-testid="dog-tray-slot"]')).toHaveLength(8);
+    expect(root.querySelector('[data-testid="dog-tray"]')?.getAttribute("data-tray-capacity")).toBe("8");
+    expect(root.querySelector('[data-testid="dog-tray"]')?.getAttribute("style")).toContain(
+      "--dog-tray-columns: 8",
+    );
     expect(root.querySelector('[data-testid="dog-item-effect"]')).not.toBeNull();
 
     await vi.advanceTimersByTimeAsync(DOG_ITEM_FEEDBACK_DURATION_MS);

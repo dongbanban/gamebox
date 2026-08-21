@@ -120,6 +120,12 @@ export interface DogLoadoutEditorRenderOptions {
   readonly itemUses?: Partial<Record<DogItemId, number>>;
 }
 
+export interface DogLoadoutSummaryItemState {
+  readonly id: DogItemId;
+  readonly remainingUses: number;
+  readonly available: boolean;
+}
+
 export function renderDogLoadoutEditor({
   mode,
   draft,
@@ -205,14 +211,23 @@ export function renderDogLoadoutEditor({
 export function renderDogLoadoutSummary(
   loadout: readonly DogItemId[],
   inputLocked = false,
+  itemStates: readonly DogLoadoutSummaryItemState[] = [],
 ): string {
   return `
     <section class="dog-loadout-summary" data-testid="dog-loadout-summary" aria-label="当前道具组">
       <div class="dog-loadout-summary__items">
         ${loadout.map((itemId) => {
           const item = getDogItemDefinition(itemId);
-          return `<span class="dog-loadout-thumbnail" data-testid="dog-loadout-thumbnail" data-loadout-id="${itemId}" role="img" aria-label="${item.name}">
+          const state = itemStates.find((itemState) => itemState.id === itemId);
+          const available = !inputLocked && (state?.available ?? true);
+          const remainingUses = state?.remainingUses;
+          const remainingLabel = remainingUses === undefined ? "" : `，剩余 ${remainingUses} 次`;
+          const usageBadge = remainingUses === undefined
+            ? ""
+            : `<span class="dog-loadout-thumbnail__uses" data-testid="dog-loadout-thumbnail-uses" aria-hidden="true">${remainingUses}</span>`;
+          return `<span class="dog-loadout-thumbnail${available ? "" : " dog-loadout-thumbnail--unavailable"}" data-testid="dog-loadout-thumbnail" data-loadout-id="${itemId}" data-item-available="${available}" role="img" aria-label="${item.name}${remainingLabel}">
             <span class="dog-loadout-thumbnail__placeholder" aria-hidden="true">${item.name.slice(0, 1)}</span>
+            ${usageBadge}
           </span>`;
         }).join("")}
       </div>
