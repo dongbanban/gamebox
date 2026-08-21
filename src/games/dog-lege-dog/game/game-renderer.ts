@@ -55,9 +55,21 @@ export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameSta
       data-feedback="${state.feedback}"
     >
       <header class="dog-game__header">
-        <div class="dog-game__level-mark" data-testid="dog-active-level" aria-label="当前关卡 ${state.level.number}">
-          <span>关卡</span>
-          <strong>${state.level.number}</strong>
+        <div class="dog-game__level-tools">
+          <div class="dog-game__level-mark" data-testid="dog-active-level" aria-label="当前关卡 ${state.level.number}">
+            <span>关卡</span>
+            <strong>${state.level.number}</strong>
+          </div>
+          <button
+            class="dog-special-mechanism-button"
+            type="button"
+            data-action="open-special-mechanisms"
+            data-testid="dog-special-mechanism-button"
+            aria-haspopup="dialog"
+            aria-label="查看本关特殊机制"
+          >
+            <span aria-hidden="true">?</span>
+          </button>
         </div>
       </header>
       <div class="dog-board-frame">
@@ -152,10 +164,6 @@ function updateDogLegeDogGame(
   boardScaler?.style.setProperty("--board-pixel-width", `${boardPixelWidth}px`);
   boardScaler?.style.setProperty("--board-pixel-height", `${boardPixelHeight}px`);
 
-  const trayCount = tray?.querySelector<HTMLElement>('[data-testid="dog-tray-count"]');
-  if (trayCount !== null && trayCount !== undefined) {
-    trayCount.textContent = `${state.session.tray.length}/${state.session.trayCapacity}`;
-  }
   if (traySlots !== null && traySlots !== undefined) {
     traySlots.style.setProperty("--dog-tray-columns", String(state.session.trayCapacity));
     traySlots.dataset.trayCapacity = String(state.session.trayCapacity);
@@ -303,9 +311,6 @@ function renderTray(
 ): string {
   return `
     <section class="dog-tray" data-testid="dog-tray-region" aria-label="暂存槽">
-      <div class="dog-tray__heading">
-        <span data-testid="dog-tray-count">${session.tray.length}/${session.trayCapacity}</span>
-      </div>
       ${renderMatchFeedback(feedback)}
       <ol class="dog-tray__slots" data-testid="dog-tray" data-tray-capacity="${session.trayCapacity}" style="--dog-tray-columns: ${session.trayCapacity};">${renderTraySlots(session, itemTargetType)}</ol>
       <p class="dog-game__status dog-game__status--${session.status}" data-testid="dog-status" role="status">${renderStatusMessage(session.status)}</p>
@@ -313,6 +318,66 @@ function renderTray(
         <canvas class="dog-effects-canvas" data-testid="dog-effects-canvas"></canvas>
       </div>
     </section>
+  `;
+}
+
+interface DogSpecialMechanismPresentation {
+  readonly name: string;
+  readonly icon: string;
+  readonly description: string;
+}
+
+const DOG_SPECIAL_MECHANISM_PRESENTATIONS: Readonly<Record<string, DogSpecialMechanismPresentation>> =
+  Object.freeze({
+    freeze: Object.freeze({
+      name: "冻结方块",
+      icon: "❄",
+      description: "冻结方块进入暂存槽后暂不参与三消；其他图案完成 2 次三消后自动融化。火把可将其解冻为普通方块，万能方块可直接消除。",
+    }),
+  });
+
+export function renderDogSpecialMechanismModal(level: DogLegeDogLevel): string {
+  const mechanismTypes = Array.from(
+    new Set(
+      level.blocks
+        .map((block) => block.specialMechanism?.type)
+        .filter((type): type is string => type !== undefined),
+    ),
+  );
+  const mechanismCards = mechanismTypes.length === 0
+    ? `<p class="dog-special-mechanism-modal__empty" data-testid="dog-special-mechanism-empty">本关暂无特殊机制。</p>`
+    : mechanismTypes.map((type) => {
+      const presentation = DOG_SPECIAL_MECHANISM_PRESENTATIONS[type] ?? {
+        name: type,
+        icon: "✦",
+        description: "本关包含特殊规则，请结合棋盘上的视觉提示操作。",
+      };
+      return `
+        <li class="dog-special-mechanism-card" data-testid="dog-special-mechanism" data-special-mechanism="${type}">
+          <span class="dog-special-mechanism-card__icon" aria-hidden="true">${presentation.icon}</span>
+          <div>
+            <strong>${presentation.name}</strong>
+            <p>${presentation.description}</p>
+          </div>
+        </li>
+      `;
+    }).join("");
+
+  return `
+    <div class="dog-special-mechanism-modal" data-testid="dog-special-mechanism-modal" role="dialog" aria-modal="true" aria-labelledby="dog-special-mechanism-title">
+      <button class="dog-special-mechanism-modal__backdrop" type="button" data-action="close-special-mechanisms" aria-label="关闭特殊机制说明"></button>
+      <section class="dog-special-mechanism-modal__dialog">
+        <header class="dog-special-mechanism-modal__heading">
+          <div>
+            <span class="dog-special-mechanism-modal__eyebrow">关卡 ${level.number}</span>
+            <h2 id="dog-special-mechanism-title">本关特殊机制</h2>
+            <p class="dog-special-mechanism-modal__hint">无需使用道具也可应对本关机制。</p>
+          </div>
+          <button class="dog-special-mechanism-modal__close" type="button" data-action="close-special-mechanisms" aria-label="关闭特殊机制说明">×</button>
+        </header>
+        <ul class="dog-special-mechanism-modal__list">${mechanismCards}</ul>
+      </section>
+    </div>
   `;
 }
 

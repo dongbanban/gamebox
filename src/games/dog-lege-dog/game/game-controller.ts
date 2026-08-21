@@ -28,6 +28,7 @@ import { createParticleEffects } from "@/games/dog-lege-dog/assets/particle-effe
 import { createSoundEffects } from "@/games/dog-lege-dog/assets/sound-effects";
 import {
   fitDogBoardToFrame,
+  renderDogSpecialMechanismModal,
   renderDogLegeDogGame,
 } from "@/games/dog-lege-dog/game/game-renderer";
 import {
@@ -439,6 +440,14 @@ export function createDogLegeDogGame(
       applyLoadoutChange();
       return;
     }
+    if (action === "open-special-mechanisms") {
+      openSpecialMechanisms();
+      return;
+    }
+    if (action === "close-special-mechanisms") {
+      closeSpecialMechanisms();
+      return;
+    }
     if (action === "use-item") {
       startItem(actionElement?.dataset.itemId);
       return;
@@ -522,6 +531,20 @@ export function createDogLegeDogGame(
 
     runtime.itemRuntime.cancel();
     renderStartedGame();
+  }
+
+  function openSpecialMechanisms(): void {
+    const gameRoot = root.querySelector<HTMLElement>('[data-testid="dog-game"]');
+    if (gameRoot === null || gameRoot.querySelector('[data-testid="dog-special-mechanism-modal"]') !== null) {
+      return;
+    }
+
+    gameRoot.insertAdjacentHTML("beforeend", renderDogSpecialMechanismModal(level));
+    gameRoot.querySelector<HTMLButtonElement>(".dog-special-mechanism-modal__close")?.focus();
+  }
+
+  function closeSpecialMechanisms(): void {
+    root.querySelector('[data-testid="dog-special-mechanism-modal"]')?.remove();
   }
 
   function startItemAnimation(

@@ -569,8 +569,30 @@ describe("狗了个狗首关", () => {
     ).toBe("1");
     expect(root.querySelectorAll('[data-testid="dog-tray-slot"]')).toHaveLength(7);
     expect(root.querySelector('[data-testid="dog-tray-region"] h3')).toBeNull();
-    expect(root.querySelector('[data-testid="dog-tray-count"]')?.textContent).toBe("0/7");
+    expect(root.querySelector('[data-testid="dog-tray-count"]')).toBeNull();
+    expect(root.querySelector('[data-testid="dog-tray-region"] .dog-tray__heading')).toBeNull();
     expect(root.querySelector('[data-testid="dog-tray"]')?.getAttribute("data-tray-capacity")).toBe("7");
+
+    const mechanismButton = root.querySelector<HTMLButtonElement>(
+      '[data-testid="dog-special-mechanism-button"]',
+    );
+    expect(mechanismButton).not.toBeNull();
+    mechanismButton?.click();
+    expect(root.querySelector('[data-testid="dog-special-mechanism-modal"]')).not.toBeNull();
+    expect(
+      root.querySelector('[data-testid="dog-special-mechanism"][data-special-mechanism="freeze"]'),
+    ).not.toBeNull();
+    expect(root.querySelector('[data-testid="dog-special-mechanism-modal"]')?.textContent).toContain(
+      "冻结方块",
+    );
+    expect(root.querySelector('[data-testid="dog-special-mechanism-modal"]')?.textContent).toContain(
+      "无需使用道具也可应对本关机制",
+    );
+    expect(root.querySelector('[data-testid="dog-special-mechanism-modal"]')?.textContent).toContain(
+      "火把可将其解冻为普通方块，万能方块可直接消除",
+    );
+    root.querySelector<HTMLButtonElement>('[data-action="close-special-mechanisms"]')?.click();
+    expect(root.querySelector('[data-testid="dog-special-mechanism-modal"]')).toBeNull();
 
     capacityButton?.click();
 

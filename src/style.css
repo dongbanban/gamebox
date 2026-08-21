@@ -894,6 +894,12 @@ h2 {
   margin-bottom: 18px;
 }
 
+.dog-game__level-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .dog-game__level-mark {
   display: inline-flex;
   align-items: baseline;
@@ -912,6 +918,148 @@ h2 {
   color: var(--ink);
   font-size: 22px;
   letter-spacing: -0.04em;
+}
+
+.dog-special-mechanism-button {
+  display: inline-grid;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid rgba(79, 155, 192, 0.28);
+  border-radius: 50%;
+  background: #f2fbff;
+  color: var(--sky-deep);
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 900;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.dog-special-mechanism-button:hover {
+  border-color: var(--sky-deep);
+  background: #dff3fc;
+  transform: translateY(-1px);
+}
+
+.dog-special-mechanism-modal {
+  position: absolute;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(16px, 4vw, 40px);
+}
+
+.dog-special-mechanism-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: rgba(22, 68, 93, 0.38);
+  cursor: pointer;
+}
+
+.dog-special-mechanism-modal__dialog {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 460px);
+  padding: 22px;
+  border: 1px solid rgba(79, 155, 192, 0.22);
+  border-radius: 22px;
+  background: #f2fbff;
+  box-shadow: 0 24px 70px rgba(22, 68, 93, 0.28);
+}
+
+.dog-special-mechanism-modal__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.dog-special-mechanism-modal__eyebrow {
+  color: var(--ink-muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.dog-special-mechanism-modal__heading h2 {
+  margin: 4px 0 0;
+  color: var(--ink);
+  font-size: 22px;
+}
+
+.dog-special-mechanism-modal__hint {
+  margin: 6px 0 0;
+  color: var(--ink-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.dog-special-mechanism-modal__close {
+  display: inline-grid;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: #dceff9;
+  color: var(--ink-muted);
+  cursor: pointer;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.dog-special-mechanism-modal__close:hover {
+  background: #c9e8f6;
+  color: var(--ink);
+}
+
+.dog-special-mechanism-modal__list {
+  display: grid;
+  gap: 10px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dog-special-mechanism-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid rgba(79, 155, 192, 0.18);
+  border-radius: 14px;
+  background: rgba(255, 253, 248, 0.76);
+}
+
+.dog-special-mechanism-card__icon {
+  display: inline-grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 11px;
+  background: #dff3fc;
+  color: var(--sky-deep);
+  font-size: 19px;
+}
+
+.dog-special-mechanism-card strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.dog-special-mechanism-card p,
+.dog-special-mechanism-modal__empty {
+  margin: 4px 0 0;
+  color: var(--ink-muted);
+  font-size: 12px;
+  line-height: 1.55;
 }
 
 .sound-button {
@@ -1353,21 +1501,6 @@ h2 {
   padding: 20px;
   border-radius: 20px;
   background: #e7f5fc;
-}
-
-.dog-tray__heading {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  margin-bottom: 10px;
-  color: var(--ink-muted);
-  font-size: 13px;
-}
-
-.dog-tray__heading h3 {
-  margin: 0;
-  color: var(--ink);
-  font-size: 16px;
 }
 
 .dog-tray__slots {
@@ -2084,6 +2217,19 @@ h2 {
     margin-bottom: 8px;
   }
 
+  .dog-game__level-tools {
+    gap: 8px;
+  }
+
+  .dog-special-mechanism-modal {
+    padding: 12px;
+  }
+
+  .dog-special-mechanism-modal__dialog {
+    padding: 16px;
+    border-radius: 20px;
+  }
+
   .dog-game__status {
     margin: 8px 0 0;
     padding: 7px 10px;
@@ -2105,10 +2251,6 @@ h2 {
     flex: 0 0 auto;
     margin-top: 7px;
     padding: 8px;
-  }
-
-  .dog-tray__heading {
-    margin-bottom: 6px;
   }
 
   .dog-tray__slots {
