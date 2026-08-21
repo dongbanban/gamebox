@@ -21,12 +21,17 @@ export type DogItemTarget =
   | { readonly type: "tray-block"; readonly blockId: string }
   | { readonly type: "pattern"; readonly patternType: DogPatternType };
 
-export type DogItemEffect = {
-  readonly type: "melt";
-} & Pick<
-  GameSessionMeltResult,
-  "blockId" | "location" | "removedCount" | "tripleCount" | "meltedBlockIds"
->;
+export type DogItemEffect =
+  | ({
+      readonly type: "melt";
+    } & Pick<
+      GameSessionMeltResult,
+      "blockId" | "location" | "removedCount" | "tripleCount" | "meltedBlockIds"
+    >)
+  | {
+      readonly type: "reveal";
+      readonly blockId: string;
+    };
 
 export interface DogItemAnimationCompletion {
   readonly success: boolean;
@@ -444,7 +449,43 @@ const DOG_ITEM_BEHAVIORS: Readonly<Record<DogItemId, DogItemBehavior>> = {
       };
     },
   },
-  detector: createUnavailableBehavior("detector"),
+  detector: {
+    canUse: ({ session, target }) => {
+      if (target === undefined) {
+        return hasRevealableIllusionBlock(session);
+      }
+
+      const revealTarget = getDetectorTarget(target);
+      return revealTarget !== undefined && session.canRevealIllusionBlock(revealTarget.blockId);
+    },
+    execute: ({ session, target }) => {
+      const revealTarget = target === undefined ? undefined : getDetectorTarget(target);
+      if (revealTarget === undefined || !session.canRevealIllusionBlock(revealTarget.blockId)) {
+        return { success: false, visualFeedback: "detector" };
+      }
+
+      return {
+        success: true,
+        visualFeedback: "detector",
+        effect: {
+          type: "reveal",
+          blockId: revealTarget.blockId,
+        },
+        commitAfterAnimation: () => {
+          const completed = session.revealIllusionBlock(revealTarget.blockId);
+          return {
+            success: completed.revealed,
+            effect: completed.revealed
+              ? {
+                  type: "reveal",
+                  blockId: completed.blockId,
+                }
+              : undefined,
+          };
+        },
+      };
+    },
+  },
 };
 
 function createUnavailableBehavior(visualFeedback: DogItemVisualFeedback): DogItemBehavior {
@@ -489,6 +530,18 @@ function hasMeltableFrozenBlock(session: GameSession): boolean {
   ) || state.trayBlocks.some(
     (block) => session.canMeltFrozenBlock(block.id, "tray"),
   );
+}
+
+function hasRevealableIllusionBlock(session: GameSession): boolean {
+  return session.getState().remainingBlocks.some(
+    (block) => session.canRevealIllusionBlock(block.id),
+  );
+}
+
+function getDetectorTarget(
+  target: DogItemTarget,
+): { readonly blockId: string } | undefined {
+  return target.type === "block" ? { blockId: target.blockId } : undefined;
 }
 
 function getMeltTarget(

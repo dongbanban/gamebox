@@ -69,6 +69,12 @@ export interface GameSessionMeltResult extends GameSessionSnapshot {
   readonly snapshot: GameSessionSnapshot;
 }
 
+export interface GameSessionRevealResult extends GameSessionSnapshot {
+  readonly revealed: boolean;
+  readonly blockId: string;
+  readonly snapshot: GameSessionSnapshot;
+}
+
 export class GameSession {
   private readonly level: DogLegeDogLevel;
   private readonly graph: BlockGraph;
@@ -195,6 +201,29 @@ export class GameSession {
       ? this.remainingBlocks.get(blockId)
       : this.tray.find((candidate) => candidate.id === blockId);
     return block?.specialMechanism?.type === DOG_FREEZE_MECHANISM_TYPE;
+  }
+
+  canRevealIllusionBlock(blockId: string): boolean {
+    if (this.status !== "playing" || this.pendingSelection !== null) {
+      return false;
+    }
+
+    return this.remainingBlocks.get(blockId)?.specialMechanism?.type === DOG_ILLUSION_MECHANISM_TYPE;
+  }
+
+  revealIllusionBlock(blockId: string): GameSessionRevealResult {
+    if (!this.canRevealIllusionBlock(blockId)) {
+      return this.createRevealResult(false, blockId);
+    }
+
+    const block = this.remainingBlocks.get(blockId);
+    if (block === undefined) {
+      return this.createRevealResult(false, blockId);
+    }
+
+    this.remainingBlocks.set(blockId, removeSpecialMechanism(block));
+    this.updateResult();
+    return this.createRevealResult(true, blockId);
   }
 
   meltFrozenBlock(
@@ -403,6 +432,37 @@ export class GameSession {
         configurable: false,
         enumerable: false,
         value: Object.freeze([...meltedBlockIds]),
+        writable: false,
+      },
+      snapshot: {
+        configurable: false,
+        enumerable: false,
+        value: snapshot,
+        writable: false,
+      },
+    });
+    return Object.freeze(result);
+  }
+
+  private createRevealResult(
+    revealed: boolean,
+    blockId: string,
+  ): GameSessionRevealResult {
+    const snapshot = this.getState();
+    const result = {
+      ...snapshot,
+    } as GameSessionRevealResult;
+    Object.defineProperties(result, {
+      revealed: {
+        configurable: false,
+        enumerable: false,
+        value: revealed,
+        writable: false,
+      },
+      blockId: {
+        configurable: false,
+        enumerable: false,
+        value: blockId,
         writable: false,
       },
       snapshot: {

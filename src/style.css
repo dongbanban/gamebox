@@ -1427,6 +1427,35 @@ h2 {
   animation: dog-illusion-fuzzy-image 880ms steps(9, end) infinite;
 }
 
+.dog-block--detector-reveal {
+  border-color: rgba(255, 253, 220, 0.98);
+  box-shadow:
+    0 0 0 2px rgba(255, 209, 102, 0.78),
+    0 0 18px 6px rgba(255, 244, 188, 0.78),
+    4px 5px 0 rgba(22, 68, 93, 0.2),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.96);
+}
+
+.dog-block--detector-reveal .dog-block__glyph--fuzzy {
+  opacity: 0.12;
+  filter: blur(2px) saturate(0.3);
+  animation: none;
+}
+
+.dog-block__glyph--detector-reveal {
+  position: absolute;
+  z-index: 5;
+  inset: 7%;
+  display: block;
+  opacity: 0;
+  pointer-events: none;
+  animation: dog-detector-reveal 360ms cubic-bezier(0.16, 0.8, 0.3, 1) both;
+}
+
+.dog-block__glyph--detector-reveal img {
+  filter: drop-shadow(0 0 5px rgba(255, 253, 220, 0.94));
+}
+
 .dog-block--special-illusion:not(:disabled):hover .dog-block__glyph--fuzzy,
 .dog-block--special-illusion:focus-visible .dog-block__glyph--fuzzy {
   animation-duration: 420ms;
@@ -1583,10 +1612,32 @@ h2 {
   .dog-block--special-illusion .dog-block__glyph--fuzzy::before,
   .dog-block--special-illusion .dog-block__glyph--fuzzy::after,
   .dog-block--special-illusion .dog-block__glyph--fuzzy > img,
+  .dog-block--detector-reveal,
+  .dog-block__glyph--detector-reveal,
   .dog-tray__slot--illusion-reveal::before,
   .dog-tray__slot--illusion-reveal .dog-block__glyph,
   .dog-flying-block--illusion::before {
     animation: none;
+  }
+}
+
+@keyframes dog-detector-reveal {
+  0% {
+    opacity: 0;
+    transform: scale(0.58) rotate(-8deg);
+    filter: blur(8px) saturate(1.8);
+  }
+
+  48% {
+    opacity: 1;
+    transform: scale(1.08) rotate(3deg);
+    filter: blur(0) saturate(1.2);
+  }
+
+  100% {
+    opacity: 0.94;
+    transform: scale(1) rotate(0deg);
+    filter: blur(0) saturate(1);
   }
 }
 

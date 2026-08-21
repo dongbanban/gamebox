@@ -20,6 +20,7 @@ import { getDogLegeDogLevel } from "@/games/dog-lege-dog/levels/level-provider";
 import { createRunSeed } from "@/games/dog-lege-dog/levels/level-random";
 import {
   animateBlockFlight,
+  animateDogDetectorReveal,
   animateDogIllusionReveal,
   animateDogItemEffect,
   animateDogTorchMeltEffect,
@@ -147,7 +148,9 @@ export function createDogLegeDogGame(
     soundEffects.initialize();
 
     const sourceElement = findBlockElement(root, blockId);
-    const sourceBlock = level.blocks.find((block) => block.id === blockId);
+    const sourceBlock = runtime.session.getState().remainingBlocks.find(
+      (block) => block.id === blockId,
+    );
     const sourceRect = sourceElement?.getBoundingClientRect() ?? null;
     const isIllusion = sourceBlock?.specialMechanism?.type === DOG_ILLUSION_MECHANISM_TYPE;
     const patternMarkup = isIllusion
@@ -657,7 +660,16 @@ export function createDogLegeDogGame(
           location: effect.location,
           target: targetRect,
         })
-      : animateDogItemEffect({ root, itemId, visualFeedback });
+      : effect?.type === "reveal"
+        ? animateDogDetectorReveal({
+            root,
+            blockId: effect.blockId,
+            patternMarkup: renderDogPatternAsset(
+              level.blocks.find((block) => block.id === effect.blockId)?.patternType ??
+                DOG_PATTERN_TYPES[0],
+            ),
+          })
+        : animateDogItemEffect({ root, itemId, visualFeedback });
     runtime.itemAnimation = animation;
     void finishItemAnimation(animation);
   }
@@ -678,7 +690,7 @@ export function createDogLegeDogGame(
       runtime.inputLocked = true;
       confirmResult(result, false);
     }
-    if (completedEffect !== undefined && completedEffect !== null && completedEffect.removedCount > 0) {
+    if (completedEffect?.type === "melt" && completedEffect.removedCount > 0) {
       runtime.matchFeedbackActive = true;
       runtime.feedback = "match";
       renderStartedGame();

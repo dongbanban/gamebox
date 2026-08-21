@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   DOG_FREEZE_MECHANISM_TYPE,
+  DOG_ILLUSION_MECHANISM_TYPE,
   FIRST_LEVEL,
   GameSession,
   type DogBlock,
@@ -295,6 +296,101 @@ describe("DogItemRuntime", () => {
       removedCount: 3,
       tripleCount: 1,
     });
+  });
+
+  it("检测仪只接受棋盘幻化方块，原位揭示且不改变暂存槽", () => {
+    const session = new GameSession({
+      level: createLevel([
+        createBlock("illusion", WORKING_DOG, {
+          type: DOG_ILLUSION_MECHANISM_TYPE,
+          state: { status: "masked", disguisedPatternType: SINGLE_DOG },
+        }),
+        createBlock("ordinary", SINGLE_DOG),
+        createBlock("freeze", LICKING_DOG, {
+          type: DOG_FREEZE_MECHANISM_TYPE,
+          state: { status: "frozen", completedTriples: 0 },
+        }),
+      ]),
+      initialTrayBlocks: [
+        { id: "tray-1", patternType: WORKING_DOG },
+        { id: "tray-2", patternType: WORKING_DOG },
+      ],
+    });
+    const runtime = new DogItemRuntime({
+      level: session.getState().level,
+      session,
+      loadout: ["detector", "torch"],
+    });
+    const initial = session.getState();
+    const initialIllusion = initial.remainingBlocks.find((block) => block.id === "illusion");
+
+    expect(runtime.getState().items.find((item) => item.id === "detector")).toMatchObject({
+      remainingUses: 1,
+      available: true,
+    });
+    expect(runtime.begin("detector")).toMatchObject({
+      accepted: true,
+      success: false,
+      requiresTarget: true,
+    });
+    expect(runtime.isInputLocked()).toBe(true);
+    expect(runtime.begin("torch")).toMatchObject({ accepted: false, success: false });
+
+    for (const invalidTarget of [
+      { type: "block", blockId: "ordinary" },
+      { type: "block", blockId: "freeze" },
+      { type: "tray-block", blockId: "tray-1" },
+    ] as const) {
+      expect(runtime.confirmTarget(invalidTarget)).toMatchObject({
+        accepted: false,
+        success: false,
+      });
+      expect(runtime.getState().phase).toBe("targeting");
+      expect(session.getState()).toEqual(initial);
+    }
+
+    runtime.cancel();
+    expect(runtime.getState().phase).toBe("idle");
+    expect(runtime.getState().items.find((item) => item.id === "detector"))
+      .toMatchObject({ remainingUses: 1 });
+    expect(session.getState()).toEqual(initial);
+    expect(runtime.begin("detector")).toMatchObject({
+      accepted: true,
+      success: false,
+      requiresTarget: true,
+    });
+
+    const action = runtime.confirmTarget({ type: "block", blockId: "illusion" });
+
+    expect(action).toMatchObject({
+      accepted: true,
+      success: true,
+      itemId: "detector",
+      effect: { type: "reveal", blockId: "illusion" },
+    });
+    expect(runtime.getState()).toMatchObject({ phase: "animating" });
+    expect(runtime.getState().items.find((item) => item.id === "detector"))
+      .toMatchObject({ remainingUses: 0, available: false });
+    expect(session.getState()).toEqual(initial);
+    expect(session.getState().tray).toEqual([WORKING_DOG, WORKING_DOG]);
+
+    runtime.completeAnimation();
+
+    expect(runtime.isInputLocked()).toBe(false);
+    expect(session.getState().remainingBlocks.find((block) => block.id === "illusion"))
+      .toMatchObject({
+        x: initialIllusion?.x,
+        y: initialIllusion?.y,
+        z: initialIllusion?.z,
+        patternType: WORKING_DOG,
+      });
+    expect(session.getState().remainingBlocks.find((block) => block.id === "illusion"))
+      .not.toHaveProperty("specialMechanism");
+    expect(session.getState().tray).toEqual([WORKING_DOG, WORKING_DOG]);
+    expect(session.getState().status).toBe("playing");
+    expect(runtime.begin("detector")).toMatchObject({ accepted: false, success: false });
+    expect(runtime.getState().items.find((item) => item.id === "detector"))
+      .toMatchObject({ remainingUses: 0 });
   });
 });
 

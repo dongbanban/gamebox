@@ -1,6 +1,7 @@
 export const BLOCK_FLIGHT_DURATION_MS = 240;
 export const DOG_ILLUSION_REVEAL_DURATION_MS = 420;
 export const DOG_ITEM_FEEDBACK_DURATION_MS = 360;
+export const DOG_DETECTOR_REVEAL_DURATION_MS = DOG_ITEM_FEEDBACK_DURATION_MS;
 export const DOG_TORCH_MELT_DURATION_MS = DOG_ITEM_FEEDBACK_DURATION_MS;
 
 export interface BlockFlightOptions {
@@ -108,6 +109,38 @@ export function animateDogIllusionReveal(
     if (traySlot?.dataset.illusionReveal === "true") {
       delete traySlot.dataset.illusionReveal;
     }
+  });
+}
+
+export interface DogDetectorRevealOptions {
+  readonly root: HTMLElement;
+  readonly blockId: string;
+  readonly patternMarkup: string;
+}
+
+export function animateDogDetectorReveal(
+  options: DogDetectorRevealOptions,
+): CancellableAnimation {
+  const boardBlock = [...options.root.querySelectorAll<HTMLElement>(
+    '[data-testid="dog-block"][data-block-id]',
+  )].find((block) => block.dataset.blockId === options.blockId) ?? null;
+  const revealGlyph = boardBlock === null ? null : document.createElement("span");
+
+  if (boardBlock !== null && revealGlyph !== null) {
+    boardBlock.classList.add("dog-block--detector-reveal");
+    boardBlock.dataset.detectorReveal = "true";
+    revealGlyph.className = "dog-block__glyph dog-block__glyph--detector-reveal";
+    revealGlyph.dataset.testid = "dog-detector-reveal";
+    revealGlyph.innerHTML = options.patternMarkup;
+    boardBlock.append(revealGlyph);
+  }
+
+  return createAnimationLifecycle(DOG_DETECTOR_REVEAL_DURATION_MS, () => {
+    boardBlock?.classList.remove("dog-block--detector-reveal");
+    if (boardBlock?.dataset.detectorReveal === "true") {
+      delete boardBlock.dataset.detectorReveal;
+    }
+    revealGlyph?.remove();
   });
 }
 
