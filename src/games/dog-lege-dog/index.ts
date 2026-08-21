@@ -36,6 +36,11 @@ export type {
   DogLevelReplayMode,
   DogLegeDogLevel,
   DogPatternType,
+  DogSpecialMechanism,
+  DogSpecialMechanismConfig,
+  DogSpecialMechanismHandler,
+  DogSpecialMechanismStateValue,
+  DogTrayBlock,
   DogSafeChoiceSearchStatus,
   DogSolvabilityStatus,
 } from "@/games/dog-lege-dog/levels/first-level";
@@ -74,6 +79,17 @@ export {
   type SolvabilitySearchOptions,
 } from "@/games/dog-lege-dog/levels/level-generator";
 export { createRunSeed } from "@/games/dog-lege-dog/levels/level-random";
+export {
+  DOG_LEVEL_SPECIAL_MECHANISM_DEFINITIONS,
+} from "@/games/dog-lege-dog/game/game-config";
+
+export {
+  DOG_FREEZE_MECHANISM_TYPE,
+  DOG_FREEZE_MELT_TRIPLE_COUNT,
+  DOG_SPECIAL_MECHANISM_HANDLERS,
+  createDogSpecialMechanism,
+  getDogSpecialMechanismConfigs,
+} from "@/games/dog-lege-dog/game/special-mechanisms";
 
 export {
   DOG_ITEM_DEFINITIONS,

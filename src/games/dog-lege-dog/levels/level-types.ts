@@ -16,6 +16,36 @@ export const DOG_PATTERN_TYPES = [
 
 export type DogPatternType = (typeof DOG_PATTERN_TYPES)[number];
 
+export type DogSpecialMechanismStateValue = string | number | boolean | null;
+
+/** Opaque mechanism payload owned by the concrete game. */
+export interface DogSpecialMechanism {
+  readonly type: string;
+  readonly state: Readonly<Record<string, DogSpecialMechanismStateValue>>;
+}
+
+export interface DogSpecialMechanismConfig {
+  readonly type: string;
+  readonly min: number;
+  readonly max: number;
+}
+
+export interface DogTrayBlock {
+  readonly id: string;
+  readonly patternType: DogPatternType;
+  readonly specialMechanism?: DogSpecialMechanism;
+}
+
+export interface DogSpecialMechanismHandler {
+  readonly type: string;
+  isMatchable(mechanism: DogSpecialMechanism): boolean;
+  onSuccessfulTriples(
+    block: DogTrayBlock,
+    tripleCount: number,
+    triplePatterns: readonly DogPatternType[],
+  ): DogTrayBlock;
+}
+
 export type DogSolvabilityStatus =
   | "solvable"
   | "unsolvable"
@@ -50,6 +80,7 @@ export interface DogBlock {
   readonly height: 4;
   readonly rotation: 0;
   readonly patternType: DogPatternType;
+  readonly specialMechanism?: DogSpecialMechanism;
 }
 
 export interface DogDifficultyRange {
@@ -112,6 +143,7 @@ export interface DogLevelGeometry {
   readonly board: DogBoard;
   readonly patternTypes: readonly DogPatternType[];
   readonly blocks: readonly DogBlock[];
+  readonly specialMechanisms?: readonly DogSpecialMechanismConfig[];
 }
 
 export interface DogLegeDogLevel {
@@ -125,6 +157,7 @@ export interface DogLegeDogLevel {
   readonly board: DogBoard;
   readonly patternTypes: readonly DogPatternType[];
   readonly blocks: readonly DogBlock[];
+  readonly specialMechanisms: readonly DogSpecialMechanismConfig[];
   readonly solutionPath: readonly string[];
   readonly difficulty: DogLevelDifficulty;
   readonly generation: DogLevelGeneration;

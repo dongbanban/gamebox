@@ -223,7 +223,9 @@ async function winCurrentLevel(page: Page): Promise<void> {
       .evaluateAll((blocks) => {
         const trayPatterns = [...document.querySelectorAll<HTMLElement>(
           '[data-testid="dog-tray-slot"][data-pattern-type]',
-        )].map((slot) => slot.dataset.patternType);
+        )]
+          .filter((slot) => slot.dataset.specialMechanismState !== "frozen")
+          .map((slot) => slot.dataset.patternType);
         const trayCounts = new Map<string, number>();
         for (const pattern of trayPatterns) {
           if (pattern !== undefined) {

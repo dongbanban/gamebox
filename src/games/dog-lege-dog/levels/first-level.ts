@@ -28,6 +28,11 @@ export {
   type DogDifficultyCertainty,
   type DogSafeChoiceSearchStatus,
   type DogSolvabilityStatus,
+  type DogSpecialMechanism,
+  type DogSpecialMechanismConfig,
+  type DogSpecialMechanismHandler,
+  type DogSpecialMechanismStateValue,
+  type DogTrayBlock,
 } from "@/games/dog-lege-dog/levels/level-types";
 
 export const FIRST_LEVEL_REWARD = DEFAULT_LEVEL_REWARD;

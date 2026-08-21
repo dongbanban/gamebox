@@ -1,16 +1,26 @@
-import { insertPatternIntoTray } from "@/games/dog-lege-dog/levels/level-rules";
+import {
+  isDogTrayBlockMatchable,
+  insertDogBlockIntoTray,
+} from "@/games/dog-lege-dog/levels/level-rules";
 import { createBlockGraph, type BlockGraph } from "@/games/dog-lege-dog/levels/level-graph";
+import {
+  createDogSpecialMechanismHandlerMap,
+  DOG_SPECIAL_MECHANISM_HANDLERS,
+} from "@/games/dog-lege-dog/game/special-mechanisms";
 import type {
   DogLevelGeometry,
-  DogPatternType,
   DogSafeChoiceSearchStatus,
+  DogSpecialMechanismHandler,
   DogSolvabilityStatus,
+  DogTrayBlock,
 } from "@/games/dog-lege-dog/levels/level-types";
 
 export const MAX_SOLVABILITY_SEARCH_BRANCHES = 16 as const;
+const DEFAULT_SPECIAL_MECHANISM_HANDLER_MAP = createDogSpecialMechanismHandlerMap();
 
 export interface SolvabilitySearchOptions {
   readonly branchBudget?: number;
+  readonly specialMechanismHandlers?: readonly DogSpecialMechanismHandler[];
 }
 
 export interface PathVerification {
@@ -37,9 +47,12 @@ export function findSolvability(
   level: DogLevelGeometry & { readonly solutionPath?: readonly string[] },
   options: SolvabilitySearchOptions = {},
 ): SolvabilityResult {
+  const handlers = createDogSpecialMechanismHandlerMap(
+    options.specialMechanismHandlers ?? DOG_SPECIAL_MECHANISM_HANDLERS,
+  );
   const storedPath = level.solutionPath;
   if (storedPath !== undefined && storedPath.length > 0) {
-    const storedVerification = verifyRemovalPath(level, storedPath);
+    const storedVerification = verifyRemovalPath(level, storedPath, undefined, handlers);
     if (storedVerification.solvable) {
       return toSolvabilityResult(storedVerification);
     }
@@ -48,7 +61,7 @@ export function findSolvability(
   const descendingPath = [...level.blocks]
     .sort((first, second) => second.z - first.z || first.id.localeCompare(second.id))
     .map((block) => block.id);
-  const descendingVerification = verifyRemovalPath(level, descendingPath);
+  const descendingVerification = verifyRemovalPath(level, descendingPath, undefined, handlers);
   if (descendingVerification.solvable) {
     return toSolvabilityResult(descendingVerification);
   }
@@ -62,12 +75,13 @@ export function findSolvability(
     createFullBlockMask(level.blocks.length),
     [...graph.higherBlockCounts],
     [],
+    handlers,
     preferredRank,
     [],
     0,
   );
   if (greedyResult !== undefined) {
-    return normalizeSolvabilityResult(level, greedyResult);
+    return normalizeSolvabilityResult(level, greedyResult, handlers);
   }
 
   const searchResult = searchSolvableContinuation(
@@ -76,6 +90,7 @@ export function findSolvability(
     createFullBlockMask(level.blocks.length),
     [...graph.higherBlockCounts],
     [],
+    handlers,
     preferredRank,
     {
       completedStates: new Map<string, SolvabilityMemoEntry>(),
@@ -85,13 +100,15 @@ export function findSolvability(
     [],
     0,
   );
-  return normalizeSolvabilityResult(level, searchResult);
+  return normalizeSolvabilityResult(level, searchResult, handlers);
 }
 
 export function verifyRemovalPath(
   level: DogLevelGeometry,
   path: readonly string[],
   knownGraph?: BlockGraph,
+  specialMechanismHandlers: ReadonlyMap<string, DogSpecialMechanismHandler> =
+    DEFAULT_SPECIAL_MECHANISM_HANDLER_MAP,
 ): PathVerification {
   if (path.length !== level.blocks.length) {
     return createPathVerification(
@@ -105,7 +122,7 @@ export function verifyRemovalPath(
   const graph = knownGraph ?? createBlockGraph(level.blocks);
   const remaining = new Set(level.blocks.map((_, index) => index));
   const higherBlockCounts = [...graph.higherBlockCounts];
-  const tray: DogPatternType[] = [];
+  const tray: DogTrayBlock[] = [];
   const seen = new Set<number>();
   let trayPeakPressure = 0;
 
@@ -144,7 +161,11 @@ export function verifyRemovalPath(
       higherBlockCounts[lowerIndex] -= 1;
     }
 
-    insertPatternIntoTray(tray, level.blocks[blockIndex].patternType);
+    insertDogBlockIntoTray(
+      tray,
+      toTrayBlock(level.blocks[blockIndex]),
+      specialMechanismHandlers,
+    );
     trayPeakPressure = Math.max(trayPeakPressure, tray.length);
     if (tray.length >= 7 && remaining.size > 0) {
       return createPathVerification(
@@ -156,12 +177,25 @@ export function verifyRemovalPath(
     }
   }
 
-  return createPathVerification(
-    remaining.size === 0 ? "solvable" : "unsolvable",
-    path,
-    trayPeakPressure,
-    remaining.size === 0 ? undefined : "solvable path leaves blocks behind",
-  );
+  if (remaining.size !== 0) {
+    return createPathVerification(
+      "unsolvable",
+      path,
+      trayPeakPressure,
+      "solvable path leaves blocks behind",
+    );
+  }
+
+  if (tray.some((block) => block.specialMechanism !== undefined)) {
+    return createPathVerification(
+      "unsolvable",
+      path,
+      trayPeakPressure,
+      "solvable path leaves frozen blocks before natural melting",
+    );
+  }
+
+  return createPathVerification("solvable", path, trayPeakPressure);
 }
 
 export function countSafeChoices(
@@ -188,6 +222,9 @@ export function countSafeChoiceMetrics(
   let safeChoiceCount = 0;
   let searchStatus: DogSafeChoiceSearchStatus = "complete";
   const completedStates = new Map<string, SolvabilityMemoEntry>();
+  const handlers = createDogSpecialMechanismHandlerMap(
+    options.specialMechanismHandlers ?? DOG_SPECIAL_MECHANISM_HANDLERS,
+  );
   for (let index = 0; index < level.blocks.length; index += 1) {
     if (graph.higherBlockCounts[index] !== 0) {
       continue;
@@ -198,7 +235,12 @@ export function countSafeChoiceMetrics(
       blockId,
       ...solutionPath.filter((pathBlockId) => pathBlockId !== blockId),
     ];
-    const candidateVerification = verifyRemovalPath(level, candidatePath, graph);
+    const candidateVerification = verifyRemovalPath(
+      level,
+      candidatePath,
+      graph,
+      handlers,
+    );
     if (candidateVerification.solvable) {
       safeChoiceCount += 1;
       continue;
@@ -211,6 +253,7 @@ export function countSafeChoiceMetrics(
       index,
       options,
       completedStates,
+      handlers,
     );
     if (continuation.status === "solvable") {
       safeChoiceCount += 1;
@@ -232,11 +275,16 @@ function hasSolvableContinuation(
   firstBlockIndex: number,
   options: SolvabilitySearchOptions,
   completedStates: Map<string, SolvabilityMemoEntry>,
+  handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
 ): SolvabilityResult {
   const remainingMask = createFullBlockMask(level.blocks.length) &
     ~blockMask(firstBlockIndex);
-  const tray: DogPatternType[] = [];
-  insertPatternIntoTray(tray, level.blocks[firstBlockIndex].patternType);
+  const tray: DogTrayBlock[] = [];
+  insertDogBlockIntoTray(
+    tray,
+    toTrayBlock(level.blocks[firstBlockIndex]),
+    handlers,
+  );
   const firstBlockId = level.blocks[firstBlockIndex].id;
   if (tray.length >= 7 && remainingMask !== 0n) {
     return createSolvabilityResult(
@@ -260,6 +308,7 @@ function hasSolvableContinuation(
     remainingMask,
     higherBlockCounts,
     tray,
+    handlers,
     preferredRank,
     [firstBlockId],
     1,
@@ -274,6 +323,7 @@ function hasSolvableContinuation(
     remainingMask,
     higherBlockCounts,
     tray,
+    handlers,
     preferredRank,
     {
       completedStates,
@@ -302,13 +352,22 @@ function searchSolvableContinuation(
   graph: BlockGraph,
   remainingMask: bigint,
   higherBlockCounts: readonly number[],
-  tray: readonly DogPatternType[],
+  tray: readonly DogTrayBlock[],
+  handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
   preferredRank: ReadonlyMap<number, number>,
   context: SolvabilitySearchContext,
   path: readonly string[],
   pathDepth: number,
 ): SolvabilityResult {
   if (remainingMask === 0n) {
+    if (tray.some((block) => block.specialMechanism !== undefined)) {
+      return createSolvabilityResult(
+        "unsolvable",
+        path,
+        tray.length,
+        "solvable continuation leaves frozen blocks before natural melting",
+      );
+    }
     context.completedStates.set(stateKeyFor(remainingMask, tray), {
       status: "solvable",
       path: [],
@@ -361,7 +420,7 @@ function searchSolvableContinuation(
     );
   }
 
-  sortSelectableBlocks(selectable, level, tray, preferredRank);
+  sortSelectableBlocks(selectable, level, tray, handlers, preferredRank);
 
   let trayPeakPressure = tray.length;
   for (let choiceIndex = 0; choiceIndex < selectable.length; choiceIndex += 1) {
@@ -380,7 +439,11 @@ function searchSolvableContinuation(
     const selectedIndex = selectable[choiceIndex];
     const nextRemainingMask = remainingMask & ~blockMask(selectedIndex);
     const nextTray = [...tray];
-    insertPatternIntoTray(nextTray, level.blocks[selectedIndex].patternType);
+    insertDogBlockIntoTray(
+      nextTray,
+      toTrayBlock(level.blocks[selectedIndex]),
+      handlers,
+    );
     trayPeakPressure = Math.max(trayPeakPressure, nextTray.length);
     if (nextTray.length >= 7 && nextRemainingMask !== 0n) {
       continue;
@@ -396,6 +459,7 @@ function searchSolvableContinuation(
       nextRemainingMask,
       nextHigherBlockCounts,
       nextTray,
+      handlers,
       preferredRank,
       context,
       [...path, level.blocks[selectedIndex].id],
@@ -413,6 +477,7 @@ function searchSolvableContinuation(
             tray,
             continuationPath,
             graph,
+            handlers,
           ),
         });
       }
@@ -457,7 +522,8 @@ function findGreedyContinuation(
   graph: BlockGraph,
   initialRemainingMask: bigint,
   initialHigherBlockCounts: readonly number[],
-  initialTray: readonly DogPatternType[],
+  initialTray: readonly DogTrayBlock[],
+  handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
   preferredRank: ReadonlyMap<number, number>,
   initialPath: readonly string[],
   initialPathDepth: number,
@@ -478,11 +544,15 @@ function findGreedyContinuation(
     if (selectable.length === 0) {
       return undefined;
     }
-    sortSelectableBlocks(selectable, level, tray, preferredRank);
+    sortSelectableBlocks(selectable, level, tray, handlers, preferredRank);
 
     const selectedIndex = selectable[0];
     remainingMask &= ~blockMask(selectedIndex);
-    insertPatternIntoTray(tray, level.blocks[selectedIndex].patternType);
+    insertDogBlockIntoTray(
+      tray,
+      toTrayBlock(level.blocks[selectedIndex]),
+      handlers,
+    );
     trayPeakPressure = Math.max(trayPeakPressure, tray.length);
     path.push(level.blocks[selectedIndex].id);
     pathDepth += 1;
@@ -493,6 +563,10 @@ function findGreedyContinuation(
     for (const lowerIndex of graph.lowerBlockIndicesByHigher[selectedIndex]) {
       higherBlockCounts[lowerIndex] -= 1;
     }
+  }
+
+  if (tray.some((block) => block.specialMechanism !== undefined)) {
+    return undefined;
   }
 
   return createSolvabilityResult("solvable", path, trayPeakPressure);
@@ -518,17 +592,22 @@ function getSelectableBlocks(
 function sortSelectableBlocks(
   selectable: number[],
   level: DogLevelGeometry,
-  tray: readonly DogPatternType[],
+  tray: readonly DogTrayBlock[],
+  handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
   preferredRank: ReadonlyMap<number, number>,
 ): void {
   selectable.sort((firstIndex, secondIndex) => {
     const firstRank = preferredRank.get(firstIndex) ?? Number.MAX_SAFE_INTEGER;
     const secondRank = preferredRank.get(secondIndex) ?? Number.MAX_SAFE_INTEGER;
     const firstMatches = tray.filter(
-      (patternType) => patternType === level.blocks[firstIndex].patternType,
+      (block) =>
+        block.patternType === level.blocks[firstIndex].patternType &&
+        isDogTrayBlockMatchable(block, handlers),
     ).length;
     const secondMatches = tray.filter(
-      (patternType) => patternType === level.blocks[secondIndex].patternType,
+      (block) =>
+        block.patternType === level.blocks[secondIndex].patternType &&
+        isDogTrayBlockMatchable(block, handlers),
     ).length;
     return (
       secondMatches - firstMatches ||
@@ -541,16 +620,22 @@ function sortSelectableBlocks(
 
 function stateKeyFor(
   remainingMask: bigint,
-  tray: readonly DogPatternType[],
+  tray: readonly DogTrayBlock[],
 ): string {
-  return `${remainingMask.toString(36)}:${[...tray].sort().join(",")}`;
+  return `${remainingMask.toString(36)}:${tray
+    .map((block) => block.specialMechanism === undefined
+      ? `ordinary:${block.patternType}`
+      : `${block.id}:${block.patternType}:${serializeMechanism(block)}`)
+    .sort()
+    .join(",")}`;
 }
 
 function trayPeakPressureForPath(
   level: DogLevelGeometry,
-  initialTray: readonly DogPatternType[],
+  initialTray: readonly DogTrayBlock[],
   path: readonly string[],
   graph: BlockGraph,
+  handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
 ): number {
   const tray = [...initialTray];
   let trayPeakPressure = tray.length;
@@ -560,11 +645,38 @@ function trayPeakPressureForPath(
       return trayPeakPressure;
     }
 
-    insertPatternIntoTray(tray, level.blocks[blockIndex].patternType);
+    insertDogBlockIntoTray(
+      tray,
+      toTrayBlock(level.blocks[blockIndex]),
+      handlers,
+    );
     trayPeakPressure = Math.max(trayPeakPressure, tray.length);
   }
 
   return trayPeakPressure;
+}
+
+function toTrayBlock(block: DogLevelGeometry["blocks"][number]): DogTrayBlock {
+  return {
+    id: block.id,
+    patternType: block.patternType,
+    ...(block.specialMechanism === undefined
+      ? {}
+      : { specialMechanism: block.specialMechanism }),
+  };
+}
+
+function serializeMechanism(block: DogTrayBlock): string {
+  if (block.specialMechanism === undefined) {
+    return "ordinary";
+  }
+
+  return [
+    block.specialMechanism.type,
+    ...Object.entries(block.specialMechanism.state)
+      .sort(([firstKey], [secondKey]) => firstKey.localeCompare(secondKey))
+      .map(([key, value]) => `${key}=${String(value)}`),
+  ].join(";");
 }
 
 export function resolveBranchBudget(options: SolvabilitySearchOptions): number {
@@ -620,11 +732,12 @@ function toSolvabilityResult(verification: PathVerification): SolvabilityResult 
 function normalizeSolvabilityResult(
   level: DogLevelGeometry,
   result: SolvabilityResult,
+  handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
 ): SolvabilityResult {
   const graph = createBlockGraph(level.blocks);
   return {
     ...result,
-    trayPeakPressure: trayPeakPressureForPath(level, [], result.path, graph),
+    trayPeakPressure: trayPeakPressureForPath(level, [], result.path, graph, handlers),
   };
 }
 

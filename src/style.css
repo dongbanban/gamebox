@@ -977,6 +977,56 @@ h2 {
     inset 0 0 0 1px rgba(22, 68, 93, 0.18);
 }
 
+.dog-block--special {
+  isolation: isolate;
+  border-color: rgba(220, 250, 255, 0.96);
+}
+
+.dog-block--special::before {
+  position: absolute;
+  z-index: -1;
+  inset: 3px;
+  border: 1px solid rgba(239, 253, 255, 0.9);
+  border-radius: 7px;
+  background: repeating-linear-gradient(
+    135deg,
+    rgba(240, 253, 255, 0.38) 0 3px,
+    rgba(112, 207, 239, 0.14) 3px 7px
+  );
+  content: "";
+  pointer-events: none;
+  animation: dog-special-shimmer 2200ms ease-in-out infinite;
+}
+
+.dog-block--special-freeze {
+  box-shadow:
+    0 0 0 2px rgba(194, 244, 255, 0.78),
+    4px 5px 0 rgba(22, 68, 93, 0.2),
+    inset 0 0 0 1px rgba(22, 68, 93, 0.12);
+}
+
+.dog-block--special .dog-block__glyph {
+  position: relative;
+  z-index: 1;
+}
+
+.dog-tray__slot.dog-block--special {
+  position: relative;
+}
+
+@keyframes dog-special-shimmer {
+  0%,
+  100% {
+    opacity: 0.48;
+    transform: translateX(-3%);
+  }
+
+  50% {
+    opacity: 0.9;
+    transform: translateX(3%);
+  }
+}
+
 .dog-block--working-dog {
   --dog-block-background: #ef6f63;
   background: var(--dog-block-background);

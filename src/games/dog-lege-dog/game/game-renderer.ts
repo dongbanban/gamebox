@@ -214,6 +214,8 @@ function renderBlock(
   inputLocked: boolean,
 ): string {
   const className = getDogPatternClassName(block.patternType);
+  const mechanismClass = getSpecialMechanismClass(block.specialMechanism?.type);
+  const mechanismAttributes = renderSpecialMechanismAttributes(block.specialMechanism);
   const blockWidth = BLOCK_WIDTH * DOG_LOGICAL_UNIT_VISUAL_WIDTH_PX;
   const blockHeight = BLOCK_HEIGHT * DOG_LOGICAL_UNIT_VISUAL_HEIGHT_PX;
   const left = clampVisualBlockPosition(
@@ -231,10 +233,11 @@ function renderBlock(
   return `
     <button
       type="button"
-      class="dog-block dog-block--${className}"
+      class="dog-block dog-block--${className}${mechanismClass}"
       data-testid="dog-block"
       data-block-id="${block.id}"
       data-pattern-type="${block.patternType}"
+      ${mechanismAttributes}
       data-x="${block.x}"
       data-y="${block.y}"
       data-z="${block.z}"
@@ -272,17 +275,45 @@ function renderTray(session: GameSessionSnapshot, feedback: DogVisualFeedback): 
 
 function renderTraySlots(session: GameSessionSnapshot): string {
   return Array.from({ length: session.trayCapacity }, (_, index) => {
-    const patternType = session.tray[index];
-    if (patternType === undefined) {
+    const block = session.trayBlocks[index];
+    if (block === undefined) {
       return '<li class="dog-tray__slot" data-testid="dog-tray-slot" aria-label="空暂存槽"></li>';
     }
 
+    const mechanismClass = getSpecialMechanismClass(block.specialMechanism?.type);
+    const mechanismAttributes = renderSpecialMechanismAttributes(block.specialMechanism);
     return `
-      <li class="dog-tray__slot dog-tray__slot--filled dog-block--${getDogPatternClassName(patternType)}" data-testid="dog-tray-slot" data-pattern-type="${patternType}" aria-label="${patternType}">
-        <span class="dog-block__glyph">${renderDogPatternAsset(patternType)}</span>
+      <li class="dog-tray__slot dog-tray__slot--filled dog-block--${getDogPatternClassName(block.patternType)}${mechanismClass}" data-testid="dog-tray-slot" data-pattern-type="${block.patternType}" ${mechanismAttributes} aria-label="${block.patternType}">
+        <span class="dog-block__glyph">${renderDogPatternAsset(block.patternType)}</span>
       </li>
     `;
   }).join("");
+}
+
+function getSpecialMechanismClass(type: string | undefined): string {
+  if (type === undefined) {
+    return "";
+  }
+
+  return ` dog-block--special dog-block--special-${type.replace(/[^a-z0-9-]/gi, "-")}`;
+}
+
+function renderSpecialMechanismAttributes(
+  mechanism: DogLegeDogLevel["blocks"][number]["specialMechanism"],
+): string {
+  if (mechanism === undefined) {
+    return "";
+  }
+
+  const status = mechanism.state.status;
+  const completedTriples = mechanism.state.completedTriples;
+  return [
+    `data-special-mechanism="${mechanism.type}"`,
+    typeof status === "string" ? `data-special-mechanism-state="${status}"` : "",
+    typeof completedTriples === "number"
+      ? `data-special-mechanism-progress="${completedTriples}"`
+      : "",
+  ].filter(Boolean).join(" ");
 }
 
 function renderStatusMessage(status: GameSessionSnapshot["status"]): string {

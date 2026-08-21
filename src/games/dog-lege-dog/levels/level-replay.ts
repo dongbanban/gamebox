@@ -25,6 +25,7 @@ export interface GeneratedLevelCandidate {
   readonly board: DogLegeDogLevel["board"];
   readonly patternTypes: DogLegeDogLevel["patternTypes"];
   readonly blocks: DogLegeDogLevel["blocks"];
+  readonly specialMechanisms: DogLegeDogLevel["specialMechanisms"];
   readonly solutionPath: readonly string[];
   readonly difficulty: DogLevelDifficulty;
   readonly baseSeed: string;

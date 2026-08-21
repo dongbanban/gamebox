@@ -33,6 +33,7 @@ import {
   type SolvabilitySearchOptions,
   type SolvabilityResult,
 } from "@/games/dog-lege-dog/levels/level-solvability";
+import { createBlockGraph } from "@/games/dog-lege-dog/levels/level-graph";
 import {
   calculateDifficultyMetrics,
   compareDifficultyDistance,
@@ -48,6 +49,10 @@ import {
   getGuaranteedRandomSeed,
   SeededRandom,
 } from "@/games/dog-lege-dog/levels/level-random";
+import {
+  assignDogSpecialMechanisms,
+  getDogSpecialMechanismConfigs,
+} from "@/games/dog-lege-dog/game/special-mechanisms";
 import type {
   DogLevelDifficulty,
   DogLevelGenerationFailure,
@@ -368,12 +373,33 @@ export class GeneratedLevelGenerator {
       random,
       plannedRemovalPlan.order,
     );
-    const { blocks, solutionPath } = createSolvableBlocks(
+    const { blocks: ordinaryBlocks, solutionPath } = createSolvableBlocks(
       placements,
       patternTypes,
       request.levelNumber,
       random,
       removalPlan,
+    );
+    const specialMechanisms = getDogSpecialMechanismConfigs(blockCount);
+    const board = createBoard(shape);
+    const placementGraph = createBlockGraph(ordinaryBlocks);
+    const blocks = assignDogSpecialMechanisms(
+      ordinaryBlocks,
+      specialMechanisms,
+      random,
+      (candidateBlocks) =>
+        verifyRemovalPath(
+          {
+            number: request.levelNumber,
+            maxLayers,
+            board,
+            patternTypes,
+            blocks: candidateBlocks,
+            specialMechanisms,
+          },
+          solutionPath,
+          placementGraph,
+        ).solvable,
     );
     return createCandidateLevel(
       request,
@@ -381,9 +407,10 @@ export class GeneratedLevelGenerator {
       testSeed,
       attempt,
       maxLayers,
-      createBoard(shape),
+      board,
       patternTypes,
       blocks,
+      specialMechanisms,
       solutionPath,
       replayMode,
       randomSeed,
@@ -468,6 +495,7 @@ function createCandidateLevel(
   board: DogLegeDogLevel["board"],
   patternTypes: DogLegeDogLevel["patternTypes"],
   blocks: DogLegeDogLevel["blocks"],
+  specialMechanisms: DogLegeDogLevel["specialMechanisms"],
   solutionPath: readonly string[],
   replayMode: DogLevelReplayMode,
   randomSeed: string,
@@ -479,6 +507,7 @@ function createCandidateLevel(
     board,
     patternTypes,
     blocks,
+    specialMechanisms,
   };
   const geometryError = validatePlacementGeometry(board, blocks);
   if (geometryError !== undefined) {
@@ -508,6 +537,7 @@ function createCandidateLevel(
     board,
     patternTypes: Object.freeze([...patternTypes]),
     blocks: Object.freeze([...blocks]),
+    specialMechanisms: Object.freeze([...specialMechanisms]),
     solutionPath: Object.freeze([...solutionPath]),
     difficulty,
     baseSeed: request.seed,

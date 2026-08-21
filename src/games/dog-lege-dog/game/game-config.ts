@@ -1,4 +1,7 @@
-import type { DogPatternType } from "@/games/dog-lege-dog/levels/level-types";
+import type {
+  DogPatternType,
+  DogSpecialMechanismConfig,
+} from "@/games/dog-lege-dog/levels/level-types";
 
 const GAME_ID = "dog-lege-dog" as const;
 const GENERATOR_VERSION = 7 as const;
@@ -35,6 +38,13 @@ export const DOG_LEGE_DOG_CONFIG = Object.freeze({
     "拆家狗",
   ] as readonly DogPatternType[]),
   firstLevelTemplateId: "irregular-first-level-v2" as const,
+  specialMechanisms: Object.freeze([
+    {
+      type: "freeze",
+      min: 1,
+      max: 2,
+    },
+  ] as readonly DogSpecialMechanismConfig[]),
 });
 
 export const DOG_GAME_ID = DOG_LEGE_DOG_CONFIG.id;
@@ -48,3 +58,5 @@ export const FIRST_LEVEL_BLOCK_COUNT = DOG_LEGE_DOG_CONFIG.firstLevelBlockCount;
 export const FIRST_LEVEL_MAX_LAYERS = DOG_LEGE_DOG_CONFIG.firstLevelMaxLayers;
 export const FIRST_LEVEL_PATTERN_TYPES = DOG_LEGE_DOG_CONFIG.firstLevelPatternTypes;
 export const FIRST_LEVEL_TEMPLATE_ID = DOG_LEGE_DOG_CONFIG.firstLevelTemplateId;
+export const DOG_LEVEL_SPECIAL_MECHANISM_DEFINITIONS =
+  DOG_LEGE_DOG_CONFIG.specialMechanisms;
