@@ -3,7 +3,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { resolveAssetUrl } from "@/asset-url";
 import type { GameResult } from "@/catalog";
-import { BLOCK_FLIGHT_DURATION_MS } from "@/games/dog-lege-dog/assets/animation-effects";
+import {
+  BLOCK_FLIGHT_DURATION_MS,
+  DOG_ITEM_FEEDBACK_DURATION_MS,
+} from "@/games/dog-lege-dog/assets/animation-effects";
 import {
   DEFAULT_LEVEL_SEED,
   DOG_PATTERN_TYPES,
@@ -346,8 +349,9 @@ describe("狗了个狗首关", () => {
       expect(block?.disabled).toBe(false);
       block?.dispatchEvent(new Event("pointerup", { bubbles: true, cancelable: true }));
       const isTerminal = game.getState().session.status !== "playing";
-      expect(game.getState().inputLocked).toBe(isTerminal);
-      if (!isTerminal) {
+      const isMatchAnimating = game.getState().feedback === "match";
+      expect(game.getState().inputLocked).toBe(isTerminal || isMatchAnimating);
+      if (!isTerminal && !isMatchAnimating) {
         expect(root.querySelector('[data-testid="dog-block"]:not([disabled])')).not.toBeNull();
       }
       expect(game.getState().session.remainingBlocks.some((candidate) => candidate.id === blockId)).toBe(
@@ -449,7 +453,7 @@ describe("狗了个狗首关", () => {
 
     expect(matched).toBe(true);
     expect(game.getState().feedback).toBe("match");
-    expect(game.getState().inputLocked).toBe(false);
+    expect(game.getState().inputLocked).toBe(true);
     expect(root.querySelector('[data-testid="dog-feedback"]')).toBeNull();
     const matchEffect = root.querySelector('[data-testid="dog-match-effect"]');
     expect(matchEffect?.getAttribute("role")).toBe("status");
@@ -534,6 +538,72 @@ describe("狗了个狗首关", () => {
         actions: ["retry", "catalog"],
       }),
     ]);
+    game.destroy();
+  });
+
+  it("暂存槽容量提升显示剩余次数，成功后锁定输入并扩展当前暂存槽", async () => {
+    vi.useFakeTimers();
+    const root = document.createElement("div");
+    const game = startTestGame(root, {
+      loadout: ["tray-capacity", "wildcard", "torch"],
+    });
+    const capacityButton = root.querySelector<HTMLButtonElement>(
+      '[data-action="use-item"][data-item-id="tray-capacity"]',
+    );
+
+    expect(capacityButton).not.toBeNull();
+    expect(capacityButton?.disabled).toBe(false);
+    expect(capacityButton?.querySelector('[data-testid="dog-item-uses"]')?.textContent).toContain(
+      "剩余 1 次",
+    );
+    expect(root.querySelectorAll('[data-testid="dog-tray-slot"]')).toHaveLength(7);
+
+    capacityButton?.click();
+
+    expect(game.getState().session.trayCapacity).toBe(8);
+    expect(game.getState().inputLocked).toBe(true);
+    expect(
+      root.querySelector<HTMLButtonElement>(
+        '[data-action="use-item"][data-item-id="tray-capacity"]',
+      )?.disabled,
+    ).toBe(true);
+    expect(root.querySelectorAll('[data-testid="dog-tray-slot"]')).toHaveLength(8);
+    expect(root.querySelector('[data-testid="dog-item-effect"]')).not.toBeNull();
+
+    await vi.advanceTimersByTimeAsync(DOG_ITEM_FEEDBACK_DURATION_MS);
+
+    expect(game.getState().inputLocked).toBe(false);
+    expect(root.querySelector('[data-testid="dog-item-effect"]')).toBeNull();
+    expect(game.getState().items?.items.find((item) => item.id === "tray-capacity")).toMatchObject({
+      remainingUses: 0,
+      available: false,
+    });
+    game.destroy();
+  });
+
+  it("更换道具组重置当前尝试容量加成与次数", async () => {
+    vi.useFakeTimers();
+    const root = document.createElement("div");
+    const game = startTestGame(root, {
+      runSeed: "capacity-loadout-reset",
+      loadout: ["tray-capacity", "wildcard", "torch"],
+    });
+
+    root.querySelector<HTMLButtonElement>('[data-item-id="tray-capacity"]')?.click();
+    await vi.advanceTimersByTimeAsync(DOG_ITEM_FEEDBACK_DURATION_MS);
+    expect(game.getState().session.trayCapacity).toBe(8);
+
+    root.querySelector<HTMLButtonElement>('[data-action="edit-loadout"]')?.click();
+    root.querySelector<HTMLButtonElement>('[data-loadout-id="wildcard"]')?.click();
+    root.querySelector<HTMLButtonElement>('[data-loadout-id="triple-removal"]')?.click();
+    root.querySelector<HTMLButtonElement>('[data-action="confirm-loadout"]')?.click();
+    root.querySelector<HTMLButtonElement>('[data-action="apply-loadout-change"]')?.click();
+
+    expect(game.getState().session.trayCapacity).toBe(7);
+    expect(game.getState().items?.items.find((item) => item.id === "tray-capacity")).toMatchObject({
+      remainingUses: 1,
+      available: true,
+    });
     game.destroy();
   });
 });

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   BLOCK_HEIGHT,
   BLOCK_WIDTH,
@@ -20,6 +20,10 @@ const SINGLE_DOG: DogPatternType = "单身狗";
 const LICKING_DOG: DogPatternType = "舔狗";
 
 describe("狗了个狗特殊机制", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("冻结方块进入暂存槽后不参与三消，并记录后续三消进度", () => {
     const freezeBlock = createBlock("freeze", 0, 0, WORKING_DOG, {
       type: DOG_FREEZE_MECHANISM_TYPE,
@@ -142,7 +146,8 @@ describe("狗了个狗特殊机制", () => {
     game.destroy();
   });
 
-  it("冻结方块融化时在 UI 动画层显示冰壳消散效果", () => {
+  it("冻结方块融化时在 UI 动画层显示冰壳消散效果", async () => {
+    vi.useFakeTimers();
     const root = document.createElement("div");
     const game = startDogLegeDogGame(root, {
       runSeed: "freeze-melt-ui-seed",
@@ -156,6 +161,7 @@ describe("狗了个狗特殊机制", () => {
       if (meltEffect !== null) {
         break;
       }
+      await vi.advanceTimersByTimeAsync(900);
     }
 
     expect(meltEffect).not.toBeNull();

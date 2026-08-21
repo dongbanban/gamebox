@@ -209,6 +209,18 @@ describe("GameSession", () => {
     expect(session.canSelectBlock("remaining")).toBe(false);
   });
 
+  it("暂存槽容量提升只增加当前尝试一格并封顶", () => {
+    const session = new GameSession(
+      createLevel([createBlock("remaining", 0, 0, 0, WORKING_DOG)]),
+    );
+
+    expect(session.getState().trayCapacity).toBe(7);
+    expect(session.increaseTrayCapacity()).toBe(true);
+    expect(session.getState().trayCapacity).toBe(8);
+    expect(session.increaseTrayCapacity()).toBe(false);
+    expect(session.getState().trayCapacity).toBe(8);
+  });
+
   it("棋盘方块全部清空时通关", () => {
     const session = new GameSession(
       createLevel([

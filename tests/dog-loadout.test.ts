@@ -22,6 +22,13 @@ describe("狗了个狗道具组", () => {
     ]);
     expect(DOG_ITEM_DEFINITIONS).toHaveLength(5);
     expect(DOG_ITEM_DEFINITIONS.every((item) => item.name && item.description && item.icon)).toBe(true);
+    expect(DOG_ITEM_DEFINITIONS.map((item) => item.targetType)).toEqual([
+      "tray-pattern",
+      "none",
+      "pattern",
+      "block",
+      "block",
+    ]);
     expect(DOG_LOADOUT_SIZE).toBe(3);
     expect(isValidDogLoadout(["triple-removal", "tray-capacity", "wildcard"])).toBe(true);
     expect(isValidDogLoadout(["triple-removal", "tray-capacity"])).toBe(false);
@@ -43,6 +50,11 @@ describe("狗了个狗道具组", () => {
       current: null,
       levelNumber: 1,
       confirming: false,
+      itemUses: {
+        "triple-removal": 1,
+        "tray-capacity": 1,
+        wildcard: 1,
+      },
     });
     const changeEditor = renderDogLoadoutEditor({
       mode: "change",
@@ -59,6 +71,7 @@ describe("狗了个狗道具组", () => {
 
     expect(editor).toContain('data-testid="dog-loadout-modal"');
     expect(editor).toContain('role="dialog"');
+    expect(editor).toContain("本关 1 次");
     expect(editor).not.toContain("DOG · LOADOUT");
     expect(editor).toContain(">清空</button>");
     expect(editor).toMatch(/data-action="confirm-loadout"[^>]*>\s*确认\s*<\/button>/);

@@ -17,7 +17,9 @@ import {
   DOG_SPECIAL_MECHANISM_HANDLERS,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
 
-export const GAME_SESSION_TRAY_CAPACITY = 7 as const;
+export const GAME_SESSION_BASE_TRAY_CAPACITY = 7 as const;
+export const GAME_SESSION_TRAY_CAPACITY = GAME_SESSION_BASE_TRAY_CAPACITY;
+export const GAME_SESSION_MAX_TRAY_CAPACITY = 8 as const;
 
 export type GameSessionStatus = "playing" | "won" | "lost";
 
@@ -25,6 +27,7 @@ export interface GameSessionOptions {
   readonly level?: DogLegeDogLevel;
   readonly initialTray?: readonly DogPatternType[];
   readonly initialTrayBlocks?: readonly DogTrayBlock[];
+  readonly initialTrayCapacity?: number;
   readonly specialMechanismHandlers?: readonly DogSpecialMechanismHandler[];
 }
 
@@ -34,7 +37,7 @@ export interface GameSessionSnapshot {
   readonly remainingBlocks: readonly DogBlock[];
   readonly tray: readonly DogPatternType[];
   readonly trayBlocks: readonly DogTrayBlock[];
-  readonly trayCapacity: typeof GAME_SESSION_TRAY_CAPACITY;
+  readonly trayCapacity: number;
   readonly selectableBlockIds: readonly string[];
 }
 
@@ -53,6 +56,7 @@ export class GameSession {
   private readonly higherBlockCounts: number[];
   private readonly specialMechanismHandlers: ReadonlyMap<string, DogSpecialMechanismHandler>;
   private tray: DogTrayBlock[];
+  private trayCapacity: number;
   private status: GameSessionStatus = "playing";
 
   constructor(level?: DogLegeDogLevel);
@@ -65,6 +69,14 @@ export class GameSession {
     this.specialMechanismHandlers = createDogSpecialMechanismHandlerMap(
       options.specialMechanismHandlers ?? DOG_SPECIAL_MECHANISM_HANDLERS,
     );
+    this.trayCapacity = options.initialTrayCapacity ?? GAME_SESSION_BASE_TRAY_CAPACITY;
+    if (
+      !Number.isInteger(this.trayCapacity) ||
+      this.trayCapacity < GAME_SESSION_BASE_TRAY_CAPACITY ||
+      this.trayCapacity > GAME_SESSION_MAX_TRAY_CAPACITY
+    ) {
+      throw new Error("GameSession tray capacity must be an integer between 7 and 8");
+    }
     for (const block of this.level.blocks) {
       if (
         block.specialMechanism !== undefined &&
@@ -93,8 +105,8 @@ export class GameSession {
       this.remainingBlocks.set(block.id, block);
     }
 
-    if (this.tray.length > GAME_SESSION_TRAY_CAPACITY) {
-      throw new Error("GameSession tray cannot contain more than 7 blocks");
+    if (this.tray.length > this.trayCapacity) {
+      throw new Error(`GameSession tray cannot contain more than ${this.trayCapacity} blocks`);
     }
 
     resolveDogTrayMatches(this.tray, this.specialMechanismHandlers);
@@ -111,7 +123,7 @@ export class GameSession {
       remainingBlocks,
       tray: Object.freeze(trayBlocks.map((block) => block.patternType)),
       trayBlocks,
-      trayCapacity: GAME_SESSION_TRAY_CAPACITY,
+      trayCapacity: this.trayCapacity,
       selectableBlockIds: Object.freeze(this.getSelectableBlockIds()),
     });
   }
@@ -128,6 +140,15 @@ export class GameSession {
 
     const blockIndex = this.graph.indexById.get(blockId);
     return blockIndex !== undefined && this.higherBlockCounts[blockIndex] === 0;
+  }
+
+  increaseTrayCapacity(): boolean {
+    if (this.status !== "playing" || this.trayCapacity >= GAME_SESSION_MAX_TRAY_CAPACITY) {
+      return false;
+    }
+
+    this.trayCapacity += 1;
+    return true;
   }
 
   selectBlock(blockId: string): GameSessionSelectionResult {
@@ -236,7 +257,7 @@ export class GameSession {
       return;
     }
 
-    if (this.tray.length >= GAME_SESSION_TRAY_CAPACITY) {
+    if (this.tray.length >= this.trayCapacity) {
       this.status = "lost";
     }
   }

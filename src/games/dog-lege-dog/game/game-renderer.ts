@@ -1,12 +1,22 @@
-import type { DogLegeDogLevel } from "@/games/dog-lege-dog/levels/first-level";
+import type {
+  DogLegeDogLevel,
+  DogPatternType,
+} from "@/games/dog-lege-dog/levels/first-level";
 import { BLOCK_HEIGHT, BLOCK_WIDTH } from "@/games/dog-lege-dog/levels/level-types";
 import { getDogPatternClassName, renderDogPatternAsset } from "@/games/dog-lege-dog/assets/game-assets";
 import type { GameSessionSnapshot } from "@/games/dog-lege-dog/game/game-session";
-import type { DogLegeDogGameState, DogVisualFeedback } from "@/games/dog-lege-dog/game/game-types";
+import type {
+  DogLegeDogGameState,
+  DogVisualFeedback,
+} from "@/games/dog-lege-dog/game/game-types";
 import {
+  DOG_ITEM_DEFINITIONS,
   renderDogLoadoutEditor,
   renderDogLoadoutSummary,
+  type DogItemTargetType,
 } from "@/games/dog-lege-dog/game/dog-loadout";
+import { getDogItemUses } from "@/games/dog-lege-dog/game/dog-item-runtime";
+import type { DogItemRuntimeSnapshot } from "@/games/dog-lege-dog/game/dog-item-runtime";
 
 export const DOG_BLOCK_VISUAL_SIZE_PX = 48;
 export const DOG_LOGICAL_UNIT_VISUAL_WIDTH_PX = DOG_BLOCK_VISUAL_SIZE_PX / BLOCK_WIDTH;
@@ -74,14 +84,15 @@ export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameSta
                   boardPixelHeight,
                   selectableBlockIds,
                   state.inputLocked,
+                  state.items?.selectedItemTargetType ?? null,
                 ),
               )
               .join("")}
           </div>
         </div>
       </div>
-      <div data-testid="dog-loadout-slot">${renderLoadoutArea(state)}</div>
-      ${renderTray(state.session, state.feedback)}
+      <div class="dog-loadout-slot" data-testid="dog-loadout-slot">${renderLoadoutArea(state)}</div>
+      ${renderTray(state.session, state.feedback, state.items?.selectedItemTargetType ?? null)}
       <div class="dog-animation-layer" data-testid="dog-animation-layer"></div>
     </section>
   `;
@@ -135,6 +146,7 @@ function updateDogLegeDogGame(
           boardPixelHeight,
           selectableBlockIds,
           state.inputLocked,
+          state.items?.selectedItemTargetType ?? null,
         ),
       )
       .join("");
@@ -147,7 +159,10 @@ function updateDogLegeDogGame(
     trayCount.textContent = `${state.session.tray.length}/${state.session.trayCapacity}`;
   }
   if (traySlots !== null && traySlots !== undefined) {
-    traySlots.innerHTML = renderTraySlots(state.session);
+    traySlots.innerHTML = renderTraySlots(
+      state.session,
+      state.items?.selectedItemTargetType ?? null,
+    );
   }
 
   if (loadoutSlot !== null) {
@@ -174,10 +189,85 @@ function renderLoadoutArea(state: DogLegeDogGameState): string {
       current: state.loadout,
       levelNumber: state.level.number,
       confirming: state.loadoutEditor.confirming,
+      itemUses: Object.fromEntries(
+        DOG_ITEM_DEFINITIONS.map((item) => [item.id, getDogItemUses(state.level, item.id)]),
+      ),
     });
   }
 
-  return state.loadout === null ? "" : renderDogLoadoutSummary(state.loadout, state.loadoutLocked);
+  if (state.loadout === null || state.items === null) {
+    return "";
+  }
+
+  const targetPatterns = state.items.selectedItemTargetType === "tray-pattern"
+    ? [...new Set(state.session.tray)]
+    : state.level.patternTypes;
+  return `${renderDogLoadoutSummary(state.loadout, state.loadoutLocked)}${renderDogItemPanel(state.items, state.loadoutLocked, targetPatterns)}`;
+}
+
+function renderDogItemPanel(
+  items: DogItemRuntimeSnapshot,
+  controlsLocked: boolean,
+  targetPatterns: readonly DogPatternType[],
+): string {
+  const controls = items.items.map((item) => {
+    const available = item.available && !controlsLocked;
+    return `
+    <button
+      class="dog-item-button${available ? "" : " dog-item-button--disabled"}"
+      type="button"
+      data-action="use-item"
+      data-item-id="${item.id}"
+      data-item-target-type="${item.targetType}"
+      data-item-feedback="${item.visualFeedback}"
+      aria-label="${item.name}，剩余 ${item.remainingUses} 次"
+      ${available ? "" : "disabled"}
+    >
+      <span class="dog-item-button__icon" aria-hidden="true">${item.icon}</span>
+      <span class="dog-item-button__body">
+        <strong>${item.name}</strong>
+        <small data-testid="dog-item-uses">剩余 ${item.remainingUses} 次</small>
+      </span>
+    </button>
+  `;
+  }).join("");
+  const patternTargets = items.phase === "targeting" &&
+    (items.selectedItemTargetType === "pattern" || items.selectedItemTargetType === "tray-pattern")
+    ? `
+        <div class="dog-item-pattern-targets" data-testid="dog-item-pattern-targets">
+          ${targetPatterns.map((patternType) => `
+            <button
+              class="dog-item-pattern-target"
+              type="button"
+              data-action="select-item-pattern"
+              data-pattern-type="${patternType}"
+            >${patternType}</button>
+          `).join("")}
+        </div>
+      `
+    : "";
+  const targetPrompt = items.phase === "targeting"
+    ? `
+        <div class="dog-item-targeting" data-testid="dog-item-targeting" role="status">
+          <div>
+            <span>选择道具目标</span>
+            ${patternTargets}
+          </div>
+          <button class="text-button" type="button" data-action="cancel-item-target">取消</button>
+        </div>
+      `
+    : "";
+
+  return `
+    <section class="dog-item-panel" data-testid="dog-item-panel" aria-label="本关道具">
+      <div class="dog-item-panel__heading">
+        <h3>道具</h3>
+        <span>${items.phase === "idle" ? "可主动使用" : "操作已锁定"}</span>
+      </div>
+      <div class="dog-item-panel__items">${controls}</div>
+      ${targetPrompt}
+    </section>
+  `;
 }
 
 export function fitDogBoardToFrame(root: HTMLElement): void {
@@ -193,13 +283,18 @@ export function fitDogBoardToFrame(root: HTMLElement): void {
     frame.clientWidth -
     Number.parseFloat(frameStyle.paddingLeft) -
     Number.parseFloat(frameStyle.paddingRight);
+  const availableHeight =
+    frame.clientHeight -
+    Number.parseFloat(frameStyle.paddingTop) -
+    Number.parseFloat(frameStyle.paddingBottom);
   const boardOuterWidth = board.offsetWidth;
   const boardOuterHeight = board.offsetHeight;
   if (boardOuterWidth <= 0 || boardOuterHeight <= 0) {
     return;
   }
-  const scale =
-    availableWidth > 0 ? Math.min(1, availableWidth / boardOuterWidth) : 1;
+  const widthScale = availableWidth > 0 ? availableWidth / boardOuterWidth : 1;
+  const heightScale = availableHeight > 0 ? availableHeight / boardOuterHeight : 1;
+  const scale = Math.min(1, widthScale, heightScale);
 
   board.style.setProperty("--board-display-scale", String(scale));
   scaler.style.width = `${boardOuterWidth * scale}px`;
@@ -212,6 +307,7 @@ function renderBlock(
   boardPixelHeight: number,
   selectableBlockIds: readonly string[],
   inputLocked: boolean,
+  itemTargetType: DogItemTargetType | null,
 ): string {
   const className = getDogPatternClassName(block.patternType);
   const mechanismClass = getSpecialMechanismClass(block.specialMechanism?.type);
@@ -228,7 +324,9 @@ function renderBlock(
     DOG_BOARD_SAFE_MARGIN_PX,
     boardPixelHeight - blockHeight - DOG_BOARD_SAFE_MARGIN_PX,
   );
-  const selectable = !inputLocked && selectableBlockIds.includes(block.id);
+  const selectingBlockTarget = itemTargetType === "block";
+  const selectable = selectingBlockTarget || (!inputLocked && selectableBlockIds.includes(block.id));
+  const targetAttributes = selectingBlockTarget ? 'data-item-targetable="true"' : "";
 
   return `
     <button
@@ -238,10 +336,11 @@ function renderBlock(
       data-block-id="${block.id}"
       data-pattern-type="${block.patternType}"
       ${mechanismAttributes}
+      ${targetAttributes}
       data-x="${block.x}"
       data-y="${block.y}"
       data-z="${block.z}"
-      aria-label="可选择方块"
+      aria-label="${selectingBlockTarget ? "选择道具目标" : "可选择方块"}"
       ${selectable ? "" : "disabled"}
       style="--block-left: ${left}px; --block-top: ${top}px; --block-width: ${blockWidth}px; --block-height: ${blockHeight}px; --block-z: ${block.z};"
     ><span class="dog-block__glyph">${renderDogPatternAsset(block.patternType)}</span></button>
@@ -256,7 +355,11 @@ function clampVisualBlockPosition(
   return Math.min(Math.max(position, minPosition), maxPosition);
 }
 
-function renderTray(session: GameSessionSnapshot, feedback: DogVisualFeedback): string {
+function renderTray(
+  session: GameSessionSnapshot,
+  feedback: DogVisualFeedback,
+  itemTargetType: DogItemTargetType | null,
+): string {
   return `
     <section class="dog-tray" data-testid="dog-tray-region" aria-label="暂存槽">
       <div class="dog-tray__heading">
@@ -264,7 +367,7 @@ function renderTray(session: GameSessionSnapshot, feedback: DogVisualFeedback): 
         <span>${session.tray.length}/${session.trayCapacity}</span>
       </div>
       ${renderMatchFeedback(feedback)}
-      <ol class="dog-tray__slots" data-testid="dog-tray">${renderTraySlots(session)}</ol>
+      <ol class="dog-tray__slots" data-testid="dog-tray" style="--dog-tray-columns: ${session.trayCapacity};">${renderTraySlots(session, itemTargetType)}</ol>
       <p class="dog-game__status dog-game__status--${session.status}" data-testid="dog-status" role="status">${renderStatusMessage(session.status)}</p>
       <div class="dog-effects-layer" data-testid="dog-effects-layer">
         <canvas class="dog-effects-canvas" data-testid="dog-effects-canvas"></canvas>
@@ -273,7 +376,10 @@ function renderTray(session: GameSessionSnapshot, feedback: DogVisualFeedback): 
   `;
 }
 
-function renderTraySlots(session: GameSessionSnapshot): string {
+function renderTraySlots(
+  session: GameSessionSnapshot,
+  itemTargetType: DogItemTargetType | null = null,
+): string {
   return Array.from({ length: session.trayCapacity }, (_, index) => {
     const block = session.trayBlocks[index];
     if (block === undefined) {
@@ -282,8 +388,11 @@ function renderTraySlots(session: GameSessionSnapshot): string {
 
     const mechanismClass = getSpecialMechanismClass(block.specialMechanism?.type);
     const mechanismAttributes = renderSpecialMechanismAttributes(block.specialMechanism);
+    const targetAttributes = itemTargetType === "block"
+      ? 'data-item-targetable="true" role="button" tabindex="0"'
+      : "";
     return `
-      <li class="dog-tray__slot dog-tray__slot--filled dog-block--${getDogPatternClassName(block.patternType)}${mechanismClass}" data-testid="dog-tray-slot" data-block-id="${block.id}" data-pattern-type="${block.patternType}" ${mechanismAttributes} aria-label="${block.patternType}">
+      <li class="dog-tray__slot dog-tray__slot--filled dog-block--${getDogPatternClassName(block.patternType)}${mechanismClass}" data-testid="dog-tray-slot" data-block-id="${block.id}" data-pattern-type="${block.patternType}" ${mechanismAttributes} ${targetAttributes} aria-label="${itemTargetType === "block" ? "选择道具目标" : block.patternType}">
         <span class="dog-block__glyph">${renderDogPatternAsset(block.patternType)}</span>
       </li>
     `;

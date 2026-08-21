@@ -10,11 +10,17 @@ export const DOG_ITEM_IDS = Object.freeze([
 
 export type DogItemId = (typeof DOG_ITEM_IDS)[number];
 
+export type DogItemTargetType = "none" | "tray-pattern" | "pattern" | "block";
+
+export type DogItemVisualFeedback = DogItemId;
+
 export interface DogItemDefinition {
   readonly id: DogItemId;
   readonly name: string;
   readonly icon: string;
   readonly description: string;
+  readonly targetType: DogItemTargetType;
+  readonly visualFeedback: DogItemVisualFeedback;
 }
 
 export const DOG_ITEM_DEFINITIONS: readonly DogItemDefinition[] = Object.freeze([
@@ -23,30 +29,40 @@ export const DOG_ITEM_DEFINITIONS: readonly DogItemDefinition[] = Object.freeze(
     name: "道具三消移除",
     icon: "✦",
     description: "补齐槽内图案并一次移除",
+    targetType: "tray-pattern",
+    visualFeedback: "triple-removal",
   }),
   Object.freeze({
     id: "tray-capacity",
     name: "暂存槽容量提升",
     icon: "+1",
     description: "当前关卡暂存槽增加 1 格",
+    targetType: "none",
+    visualFeedback: "tray-capacity",
   }),
   Object.freeze({
     id: "wildcard",
     name: "万能方块",
     icon: "◇",
     description: "选择图案后转化入槽",
+    targetType: "pattern",
+    visualFeedback: "wildcard",
   }),
   Object.freeze({
     id: "torch",
     name: "火把",
     icon: "火",
     description: "融化一个冻结方块",
+    targetType: "block",
+    visualFeedback: "torch",
   }),
   Object.freeze({
     id: "detector",
     name: "检测仪",
     icon: "⌕",
     description: "揭示一个幻化方块",
+    targetType: "block",
+    visualFeedback: "detector",
   }),
 ]);
 
@@ -101,6 +117,7 @@ export interface DogLoadoutEditorRenderOptions {
   readonly levelNumber: number;
   readonly confirming: boolean;
   readonly changeTarget?: "current" | "next";
+  readonly itemUses?: Partial<Record<DogItemId, number>>;
 }
 
 export function renderDogLoadoutEditor({
@@ -110,6 +127,7 @@ export function renderDogLoadoutEditor({
   levelNumber,
   confirming,
   changeTarget = "current",
+  itemUses,
 }: DogLoadoutEditorRenderOptions): string {
   const isChange = mode === "change";
   const isNextChange = changeTarget === "next";
@@ -123,6 +141,7 @@ export function renderDogLoadoutEditor({
   const titleId = `dog-loadout-title-${mode}`;
   const options = DOG_ITEM_DEFINITIONS.map((item) => {
     const selected = draft.includes(item.id);
+    const uses = itemUses?.[item.id];
     return `
       <button
         class="dog-loadout-option${selected ? " dog-loadout-option--selected" : ""}"
@@ -136,7 +155,7 @@ export function renderDogLoadoutEditor({
         <span class="dog-loadout-option__body">
           <strong>${item.name}</strong>
           <span>${item.description}</span>
-          <small>次数按关卡规则初始化</small>
+          <small>${uses === undefined ? "次数按关卡规则初始化" : `本关 ${uses} 次`}</small>
         </span>
         <span class="dog-loadout-option__check" aria-hidden="true">${selected ? "✓" : ""}</span>
       </button>

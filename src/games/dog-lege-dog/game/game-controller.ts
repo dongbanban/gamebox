@@ -4,12 +4,26 @@ import type {
   GameResultAction,
   GameResultDisplay,
 } from "@/game-contracts";
-import { FIRST_LEVEL, type DogLegeDogLevel } from "@/games/dog-lege-dog/levels/first-level";
+import {
+  DOG_PATTERN_TYPES,
+  FIRST_LEVEL,
+  type DogLegeDogLevel,
+} from "@/games/dog-lege-dog/levels/first-level";
 import { DOG_GAME_ID, DOG_GAME_RESULT_DISPLAY } from "@/games/dog-lege-dog/game/game-config";
 import { getDogLegeDogLevel } from "@/games/dog-lege-dog/levels/level-provider";
 import { createRunSeed } from "@/games/dog-lege-dog/levels/level-random";
-import { animateBlockFlight, type CancellableAnimation } from "@/games/dog-lege-dog/assets/animation-effects";
+import {
+  animateBlockFlight,
+  animateDogItemEffect,
+  type CancellableAnimation,
+} from "@/games/dog-lege-dog/assets/animation-effects";
 import { GameSession, type GameSessionSnapshot } from "@/games/dog-lege-dog/game/game-session";
+import {
+  DogItemRuntime,
+  type DogItemActionResult,
+  type DogItemTarget,
+  type DogItemRuntimeSnapshot,
+} from "@/games/dog-lege-dog/game/dog-item-runtime";
 import { createParticleEffects } from "@/games/dog-lege-dog/assets/particle-effects";
 import { createSoundEffects } from "@/games/dog-lege-dog/assets/sound-effects";
 import {
@@ -47,6 +61,8 @@ interface DogGameRuntime {
   matchFeedbackActive: boolean;
   matchAnimation: Promise<void> | null;
   loadout: readonly DogItemId[] | null;
+  itemRuntime: DogItemRuntime | null;
+  itemAnimation: CancellableAnimation | null;
   loadoutEditor: DogLoadoutEditorState | null;
 }
 
@@ -63,8 +79,9 @@ export function createDogLegeDogGame(
   const initialLoadout = managesLoadout
     ? normalizeDogLoadout(options.loadout)
     : null;
+  const initialSession = new GameSession(level);
   const runtime: DogGameRuntime = {
-    session: new GameSession(level),
+    session: initialSession,
     started: false,
     destroyed: false,
     hasInteracted: false,
@@ -79,6 +96,15 @@ export function createDogLegeDogGame(
     matchFeedbackActive: false,
     matchAnimation: null,
     loadout: initialLoadout,
+    itemRuntime:
+      initialLoadout === null
+        ? null
+        : new DogItemRuntime({
+            level,
+            session: initialSession,
+            loadout: initialLoadout,
+          }),
+    itemAnimation: null,
     loadoutEditor:
       managesLoadout && initialLoadout === null
         ? { mode: "initial", draft: [], confirming: false }
@@ -100,7 +126,7 @@ export function createDogLegeDogGame(
   };
 
   function commitBlockSelection(blockId: string, shouldAnimate: boolean): GameSessionSnapshot {
-    if (runtime.inputLocked) {
+    if (runtime.itemRuntime?.getState().phase === "targeting" || isGameInputLocked()) {
       return runtime.session.getState();
     }
 
@@ -139,7 +165,7 @@ export function createDogLegeDogGame(
       return nextState;
     }
 
-    runtime.inputLocked = result !== null;
+    runtime.inputLocked = didMatch || result !== null;
     if (didMatch) {
       runtime.matchFeedbackActive = true;
       runtime.feedback = "match";
@@ -224,6 +250,8 @@ export function createDogLegeDogGame(
       return Promise.resolve();
     }
 
+    runtime.inputLocked = true;
+
     if (runtime.feedback !== "match") {
       runtime.feedback = "match";
       renderStartedGame();
@@ -239,6 +267,9 @@ export function createDogLegeDogGame(
       }
 
       runtime.matchFeedbackActive = false;
+      if (runtime.session.getState().status === "playing") {
+        runtime.inputLocked = false;
+      }
       if (runtime.feedback === "match") {
         runtime.feedback = "idle";
         renderStartedGame();
@@ -358,6 +389,15 @@ export function createDogLegeDogGame(
   }
 
   const handlePointerUp = (event: Event): void => {
+    if (runtime.itemRuntime?.getState().phase === "targeting") {
+      const itemTarget = getItemTarget(event);
+      if (itemTarget !== undefined) {
+        event.preventDefault();
+        confirmItemTarget(itemTarget);
+      }
+      return;
+    }
+
     const blockId = getBlockId(event);
     if (blockId === undefined) {
       return;
@@ -399,6 +439,21 @@ export function createDogLegeDogGame(
       applyLoadoutChange();
       return;
     }
+    if (action === "use-item") {
+      startItem(actionElement?.dataset.itemId);
+      return;
+    }
+    if (action === "cancel-item-target") {
+      cancelItemTarget();
+      return;
+    }
+    if (action === "select-item-pattern") {
+      const patternType = actionElement?.dataset.patternType;
+      if (isDogPatternType(patternType)) {
+        confirmItemTarget({ type: "pattern", patternType });
+      }
+      return;
+    }
     if (action === "toggle-sound") {
       soundEffects.initialize();
       runtime.soundEnabled = !runtime.soundEnabled;
@@ -413,11 +468,121 @@ export function createDogLegeDogGame(
       return;
     }
 
+    if (runtime.itemRuntime?.getState().phase === "targeting") {
+      const itemTarget = getItemTarget(event);
+      if (itemTarget !== undefined) {
+        confirmItemTarget(itemTarget);
+      }
+      return;
+    }
+
     const blockId = getBlockId(event);
     if (blockId !== undefined) {
       commitBlockSelection(blockId, false);
     }
   };
+
+  function startItem(itemId: string | undefined): void {
+    if (
+      runtime.itemRuntime === null ||
+      itemId === undefined ||
+      !isDogItemId(itemId) ||
+      runtime.inputLocked ||
+      runtime.activeFlights.size > 0 ||
+      runtime.matchAnimation !== null
+    ) {
+      return;
+    }
+
+    soundEffects.initialize();
+    const action = runtime.itemRuntime.begin(itemId);
+    applyItemAction(action);
+  }
+
+  function confirmItemTarget(target: DogItemTarget): void {
+    if (runtime.itemRuntime === null) {
+      return;
+    }
+
+    const action = runtime.itemRuntime.confirmTarget(target);
+    applyItemAction(action);
+  }
+
+  function applyItemAction(action: DogItemActionResult): void {
+    renderStartedGame();
+    if (action.accepted && action.success && action.itemId !== null) {
+      startItemAnimation(action.itemId, action.snapshot.visualFeedback);
+    }
+  }
+
+  function cancelItemTarget(): void {
+    if (runtime.itemRuntime?.getState().phase !== "targeting") {
+      return;
+    }
+
+    runtime.itemRuntime.cancel();
+    renderStartedGame();
+  }
+
+  function startItemAnimation(
+    itemId: DogItemId,
+    visualFeedback: DogItemRuntimeSnapshot["visualFeedback"],
+  ): void {
+    if (runtime.itemAnimation !== null) {
+      return;
+    }
+
+    const animation = animateDogItemEffect({
+      root,
+      itemId,
+      visualFeedback,
+    });
+    runtime.itemAnimation = animation;
+    void finishItemAnimation(animation);
+  }
+
+  async function finishItemAnimation(animation: CancellableAnimation): Promise<void> {
+    await animation.promise;
+    if (runtime.destroyed || runtime.itemAnimation !== animation) {
+      return;
+    }
+
+    runtime.itemAnimation = null;
+    runtime.itemRuntime?.completeAnimation();
+    renderStartedGame();
+  }
+
+  function isGameInputLocked(): boolean {
+    return runtime.inputLocked || runtime.itemRuntime?.isInputLocked() === true;
+  }
+
+  function getItemTarget(event: Event): DogItemTarget | undefined {
+    const target = event.target;
+    if (!(target instanceof Element)) {
+      return undefined;
+    }
+
+    const targetElement = target.closest<HTMLElement>('[data-item-targetable="true"]');
+    const itemTargetType = runtime.itemRuntime?.getState().selectedItemTargetType;
+    if (targetElement === null || itemTargetType !== "block") {
+      return undefined;
+    }
+
+    const blockId = targetElement.dataset.blockId;
+    if (blockId === undefined) {
+      return undefined;
+    }
+
+    return targetElement.dataset.testid === "dog-tray-slot"
+      ? { type: "tray-block", blockId }
+      : { type: "block", blockId };
+  }
+
+  function isDogPatternType(
+    value: string | undefined,
+  ): value is (typeof DOG_PATTERN_TYPES)[number] {
+    return value !== undefined && DOG_PATTERN_TYPES.includes(value as (typeof DOG_PATTERN_TYPES)[number]);
+  }
 
   function toggleLoadout(itemId: string | undefined): void {
     if (runtime.loadoutEditor === null || itemId === undefined || !isDogItemId(itemId)) {
@@ -535,6 +700,8 @@ export function createDogLegeDogGame(
     runtime.inputLocked = false;
     if (mode === "change") {
       runtime.session = new GameSession(level);
+      runtime.itemAnimation?.cancel();
+      runtime.itemAnimation = null;
       runtime.hasInteracted = false;
       runtime.resultConfirmed = false;
       runtime.resultPresented = false;
@@ -542,6 +709,11 @@ export function createDogLegeDogGame(
       runtime.matchFeedbackActive = false;
       runtime.matchAnimation = null;
     }
+    runtime.itemRuntime = new DogItemRuntime({
+      level,
+      session: runtime.session,
+      loadout: runtime.loadout,
+    });
     renderStartedGame();
   }
 
@@ -596,6 +768,8 @@ export function createDogLegeDogGame(
         flight.cancel();
       }
       runtime.activeFlights.clear();
+      runtime.itemAnimation?.cancel();
+      runtime.itemAnimation = null;
       particleEffects.destroy();
       soundEffects.destroy();
       root.removeEventListener("pointerup", handlePointerUp);
@@ -620,6 +794,8 @@ function createGameState(
   snapshot?: GameSessionSnapshot,
 ): DogLegeDogGameState {
   const sessionState = snapshot ?? runtime.session.getState();
+  const itemState = runtime.itemRuntime?.getState() ?? null;
+  const inputLocked = runtime.inputLocked || runtime.itemRuntime?.isInputLocked() === true;
 
   return {
     gameId: DOG_GAME_ID,
@@ -627,15 +803,16 @@ function createGameState(
       sessionState.status === "playing" && !runtime.hasInteracted ? "ready" : sessionState.status,
     level: sessionState.level,
     session: sessionState,
-    inputLocked: runtime.inputLocked,
+    inputLocked,
     loadoutLocked:
       sessionState.status !== "playing" ||
-      runtime.inputLocked ||
+      inputLocked ||
       runtime.activeFlights.size > 0 ||
       runtime.matchAnimation !== null,
     feedback: runtime.feedback,
     soundEnabled: runtime.soundEnabled,
     loadout: runtime.loadout,
+    items: itemState,
     loadoutEditor:
       runtime.loadoutEditor === null
         ? null

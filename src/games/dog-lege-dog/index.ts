@@ -1,4 +1,6 @@
 export {
+  GAME_SESSION_BASE_TRAY_CAPACITY,
+  GAME_SESSION_MAX_TRAY_CAPACITY,
   GAME_SESSION_TRAY_CAPACITY,
   GameSession,
   type GameSessionOptions,
@@ -102,7 +104,25 @@ export {
   normalizeDogLoadout,
   type DogItemDefinition,
   type DogItemId,
+  type DogItemTargetType,
+  type DogItemVisualFeedback,
 } from "@/games/dog-lege-dog/game/dog-loadout";
+
+export {
+  DOG_ITEM_RUNTIME_DEFINITIONS,
+  DogItemRuntime,
+  getDogItemUses,
+  type DogItemActionResult,
+  type DogItemAvailabilityContext,
+  type DogItemExecutionContext,
+  type DogItemExecutionResult,
+  type DogItemRuntimeDefinition,
+  type DogItemRuntimeOptions,
+  type DogItemRuntimePhase,
+  type DogItemRuntimeSnapshot,
+  type DogItemState,
+  type DogItemTarget,
+} from "@/games/dog-lege-dog/game/dog-item-runtime";
 
 export { createDogLegeDogGame, startDogLegeDogGame } from "@/games/dog-lege-dog/game/game-controller";
 export type {

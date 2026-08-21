@@ -3,6 +3,7 @@ import type { DogLegeDogLevel } from "@/games/dog-lege-dog/levels/first-level";
 import type { GameSessionSnapshot } from "@/games/dog-lege-dog/game/game-session";
 import type { DOG_GAME_ID } from "@/games/dog-lege-dog/game/game-config";
 import type { DogItemId } from "@/games/dog-lege-dog/game/dog-loadout";
+import type { DogItemRuntimeSnapshot } from "@/games/dog-lege-dog/game/dog-item-runtime";
 
 export interface DogLegeDogGameState {
   readonly gameId: typeof DOG_GAME_ID;
@@ -14,6 +15,7 @@ export interface DogLegeDogGameState {
   readonly feedback: DogVisualFeedback;
   readonly soundEnabled: boolean;
   readonly loadout: readonly DogItemId[] | null;
+  readonly items: DogItemRuntimeSnapshot | null;
   readonly loadoutEditor: DogLoadoutEditorState | null;
   readonly debug: {
     readonly elapsedMs: number;

@@ -1,4 +1,5 @@
 export const BLOCK_FLIGHT_DURATION_MS = 240;
+export const DOG_ITEM_FEEDBACK_DURATION_MS = 360;
 
 export interface BlockFlightOptions {
   readonly root: HTMLElement;
@@ -70,6 +71,34 @@ export function animateBlockFlight(options: BlockFlightOptions): CancellableAnim
   animation?.addEventListener("finish", lifecycle.cancel, { once: true });
   animation?.addEventListener("cancel", lifecycle.cancel, { once: true });
 
+  return lifecycle;
+}
+
+export interface DogItemEffectOptions {
+  readonly root: HTMLElement;
+  readonly itemId: string;
+  readonly visualFeedback: string | null;
+}
+
+export function animateDogItemEffect(options: DogItemEffectOptions): CancellableAnimation {
+  const layer = options.root.querySelector<HTMLElement>(
+    '[data-testid="dog-animation-layer"]',
+  );
+  if (layer === null) {
+    return createAnimationLifecycle(DOG_ITEM_FEEDBACK_DURATION_MS, () => undefined);
+  }
+
+  const effect = document.createElement("div");
+  effect.className = "dog-item-effect";
+  effect.dataset.testid = "dog-item-effect";
+  effect.dataset.itemId = options.itemId;
+  effect.dataset.itemFeedback = options.visualFeedback ?? options.itemId;
+  effect.innerHTML = '<span class="dog-item-effect__spark" aria-hidden="true">✦</span>';
+  layer.append(effect);
+
+  const lifecycle = createAnimationLifecycle(DOG_ITEM_FEEDBACK_DURATION_MS, () => {
+    effect.remove();
+  });
   return lifecycle;
 }
 
