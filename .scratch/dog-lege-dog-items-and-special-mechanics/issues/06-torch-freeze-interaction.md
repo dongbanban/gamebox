@@ -21,3 +21,4 @@
 - 2026-08-21：新增棋盘/暂存槽/普通目标拒绝、取消、扣次、融化时序、即时三消、输入锁与视觉测试。`pnpm test:focused`：107 tests；`pnpm exec vitest run tests/special-mechanism.test.ts tests/item-runtime.test.ts --reporter dot`：23 tests；`pnpm test:random`：3 tests；`pnpm test:e2e`：18/18；`pnpm build`、`pnpm typecheck`、`git diff --check`：通过。
 - 2026-08-21：全量核心拆分命令中已显示受影响核心用例通过；Vitest 在 level-generator/既有 worker 收尾阶段未退出，手动中止（code 130），无测试失败输出。仓库 `test:qa` 仍受 `test:core` 误收集 `tests/e2e/**` 的已知问题影响，随机回归与 E2E 已单独完成。
 - 2026-08-21：目标选择 UI 改为高亮合法暂存槽；block 目标移除黄色提示；顶部“取消 / 变更”同排展示，“变更”保持最右。`pnpm test:ui`：44 tests；`pnpm exec vitest run tests/dog-loadout.test.ts tests/special-mechanism.test.ts --reporter dot`：19 tests；`pnpm typecheck`、`git diff --check`：通过。
+- 2026-08-21：取消按钮改为更宽的扁平文字按钮，保留与“变更”同排及右侧顺序。`pnpm test:ui`：44 tests；道具/特殊机制专测：19 tests；`pnpm typecheck`、`git diff --check`：通过。

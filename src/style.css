@@ -861,16 +861,18 @@ h2 {
 }
 
 .dog-loadout-summary .dog-loadout-summary__cancel {
-  padding: 6px 10px;
-  border: 1px solid rgba(79, 155, 192, 0.34);
-  border-radius: 999px;
-  background: rgba(251, 254, 255, 0.74);
+  min-width: 56px;
+  min-height: 32px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
   color: var(--ink-muted);
+  text-align: center;
 }
 
 .dog-loadout-summary .dog-loadout-summary__cancel:hover {
-  border-color: var(--sky-deep);
-  background: rgba(217, 244, 255, 0.9);
+  background: rgba(79, 155, 192, 0.1);
   color: var(--sky-deep);
   text-decoration: none;
 }
