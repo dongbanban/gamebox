@@ -17,7 +17,7 @@
 
 - [x] 浮层顶部不生成红色 `DOG · LOADOUT` 简要说明；首次选择按钮为“清空 / 确认”，更换按钮为“取消 / 确认”。
 - [x] 道具卡片改为左右布局：左侧 48px 缩略图占位，右侧纵向排列名称与功能简介。
-- [x] 暂存槽上方只展示 48px 道具缩略图与首字占位，不显示浅蓝底色、左侧“道具组”说明或缩略图长名称；右侧“变更”为蓝色纯文字按钮。
+- [x] 暂存槽上方只展示 48px 蓝色方块道具缩略图与白色首字占位，与棋盘保持 8px 间距；不显示浅蓝底色、左侧“道具组”说明或缩略图长名称；右侧“变更”为蓝色纯文字按钮。
 - [x] 补充上述文案、DOM、卡片布局、摘要占位尺寸与移动端布局测试。
 
 ## Comments
@@ -29,3 +29,5 @@
 - 2026-08-20：视觉细化完成。`pnpm test:ui` 42/42；`pnpm exec vitest run tests/dog-loadout.test.ts` 3/3；`pnpm build` 通过；`pnpm test:e2e` 17/17；`pnpm test:e2e:cross-browser` 6/6；移动端布局用例 1/1。
 - 2026-08-20：复核后统一二次确认保留“返回修改 / 确认更换”，卡片与摘要占位均固定 48px；`dog-loadout-thumbnail__placeholder` 表达首字占位语义。
 - 2026-08-20：最终移动端样式断言 1/1；摘要透明无边框，变更按钮蓝色纯文字，卡片左右布局与 48px 占位通过。
+- 2026-08-21：按新视觉参考图补充蓝色白字缩略图与摘要到棋盘 8px 间距；状态恢复为 `claimed`。
+- 2026-08-21：蓝色方块白字、摘要到棋盘可见边界 8px 间距完成；`pnpm exec playwright test tests/e2e/register-catalog.spec.ts -g "移动端竖屏活动游戏"` 1/1，`pnpm test:ui` 42/42，`pnpm build` 通过，`pnpm test:e2e:cross-browser` 6/6，`git diff --check` 通过；状态置为 `done`。

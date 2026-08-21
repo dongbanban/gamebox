@@ -227,6 +227,9 @@ test.describe("注册与游戏目录", () => {
       const summary = document.querySelector<HTMLElement>('[data-testid="dog-loadout-summary"]');
       const changeButton = document.querySelector<HTMLElement>('[data-testid="dog-edit-loadout"]');
       const thumbnail = document.querySelector<HTMLElement>('[data-testid="dog-loadout-thumbnail"]');
+      const placeholders = [
+        ...document.querySelectorAll<HTMLElement>('.dog-loadout-thumbnail__placeholder'),
+      ];
       return {
         viewportWidth: window.innerWidth,
         viewportHeight: window.innerHeight,
@@ -244,6 +247,16 @@ test.describe("注册与游戏目录", () => {
         loadoutSummary: summary === null ? null : serializeRect(summary),
         loadoutChangeButton: changeButton === null ? null : serializeRect(changeButton),
         loadoutThumbnail: thumbnail === null ? null : serializeRect(thumbnail),
+        loadoutPlaceholders: placeholders.map((placeholder) => {
+          const style = getComputedStyle(placeholder);
+          const placeholderRect = placeholder.getBoundingClientRect();
+          return {
+            width: placeholderRect.width,
+            height: placeholderRect.height,
+            backgroundColor: style.backgroundColor,
+            color: style.color,
+          };
+        }),
         loadoutSummaryBackground: summary === null ? "" : getComputedStyle(summary).backgroundColor,
         loadoutSummaryBorderWidth: summary === null ? "" : getComputedStyle(summary).borderTopWidth,
         loadoutChangeButtonColor: changeButton === null ? "" : getComputedStyle(changeButton).color,
@@ -276,8 +289,19 @@ test.describe("注册与游戏目录", () => {
     expect(layout.tray?.bottom).toBeLessThanOrEqual(layout.viewportHeight);
     expect(layout.loadoutSummary).not.toBeNull();
     expect(layout.loadoutChangeButton).not.toBeNull();
+    expect(layout.loadoutSummary?.top).toBeCloseTo(layout.boardBottom + 8, 1);
     expect(layout.loadoutSummaryBackground).toBe("rgba(0, 0, 0, 0)");
     expect(layout.loadoutSummaryBorderWidth).toBe("0px");
+    expect(layout.loadoutPlaceholders).toHaveLength(3);
+    expect(
+      layout.loadoutPlaceholders.every(
+        (placeholder) =>
+          placeholder.width === 48 &&
+          placeholder.height === 48 &&
+          placeholder.backgroundColor === "rgb(63, 148, 195)" &&
+          placeholder.color === "rgb(255, 253, 248)",
+      ),
+    ).toBe(true);
     expect(layout.loadoutChangeButtonColor).toBe("rgb(63, 148, 195)");
     expect(layout.loadoutChangeButtonBackground).toBe("rgba(0, 0, 0, 0)");
     expect(layout.loadoutChangeButtonBorderWidth).toBe("0px");
@@ -416,16 +440,21 @@ test.describe("注册与游戏目录", () => {
     const desktopLayout = await page.evaluate(() => {
       const board = document.querySelector<HTMLElement>('[data-testid="dog-board"]');
       const frame = document.querySelector<HTMLElement>('.dog-board-frame');
+      const summary = document.querySelector<HTMLElement>('[data-testid="dog-loadout-summary"]');
       const boardRect = board?.getBoundingClientRect();
       const frameRect = frame?.getBoundingClientRect();
+      const summaryRect = summary?.getBoundingClientRect();
       return {
         boardWidth: boardRect?.width ?? 0,
+        boardBottom: boardRect?.bottom ?? 0,
         boardCenter: boardRect === undefined ? 0 : boardRect.left + boardRect.width / 2,
         frameCenter: frameRect === undefined ? 0 : frameRect.left + frameRect.width / 2,
+        summaryTop: summaryRect?.top ?? 0,
       };
     });
     expect(desktopLayout.boardWidth).toBeLessThanOrEqual(1040);
     expect(Math.abs(desktopLayout.boardCenter - desktopLayout.frameCenter)).toBeLessThanOrEqual(1);
+    expect(desktopLayout.summaryTop).toBeCloseTo(desktopLayout.boardBottom + 8, 1);
   });
 
   test("棋盘狗图标不显示白色下沿，暂存槽图片不溢出", async ({ page }) => {

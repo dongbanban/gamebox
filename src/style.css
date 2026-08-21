@@ -550,6 +550,8 @@ h2 {
 }
 
 .dog-game {
+  --dog-loadout-board-gap: 8px;
+  --dog-board-frame-padding: clamp(8px, 2vw, 20px);
   position: relative;
   isolation: isolate;
   padding: clamp(14px, 2.5vw, 26px);
@@ -738,7 +740,7 @@ h2 {
 .dog-loadout-summary {
   align-items: center;
   gap: 12px;
-  margin-top: 14px;
+  margin-top: calc(var(--dog-loadout-board-gap) - var(--dog-board-frame-padding));
   padding: 0;
   border: 0;
   background: transparent;
@@ -767,8 +769,8 @@ h2 {
   height: 48px;
   place-items: center;
   border-radius: 14px;
-  background: var(--yellow);
-  color: var(--ink);
+  background: var(--sky-deep);
+  color: #fffdf8;
   font-size: 18px;
   font-weight: 900;
 }
@@ -896,7 +898,7 @@ h2 {
   justify-content: center;
   max-width: 100%;
   overflow: hidden;
-  padding: clamp(8px, 2vw, 20px);
+  padding: var(--dog-board-frame-padding);
   border-radius: 22px;
   background: var(--sky-pale);
   overscroll-behavior: contain;
@@ -1459,6 +1461,7 @@ h2 {
   }
 
   .dog-game {
+    --dog-board-frame-padding: 3px;
     display: flex;
     min-height: 0;
     height: 100%;
@@ -1492,7 +1495,7 @@ h2 {
   }
 
   .dog-loadout-summary {
-    margin: 0;
+    margin: calc(var(--dog-loadout-board-gap) - var(--dog-board-frame-padding)) 0 0;
     gap: 8px;
     padding: 0;
   }
