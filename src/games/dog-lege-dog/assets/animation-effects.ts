@@ -130,6 +130,10 @@ export function animateDogDetectorReveal(
     boardBlock.classList.add("dog-block--detector-reveal");
     boardBlock.dataset.detectorReveal = "true";
     revealGlyph.className = "dog-block__glyph dog-block__glyph--detector-reveal";
+    revealGlyph.style.position = "absolute";
+    revealGlyph.style.inset = "4px";
+    revealGlyph.style.overflow = "hidden";
+    revealGlyph.style.borderRadius = "inherit";
     revealGlyph.dataset.testid = "dog-detector-reveal";
     revealGlyph.innerHTML = options.patternMarkup;
     boardBlock.append(revealGlyph);

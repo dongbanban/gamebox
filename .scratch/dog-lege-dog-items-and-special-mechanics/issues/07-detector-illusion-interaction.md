@@ -6,7 +6,7 @@
 
 **Status:** in-progress
 
-- [x] 检测仪只能选择棋盘中的幻化方块；普通方块、冻结方块、暂存槽方块不可作为目标。
+- [x] 检测仪只能选择当前可点击的棋盘幻化方块；普通方块、冻结方块、不可点击方块、暂存槽方块不可作为目标。
 - [x] 确认目标后锁定棋盘，播放原位检测/揭示动画；不把方块移入暂存槽，不占用槽位，不触发三消。
 - [x] 揭示完成后方块保留在棋盘原位置，真实图案可见，幻化状态移除并转为普通方块；动画结束恢复点击。
 - [x] 目标确认前可以取消；取消、无效目标、次数为 0 不扣次数；成功揭示扣 1 次。
@@ -21,3 +21,6 @@
 - `pnpm typecheck`、`pnpm build` 通过。
 - `pnpm test:e2e`：17 passed，1 个既有移动端 freeze shadow 断言失败（`tests/e2e/register-catalog.spec.ts:166`；固定起点已有同一 freeze CSS，非检测仪改动）。`pnpm test:qa` 的 `test:core` 仍命中仓库已知 E2E 误收集问题；按替代命令运行时核心/随机进程在断言输出后未正常退出，未将其计为 detector 行为失败。
 - AC 行为均由 `tests/item-runtime.test.ts`、`tests/special-mechanism.test.ts` 覆盖；状态暂留 `in-progress`，等待批量 QA blocker 处理。
+- 修复检测仪揭示层被特殊方块 glyph 样式覆盖导致的偏移/溢出：揭示图层固定在目标方块内部并裁剪边界；火把与检测仪运行时、棋盘渲染统一拒绝不可点击棋盘目标。`CONTEXT.md` 与 spec 补充火把/检测仪/消磁仪/三消移除目标限制。
+- 回归验证：`tests/item-runtime.test.ts`、`tests/special-mechanism.test.ts` 共 27 tests 通过。
+- 本次聚焦验证：`pnpm test:focused` 通过，8 files / 111 tests；`pnpm typecheck`、`pnpm build`、`git diff --check` 通过。`pnpm test:qa` 仍被已知 `test:core` 误收集 `tests/e2e/**` 且断言后不退出的问题阻塞；排除 E2E 的核心测试断言通过但同样未退出，已停止进程。

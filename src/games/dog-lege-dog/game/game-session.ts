@@ -197,6 +197,10 @@ export class GameSession {
       return false;
     }
 
+    if (location === "board" && !this.canSelectBlock(blockId)) {
+      return false;
+    }
+
     const block = location === "board"
       ? this.remainingBlocks.get(blockId)
       : this.tray.find((candidate) => candidate.id === blockId);
@@ -205,6 +209,10 @@ export class GameSession {
 
   canRevealIllusionBlock(blockId: string): boolean {
     if (this.status !== "playing" || this.pendingSelection !== null) {
+      return false;
+    }
+
+    if (!this.canSelectBlock(blockId)) {
       return false;
     }
 

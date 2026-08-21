@@ -1452,6 +1452,14 @@ h2 {
   animation: dog-detector-reveal 360ms cubic-bezier(0.16, 0.8, 0.3, 1) both;
 }
 
+.dog-block--detector-reveal .dog-block__glyph--detector-reveal {
+  position: absolute;
+  inset: 4px;
+  overflow: hidden;
+  border-radius: inherit;
+  box-sizing: border-box;
+}
+
 .dog-block__glyph--detector-reveal img {
   filter: drop-shadow(0 0 5px rgba(255, 253, 220, 0.94));
 }

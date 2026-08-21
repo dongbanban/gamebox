@@ -211,6 +211,43 @@ describe("DogItemRuntime", () => {
       .toHaveProperty("specialMechanism.type", DOG_FREEZE_MECHANISM_TYPE);
   });
 
+  it("火把与检测仪不能选择被遮挡的棋盘方块", () => {
+    const session = new GameSession(
+      createLevel([
+        createBlock("freeze", WORKING_DOG, {
+          type: DOG_FREEZE_MECHANISM_TYPE,
+          state: { status: "frozen", completedTriples: 0 },
+        }, { x: 0, y: 0, z: 0 }),
+        createBlock("freeze-cover", SINGLE_DOG, undefined, { x: 0, y: 0, z: 1 }),
+        createBlock("illusion", LICKING_DOG, {
+          type: DOG_ILLUSION_MECHANISM_TYPE,
+          state: { status: "masked", disguisedPatternType: SINGLE_DOG },
+        }, { x: 8, y: 0, z: 0 }),
+        createBlock("illusion-cover", GUARD_DOG, undefined, { x: 8, y: 0, z: 1 }),
+      ]),
+    );
+
+    expect(session.getState().selectableBlockIds).toEqual(["freeze-cover", "illusion-cover"]);
+    expect(session.canMeltFrozenBlock("freeze", "board")).toBe(false);
+    expect(session.canRevealIllusionBlock("illusion")).toBe(false);
+
+    const torch = new DogItemRuntime({
+      level: session.getState().level,
+      session,
+      loadout: ["torch"],
+    });
+    const detector = new DogItemRuntime({
+      level: session.getState().level,
+      session,
+      loadout: ["detector"],
+    });
+
+    expect(torch.getState().items[0]).toMatchObject({ available: false, remainingUses: 1 });
+    expect(detector.getState().items[0]).toMatchObject({ available: false, remainingUses: 1 });
+    expect(torch.begin("torch")).toMatchObject({ accepted: false, success: false });
+    expect(detector.begin("detector")).toMatchObject({ accepted: false, success: false });
+  });
+
   it("火把成功融化棋盘冻结方块后扣次并锁定至动画完成", () => {
     const session = new GameSession(
       createLevel([
@@ -421,12 +458,13 @@ function createBlock(
   id: string,
   patternType: DogPatternType,
   specialMechanism?: DogBlock["specialMechanism"],
+  placement: Partial<Pick<DogBlock, "x" | "y" | "z">> = {},
 ): DogBlock {
   return {
     id,
-    x: 0,
-    y: 0,
-    z: 0,
+    x: placement.x ?? 0,
+    y: placement.y ?? 0,
+    z: placement.z ?? 0,
     width: 4,
     height: 4,
     rotation: 0,

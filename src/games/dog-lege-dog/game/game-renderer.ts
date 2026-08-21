@@ -304,6 +304,7 @@ function renderBlock(
     block.specialMechanism,
     itemTargetType,
     itemTargetId,
+    selectableBlockIds.includes(block.id),
   );
   const selectable = selectingBlockTarget || (!inputLocked && selectableBlockIds.includes(block.id));
   const targetAttributes = selectingBlockTarget ? 'data-item-targetable="true"' : "";
@@ -460,8 +461,9 @@ function isItemTargetable(
   mechanism: DogLegeDogLevel["blocks"][number]["specialMechanism"],
   itemTargetType: DogItemTargetType | null,
   itemTargetId: DogItemId | null,
+  selectable = true,
 ): boolean {
-  if (itemTargetType !== "block") {
+  if (itemTargetType !== "block" || !selectable) {
     return false;
   }
 

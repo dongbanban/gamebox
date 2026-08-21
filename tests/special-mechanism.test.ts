@@ -365,12 +365,29 @@ describe("狗了个狗特殊机制", () => {
     game.destroy();
   });
 
-  it("火把目标选择只暴露冻结方块，取消不扣次数", () => {
+  it("火把目标选择只暴露当前可点击冻结方块，取消不扣次数", async () => {
+    vi.useFakeTimers();
     const root = document.createElement("div");
     const game = startDogLegeDogGame(root, {
       runSeed: "freeze-visual-seed",
       loadout: ["tray-capacity", "wildcard", "torch"],
     });
+    const level = game.getState().level;
+    const freezeBlock = level.blocks.find(
+      (block) => block.specialMechanism?.type === DOG_FREEZE_MECHANISM_TYPE,
+    );
+    if (freezeBlock === undefined) {
+      throw new Error("Expected generated freeze block");
+    }
+    const freezePathIndex = level.solutionPath.indexOf(freezeBlock.id);
+    if (freezePathIndex < 0) {
+      throw new Error("Expected freeze block in solution path");
+    }
+    for (const blockId of level.solutionPath.slice(0, freezePathIndex)) {
+      game.selectBlock(blockId);
+      await vi.runAllTimersAsync();
+    }
+
     const torchButton = root.querySelector<HTMLButtonElement>(
       '[data-action="use-item"][data-item-id="torch"]',
     );
@@ -401,6 +418,15 @@ describe("狗了个狗特殊机制", () => {
     );
     expect(
       [...activeFreezeBlocks].every((block) => block.dataset.itemTargetable === "true"),
+    ).toBe(true);
+    expect(
+      [...root.querySelectorAll<HTMLElement>(
+        '[data-testid="dog-block"][data-special-mechanism="freeze"]',
+      )].every((block) =>
+        game.getState().session.selectableBlockIds.includes(block.dataset.blockId ?? "")
+          ? block.dataset.itemTargetable === "true"
+          : block.dataset.itemTargetable === undefined,
+      ),
     ).toBe(true);
     expect(ordinaryBlock?.dataset.itemTargetable).toBeUndefined();
 
@@ -476,6 +502,17 @@ describe("狗了个狗特殊机制", () => {
     if (freezeBlock === null) {
       throw new Error("Expected generated freeze block");
     }
+
+    const level = game.getState().level;
+    const freezePathIndex = level.solutionPath.indexOf(freezeBlock.dataset.blockId ?? "");
+    if (freezePathIndex < 0) {
+      throw new Error("Expected freeze block in solution path");
+    }
+    for (const blockId of level.solutionPath.slice(0, freezePathIndex)) {
+      game.selectBlock(blockId);
+      await vi.runAllTimersAsync();
+    }
+    expect(game.getState().session.selectableBlockIds).toContain(freezeBlock.dataset.blockId);
 
     root.querySelector<HTMLButtonElement>('[data-item-id="torch"]')?.click();
     root
@@ -656,9 +693,22 @@ describe("狗了个狗特殊机制", () => {
       root.querySelectorAll<HTMLElement>('[data-testid="dog-block"][data-item-targetable="true"]'),
     ).toHaveLength(
       game.getState().session.remainingBlocks.filter(
-        (block) => block.specialMechanism?.type === DOG_ILLUSION_MECHANISM_TYPE,
+        (block) =>
+          block.specialMechanism?.type === DOG_ILLUSION_MECHANISM_TYPE &&
+          game.getState().session.selectableBlockIds.includes(block.id),
       ).length,
     );
+    for (const block of game.getState().session.remainingBlocks) {
+      if (block.specialMechanism?.type !== DOG_ILLUSION_MECHANISM_TYPE) {
+        continue;
+      }
+
+      expect(
+        root.querySelector<HTMLElement>(
+          `[data-testid="dog-block"][data-block-id="${block.id}"]`,
+        )?.dataset.itemTargetable,
+      ).toBe(game.getState().session.selectableBlockIds.includes(block.id) ? "true" : undefined);
+    }
     expect(
       root.querySelector<HTMLElement>(
         `[data-testid="dog-block"][data-block-id="${ordinary.id}"]`,
@@ -685,7 +735,13 @@ describe("狗了个狗特殊机制", () => {
     expect(game.getState().session.tray).toHaveLength(beforeTrayLength);
     expect(game.getState().session.remainingBlocks.find((block) => block.id === illusion.id))
       .toHaveProperty("specialMechanism.type", DOG_ILLUSION_MECHANISM_TYPE);
-    expect(root.querySelector('[data-testid="dog-detector-reveal"]')).not.toBeNull();
+    const detectorReveal = root.querySelector<HTMLElement>('[data-testid="dog-detector-reveal"]');
+    expect(detectorReveal).not.toBeNull();
+    expect(detectorReveal?.parentElement).toBe(
+      root.querySelector(`[data-testid="dog-block"][data-block-id="${illusion.id}"]`),
+    );
+    expect(detectorReveal?.style.position).toBe("absolute");
+    expect(detectorReveal?.style.inset).toBe("4px");
     expect(
       root.querySelector<HTMLElement>(
         `[data-testid="dog-block"][data-block-id="${ordinary.id}"]`,
