@@ -1,4 +1,11 @@
-import { DOG_LEVEL_SPECIAL_MECHANISM_DEFINITIONS } from "@/games/dog-lege-dog/game/game-config";
+import {
+  DOG_FREEZE_GENERATOR_VERSION,
+  DOG_FREEZE_ONLY_SPECIAL_MECHANISM_DEFINITIONS,
+  DOG_ILLUSION_GENERATOR_VERSION,
+  DOG_LEGACY_SPECIAL_MECHANISM_DEFINITIONS,
+  DOG_LEVEL_SPECIAL_MECHANISM_DEFINITIONS,
+  LEVEL_GENERATOR_VERSION,
+} from "@/games/dog-lege-dog/game/game-config";
 import {
   DOG_PATTERN_TYPES,
   type DogBlock,
@@ -16,6 +23,8 @@ export const DOG_FREEZE_MECHANISM_TYPE = "freeze" as const;
 export const DOG_FREEZE_MELT_TRIPLE_COUNT = 2 as const;
 export const DOG_ILLUSION_MECHANISM_TYPE = "illusion" as const;
 export const DOG_ILLUSION_MASK_STATUS = "masked" as const;
+export const DOG_MAGNETIC_MECHANISM_TYPE = "magnetic" as const;
+export const DOG_TWIN_MECHANISM_TYPE = "twin" as const;
 export const DOG_SPECIAL_MECHANISM_DENSITY_LIMIT = 0.06 as const;
 export const DOG_SPECIAL_MECHANISM_MIDDLE_LAYER_RATIO = 0.7 as const;
 // Keep retry search bounded. Pool still covers enough high-layer positions for
@@ -37,16 +46,20 @@ export const DOG_SPECIAL_MECHANISM_HANDLERS: readonly DogSpecialMechanismHandler
     }),
   ]);
 
+const DOG_SUPPORTED_SPECIAL_MECHANISM_TYPES = new Set(
+  DOG_SPECIAL_MECHANISM_HANDLERS.map(({ type }) => type),
+);
+
 export function getDogSpecialMechanismConfigs(
   levelNumber: number,
+  generatorVersion: number = LEVEL_GENERATOR_VERSION,
 ): readonly DogSpecialMechanismConfig[] {
   // Resolve progression once at the game configuration seam. Downstream
   // placement, solvability and runtime consume only resolved min/max values.
-  // Definitions without stage arrays keep current baseline until progression
-  // ticket supplies its first curve.
+  const definitions = getDogSpecialMechanismDefinitions(generatorVersion);
   const progressStage = getProgressStage(levelNumber);
   return Object.freeze(
-    DOG_LEVEL_SPECIAL_MECHANISM_DEFINITIONS.map((definition) => {
+    definitions.map((definition) => {
       const min = definition.minByStage?.[progressStage] ?? definition.min;
       const max = definition.maxByStage?.[progressStage] ?? definition.max;
       if (!Number.isSafeInteger(min) || !Number.isSafeInteger(max) || max < min) {
@@ -65,6 +78,35 @@ export function getDogSpecialMechanismConfigs(
       });
     }),
   );
+}
+
+/**
+ * Candidate-generation view. Current metadata can include mechanisms whose
+ * handlers land in later tickets; handler registration activates them here
+ * without moving progression logic into placement or solving.
+ */
+export function getDogSpecialMechanismConfigsForGeneration(
+  levelNumber: number,
+  generatorVersion: number = LEVEL_GENERATOR_VERSION,
+): readonly DogSpecialMechanismConfig[] {
+  return getDogSpecialMechanismConfigs(levelNumber, generatorVersion).filter(
+    (configuration) => DOG_SUPPORTED_SPECIAL_MECHANISM_TYPES.has(configuration.type),
+  );
+}
+
+function getDogSpecialMechanismDefinitions(
+  generatorVersion: number,
+): readonly DogSpecialMechanismConfig[] {
+  if (generatorVersion < DOG_FREEZE_GENERATOR_VERSION) {
+    return [];
+  }
+  if (generatorVersion < DOG_ILLUSION_GENERATOR_VERSION) {
+    return DOG_FREEZE_ONLY_SPECIAL_MECHANISM_DEFINITIONS;
+  }
+  if (generatorVersion < LEVEL_GENERATOR_VERSION) {
+    return DOG_LEGACY_SPECIAL_MECHANISM_DEFINITIONS;
+  }
+  return DOG_LEVEL_SPECIAL_MECHANISM_DEFINITIONS;
 }
 
 export function createDogSpecialMechanism(type: string): DogSpecialMechanism {

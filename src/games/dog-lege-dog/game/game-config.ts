@@ -4,7 +4,7 @@ import type {
 } from "@/games/dog-lege-dog/levels/level-types";
 
 const GAME_ID = "dog-lege-dog" as const;
-const GENERATOR_VERSION = 10 as const;
+const GENERATOR_VERSION = 11 as const;
 
 export const DOG_GAME_RESULT_DISPLAY = Object.freeze({
   won: Object.freeze({
@@ -40,18 +40,52 @@ export const DOG_LEGE_DOG_CONFIG = Object.freeze({
   ] as readonly DogPatternType[]),
   firstLevelTemplateId: "irregular-first-level-v2" as const,
   specialMechanisms: Object.freeze([
-    {
+    Object.freeze({
       type: "freeze",
       min: 1,
       max: 2,
-    },
-    {
+      minByStage: Object.freeze([1, 2, 2, 3]),
+      maxByStage: Object.freeze([2, 3, 4, 4]),
+    }),
+    Object.freeze({
       type: "illusion",
       min: 1,
       max: 2,
-    },
+      minByStage: Object.freeze([1, 2, 3, 3]),
+      maxByStage: Object.freeze([2, 3, 4, 5]),
+    }),
+    Object.freeze({
+      type: "magnetic",
+      min: 1,
+      max: 2,
+      minByStage: Object.freeze([1, 2, 2, 3]),
+      maxByStage: Object.freeze([2, 3, 4, 4]),
+      densityWeight: 1,
+    }),
+    Object.freeze({
+      type: "twin",
+      min: 1,
+      max: 2,
+      minByStage: Object.freeze([1, 2, 2, 3]),
+      maxByStage: Object.freeze([2, 3, 4, 4]),
+      densityWeight: 2,
+    }),
   ] as readonly DogSpecialMechanismConfig[]),
 });
+
+export const DOG_FREEZE_GENERATOR_VERSION = 7 as const;
+export const DOG_ILLUSION_GENERATOR_VERSION = 8 as const;
+
+/** v7 replay metadata must keep its freeze-only quantity policy. */
+export const DOG_FREEZE_ONLY_SPECIAL_MECHANISM_DEFINITIONS = Object.freeze([
+  Object.freeze({ type: "freeze", min: 1, max: 2 }),
+] as readonly DogSpecialMechanismConfig[]);
+
+/** v8–v10 replay metadata must keep its two-mechanism quantity policy. */
+export const DOG_LEGACY_SPECIAL_MECHANISM_DEFINITIONS = Object.freeze([
+  Object.freeze({ type: "freeze", min: 1, max: 2 }),
+  Object.freeze({ type: "illusion", min: 1, max: 2 }),
+] as readonly DogSpecialMechanismConfig[]);
 
 export const DOG_GAME_ID = DOG_LEGE_DOG_CONFIG.id;
 export const LEVEL_GENERATOR_VERSION = DOG_LEGE_DOG_CONFIG.generatorVersion;

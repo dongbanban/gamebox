@@ -15,12 +15,15 @@ import {
   DOG_ILLUSION_MECHANISM_TYPE,
   DOG_PATTERN_TYPES,
   DOG_FREEZE_MECHANISM_TYPE,
+  DOG_FREEZE_GENERATOR_VERSION,
+  DOG_ILLUSION_GENERATOR_VERSION,
   FIRST_LEVEL,
   GameSession,
   LEVEL_GENERATOR_VERSION,
   LevelGenerator,
   createDogSpecialMechanism,
   getDogSpecialMechanismComposition,
+  getDogSpecialMechanismConfigs,
   validateDogSpecialMechanismComposition,
   type DogBlock,
   type DogLegeDogLevel,
@@ -38,6 +41,70 @@ const LICKING_DOG: DogPatternType = "舔狗";
 describe("狗了个狗特殊机制", () => {
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  it("按四个关卡档位解析四种机制的独立数量范围", () => {
+    const expectedByStage = [
+      {
+        freeze: [1, 2],
+        illusion: [1, 2],
+        magnetic: [1, 2],
+        twin: [1, 2],
+      },
+      {
+        freeze: [2, 3],
+        illusion: [2, 3],
+        magnetic: [2, 3],
+        twin: [2, 3],
+      },
+      {
+        freeze: [2, 4],
+        illusion: [3, 4],
+        magnetic: [2, 4],
+        twin: [2, 4],
+      },
+      {
+        freeze: [3, 4],
+        illusion: [3, 5],
+        magnetic: [3, 4],
+        twin: [3, 4],
+      },
+    ] as const;
+
+    for (const [levelNumber, stageIndex] of [
+      [1, 0],
+      [5, 0],
+      [6, 1],
+      [15, 1],
+      [16, 2],
+      [30, 2],
+      [31, 3],
+      [100, 3],
+    ] as const) {
+      const expected = expectedByStage[stageIndex];
+      const configs = getDogSpecialMechanismConfigs(levelNumber);
+      expect(configs.map(({ type, min, max }) => [type, min, max])).toEqual([
+        ["freeze", ...expected.freeze],
+        ["illusion", ...expected.illusion],
+        ["magnetic", ...expected.magnetic],
+        ["twin", ...expected.twin],
+      ]);
+    }
+
+    expect(getDogSpecialMechanismConfigs(16, LEVEL_GENERATOR_VERSION - 1)).toEqual([
+      { type: "freeze", min: 1, max: 2 },
+      { type: "illusion", min: 1, max: 2 },
+    ]);
+    expect(getDogSpecialMechanismConfigs(16, DOG_FREEZE_GENERATOR_VERSION)).toEqual([
+      { type: "freeze", min: 1, max: 2 },
+    ]);
+    expect(getDogSpecialMechanismConfigs(16, DOG_FREEZE_GENERATOR_VERSION - 1)).toEqual([]);
+    expect(getDogSpecialMechanismConfigs(16, DOG_ILLUSION_GENERATOR_VERSION)).toEqual([
+      { type: "freeze", min: 1, max: 2 },
+      { type: "illusion", min: 1, max: 2 },
+    ]);
+    expect(getDogSpecialMechanismConfigs(16).find(({ type }) => type === "twin"))
+      .toMatchObject({ densityWeight: 2 });
   });
 
   it("冻结方块进入暂存槽后不参与三消，并记录后续三消进度", () => {
@@ -378,6 +445,12 @@ describe("狗了个狗特殊机制", () => {
       (mechanism) => mechanism.type === DOG_FREEZE_MECHANISM_TYPE,
     );
 
+    expect(first.specialMechanisms.map((mechanism) => mechanism.type)).toEqual([
+      "freeze",
+      "illusion",
+      "magnetic",
+      "twin",
+    ]);
     expect(configured).toEqual(
       expect.objectContaining({
         min: expect.any(Number),
@@ -706,13 +779,14 @@ describe("狗了个狗特殊机制", () => {
     const freezeBlocks = root.querySelectorAll<HTMLElement>(
       '[data-testid="dog-block"][data-special-mechanism="freeze"]',
     );
-    const ordinaryBlock = root.querySelector<HTMLElement>(
-      '[data-testid="dog-block"]:not([data-special-mechanism])',
-    );
 
     expect(torchButton?.disabled).toBe(false);
     expect(freezeBlocks.length).toBeGreaterThan(0);
     torchButton?.click();
+
+    const ordinaryBlock = root.querySelector<HTMLElement>(
+      '[data-testid="dog-block"]:not([data-special-mechanism])',
+    );
 
     expect(game.getState().items?.phase).toBe("targeting");
     expect(root.querySelector('[data-testid="dog-item-targeting"]')).not.toBeNull();

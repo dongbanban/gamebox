@@ -92,6 +92,8 @@ export {
 } from "@/games/dog-lege-dog/levels/level-generator";
 export { createRunSeed } from "@/games/dog-lege-dog/levels/level-random";
 export {
+  DOG_FREEZE_GENERATOR_VERSION,
+  DOG_ILLUSION_GENERATOR_VERSION,
   DOG_LEVEL_SPECIAL_MECHANISM_DEFINITIONS,
 } from "@/games/dog-lege-dog/game/game-config";
 
@@ -100,6 +102,8 @@ export {
   DOG_FREEZE_MELT_TRIPLE_COUNT,
   DOG_ILLUSION_MECHANISM_TYPE,
   DOG_ILLUSION_MASK_STATUS,
+  DOG_MAGNETIC_MECHANISM_TYPE,
+  DOG_TWIN_MECHANISM_TYPE,
   DOG_SPECIAL_MECHANISM_DENSITY_LIMIT,
   DOG_SPECIAL_MECHANISM_MIDDLE_LAYER_RATIO,
   DOG_SPECIAL_MECHANISM_HANDLERS,

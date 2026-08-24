@@ -395,10 +395,13 @@ function renderBlock(
     block.id,
     targetBlockIds,
   );
-  const selectable = selectingBlockTarget || (!inputLocked && selectableBlockIds.includes(block.id));
+  const selectable = selectingBlockTarget || (
+    itemTargetType === null &&
+    !inputLocked &&
+    selectableBlockIds.includes(block.id)
+  );
   const targetAttributes = selectingBlockTarget ? 'data-item-targetable="true"' : "";
   const targetClass = selectingBlockTarget ? " dog-block--item-targetable" : "";
-
   return `
     <button
       type="button"

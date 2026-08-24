@@ -53,6 +53,7 @@ import {
   assignDogSpecialMechanisms,
   validateDogSpecialMechanismComposition,
   getDogSpecialMechanismConfigs,
+  getDogSpecialMechanismConfigsForGeneration,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
 import type {
   DogLevelDifficulty,
@@ -421,12 +422,19 @@ export class GeneratedLevelGenerator {
       random,
       removalPlan,
     );
-    const specialMechanisms = getDogSpecialMechanismConfigs(request.levelNumber);
+    const specialMechanisms = getDogSpecialMechanismConfigs(
+      request.levelNumber,
+      request.generatorVersion,
+    );
+    const generationSpecialMechanisms = getDogSpecialMechanismConfigsForGeneration(
+      request.levelNumber,
+      request.generatorVersion,
+    );
     const board = createBoard(shape);
     const placementGraph = createBlockGraph(ordinaryBlocks);
     const blocks = assignDogSpecialMechanisms(
       ordinaryBlocks,
-      specialMechanisms,
+      generationSpecialMechanisms,
       random,
       (candidateBlocks) =>
         verifyRemovalPath(
@@ -453,6 +461,7 @@ export class GeneratedLevelGenerator {
       patternTypes,
       blocks,
       specialMechanisms,
+      generationSpecialMechanisms,
       solutionPath,
       replayMode,
       randomSeed,
@@ -538,6 +547,7 @@ function createCandidateLevel(
   patternTypes: DogLegeDogLevel["patternTypes"],
   blocks: DogLegeDogLevel["blocks"],
   specialMechanisms: DogLegeDogLevel["specialMechanisms"],
+  generationSpecialMechanisms: DogLegeDogLevel["specialMechanisms"],
   solutionPath: readonly string[],
   replayMode: DogLevelReplayMode,
   randomSeed: string,
@@ -565,7 +575,7 @@ function createCandidateLevel(
   const mechanismCompositionError = validateDogSpecialMechanismComposition(
     blocks,
     maxLayers,
-    specialMechanisms,
+    generationSpecialMechanisms,
   );
   if (mechanismCompositionError !== undefined) {
     throw new Error(mechanismCompositionError);
