@@ -590,13 +590,6 @@ export function createDogLegeDogGame(
       cancelItemTarget();
       return;
     }
-    if (action === "select-item-pattern") {
-      const patternType = actionElement?.dataset.patternType;
-      if (isDogPatternType(patternType)) {
-        confirmItemTarget({ type: "pattern", patternType });
-      }
-      return;
-    }
     if (action === "toggle-sound") {
       soundEffects.initialize();
       runtime.soundEnabled = !runtime.soundEnabled;
@@ -647,10 +640,9 @@ export function createDogLegeDogGame(
       return;
     }
 
-    const targetRect = target.type === "pattern"
-      ? findTrayTarget(root, target.patternType)?.getBoundingClientRect() ?? null
-      : findItemTargetElement(root, target)?.getBoundingClientRect() ?? null;
-    const tripleSourceRects = target.type === "tray-block"
+    const targetRect = findItemTargetElement(root, target)?.getBoundingClientRect() ?? null;
+    const tripleSourceRects = target.type === "tray-block" &&
+      runtime.itemRuntime.getState().selectedItemId === "triple-removal"
       ? captureTripleRemovalSourceRects(
           root,
           runtime.session.getTripleRemovalPlanForTrayBlock(target.blockId)?.blockIds ?? [],
@@ -819,12 +811,6 @@ export function createDogLegeDogGame(
     return targetElement.dataset.testid === "dog-tray-slot"
       ? { type: "tray-block", blockId }
       : { type: "block", blockId };
-  }
-
-  function isDogPatternType(
-    value: string | undefined,
-  ): value is (typeof DOG_PATTERN_TYPES)[number] {
-    return value !== undefined && DOG_PATTERN_TYPES.includes(value as (typeof DOG_PATTERN_TYPES)[number]);
   }
 
   function toggleLoadout(itemId: string | undefined): void {
@@ -1122,10 +1108,6 @@ function findItemTargetElement(
   root: HTMLElement,
   target: DogItemTarget,
 ): HTMLElement | null {
-  if (target.type === "pattern") {
-    return null;
-  }
-
   const testId = target.type === "tray-block" ? "dog-tray-slot" : "dog-block";
   return [...root.querySelectorAll<HTMLElement>(`[data-testid="${testId}"]`)].find(
     (element) => element.dataset.blockId === target.blockId,

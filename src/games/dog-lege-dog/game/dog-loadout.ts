@@ -1,4 +1,3 @@
-import type { DogPatternType } from "@/games/dog-lege-dog/levels/level-types";
 import { renderDogItemAsset } from "@/games/dog-lege-dog/assets/item-assets";
 
 export const DOG_LOADOUT_SIZE = 3 as const;
@@ -15,9 +14,7 @@ export type DogItemId = (typeof DOG_ITEM_IDS)[number];
 
 export type DogItemTargetType =
   | "none"
-  | "tray-pattern"
   | "tray-block"
-  | "pattern"
   | "block";
 
 export type DogItemVisualFeedback = DogItemId;
@@ -52,8 +49,8 @@ export const DOG_ITEM_DEFINITIONS: readonly DogItemDefinition[] = Object.freeze(
     id: "wildcard",
     name: "万能方块",
     icon: "◇",
-    description: "选择图案后转化入槽",
-    targetType: "pattern",
+    description: "点击槽内方块复制其图案",
+    targetType: "tray-block",
     visualFeedback: "wildcard",
   }),
   Object.freeze({
@@ -136,7 +133,6 @@ export interface DogLoadoutSummaryItemState {
 
 export interface DogLoadoutSummaryTargetState {
   readonly targetType: DogItemTargetType | null;
-  readonly patterns: readonly DogPatternType[];
 }
 
 export function renderDogLoadoutEditor({
@@ -228,27 +224,11 @@ export function renderDogLoadoutSummary(
   targetState?: DogLoadoutSummaryTargetState,
 ): string {
   const targetType = targetState?.targetType ?? null;
-  const isPatternTarget = targetType === "pattern" || targetType === "tray-pattern";
   const isTargeting = targetType !== null;
-  const patternTargets = isPatternTarget
-    ? `
-        <div class="dog-item-pattern-targets" data-testid="dog-item-pattern-targets">
-          ${targetState?.patterns.map((patternType) => `
-            <button
-              class="dog-item-pattern-target"
-              type="button"
-              data-action="select-item-pattern"
-              data-pattern-type="${patternType}"
-            >${patternType}</button>
-          `).join("") ?? ""}
-        </div>
-      `
-    : "";
   const targetPrompt = isTargeting
     ? `
         <div class="dog-item-targeting" data-testid="dog-item-targeting" role="status">
           <span class="dog-item-targeting__label">选择道具目标</span>
-          ${patternTargets}
         </div>
       `
     : "";
@@ -258,7 +238,6 @@ export function renderDogLoadoutSummary(
       class="dog-loadout-summary"
       data-testid="dog-loadout-summary"
       data-target-type="${targetType ?? ""}"
-      data-target-patterns="${isPatternTarget ? targetState?.patterns.join("|") ?? "" : ""}"
       aria-label="当前道具组"
     >
       <div class="dog-loadout-summary__items">

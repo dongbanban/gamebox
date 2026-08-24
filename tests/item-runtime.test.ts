@@ -82,7 +82,7 @@ describe("DogItemRuntime", () => {
     expect(runtime.getState().phase).toBe("targeting");
     expect(session.getState()).toEqual(initial);
 
-    expect(runtime.confirmTarget({ type: "pattern", patternType: SINGLE_DOG })).toMatchObject({
+    expect(runtime.confirmTarget({ type: "tray-block", blockId: "missing" })).toMatchObject({
       accepted: false,
       success: false,
     });
@@ -96,12 +96,27 @@ describe("DogItemRuntime", () => {
     expect(session.getState()).toEqual(initial);
   });
 
-  it("万能方块进入图案选择，取消无副作用，确认后锁定并原子提交", () => {
+  it("万能方块在暂存槽没有可选图案时不可用", () => {
     const level = createLevel([
       createBlock("working-hidden", WORKING_DOG),
       createBlock("single-cover", SINGLE_DOG, undefined, { z: 1 }),
     ]);
     const session = new GameSession(level);
+    const runtime = new DogItemRuntime({ level, session, loadout: ["wildcard"] });
+
+    expect(runtime.getState().items[0]).toMatchObject({ available: false });
+    expect(runtime.begin("wildcard")).toMatchObject({ accepted: false, success: false });
+  });
+
+  it("万能方块点击槽内方块选择已有图案，取消无副作用，确认后原子提交", () => {
+    const level = createLevel([
+      createBlock("working-hidden", WORKING_DOG),
+      createBlock("single-cover", SINGLE_DOG, undefined, { z: 1 }),
+    ]);
+    const session = new GameSession({
+      level,
+      initialTrayBlocks: [{ id: "target-working", patternType: WORKING_DOG }],
+    });
     const runtime = new DogItemRuntime({
       level,
       session,
@@ -111,7 +126,7 @@ describe("DogItemRuntime", () => {
 
     expect(runtime.getState().items[0]).toMatchObject({
       id: "wildcard",
-      targetType: "pattern",
+      targetType: "tray-block",
       remainingUses: 1,
       available: true,
     });
@@ -126,7 +141,10 @@ describe("DogItemRuntime", () => {
     expect(session.getState()).toEqual(initial);
 
     runtime.begin("wildcard");
-    const action = runtime.confirmTarget({ type: "pattern", patternType: WORKING_DOG });
+    expect(
+      runtime.confirmTarget({ type: "block", blockId: "single-cover" }),
+    ).toMatchObject({ accepted: false, success: false, requiresTarget: true });
+    const action = runtime.confirmTarget({ type: "tray-block", blockId: "target-working" });
 
     expect(action).toMatchObject({
       accepted: true,
@@ -151,10 +169,11 @@ describe("DogItemRuntime", () => {
     expect(session.getState().remainingBlocks.map((block) => block.id)).toEqual([
       "single-cover",
     ]);
-    expect(session.getState().trayBlocks[0]).toMatchObject({
-      patternType: WORKING_DOG,
-      visualMarker: "wildcard",
-    });
+    expect(session.getState().trayBlocks.find((block) => block.visualMarker === "wildcard"))
+      .toMatchObject({
+        patternType: WORKING_DOG,
+        visualMarker: "wildcard",
+      });
     expect(runtime.getLastCompletedEffect()).toMatchObject({
       type: "wildcard",
       removedCount: 0,
@@ -172,7 +191,10 @@ describe("DogItemRuntime", () => {
       ]),
       number: 2,
     };
-    const session = new GameSession(level);
+    const session = new GameSession({
+      level,
+      initialTrayBlocks: [{ id: "target-working", patternType: WORKING_DOG }],
+    });
     const runtime = new DogItemRuntime({ level, session, loadout: ["wildcard"] });
 
     for (const expectedRemainingUses of [1, 0]) {
@@ -181,18 +203,13 @@ describe("DogItemRuntime", () => {
         requiresTarget: true,
       });
       expect(
-        runtime.confirmTarget({ type: "pattern", patternType: WORKING_DOG }),
+        runtime.confirmTarget({ type: "tray-block", blockId: "target-working" }),
       ).toMatchObject({ accepted: true, success: true });
       runtime.completeAnimation();
       expect(runtime.getState().items[0]?.remainingUses).toBe(expectedRemainingUses);
     }
 
-    expect(session.getState().trayBlocks).toHaveLength(2);
-    expect(
-      session.getState().trayBlocks.every(
-        (block) => block.patternType === WORKING_DOG && block.visualMarker === "wildcard",
-      ),
-    ).toBe(true);
+    expect(session.getState().trayBlocks).toEqual([]);
     expect(runtime.begin("wildcard")).toMatchObject({ accepted: false, success: false });
   });
 
@@ -204,13 +221,19 @@ describe("DogItemRuntime", () => {
       ]),
       patternTypes: [WORKING_DOG, SINGLE_DOG],
     };
-    const session = new GameSession(level);
+    const session = new GameSession({
+      level,
+      initialTrayBlocks: [
+        { id: "target-working", patternType: WORKING_DOG },
+        { id: "target-single", patternType: SINGLE_DOG },
+      ],
+    });
     const runtime = new DogItemRuntime({ level, session, loadout: ["wildcard"] });
     const initial = session.getState();
 
     expect(runtime.begin("wildcard")).toMatchObject({ accepted: true, requiresTarget: true });
     expect(
-      runtime.confirmTarget({ type: "pattern", patternType: SINGLE_DOG }),
+      runtime.confirmTarget({ type: "tray-block", blockId: "target-single" }),
     ).toMatchObject({ accepted: false, success: false, requiresTarget: true });
     expect(runtime.getState()).toMatchObject({ phase: "targeting" });
     expect(runtime.getState().items[0]?.remainingUses).toBe(1);
@@ -250,7 +273,10 @@ describe("DogItemRuntime", () => {
   });
 
   it("找不到合法补充方案时道具保持不可用且不扣次数", () => {
-    const session = new GameSession(createLevel([createBlock("remaining", WORKING_DOG)]));
+    const session = new GameSession({
+      level: createLevel([createBlock("remaining", WORKING_DOG)]),
+      initialTrayBlocks: [{ id: "target-working", patternType: WORKING_DOG }],
+    });
     const runtime = new DogItemRuntime({
       level: session.getState().level,
       session,
@@ -551,7 +577,10 @@ describe("DogItemRuntime", () => {
   });
 
   it("动画后原子提交失败时恢复次数且不留下完成效果", () => {
-    const session = new GameSession(createLevel([createBlock("remaining", WORKING_DOG)]));
+    const session = new GameSession({
+      level: createLevel([createBlock("remaining", WORKING_DOG)]),
+      initialTrayBlocks: [{ id: "target-working", patternType: WORKING_DOG }],
+    });
     const wildcardDefinition = DOG_ITEM_DEFINITIONS.find((item) => item.id === "wildcard")!;
     const runtime = new DogItemRuntime({
       level: session.getState().level,
@@ -572,7 +601,7 @@ describe("DogItemRuntime", () => {
 
     runtime.begin("wildcard");
     expect(
-      runtime.confirmTarget({ type: "pattern", patternType: WORKING_DOG }),
+      runtime.confirmTarget({ type: "tray-block", blockId: "target-working" }),
     ).toMatchObject({ accepted: true, success: true });
     expect(runtime.getState().items[0]?.remainingUses).toBe(0);
 

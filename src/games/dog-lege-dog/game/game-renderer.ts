@@ -4,7 +4,6 @@ import type {
 import {
   BLOCK_HEIGHT,
   BLOCK_WIDTH,
-  type DogPatternType,
 } from "@/games/dog-lege-dog/levels/level-types";
 import {
   getDogPatternAssetUrl,
@@ -47,6 +46,7 @@ export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameSta
   const boardRows = board.height / BLOCK_HEIGHT;
   const boardPixelWidth = board.width * DOG_LOGICAL_UNIT_VISUAL_WIDTH_PX;
   const boardPixelHeight = board.height * DOG_LOGICAL_UNIT_VISUAL_HEIGHT_PX;
+  const itemTargetBlockIds = getActiveItemTargetBlockIds(state);
 
   if (existingGame !== null) {
     updateDogLegeDogGame(
@@ -110,7 +110,7 @@ export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameSta
                   state.inputLocked,
                   state.items?.selectedItemTargetType ?? null,
                   state.items?.selectedItemId ?? null,
-                  state.items?.tripleRemovalTargetBlockIds ?? [],
+                  itemTargetBlockIds,
                 ),
               )
               .join("")}
@@ -123,7 +123,7 @@ export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameSta
         state.feedback,
         state.items?.selectedItemTargetType ?? null,
         state.items?.selectedItemId ?? null,
-        state.items?.tripleRemovalTargetBlockIds ?? [],
+        itemTargetBlockIds,
       )}
       <div class="dog-animation-layer" data-testid="dog-animation-layer"></div>
     </section>
@@ -147,6 +147,7 @@ function updateDogLegeDogGame(
   const tray = gameRoot.querySelector<HTMLElement>('[data-testid="dog-tray-region"]');
   const traySlots = tray?.querySelector<HTMLOListElement>('[data-testid="dog-tray"]');
   const loadoutSlot = gameRoot.querySelector<HTMLElement>('[data-testid="dog-loadout-slot"]');
+  const itemTargetBlockIds = getActiveItemTargetBlockIds(state);
 
   gameRoot.dataset.inputLocked = String(state.inputLocked);
   gameRoot.dataset.feedback = state.feedback;
@@ -180,7 +181,7 @@ function updateDogLegeDogGame(
           state.inputLocked,
           state.items?.selectedItemTargetType ?? null,
           state.items?.selectedItemId ?? null,
-          state.items?.tripleRemovalTargetBlockIds ?? [],
+          itemTargetBlockIds,
         ),
       )
       .join("");
@@ -195,7 +196,7 @@ function updateDogLegeDogGame(
       state.session,
       state.items?.selectedItemTargetType ?? null,
       state.items?.selectedItemId ?? null,
-      state.items?.tripleRemovalTargetBlockIds ?? [],
+      itemTargetBlockIds,
     );
   }
 
@@ -234,12 +235,11 @@ function renderLoadoutArea(state: DogLegeDogGameState): string {
   }
 
   const targetType = state.items.phase === "targeting" ? state.items.selectedItemTargetType : null;
-  const targetPatterns = getDogLoadoutTargetPatterns(state, targetType);
   return renderDogLoadoutSummary(
     state.loadout,
     state.loadoutLocked,
     state.items.items,
-    { targetType, patterns: targetPatterns },
+    { targetType },
   );
 }
 
@@ -262,17 +262,12 @@ function updateDogLoadoutArea(
   const targetType = state.items.phase === "targeting"
     ? state.items.selectedItemTargetType
     : null;
-  const targetPatterns = getDogLoadoutTargetPatterns(state, targetType);
-  const targetPatternsKey = targetType === "pattern" || targetType === "tray-pattern"
-    ? targetPatterns.join("|")
-    : "";
   const hasSameLoadout = currentSummary !== null &&
     [...currentSummary.querySelectorAll<HTMLElement>('[data-testid="dog-loadout-thumbnail"]')]
       .map((button) => button.dataset.loadoutId)
       .every((itemId, index) => itemId === state.loadout?.[index]) &&
     currentSummary.querySelectorAll('[data-testid="dog-loadout-thumbnail"]').length === state.loadout.length;
-  const hasSameTargetMarkup = currentSummary?.dataset.targetType === (targetType ?? "") &&
-    currentSummary.dataset.targetPatterns === targetPatternsKey;
+  const hasSameTargetMarkup = currentSummary?.dataset.targetType === (targetType ?? "");
 
   if (!hasSameLoadout || !hasSameTargetMarkup || currentSummary === null) {
     loadoutSlot.innerHTML = renderLoadoutArea(state);
@@ -282,15 +277,14 @@ function updateDogLoadoutArea(
   syncDogLoadoutSummary(currentSummary, state);
 }
 
-function getDogLoadoutTargetPatterns(
-  state: DogLegeDogGameState,
-  targetType: DogItemTargetType | null,
-): readonly DogPatternType[] {
-  if (targetType !== "tray-pattern") {
-    return state.level.patternTypes;
+function getActiveItemTargetBlockIds(state: DogLegeDogGameState): readonly string[] {
+  if (state.items?.phase !== "targeting") {
+    return [];
   }
 
-  return state.items?.tripleRemovalTargetPatterns ?? [];
+  return state.items.selectedItemId === "wildcard"
+    ? state.items.wildcardTargetBlockIds
+    : state.items.tripleRemovalTargetBlockIds;
 }
 
 function syncDogLoadoutSummary(
@@ -603,7 +597,8 @@ function isItemTargetable(
   }
 
   if (itemTargetType === "tray-block") {
-    return itemTargetId === "triple-removal" && targetBlockIds.includes(blockId);
+    return (itemTargetId === "triple-removal" || itemTargetId === "wildcard") &&
+      targetBlockIds.includes(blockId);
   }
 
   if (itemTargetType !== "block") {

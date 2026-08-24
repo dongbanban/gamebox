@@ -19,8 +19,7 @@ import {
 
 export type DogItemTarget =
   | { readonly type: "block"; readonly blockId: string }
-  | { readonly type: "tray-block"; readonly blockId: string }
-  | { readonly type: "pattern"; readonly patternType: DogPatternType };
+  | { readonly type: "tray-block"; readonly blockId: string };
 
 export type DogItemEffect =
   | {
@@ -100,6 +99,7 @@ export interface DogItemRuntimeSnapshot {
   readonly visualFeedback: DogItemVisualFeedback | null;
   readonly tripleRemovalTargetPatterns: readonly DogPatternType[];
   readonly tripleRemovalTargetBlockIds: readonly string[];
+  readonly wildcardTargetBlockIds: readonly string[];
   readonly items: readonly DogItemState[];
 }
 
@@ -163,6 +163,9 @@ export class DogItemRuntime {
   getState(): DogItemRuntimeSnapshot {
     const tripleRemovalTargetPatterns = this.session.getTripleRemovalTargetPatterns();
     const tripleRemovalTargetBlockIds = this.session.getTripleRemovalTargetBlockIds();
+    const wildcardTargetBlockIds = this.selectedItemId === "wildcard"
+      ? this.session.getWildcardTargetBlockIds()
+      : [];
     const items = this.loadout.map((itemId) => {
       const runtimeDefinition = this.getDefinition(itemId);
       const { definition } = runtimeDefinition;
@@ -197,6 +200,7 @@ export class DogItemRuntime {
       visualFeedback: this.visualFeedback,
       tripleRemovalTargetPatterns,
       tripleRemovalTargetBlockIds,
+      wildcardTargetBlockIds,
       items: Object.freeze(items),
     });
   }
@@ -480,20 +484,17 @@ const DOG_ITEM_BEHAVIORS: Readonly<Record<DogItemId, DogItemBehavior>> = {
     }),
   },
   wildcard: {
-    canUse: ({ level, session, target }) => {
-      const patternType = getWildcardPatternTarget(target);
+    canUse: ({ session, target }) => {
+      const patternType = getWildcardTargetPattern(session, target);
       if (patternType !== undefined) {
-        return level.patternTypes.includes(patternType) &&
-          session.getWildcardPlan(patternType) !== null;
+        return session.getWildcardPlan(patternType) !== null;
       }
 
-      return level.patternTypes.some(
-        (candidatePattern) => session.getWildcardPlan(candidatePattern) !== null,
-      );
+      return session.getWildcardTargetBlockIds().length > 0;
     },
-    execute: ({ level, session, target }) => {
-      const patternType = getWildcardPatternTarget(target);
-      if (patternType === undefined || !level.patternTypes.includes(patternType)) {
+    execute: ({ session, target }) => {
+      const patternType = getWildcardTargetPattern(session, target);
+      if (patternType === undefined) {
         return { success: false, visualFeedback: "wildcard" };
       }
 
@@ -643,10 +644,6 @@ function matchesTargetType(
     return target.type === "tray-block";
   }
 
-  if (targetType === "pattern" || targetType === "tray-pattern") {
-    return target.type === "pattern";
-  }
-
   return false;
 }
 
@@ -677,10 +674,17 @@ function getTripleRemovalTarget(
   return target?.type === "tray-block" ? target.blockId : undefined;
 }
 
-function getWildcardPatternTarget(
+function getWildcardTargetPattern(
+  session: GameSession,
   target: DogItemTarget | undefined,
 ): DogPatternType | undefined {
-  return target?.type === "pattern" ? target.patternType : undefined;
+  if (target?.type !== "tray-block") {
+    return undefined;
+  }
+
+  return session.getState().trayBlocks.find(
+    (block) => block.id === target.blockId,
+  )?.patternType;
 }
 
 function getMeltTarget(

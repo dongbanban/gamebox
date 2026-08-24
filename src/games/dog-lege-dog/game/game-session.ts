@@ -259,6 +259,14 @@ export class GameSession {
     return plan;
   }
 
+  getWildcardTargetBlockIds(): readonly string[] {
+    return Object.freeze(
+      this.tray
+        .filter((block) => this.getWildcardPlan(block.patternType) !== null)
+        .map((block) => block.id),
+    );
+  }
+
   useWildcard(patternType: DogPatternType): GameSessionWildcardResult {
     const plan = this.wildcardPlanCache.get(patternType) ?? this.findWildcardPlan(patternType);
     if (plan === null) {
@@ -725,7 +733,8 @@ export class GameSession {
     if (
       this.status !== "playing" ||
       this.pendingSelection !== null ||
-      !this.level.patternTypes.includes(patternType)
+      !this.level.patternTypes.includes(patternType) ||
+      !this.tray.some((block) => block.patternType === patternType)
     ) {
       return null;
     }

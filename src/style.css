@@ -901,28 +901,6 @@ h2 {
   flex: 0 0 auto;
 }
 
-.dog-item-pattern-targets {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 0;
-}
-
-.dog-item-pattern-target {
-  padding: 4px 7px;
-  border: 1px solid rgba(79, 155, 192, 0.3);
-  border-radius: 999px;
-  background: rgba(251, 254, 255, 0.9);
-  color: var(--sky-deep);
-  cursor: pointer;
-  font-size: 10px;
-}
-
-.dog-item-pattern-target:hover {
-  border-color: var(--sky-deep);
-  background: #fffdf8;
-}
-
 .game-result-card__loadout-action {
   margin: -8px auto 22px;
 }

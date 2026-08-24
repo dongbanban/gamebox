@@ -615,7 +615,7 @@ describe("狗了个狗首关", () => {
     ).toBe(false);
     expect(
       root.querySelector('[data-testid="dog-loadout-thumbnail"][data-loadout-id="wildcard"]')?.classList.contains("dog-loadout-thumbnail--unavailable"),
-    ).toBe(false);
+    ).toBe(true);
     expect(
       root.querySelector('[data-testid="dog-loadout-thumbnail"][data-loadout-id="tray-capacity"] [data-testid="dog-loadout-thumbnail-uses"]')?.textContent,
     ).toBe("1");
@@ -687,7 +687,7 @@ describe("狗了个狗首关", () => {
     game.destroy();
   });
 
-  it("万能方块展示本关全部图案，取消无副作用，确认后高亮入槽并锁定动画", async () => {
+  it("万能方块只高亮槽内合法方块，取消无副作用，点击目标后高亮入槽并锁定动画", async () => {
     vi.useFakeTimers();
     const root = document.createElement("div");
     const level = createWildcardUiLevel();
@@ -695,6 +695,8 @@ describe("狗了个狗首关", () => {
       level,
       loadout: ["wildcard", "tray-capacity", "torch"],
     });
+    game.selectBlock("working-target");
+    await vi.runAllTimersAsync();
     const initial = game.getState();
     const wildcardButton = root.querySelector<HTMLButtonElement>(
       '[data-action="use-item"][data-item-id="wildcard"]',
@@ -706,10 +708,13 @@ describe("狗了个狗首关", () => {
     expect(game.getState().items?.phase).toBe("targeting");
     expect(game.getState().inputLocked).toBe(true);
     expect(
-      [...root.querySelectorAll<HTMLElement>('[data-action="select-item-pattern"]')].map(
-        (button) => button.dataset.patternType,
+      [...root.querySelectorAll<HTMLElement>(
+        '[data-testid="dog-tray-slot"][data-item-targetable="true"]',
+      )].map(
+        (slot) => slot.dataset.blockId,
       ),
-    ).toEqual(level.patternTypes);
+    ).toEqual(["working-target"]);
+    expect(root.querySelector('[data-action="select-item-pattern"]')).toBeNull();
 
     root.querySelector<HTMLButtonElement>('[data-action="cancel-item-target"]')?.click();
 
@@ -719,8 +724,8 @@ describe("狗了个狗首关", () => {
     expect(game.getState().session).toEqual(initial.session);
 
     root.querySelector<HTMLButtonElement>('[data-item-id="wildcard"]')?.click();
-    root.querySelector<HTMLButtonElement>(
-      '[data-action="select-item-pattern"][data-pattern-type="打工狗"]',
+    root.querySelector<HTMLElement>(
+      '[data-testid="dog-tray-slot"][data-block-id="working-target"]',
     )?.click();
 
     expect(game.getState().items?.phase).toBe("animating");
@@ -768,8 +773,8 @@ describe("狗了个狗首关", () => {
     expect(game.getState().session.trayBlocks).toHaveLength(2);
 
     root.querySelector<HTMLButtonElement>('[data-item-id="wildcard"]')?.click();
-    root.querySelector<HTMLButtonElement>(
-      '[data-action="select-item-pattern"][data-pattern-type="打工狗"]',
+    root.querySelector<HTMLElement>(
+      '[data-testid="dog-tray-slot"][data-block-id="frozen-working-1"]',
     )?.click();
     expect(game.getState().items?.phase).toBe("animating");
 
@@ -948,12 +953,13 @@ function createWildcardUiLevel(): DogLegeDogLevel {
   const blocks: readonly DogBlock[] = [
     createTestBlock("working-hidden", "打工狗", 0),
     createTestBlock("single-cover", "单身狗", 1),
+    createTestBlock("working-target", "打工狗", 0, 8),
   ];
   return {
     ...FIRST_LEVEL,
     patternTypes,
     blocks,
-    solutionPath: ["single-cover", "working-hidden"],
+    solutionPath: ["working-target", "single-cover", "working-hidden"],
   };
 }
 

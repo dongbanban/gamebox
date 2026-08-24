@@ -25,7 +25,7 @@ describe("狗了个狗道具组", () => {
     expect(DOG_ITEM_DEFINITIONS.map((item) => item.targetType)).toEqual([
       "tray-block",
       "none",
-      "pattern",
+      "tray-block",
       "block",
       "block",
     ]);
@@ -76,7 +76,7 @@ describe("狗了个狗道具组", () => {
       ["triple-removal", "tray-capacity", "wildcard"],
       true,
       [],
-      { targetType: "pattern", patterns: ["打工狗"] },
+      { targetType: "tray-block" },
     );
 
     expect(editor).toContain('data-testid="dog-loadout-modal"');
@@ -112,13 +112,13 @@ describe("狗了个狗道具组", () => {
       /<div class="dog-loadout-summary__actions"[^>]*>[\s\S]*data-action="cancel-item-target"[\s\S]*data-action="edit-loadout"[\s\S]*<\/div>/,
     );
     expect(targetingSummary).toContain('data-testid="dog-item-targeting"');
-    expect(targetingSummary).toContain('data-action="select-item-pattern"');
+    expect(targetingSummary).not.toContain('data-action="select-item-pattern"');
 
     const blockTargetingSummary = renderDogLoadoutSummary(
       ["triple-removal", "tray-capacity", "wildcard"],
       true,
       [],
-      { targetType: "block", patterns: [] },
+      { targetType: "block" },
     );
     expect(blockTargetingSummary).toContain("选择道具目标");
     expect(blockTargetingSummary).toContain("dog-item-targeting");

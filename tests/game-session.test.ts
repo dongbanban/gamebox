@@ -223,12 +223,13 @@ describe("GameSession", () => {
   });
 
   it("万能方块原子补偿一个被遮挡同图案方块并以万能标记入槽", () => {
-    const session = new GameSession(
-      createLevel([
+    const session = new GameSession({
+      level: createLevel([
         createBlock("working-hidden", 0, 0, 0, WORKING_DOG),
         createBlock("single-cover", 0, 0, 1, SINGLE_DOG),
       ]),
-    );
+      initialTray: [WORKING_DOG],
+    });
 
     const plan = session.getWildcardPlan(WORKING_DOG);
 
@@ -242,7 +243,9 @@ describe("GameSession", () => {
       "working-hidden",
       "single-cover",
     ]);
-    expect(session.getState().trayBlocks).toEqual([]);
+    expect(session.getState().trayBlocks).toEqual([
+      { id: "initial-tray-1", patternType: WORKING_DOG },
+    ]);
 
     const result = session.useWildcard(WORKING_DOG);
     if (!result.used) {
@@ -259,6 +262,7 @@ describe("GameSession", () => {
     expect(result.wildcardBlockId).toMatch(/^wildcard-/);
     expect(result.snapshot.remainingBlocks.map((block) => block.id)).toEqual(["single-cover"]);
     expect(result.snapshot.trayBlocks).toEqual([
+      { id: "initial-tray-1", patternType: WORKING_DOG },
       {
         id: result.wildcardBlockId,
         patternType: WORKING_DOG,
@@ -266,6 +270,18 @@ describe("GameSession", () => {
       },
     ]);
     expect(result.snapshot.status).toBe("playing");
+  });
+
+  it("暂存槽没有所选图案时拒绝万能方块", () => {
+    const session = new GameSession(
+      createLevel([
+        createBlock("working-hidden", 0, 0, 0, WORKING_DOG),
+        createBlock("single-cover", 0, 0, 1, SINGLE_DOG),
+      ]),
+    );
+
+    expect(session.getWildcardPlan(WORKING_DOG)).toBeNull();
+    expect(session.useWildcard(WORKING_DOG)).toMatchObject({ used: false });
   });
 
   it("万能方块优先与两个相邻冻结同款三消并保留未参与普通同款", () => {
@@ -335,8 +351,8 @@ describe("GameSession", () => {
   });
 
   it("万能方块不把棋盘冻结方块作为补偿删除", () => {
-    const session = new GameSession(
-      createLevel([
+    const session = new GameSession({
+      level: createLevel([
         {
           ...createBlock("working-hidden", 0, 0, 0, WORKING_DOG),
           specialMechanism: {
@@ -350,7 +366,8 @@ describe("GameSession", () => {
         createBlock("single-2", 8, 8, 0, SINGLE_DOG),
         createBlock("single-3", 16, 8, 0, SINGLE_DOG),
       ]),
-    );
+      initialTray: [WORKING_DOG],
+    });
 
     expect(session.getWildcardPlan(WORKING_DOG)).toBeNull();
     const result = session.useWildcard(WORKING_DOG);
@@ -363,8 +380,8 @@ describe("GameSession", () => {
   });
 
   it("万能方块可以把被遮挡幻化同款作为棋盘补偿", () => {
-    const session = new GameSession(
-      createLevel([
+    const session = new GameSession({
+      level: createLevel([
         {
           ...createBlock("working-hidden", 0, 0, 0, WORKING_DOG),
           specialMechanism: {
@@ -378,7 +395,8 @@ describe("GameSession", () => {
         createBlock("single-2", 8, 8, 0, SINGLE_DOG),
         createBlock("single-3", 16, 8, 0, SINGLE_DOG),
       ]),
-    );
+      initialTray: [WORKING_DOG],
+    });
 
     expect(session.getWildcardPlan(WORKING_DOG)).toMatchObject({
       compensatedBlockId: "working-hidden",
@@ -422,7 +440,7 @@ describe("GameSession", () => {
         createBlock("single-cover", 0, 0, 1, SINGLE_DOG),
       ]),
       initialTray: [
-        SINGLE_DOG,
+        WORKING_DOG,
         LICKING_DOG,
         GUARD_DOG,
         "拆家狗",
@@ -438,8 +456,8 @@ describe("GameSession", () => {
   });
 
   it("棋盘机制被火把更新后按实时状态判断万能方块可解性", () => {
-    const session = new GameSession(
-      createLevel([
+    const session = new GameSession({
+      level: createLevel([
         createBlock("working-hidden", 0, 0, 0, WORKING_DOG),
         createBlock("working-2", 8, 0, 0, WORKING_DOG),
         createBlock("working-3", 16, 0, 0, WORKING_DOG),
@@ -453,7 +471,8 @@ describe("GameSession", () => {
         createBlock("single-2", 8, 8, 0, SINGLE_DOG),
         createBlock("single-3", 16, 8, 0, SINGLE_DOG),
       ]),
-    );
+      initialTray: [WORKING_DOG],
+    });
 
     expect(session.getWildcardPlan(WORKING_DOG)).toBeNull();
     expect(session.meltFrozenBlock("single-cover", "board")).toMatchObject({
