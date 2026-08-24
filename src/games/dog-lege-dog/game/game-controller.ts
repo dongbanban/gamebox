@@ -26,6 +26,7 @@ import {
   animateDogItemEffect,
   animateDogTripleRemovalEffect,
   animateDogTorchMeltEffect,
+  DOG_FREEZE_MELT_DURATION_MS,
   renderDogMeltEffect,
   type CancellableAnimation,
 } from "@/games/dog-lege-dog/assets/animation-effects";
@@ -77,6 +78,7 @@ interface DogGameRuntime {
   activeFlights: Set<CancellableAnimation>;
   matchFeedbackActive: boolean;
   matchAnimation: Promise<void> | null;
+  meltAnimation: Promise<void> | null;
   loadout: readonly DogItemId[] | null;
   itemRuntime: DogItemRuntime | null;
   itemAnimation: CancellableAnimation | null;
@@ -87,7 +89,7 @@ export function createDogLegeDogGame(
   root: HTMLElement,
   options: DogLegeDogGameOptions = {},
 ): DogLegeDogGame {
-  const level = getDogLegeDogLevel(
+  const level = options.level ?? getDogLegeDogLevel(
     options.levelNumber ?? FIRST_LEVEL.number,
     options.runSeed ?? createRunSeed(),
   );
@@ -112,6 +114,7 @@ export function createDogLegeDogGame(
     activeFlights: new Set(),
     matchFeedbackActive: false,
     matchAnimation: null,
+    meltAnimation: null,
     loadout: initialLoadout,
     itemRuntime:
       initialLoadout === null
@@ -190,14 +193,13 @@ export function createDogLegeDogGame(
       runtime.matchFeedbackActive = false;
       runtime.inputLocked = false;
       renderStartedGame(nextState);
-      playMeltAnimations(root, selection.meltedBlockIds, trayRectsBeforeSelection);
       if (result !== null) {
         presentResult(result);
       }
       return nextState;
     }
 
-    runtime.inputLocked = isIllusion || didMatch || result !== null;
+    runtime.inputLocked = true;
     if (isIllusion) {
       runtime.matchFeedbackActive = didMatch;
       runtime.feedback = "idle";
@@ -223,8 +225,8 @@ export function createDogLegeDogGame(
       target: target?.getBoundingClientRect() ?? null,
     });
     runtime.activeFlights.add(flight);
+    startMeltAnimations(selection.meltedBlockIds, trayRectsBeforeSelection);
     renderStartedGame(nextState);
-    playMeltAnimations(root, selection.meltedBlockIds, trayRectsBeforeSelection);
     void finishAnimatedSelection(
       flight,
       result,
@@ -447,14 +449,38 @@ export function createDogLegeDogGame(
     return rects;
   }
 
+  function startMeltAnimations(
+    meltedBlockIds: readonly string[],
+    fallbackRects: ReadonlyMap<string, DOMRect>,
+  ): void {
+    if (meltedBlockIds.length === 0) {
+      return;
+    }
+
+    const animation = playMeltAnimations(root, meltedBlockIds, fallbackRects);
+    let trackedAnimation: Promise<void>;
+    trackedAnimation = animation.then(() => {
+      if (runtime.meltAnimation !== trackedAnimation) {
+        return;
+      }
+
+      runtime.meltAnimation = null;
+      if (!runtime.destroyed) {
+        renderStartedGame();
+      }
+    });
+    runtime.meltAnimation = trackedAnimation;
+  }
+
   function playMeltAnimations(
     rootElement: HTMLElement,
     meltedBlockIds: readonly string[],
     fallbackRects: ReadonlyMap<string, DOMRect>,
-  ): void {
+  ): Promise<void> {
     const traySlots = [...rootElement.querySelectorAll<HTMLElement>(
       '[data-testid="dog-tray-slot"][data-block-id]',
     )];
+    const animations: Promise<void>[] = [];
     for (const blockId of meltedBlockIds) {
       const target = traySlots.find((slot) => slot.dataset.blockId === blockId);
       const targetRect = target?.getBoundingClientRect() ?? fallbackRects.get(blockId);
@@ -471,19 +497,30 @@ export function createDogLegeDogGame(
         continue;
       }
 
-      const remove = (): void => effect.remove();
-      const handleAnimationEnd = (event: AnimationEvent): void => {
-        if (event.animationName === "dog-freeze-melt") {
+      animations.push(new Promise<void>((resolve) => {
+        let settled = false;
+        const finish = (): void => {
+          if (settled) {
+            return;
+          }
+
+          settled = true;
           effect.removeEventListener("animationend", handleAnimationEnd);
-          remove();
-        }
-      };
-      effect.addEventListener("animationend", handleAnimationEnd);
-      window.setTimeout(() => {
-        effect.removeEventListener("animationend", handleAnimationEnd);
-        remove();
-      }, 1400);
+          window.clearTimeout(timer);
+          effect.remove();
+          resolve();
+        };
+        const handleAnimationEnd = (event: AnimationEvent): void => {
+          if (event.animationName === "dog-freeze-melt") {
+            finish();
+          }
+        };
+        const timer = window.setTimeout(finish, DOG_FREEZE_MELT_DURATION_MS);
+        effect.addEventListener("animationend", handleAnimationEnd);
+      }));
     }
+
+    return Promise.all(animations).then(() => undefined);
   }
 
   const handlePointerUp = (event: Event): void => {
@@ -749,7 +786,9 @@ export function createDogLegeDogGame(
   }
 
   function isGameInputLocked(): boolean {
-    return runtime.inputLocked || runtime.itemRuntime?.isInputLocked() === true;
+    return runtime.inputLocked ||
+      runtime.meltAnimation !== null ||
+      runtime.itemRuntime?.isInputLocked() === true;
   }
 
   function getItemTarget(event: Event): DogItemTarget | undefined {
@@ -991,7 +1030,9 @@ function createGameState(
 ): DogLegeDogGameState {
   const sessionState = snapshot ?? runtime.session.getState();
   const itemState = runtime.itemRuntime?.getState() ?? null;
-  const inputLocked = runtime.inputLocked || runtime.itemRuntime?.isInputLocked() === true;
+  const inputLocked = runtime.inputLocked ||
+    runtime.meltAnimation !== null ||
+    runtime.itemRuntime?.isInputLocked() === true;
 
   return {
     gameId: DOG_GAME_ID,

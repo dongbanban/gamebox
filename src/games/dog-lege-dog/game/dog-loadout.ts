@@ -248,7 +248,13 @@ export function renderDogLoadoutSummary(
     : "";
 
   return `
-    <section class="dog-loadout-summary" data-testid="dog-loadout-summary" aria-label="当前道具组">
+    <section
+      class="dog-loadout-summary"
+      data-testid="dog-loadout-summary"
+      data-target-type="${targetType ?? ""}"
+      data-target-patterns="${isPatternTarget ? targetState?.patterns.join("|") ?? "" : ""}"
+      aria-label="当前道具组"
+    >
       <div class="dog-loadout-summary__items">
         ${loadout.map((itemId) => {
           const item = getDogItemDefinition(itemId);

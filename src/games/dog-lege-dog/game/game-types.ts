@@ -40,4 +40,7 @@ export interface DogLegeDogGame {
   destroy(): void;
 }
 
-export type DogLegeDogGameOptions = GameLaunchContext;
+export interface DogLegeDogGameOptions extends GameLaunchContext {
+  /** Deterministic controller seam for focused gameplay tests. */
+  readonly level?: DogLegeDogLevel;
+}

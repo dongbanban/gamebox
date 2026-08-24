@@ -3,6 +3,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   BLOCK_FLIGHT_DURATION_MS,
+  DOG_FREEZE_MELT_DURATION_MS,
   DOG_DETECTOR_REVEAL_DURATION_MS,
   DOG_TORCH_MELT_DURATION_MS,
   DOG_ILLUSION_REVEAL_DURATION_MS,
@@ -21,8 +22,11 @@ import {
   type DogBlock,
   type DogLegeDogLevel,
   type DogPatternType,
+  type DogTrayBlock,
   startDogLegeDogGame,
 } from "@/games/dog-lege-dog";
+import { createDogSpecialMechanismHandlerMap } from "@/games/dog-lege-dog/game/special-mechanisms";
+import { resolveDogTrayMatches } from "@/games/dog-lege-dog/levels/level-rules";
 
 const WORKING_DOG: DogPatternType = "打工狗";
 const SINGLE_DOG: DogPatternType = "单身狗";
@@ -81,6 +85,109 @@ describe("狗了个狗特殊机制", () => {
     expect(finalTriple.removedCount).toBe(3);
     expect(finalTriple.snapshot.tray).toEqual([]);
     expect(finalTriple.snapshot.status).toBe("won");
+  });
+
+  it("规则 seam 允许终局完整三消组直接移除冻结方块", () => {
+    const handlers = createDogSpecialMechanismHandlerMap();
+    const tray = [
+      createTrayBlock("freeze", WORKING_DOG, {
+        type: DOG_FREEZE_MECHANISM_TYPE,
+        state: { status: "frozen", completedTriples: 0 },
+      }),
+      createTrayBlock("working-1", WORKING_DOG),
+      createTrayBlock("working-2", WORKING_DOG),
+    ];
+
+    const resolution = resolveDogTrayMatches(tray, handlers, {
+      allowFrozenFinalTriple: true,
+    });
+
+    expect(resolution).toMatchObject({ removedCount: 3, tripleCount: 1 });
+    expect(resolution.meltedBlockIds).toEqual([]);
+    expect(tray).toEqual([]);
+  });
+
+  it("同次多个其他图案三消只让冻结方块累计对应成功组三消", () => {
+    const tray = [
+      createTrayBlock("freeze", LICKING_DOG, {
+        type: DOG_FREEZE_MECHANISM_TYPE,
+        state: { status: "frozen", completedTriples: 0 },
+      }),
+      createTrayBlock("working-1", WORKING_DOG),
+      createTrayBlock("working-2", WORKING_DOG),
+      createTrayBlock("working-3", WORKING_DOG),
+      createTrayBlock("single-1", SINGLE_DOG),
+      createTrayBlock("single-2", SINGLE_DOG),
+      createTrayBlock("single-3", SINGLE_DOG),
+    ];
+
+    const resolution = resolveDogTrayMatches(
+      tray,
+      createDogSpecialMechanismHandlerMap(),
+    );
+
+    expect(resolution).toMatchObject({ removedCount: 6, tripleCount: 2 });
+    expect(tray).toHaveLength(1);
+    expect(tray[0]).toMatchObject({ id: "freeze", patternType: LICKING_DOG });
+    expect(tray[0]).not.toHaveProperty("specialMechanism");
+    expect(tray[0]?.id).toBe("freeze");
+  });
+
+  it("冻结方块第二组其他图案三消融化后立即重新检查同图案三消", () => {
+    const session = new GameSession({
+      level: createLevel([
+        createBlock("other-1", 0, 0, SINGLE_DOG),
+        createBlock("other-2", 4, 0, SINGLE_DOG),
+        createBlock("other-3", 8, 0, SINGLE_DOG),
+        createBlock("remaining", 12, 0, LICKING_DOG),
+      ]),
+      initialTrayBlocks: [
+        createTrayBlock("freeze", WORKING_DOG, {
+          type: DOG_FREEZE_MECHANISM_TYPE,
+          state: { status: "frozen", completedTriples: 1 },
+        }),
+        createTrayBlock("working-1", WORKING_DOG),
+        createTrayBlock("working-2", WORKING_DOG),
+      ],
+    });
+
+    const result = selectAll(session, ["other-1", "other-2", "other-3"]);
+
+    expect(result.removedCount).toBe(6);
+    expect(result.tripleCount).toBe(2);
+    expect(result.meltedBlockIds).toEqual(["freeze"]);
+    expect(result.snapshot.tray).toEqual([]);
+    expect(result.snapshot.status).toBe("playing");
+  });
+
+  it("活动游戏终局三消包含冻结方块时直接通关并完成反馈", async () => {
+    vi.useFakeTimers();
+    const level = createLevel([
+      createBlock("freeze", 0, 0, WORKING_DOG, {
+        type: DOG_FREEZE_MECHANISM_TYPE,
+        state: { status: "frozen", completedTriples: 0 },
+      }),
+      createBlock("working-1", 4, 0, WORKING_DOG),
+      createBlock("working-2", 8, 0, WORKING_DOG),
+    ]);
+    const root = document.createElement("div");
+    const results: string[] = [];
+    const game = startDogLegeDogGame(root, {
+      loadout: ["triple-removal", "tray-capacity", "wildcard"],
+      onResult: (result) => results.push(result.status),
+      level,
+    });
+
+    for (const blockId of ["freeze", "working-1", "working-2"]) {
+      game.selectBlock(blockId);
+      await vi.runAllTimersAsync();
+    }
+
+    expect(game.getState().session.status).toBe("won");
+    expect(game.getState().session.trayBlocks).toEqual([]);
+    expect(root.querySelector('[data-testid="dog-status"]')?.textContent).toContain("通关");
+    expect(results).toEqual(["won"]);
+    game.destroy();
   });
 
   it("火把融化棋盘冻结方块后保留原位置并移除冻结状态", () => {
@@ -252,6 +359,33 @@ describe("狗了个狗特殊机制", () => {
     expect(triple.snapshot.tray).toEqual([]);
   });
 
+  it("特殊方块入槽追加并保持点击相对顺序", () => {
+    const session = new GameSession(
+      createLevel([
+        createBlock("freeze", 0, 0, WORKING_DOG, {
+          type: DOG_FREEZE_MECHANISM_TYPE,
+          state: { status: "frozen", completedTriples: 0 },
+        }),
+        createBlock("illusion", 4, 0, SINGLE_DOG, {
+          type: DOG_ILLUSION_MECHANISM_TYPE,
+          state: { status: "masked", disguisedPatternType: LICKING_DOG },
+        }),
+        createBlock("ordinary", 8, 0, LICKING_DOG),
+      ]),
+    );
+
+    session.selectBlock("freeze");
+    session.selectBlock("illusion");
+    const state = session.selectBlock("ordinary");
+
+    expect(state.trayBlocks.map((block) => block.id)).toEqual([
+      "freeze",
+      "illusion",
+      "ordinary",
+    ]);
+    expect(state.trayBlocks[1]).not.toHaveProperty("specialMechanism");
+  });
+
   it("幻化飞行期间只占用暂存槽，飞行完成后才执行三消", () => {
     const session = new GameSession({
       level: createLevel([
@@ -361,6 +495,19 @@ describe("狗了个狗特殊机制", () => {
     expect(meltEffect?.getAttribute("aria-hidden")).toBe("true");
     expect(meltEffect?.querySelector(".dog-melt-effect__flake")).not.toBeNull();
     expect(meltEffect?.querySelectorAll(".dog-melt-effect__drop")).toHaveLength(4);
+
+    await vi.advanceTimersByTimeAsync(900);
+    expect(game.getState().inputLocked).toBe(true);
+    const blockedBlockId = game.getState().session.selectableBlockIds[0];
+    if (blockedBlockId !== undefined) {
+      game.selectBlock(blockedBlockId);
+      expect(game.getState().session.remainingBlocks.map((block) => block.id)).toContain(
+        blockedBlockId,
+      );
+    }
+    await vi.advanceTimersByTimeAsync(DOG_FREEZE_MELT_DURATION_MS - 900);
+    await Promise.resolve();
+    expect(game.getState().inputLocked).toBe(false);
 
     game.destroy();
   });
@@ -815,6 +962,18 @@ function createBlock(
     width: BLOCK_WIDTH,
     height: BLOCK_HEIGHT,
     rotation: 0,
+    patternType,
+    ...(specialMechanism === undefined ? {} : { specialMechanism }),
+  };
+}
+
+function createTrayBlock(
+  id: string,
+  patternType: DogPatternType,
+  specialMechanism?: DogTrayBlock["specialMechanism"],
+): DogTrayBlock {
+  return {
+    id,
     patternType,
     ...(specialMechanism === undefined ? {} : { specialMechanism }),
   };

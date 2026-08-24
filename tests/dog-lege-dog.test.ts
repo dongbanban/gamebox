@@ -356,9 +356,9 @@ describe("狗了个狗首关", () => {
       block?.dispatchEvent(new Event("pointerup", { bubbles: true, cancelable: true }));
       const isTerminal = game.getState().session.status !== "playing";
       const isMatchAnimating = game.getState().feedback === "match";
-      expect(game.getState().inputLocked).toBe(isTerminal || isMatchAnimating || isIllusion);
+      expect(game.getState().inputLocked).toBe(true);
       if (!isTerminal && !isMatchAnimating && !isIllusion) {
-        expect(root.querySelector('[data-testid="dog-block"]:not([disabled])')).not.toBeNull();
+        expect(root.querySelector('[data-testid="dog-block"]:not([disabled])')).toBeNull();
       }
       expect(game.getState().session.remainingBlocks.some((candidate) => candidate.id === blockId)).toBe(
         false,
@@ -394,7 +394,7 @@ describe("狗了个狗首关", () => {
     game.destroy();
   });
 
-  it("可在多个方块飞入暂存槽期间继续操作，并保留各自飞行动画", async () => {
+  it("普通方块飞入期间锁定棋盘，飞入完成后立即恢复点击", async () => {
     vi.useFakeTimers();
     const root = document.createElement("div");
     const game = startTestGame(root);
@@ -404,6 +404,8 @@ describe("狗了个狗首关", () => {
     }
 
     dispatchPointerUp(firstBlockId);
+    expect(BLOCK_FLIGHT_DURATION_MS).toBeLessThan(240);
+    expect(game.getState().inputLocked).toBe(true);
 
     const secondBlockId = game.getState().session.selectableBlockIds.find(
       (blockId) => blockId !== firstBlockId,
@@ -413,18 +415,32 @@ describe("狗了个狗首关", () => {
     }
     dispatchPointerUp(secondBlockId);
 
+    expect(game.getState().inputLocked).toBe(true);
+    expect(game.getState().session.remainingBlocks.some((block) => block.id === secondBlockId)).toBe(
+      true,
+    );
+    expect(root.querySelectorAll('[data-testid="dog-flight"]')).toHaveLength(1);
+
+    await vi.advanceTimersByTimeAsync(BLOCK_FLIGHT_DURATION_MS - 1);
+    expect(game.getState().inputLocked).toBe(true);
+    await vi.advanceTimersByTimeAsync(1);
     expect(game.getState().inputLocked).toBe(false);
+    expect(root.querySelectorAll('[data-testid="dog-flight"]')).toHaveLength(0);
+
+    dispatchPointerUp(secondBlockId);
+    expect(game.getState().inputLocked).toBe(true);
     expect(game.getState().session.remainingBlocks.some((block) => block.id === firstBlockId)).toBe(
       false,
     );
     expect(game.getState().session.remainingBlocks.some((block) => block.id === secondBlockId)).toBe(
       false,
     );
-    expect(root.querySelectorAll('[data-testid="dog-flight"]')).toHaveLength(2);
+    expect(root.querySelectorAll('[data-testid="dog-flight"]')).toHaveLength(1);
 
-    await vi.advanceTimersByTimeAsync(DOG_ITEM_FEEDBACK_DURATION_MS);
+    await vi.advanceTimersByTimeAsync(BLOCK_FLIGHT_DURATION_MS);
 
     expect(root.querySelectorAll('[data-testid="dog-flight"]')).toHaveLength(0);
+    expect(game.getState().inputLocked).toBe(false);
     game.destroy();
 
     function dispatchPointerUp(blockId: string): void {
@@ -439,11 +455,20 @@ describe("狗了个狗首关", () => {
   it("三消只显示显眼动画，不渲染中间文案，并在动画后开放下一次操作", async () => {
     vi.useFakeTimers();
     const root = document.createElement("div");
-    const game = startTestGame(root);
+    const game = startTestGame(root, {
+      loadout: ["triple-removal", "tray-capacity", "wildcard"],
+    });
 
     let matched = false;
     for (const blockId of game.getState().level.solutionPath) {
       const beforeTrayLength = game.getState().session.tray.length;
+      const loadoutThumbnailBeforeMatch = root.querySelector<HTMLElement>(
+        '[data-testid="dog-loadout-thumbnail"][data-loadout-id="tray-capacity"]',
+      );
+      const loadoutIconBeforeMatch = loadoutThumbnailBeforeMatch
+        ?.querySelector("img")
+        ?.getAttribute("src");
+      loadoutThumbnailBeforeMatch?.setAttribute("data-stable-loadout-probe", "true");
       root
         .querySelector<HTMLButtonElement>(
           `[data-testid="dog-block"][data-block-id="${blockId}"]`,
@@ -452,6 +477,19 @@ describe("狗了个狗首关", () => {
       const afterTrayLength = game.getState().session.tray.length;
       if (afterTrayLength < beforeTrayLength + 1) {
         matched = true;
+        const loadoutThumbnailDuringMatch = root.querySelector<HTMLButtonElement>(
+          '[data-testid="dog-loadout-thumbnail"][data-loadout-id="tray-capacity"]',
+        );
+        expect(loadoutThumbnailDuringMatch?.dataset.stableLoadoutProbe).toBe("true");
+        expect(loadoutThumbnailDuringMatch?.querySelector("img")?.getAttribute("src")).toBe(
+          loadoutIconBeforeMatch,
+        );
+        expect(loadoutThumbnailDuringMatch?.disabled).toBe(true);
+        expect(
+          loadoutThumbnailDuringMatch?.querySelector(
+            '[data-testid="dog-loadout-thumbnail-uses"]',
+          )?.textContent,
+        ).toBe("1");
         break;
       }
       await vi.runAllTimersAsync();
@@ -477,6 +515,11 @@ describe("狗了个狗首关", () => {
 
     expect(game.getState().feedback).toBe("idle");
     expect(game.getState().inputLocked).toBe(false);
+    expect(
+      root.querySelector<HTMLElement>(
+        '[data-testid="dog-loadout-thumbnail"][data-loadout-id="tray-capacity"]',
+      )?.dataset.stableLoadoutProbe,
+    ).toBe("true");
     game.destroy();
   });
 

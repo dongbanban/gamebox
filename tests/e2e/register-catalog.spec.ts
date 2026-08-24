@@ -334,9 +334,17 @@ test.describe("注册与游戏目录", () => {
     const selectableBlock = page.locator(
       '[data-testid="dog-block"]:not([disabled]):not([data-special-mechanism])',
     ).first();
+    const blockVisualSemantics = await selectableBlock.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        backgroundColor: style.backgroundColor,
+        border: style.border,
+        boxShadow: style.boxShadow,
+      };
+    });
     await selectableBlock.click();
     await expect(page.locator('[data-testid="dog-tray-slot"][data-pattern-type]')).toHaveCount(1);
-    const visualSemantics = await page.evaluate(() => {
+    const visualSemantics = await page.evaluate((blockStyle) => {
       const serializeRect = (element: Element) => {
         const rect = element.getBoundingClientRect();
         return {
@@ -350,24 +358,18 @@ test.describe("注册与游戏目录", () => {
         '[data-testid="dog-tray-slot"][data-pattern-type]',
       );
       const filledGlyph = filledSlot?.querySelector<HTMLElement>(".dog-block__glyph") ?? null;
-      const matchingBlock = [
-        ...document.querySelectorAll<HTMLElement>(
-          '[data-testid="dog-block"]:not([disabled]):not([data-special-mechanism])',
-        ),
-      ].find((block) => block.dataset.patternType === filledSlot?.dataset.patternType);
       const slotStyle = filledSlot === null ? null : getComputedStyle(filledSlot);
-      const blockStyle = matchingBlock === undefined ? null : getComputedStyle(matchingBlock);
       return {
         slotBackground: slotStyle?.backgroundColor ?? "",
-        blockBackground: blockStyle?.backgroundColor ?? "",
+        blockBackground: blockStyle.backgroundColor,
         slotBorder: slotStyle?.border ?? "",
-        blockBorder: blockStyle?.border ?? "",
+        blockBorder: blockStyle.border,
         slotShadow: slotStyle?.boxShadow ?? "",
-        blockShadow: blockStyle?.boxShadow ?? "",
+        blockShadow: blockStyle.boxShadow,
         slotRect: filledSlot === null ? null : serializeRect(filledSlot),
         glyphRect: filledGlyph === null ? null : serializeRect(filledGlyph),
       };
-    });
+    }, blockVisualSemantics);
     expect(visualSemantics.slotBackground).toBe(visualSemantics.blockBackground);
     expect(visualSemantics.slotBorder).toBe(visualSemantics.blockBorder);
     expect(visualSemantics.slotShadow).toBe(visualSemantics.blockShadow);

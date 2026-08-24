@@ -284,7 +284,7 @@ export class GameSession {
     let removedCount = 0;
     let tripleCount = 0;
     const meltedBlockIds: string[] = [];
-    for (const block of selectedBlocks) {
+    for (const [index, block] of selectedBlocks.entries()) {
       if (block === undefined) {
         continue;
       }
@@ -293,6 +293,10 @@ export class GameSession {
         this.tray,
         toTrayBlock(block),
         this.specialMechanismHandlers,
+        {
+          allowFrozenFinalTriple:
+            index === selectedBlocks.length - 1 && this.remainingBlocks.size === 0,
+        },
       );
       removedCount += resolution.removedCount;
       tripleCount += resolution.tripleCount;
@@ -427,6 +431,7 @@ export class GameSession {
       this.tray,
       toTrayBlock(pendingSelection.block),
       this.specialMechanismHandlers,
+      { allowFrozenFinalTriple: this.remainingBlocks.size === 0 },
     );
     this.tripleRemovalPlanCache.clear();
     this.updateResult();

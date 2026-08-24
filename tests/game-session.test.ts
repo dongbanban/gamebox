@@ -86,7 +86,7 @@ describe("GameSession", () => {
     expect(session.canSelectBlock("blocked")).toBe(true);
   });
 
-  it("把方块放入暂存槽，并把同类方块插入已有同类后方", () => {
+  it("把方块按点击顺序追加到暂存槽", () => {
     const session = new GameSession(
       createLevel([
         createBlock("working-1", 0, 0, 0, WORKING_DOG),
@@ -100,7 +100,7 @@ describe("GameSession", () => {
     session.selectBlock("single");
     const state = session.selectBlock("working-2");
 
-    expect(state.tray).toEqual([WORKING_DOG, WORKING_DOG, SINGLE_DOG]);
+    expect(state.tray).toEqual([WORKING_DOG, SINGLE_DOG, WORKING_DOG]);
     expect(state.remainingBlocks.map((block) => block.id)).toEqual(["remaining"]);
     expect(state.status).toBe("playing");
   });

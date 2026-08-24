@@ -17,7 +17,7 @@ export function insertPatternIntoTray(
   tray: DogPatternType[],
   patternType: DogPatternType,
 ): number {
-  insertAfterLastMatching(tray, patternType, (candidate) => candidate === patternType);
+  tray.push(patternType);
 
   return resolvePatternMatches(tray);
 }
@@ -63,26 +63,27 @@ export interface DogTrayMatchResolution {
   readonly meltedBlockIds: readonly string[];
 }
 
+export interface DogTrayMatchResolutionOptions {
+  readonly allowFrozenFinalTriple?: boolean;
+}
+
 export function insertDogBlockIntoTray(
   tray: DogTrayBlock[],
   block: DogTrayBlock,
   handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
+  options: DogTrayMatchResolutionOptions = {},
 ): DogTrayMatchResolution {
   const trayBlock = prepareDogTrayBlock(block, handlers);
   insertDogTrayBlock(tray, trayBlock);
 
-  return resolveDogTrayMatches(tray, handlers);
+  return resolveDogTrayMatches(tray, handlers, options);
 }
 
 export function insertDogTrayBlock(
   tray: DogTrayBlock[],
   block: DogTrayBlock,
 ): void {
-  insertAfterLastMatching(
-    tray,
-    block,
-    (candidate) => candidate.patternType === block.patternType,
-  );
+  tray.push(block);
 }
 
 export function prepareDogTrayBlock(
@@ -99,13 +100,16 @@ export function prepareDogTrayBlock(
 export function resolveDogTrayMatches(
   tray: DogTrayBlock[],
   handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
+  options: DogTrayMatchResolutionOptions = {},
 ): DogTrayMatchResolution {
   let removedCount = 0;
   let tripleCount = 0;
   const meltedBlockIds: string[] = [];
+  const allowFrozenMatches =
+    options.allowFrozenFinalTriple === true && canResolveAllTrayBlocks(tray);
 
   while (true) {
-    const removals = getMatchRemovals(tray, handlers);
+    const removals = getMatchRemovals(tray, handlers, allowFrozenMatches);
     if (removals.size === 0) {
       break;
     }
@@ -118,7 +122,10 @@ export function resolveDogTrayMatches(
     let roundRemovedCount = 0;
     for (const block of tray) {
       const remainingRemovals = removals.get(block.patternType) ?? 0;
-      if (remainingRemovals > 0 && isDogTrayBlockMatchable(block, handlers)) {
+      if (
+        remainingRemovals > 0 &&
+        isDogTrayBlockMatchable(block, handlers, allowFrozenMatches)
+      ) {
         removals.set(block.patternType, remainingRemovals - 1);
         roundRemovedCount += 1;
         continue;
@@ -168,10 +175,11 @@ export function resolveDogTrayMatches(
 function getMatchRemovals(
   tray: readonly DogTrayBlock[],
   handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
+  allowFrozenMatches: boolean,
 ): Map<DogPatternType, number> {
   const counts = new Map<DogPatternType, number>();
   for (const block of tray) {
-    if (!isDogTrayBlockMatchable(block, handlers)) {
+    if (!isDogTrayBlockMatchable(block, handlers, allowFrozenMatches)) {
       continue;
     }
     counts.set(block.patternType, (counts.get(block.patternType) ?? 0) + 1);
@@ -190,27 +198,30 @@ function getMatchRemovals(
 export function isDogTrayBlockMatchable(
   block: DogTrayBlock,
   handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
+  allowFrozenMatches = false,
 ): boolean {
   if (block.specialMechanism === undefined) {
+    return true;
+  }
+
+  if (allowFrozenMatches && block.specialMechanism.type === "freeze") {
     return true;
   }
 
   return getHandler(block, handlers).isMatchable(block.specialMechanism);
 }
 
-function insertAfterLastMatching<T>(
-  tray: T[],
-  item: T,
-  matches: (candidate: T) => boolean,
-): void {
-  for (let index = tray.length - 1; index >= 0; index -= 1) {
-    if (matches(tray[index]!)) {
-      tray.splice(index + 1, 0, item);
-      return;
-    }
+function canResolveAllTrayBlocks(tray: readonly DogTrayBlock[]): boolean {
+  if (tray.length === 0) {
+    return false;
   }
 
-  tray.push(item);
+  const counts = new Map<DogPatternType, number>();
+  for (const block of tray) {
+    counts.set(block.patternType, (counts.get(block.patternType) ?? 0) + 1);
+  }
+
+  return [...counts.values()].every((count) => count % 3 === 0);
 }
 
 function getHandler(

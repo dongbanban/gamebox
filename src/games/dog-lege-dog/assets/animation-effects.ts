@@ -1,10 +1,11 @@
 import type { DogPatternType } from "@/games/dog-lege-dog/levels/level-types";
 
-export const BLOCK_FLIGHT_DURATION_MS = 240;
+export const BLOCK_FLIGHT_DURATION_MS = 180;
 export const DOG_ILLUSION_REVEAL_DURATION_MS = 420;
 export const DOG_ITEM_FEEDBACK_DURATION_MS = 360;
 export const DOG_DETECTOR_REVEAL_DURATION_MS = DOG_ITEM_FEEDBACK_DURATION_MS;
 export const DOG_TORCH_MELT_DURATION_MS = DOG_ITEM_FEEDBACK_DURATION_MS;
+export const DOG_FREEZE_MELT_DURATION_MS = 1400;
 
 export interface BlockFlightOptions {
   readonly root: HTMLElement;

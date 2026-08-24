@@ -1,7 +1,11 @@
 import type {
   DogLegeDogLevel,
 } from "@/games/dog-lege-dog/levels/first-level";
-import { BLOCK_HEIGHT, BLOCK_WIDTH } from "@/games/dog-lege-dog/levels/level-types";
+import {
+  BLOCK_HEIGHT,
+  BLOCK_WIDTH,
+  type DogPatternType,
+} from "@/games/dog-lege-dog/levels/level-types";
 import {
   getDogPatternAssetUrl,
   getDogPatternClassName,
@@ -192,7 +196,7 @@ function updateDogLegeDogGame(
   }
 
   if (loadoutSlot !== null) {
-    loadoutSlot.innerHTML = renderLoadoutArea(state);
+    updateDogLoadoutArea(loadoutSlot, state);
   }
 
   const matchEffect = tray?.querySelector<HTMLElement>('[data-testid="dog-match-effect"]');
@@ -226,19 +230,103 @@ function renderLoadoutArea(state: DogLegeDogGameState): string {
   }
 
   const targetType = state.items.phase === "targeting" ? state.items.selectedItemTargetType : null;
-  const targetPatterns = targetType === "tray-pattern"
-    ? [...new Set(
-        state.session.trayBlocks
-          .filter((block) => block.specialMechanism === undefined)
-          .map((block) => block.patternType),
-      )]
-    : state.level.patternTypes;
+  const targetPatterns = getDogLoadoutTargetPatterns(state, targetType);
   return renderDogLoadoutSummary(
     state.loadout,
     state.loadoutLocked,
     state.items.items,
     { targetType, patterns: targetPatterns },
   );
+}
+
+function updateDogLoadoutArea(
+  loadoutSlot: HTMLElement,
+  state: DogLegeDogGameState,
+): void {
+  const currentEditor = loadoutSlot.querySelector('[data-testid="dog-loadout-panel"]');
+  const currentSummary = loadoutSlot.querySelector<HTMLElement>('[data-testid="dog-loadout-summary"]');
+  if (
+    state.loadoutEditor !== null ||
+    currentEditor !== null ||
+    state.loadout === null ||
+    state.items === null
+  ) {
+    loadoutSlot.innerHTML = renderLoadoutArea(state);
+    return;
+  }
+
+  const targetType = state.items.phase === "targeting"
+    ? state.items.selectedItemTargetType
+    : null;
+  const targetPatterns = getDogLoadoutTargetPatterns(state, targetType);
+  const targetPatternsKey = targetType === "pattern" || targetType === "tray-pattern"
+    ? targetPatterns.join("|")
+    : "";
+  const hasSameLoadout = currentSummary !== null &&
+    [...currentSummary.querySelectorAll<HTMLElement>('[data-testid="dog-loadout-thumbnail"]')]
+      .map((button) => button.dataset.loadoutId)
+      .every((itemId, index) => itemId === state.loadout?.[index]) &&
+    currentSummary.querySelectorAll('[data-testid="dog-loadout-thumbnail"]').length === state.loadout.length;
+  const hasSameTargetMarkup = currentSummary?.dataset.targetType === (targetType ?? "") &&
+    currentSummary.dataset.targetPatterns === targetPatternsKey;
+
+  if (!hasSameLoadout || !hasSameTargetMarkup || currentSummary === null) {
+    loadoutSlot.innerHTML = renderLoadoutArea(state);
+    return;
+  }
+
+  syncDogLoadoutSummary(currentSummary, state);
+}
+
+function getDogLoadoutTargetPatterns(
+  state: DogLegeDogGameState,
+  targetType: DogItemTargetType | null,
+): readonly DogPatternType[] {
+  if (targetType !== "tray-pattern") {
+    return state.level.patternTypes;
+  }
+
+  return [...new Set(
+    state.session.trayBlocks
+      .filter((block) => block.specialMechanism === undefined)
+      .map((block) => block.patternType),
+  )];
+}
+
+function syncDogLoadoutSummary(
+  summary: HTMLElement,
+  state: DogLegeDogGameState,
+): void {
+  const itemStates = new Map(state.items?.items.map((item) => [item.id, item]) ?? []);
+  for (const thumbnail of summary.querySelectorAll<HTMLButtonElement>(
+    '[data-testid="dog-loadout-thumbnail"]',
+  )) {
+    const itemId = thumbnail.dataset.loadoutId;
+    const itemState = itemId === undefined ? undefined : itemStates.get(itemId as DogItemId);
+    if (itemState === undefined) {
+      continue;
+    }
+
+    const available = state.loadoutLocked === false && itemState.available;
+    thumbnail.classList.toggle("dog-loadout-thumbnail--unavailable", !available);
+    thumbnail.disabled = !available;
+    thumbnail.dataset.itemAvailable = String(available);
+    thumbnail.setAttribute(
+      "aria-label",
+      `${itemState.name}，剩余 ${itemState.remainingUses} 次`,
+    );
+    const uses = thumbnail.querySelector<HTMLElement>(
+      '[data-testid="dog-loadout-thumbnail-uses"]',
+    );
+    if (uses !== null) {
+      uses.textContent = String(itemState.remainingUses);
+    }
+  }
+
+  const editButton = summary.querySelector<HTMLButtonElement>('[data-action="edit-loadout"]');
+  if (editButton !== null) {
+    editButton.disabled = state.loadoutLocked;
+  }
 }
 
 export function fitDogBoardToFrame(root: HTMLElement): void {
