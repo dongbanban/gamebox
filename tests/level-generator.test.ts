@@ -919,8 +919,8 @@ function createSafeChoiceBudgetFixture(): SolvabilityFixtureWithPath {
     patternTypes: DOG_PATTERN_TYPES.slice(0, 5),
     blocks,
     solutionPath: [
-      "a0", "b0", "c0", "d0", "e0", "a1", "b1", "c1",
-      "a2", "b2", "c2", "d1", "d2", "e1", "e2",
+      "c1", "a0", "a1", "a2", "c0", "b0", "b1", "b2",
+      "c2", "d0", "d1", "d2", "e0", "e1", "e2",
     ],
   };
 }

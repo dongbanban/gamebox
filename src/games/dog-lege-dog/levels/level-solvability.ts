@@ -766,16 +766,16 @@ function sortSelectableBlocks(
   selectable.sort((firstIndex, secondIndex) => {
     const firstRank = preferredRank.get(firstIndex) ?? Number.MAX_SAFE_INTEGER;
     const secondRank = preferredRank.get(secondIndex) ?? Number.MAX_SAFE_INTEGER;
-    const firstMatches = tray.filter(
-      (block) =>
-        block.patternType === level.blocks[firstIndex].patternType &&
-        isDogTrayBlockMatchable(block, handlers),
-    ).length;
-    const secondMatches = tray.filter(
-      (block) =>
-        block.patternType === level.blocks[secondIndex].patternType &&
-        isDogTrayBlockMatchable(block, handlers),
-    ).length;
+    const firstMatches = getTrailingMatchCount(
+      tray,
+      level.blocks[firstIndex].patternType,
+      handlers,
+    );
+    const secondMatches = getTrailingMatchCount(
+      tray,
+      level.blocks[secondIndex].patternType,
+      handlers,
+    );
     return (
       secondMatches - firstMatches ||
       firstRank - secondRank ||
@@ -793,8 +793,27 @@ function stateKeyFor(
     .map((block) => block.specialMechanism === undefined
       ? `ordinary:${block.patternType}`
       : `${block.id}:${block.patternType}:${serializeMechanism(block)}`)
-    .sort()
     .join(",")}`;
+}
+
+function getTrailingMatchCount(
+  tray: readonly DogTrayBlock[],
+  patternType: DogTrayBlock["patternType"],
+  handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
+): number {
+  let matchCount = 0;
+  for (let index = tray.length - 1; index >= 0; index -= 1) {
+    const block = tray[index];
+    if (
+      block === undefined ||
+      block.patternType !== patternType ||
+      !isDogTrayBlockMatchable(block, handlers)
+    ) {
+      break;
+    }
+    matchCount += 1;
+  }
+  return matchCount;
 }
 
 function trayPeakPressureForPath(

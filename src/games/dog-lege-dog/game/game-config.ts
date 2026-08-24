@@ -4,7 +4,7 @@ import type {
 } from "@/games/dog-lege-dog/levels/level-types";
 
 const GAME_ID = "dog-lege-dog" as const;
-const GENERATOR_VERSION = 8 as const;
+const GENERATOR_VERSION = 9 as const;
 
 export const DOG_GAME_RESULT_DISPLAY = Object.freeze({
   won: Object.freeze({

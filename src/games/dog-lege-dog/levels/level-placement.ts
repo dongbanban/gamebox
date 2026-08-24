@@ -869,56 +869,14 @@ function createSolvablePatternSequence(
   groupCount: number,
   random: SeededRandom,
 ): readonly DogPatternType[] {
-  const groupPatterns = Array.from(
+  const groupPatterns = random.shuffle(Array.from(
     { length: groupCount },
     (_, index) => patternTypes[index % patternTypes.length],
-  );
-  const remainingGroups = new Map<DogPatternType, number>();
-  for (const patternType of groupPatterns) {
-    remainingGroups.set(patternType, (remainingGroups.get(patternType) ?? 0) + 3);
-  }
+  ));
 
-  const remaining = new Map(remainingGroups);
-  const sequence: DogPatternType[] = [];
-  while (sequence.length < groupCount * 3) {
-    const activePatterns = random.shuffle(
-      patternTypes.filter((patternType) => (remaining.get(patternType) ?? 0) > 0),
-    );
-    if (activePatterns.length >= 5) {
-      const pressurePatterns = activePatterns.slice(0, 5);
-      const [first, second, third, fourth, fifth] = pressurePatterns;
-      sequence.push(
-        first,
-        second,
-        third,
-        fourth,
-        fifth,
-        first,
-        first,
-        second,
-        second,
-        third,
-        third,
-        fourth,
-        fourth,
-        fifth,
-        fifth,
-      );
-      for (const patternType of pressurePatterns) {
-        remaining.set(patternType, (remaining.get(patternType) ?? 0) - 3);
-      }
-      continue;
-    }
-
-    const patternType = activePatterns[0];
-    if (patternType === undefined) {
-      break;
-    }
-    sequence.push(patternType, patternType, patternType);
-    remaining.set(patternType, (remaining.get(patternType) ?? 0) - 3);
-  }
-
-  return sequence.slice(0, groupCount * 3);
+  // Tray order is the click order. Every generated solution group must be
+  // contiguous, otherwise a valid pattern quota would still be unsolvable.
+  return groupPatterns.flatMap((patternType) => [patternType, patternType, patternType]);
 }
 
 

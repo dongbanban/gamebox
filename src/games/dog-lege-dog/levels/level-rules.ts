@@ -23,38 +23,15 @@ export function insertPatternIntoTray(
 }
 
 export function resolvePatternMatches(tray: DogPatternType[]): number {
-  const counts = new Map<DogPatternType, number>();
-  for (const currentPatternType of tray) {
-    counts.set(currentPatternType, (counts.get(currentPatternType) ?? 0) + 1);
-  }
-
-  const removals = new Map<DogPatternType, number>();
-  for (const [currentPatternType, count] of counts) {
-    const removableCount = Math.floor(count / 3) * 3;
-    if (removableCount > 0) {
-      removals.set(currentPatternType, removableCount);
-    }
-  }
-
-  if (removals.size === 0) {
-    return 0;
-  }
-
-  let writeIndex = 0;
   let removedCount = 0;
-  for (const currentPatternType of tray) {
-    const remainingRemovals = removals.get(currentPatternType) ?? 0;
-    if (remainingRemovals > 0) {
-      removals.set(currentPatternType, remainingRemovals - 1);
-      removedCount += 1;
-      continue;
+  while (true) {
+    const removalIndexes = getAdjacentTripleRemovalIndexes(tray, (patternType) => patternType);
+    if (removalIndexes.length === 0) {
+      return removedCount;
     }
 
-    tray[writeIndex] = currentPatternType;
-    writeIndex += 1;
+    removedCount += removeItemsAtIndexes(tray, removalIndexes);
   }
-  tray.length = writeIndex;
-  return removedCount;
 }
 
 export interface DogTrayMatchResolution {
@@ -106,35 +83,26 @@ export function resolveDogTrayMatches(
   let tripleCount = 0;
   const meltedBlockIds: string[] = [];
   const allowFrozenMatches =
-    options.allowFrozenFinalTriple === true && canResolveAllTrayBlocks(tray);
+    options.allowFrozenFinalTriple === true && canResolveAllTrayBlocks(tray, handlers);
 
   while (true) {
-    const removals = getMatchRemovals(tray, handlers, allowFrozenMatches);
-    if (removals.size === 0) {
+    const groups = getAdjacentMatchGroups(
+      tray,
+      (block) => isDogTrayBlockMatchable(block, handlers, allowFrozenMatches)
+        ? block.patternType
+        : undefined,
+    );
+    const removalIndexes = groups.flatMap(({ indexes }) =>
+      indexes.slice(0, Math.floor(indexes.length / 3) * 3),
+    );
+    if (removalIndexes.length === 0) {
       break;
     }
 
-    const roundTriplePatterns = [...removals.entries()].flatMap(
-      ([patternType, removableCount]) =>
-        Array.from({ length: removableCount / 3 }, () => patternType),
+    const roundTriplePatterns = groups.flatMap(({ key, indexes }) =>
+      Array.from({ length: Math.floor(indexes.length / 3) }, () => key),
     );
-    let writeIndex = 0;
-    let roundRemovedCount = 0;
-    for (const block of tray) {
-      const remainingRemovals = removals.get(block.patternType) ?? 0;
-      if (
-        remainingRemovals > 0 &&
-        isDogTrayBlockMatchable(block, handlers, allowFrozenMatches)
-      ) {
-        removals.set(block.patternType, remainingRemovals - 1);
-        roundRemovedCount += 1;
-        continue;
-      }
-
-      tray[writeIndex] = block;
-      writeIndex += 1;
-    }
-    tray.length = writeIndex;
+    const roundRemovedCount = removeItemsAtIndexes(tray, removalIndexes);
 
     const roundTripleCount = roundTriplePatterns.length;
     removedCount += roundRemovedCount;
@@ -172,29 +140,6 @@ export function resolveDogTrayMatches(
   };
 }
 
-function getMatchRemovals(
-  tray: readonly DogTrayBlock[],
-  handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
-  allowFrozenMatches: boolean,
-): Map<DogPatternType, number> {
-  const counts = new Map<DogPatternType, number>();
-  for (const block of tray) {
-    if (!isDogTrayBlockMatchable(block, handlers, allowFrozenMatches)) {
-      continue;
-    }
-    counts.set(block.patternType, (counts.get(block.patternType) ?? 0) + 1);
-  }
-
-  const removals = new Map<DogPatternType, number>();
-  for (const [patternType, count] of counts) {
-    const removableCount = Math.floor(count / 3) * 3;
-    if (removableCount > 0) {
-      removals.set(patternType, removableCount);
-    }
-  }
-  return removals;
-}
-
 export function isDogTrayBlockMatchable(
   block: DogTrayBlock,
   handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
@@ -211,17 +156,95 @@ export function isDogTrayBlockMatchable(
   return getHandler(block, handlers).isMatchable(block.specialMechanism);
 }
 
-function canResolveAllTrayBlocks(tray: readonly DogTrayBlock[]): boolean {
+function canResolveAllTrayBlocks(
+  tray: readonly DogTrayBlock[],
+  handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
+): boolean {
   if (tray.length === 0) {
     return false;
   }
 
-  const counts = new Map<DogPatternType, number>();
-  for (const block of tray) {
-    counts.set(block.patternType, (counts.get(block.patternType) ?? 0) + 1);
+  const simulatedTray = [...tray];
+  while (simulatedTray.length > 0) {
+    const removalIndexes = getAdjacentMatchGroups(
+      simulatedTray,
+      (block) => isDogTrayBlockMatchable(block, handlers, true)
+        ? block.patternType
+        : undefined,
+    ).flatMap(({ indexes }) =>
+      indexes.slice(0, Math.floor(indexes.length / 3) * 3),
+    );
+    if (removalIndexes.length === 0) {
+      return false;
+    }
+
+    removeItemsAtIndexes(simulatedTray, removalIndexes);
   }
 
-  return [...counts.values()].every((count) => count % 3 === 0);
+  return true;
+}
+
+function getAdjacentTripleRemovalIndexes<T>(
+  items: readonly T[],
+  getMatchKey: (item: T) => string | undefined,
+): readonly number[] {
+  return getAdjacentMatchGroups(items, getMatchKey).flatMap(({ indexes }) =>
+    indexes.slice(0, Math.floor(indexes.length / 3) * 3),
+  );
+}
+
+function getAdjacentMatchGroups<T, K>(
+  items: readonly T[],
+  getMatchKey: (item: T) => K | undefined,
+): Array<{ readonly key: K; readonly indexes: number[] }> {
+  const groups: Array<{ readonly key: K; readonly indexes: number[] }> = [];
+  let currentGroup: { readonly key: K; readonly indexes: number[] } | undefined;
+
+  for (let index = 0; index < items.length; index += 1) {
+    const item = items[index];
+    if (item === undefined) {
+      currentGroup = undefined;
+      continue;
+    }
+
+    const key = getMatchKey(item);
+    if (key === undefined) {
+      currentGroup = undefined;
+      continue;
+    }
+
+    if (currentGroup !== undefined && currentGroup.key === key) {
+      currentGroup.indexes.push(index);
+      continue;
+    }
+
+    currentGroup = { key, indexes: [index] };
+    groups.push(currentGroup);
+  }
+
+  return groups;
+}
+
+function removeItemsAtIndexes<T>(items: T[], indexes: readonly number[]): number {
+  const removalIndexes = new Set(indexes);
+  let writeIndex = 0;
+  let removedCount = 0;
+  for (let index = 0; index < items.length; index += 1) {
+    const item = items[index];
+    if (item === undefined) {
+      continue;
+    }
+
+    if (removalIndexes.has(index)) {
+      removedCount += 1;
+      continue;
+    }
+
+    items[writeIndex] = item;
+    writeIndex += 1;
+  }
+  items.length = writeIndex;
+  return removedCount;
 }
 
 function getHandler(

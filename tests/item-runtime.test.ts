@@ -240,7 +240,34 @@ describe("DogItemRuntime", () => {
     });
   });
 
-  it("槽内已有 2 个非相邻图案时自动补 1 个并只移除完整三消", () => {
+  it("道具按暂存槽尾部连续图案补齐，不按全槽数量计算", () => {
+    const session = new GameSession({
+      level: createLevel([
+        createBlock("working-board", WORKING_DOG),
+        createBlock("single-1", SINGLE_DOG),
+        createBlock("single-2", SINGLE_DOG),
+        createBlock("single-3", SINGLE_DOG),
+      ]),
+      initialTray: [WORKING_DOG, SINGLE_DOG, WORKING_DOG, WORKING_DOG],
+    });
+    const runtime = new DogItemRuntime({
+      level: session.getState().level,
+      session,
+      loadout: ["triple-removal"],
+    });
+
+    expect(runtime.getState().items[0]?.available).toBe(true);
+    runtime.begin("triple-removal");
+    const action = runtime.confirmTarget({ type: "pattern", patternType: WORKING_DOG });
+
+    expect(action).toMatchObject({
+      accepted: true,
+      success: true,
+      effect: { blockIds: ["working-board"] },
+    });
+  });
+
+  it("槽内已有 2 个非相邻图案时不能补成三消", () => {
     const session = new GameSession({
       level: createLevel([
         createBlock("working-board", WORKING_DOG),
@@ -255,22 +282,15 @@ describe("DogItemRuntime", () => {
       loadout: ["triple-removal"],
     });
 
-    runtime.begin("triple-removal");
-    const action = runtime.confirmTarget({ type: "pattern", patternType: WORKING_DOG });
-
-    expect(action).toMatchObject({
-      accepted: true,
-      success: true,
-      effect: {
-        type: "triple-removal",
-        blockIds: ["working-board"],
-        removedCount: 3,
-        tripleCount: 1,
-      },
+    expect(session.getTripleRemovalTargetPatterns()).toEqual([]);
+    expect(runtime.getState().items[0]).toMatchObject({ available: false, remainingUses: 1 });
+    expect(runtime.begin("triple-removal")).toMatchObject({
+      accepted: false,
+      success: false,
     });
-    runtime.completeAnimation();
-    expect(session.getState().tray).toEqual([SINGLE_DOG]);
+    expect(session.getState().tray).toEqual([WORKING_DOG, SINGLE_DOG, WORKING_DOG]);
     expect(session.getState().remainingBlocks.map((block) => block.id)).toEqual([
+      "working-board",
       "single-1",
       "single-2",
     ]);

@@ -86,7 +86,7 @@ describe("GameSession", () => {
     expect(session.canSelectBlock("blocked")).toBe(true);
   });
 
-  it("把方块按点击顺序追加到暂存槽", () => {
+  it("把方块按点击顺序追加到暂存槽，非相邻同类不三消", () => {
     const session = new GameSession(
       createLevel([
         createBlock("working-1", 0, 0, 0, WORKING_DOG),
@@ -100,6 +100,7 @@ describe("GameSession", () => {
     session.selectBlock("single");
     const state = session.selectBlock("working-2");
 
+    expect(state.removedCount).toBe(0);
     expect(state.tray).toEqual([WORKING_DOG, SINGLE_DOG, WORKING_DOG]);
     expect(state.remainingBlocks.map((block) => block.id)).toEqual(["remaining"]);
     expect(state.status).toBe("playing");
@@ -163,12 +164,12 @@ describe("GameSession", () => {
       ]),
     );
 
-    session.selectBlock("working-1");
-    session.selectBlock("working-2");
     session.selectBlock("single-1");
     session.selectBlock("single-2");
     session.selectBlock("licking");
     session.selectBlock("guard");
+    session.selectBlock("working-1");
+    session.selectBlock("working-2");
     const state = session.selectBlock("working-3");
 
     expect(state.status).toBe("playing");

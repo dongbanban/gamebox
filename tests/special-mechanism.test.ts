@@ -107,6 +107,47 @@ describe("狗了个狗特殊机制", () => {
     expect(tray).toEqual([]);
   });
 
+  it("终局三消也不跨非相邻方块移除冻结方块", () => {
+    const handlers = createDogSpecialMechanismHandlerMap();
+    const tray = [
+      createTrayBlock("freeze", WORKING_DOG, {
+        type: DOG_FREEZE_MECHANISM_TYPE,
+        state: { status: "frozen", completedTriples: 0 },
+      }),
+      createTrayBlock("single", SINGLE_DOG),
+      createTrayBlock("working-1", WORKING_DOG),
+    ];
+
+    const resolution = resolveDogTrayMatches(tray, handlers, {
+      allowFrozenFinalTriple: true,
+    });
+
+    expect(resolution).toMatchObject({ removedCount: 0, tripleCount: 0 });
+    expect(tray.map((block) => block.id)).toEqual(["freeze", "single", "working-1"]);
+  });
+
+  it("终局冻结三消允许先消除其他组再级联覆盖全部相邻方块", () => {
+    const handlers = createDogSpecialMechanismHandlerMap();
+    const tray = [
+      createTrayBlock("freeze", WORKING_DOG, {
+        type: DOG_FREEZE_MECHANISM_TYPE,
+        state: { status: "frozen", completedTriples: 0 },
+      }),
+      createTrayBlock("working-1", WORKING_DOG),
+      createTrayBlock("single-1", SINGLE_DOG),
+      createTrayBlock("single-2", SINGLE_DOG),
+      createTrayBlock("single-3", SINGLE_DOG),
+      createTrayBlock("working-2", WORKING_DOG),
+    ];
+
+    const resolution = resolveDogTrayMatches(tray, handlers, {
+      allowFrozenFinalTriple: true,
+    });
+
+    expect(resolution).toMatchObject({ removedCount: 6, tripleCount: 2 });
+    expect(tray).toEqual([]);
+  });
+
   it("同次多个其他图案三消只让冻结方块累计对应成功组三消", () => {
     const tray = [
       createTrayBlock("freeze", LICKING_DOG, {
@@ -187,6 +228,47 @@ describe("狗了个狗特殊机制", () => {
     expect(game.getState().session.trayBlocks).toEqual([]);
     expect(root.querySelector('[data-testid="dog-status"]')?.textContent).toContain("通关");
     expect(results).toEqual(["won"]);
+    game.destroy();
+  });
+
+  it("三消道具目标只展示能形成连续三连的暂存槽图案", async () => {
+    vi.useFakeTimers();
+    const root = document.createElement("div");
+    const game = startDogLegeDogGame(root, {
+      level: createLevel([
+        createBlock("working-1", 0, 0, WORKING_DOG),
+        createBlock("single", 4, 0, SINGLE_DOG),
+        createBlock("working-2", 8, 0, WORKING_DOG),
+        createBlock("working-3", 12, 0, WORKING_DOG),
+        createBlock("working-4", 16, 0, WORKING_DOG),
+      ]),
+      loadout: ["triple-removal", "tray-capacity", "wildcard"],
+    });
+
+    for (const blockId of ["working-1", "single", "working-2"]) {
+      game.selectBlock(blockId);
+      await vi.runAllTimersAsync();
+    }
+
+    expect(game.getState().session.tray).toEqual([
+      WORKING_DOG,
+      SINGLE_DOG,
+      WORKING_DOG,
+    ]);
+    expect(
+      root.querySelector<HTMLButtonElement>('[data-action="use-item"][data-item-id="triple-removal"]')
+        ?.disabled,
+    ).toBe(false);
+
+    root.querySelector<HTMLButtonElement>(
+      '[data-action="use-item"][data-item-id="triple-removal"]',
+    )?.click();
+
+    expect(
+      [...root.querySelectorAll<HTMLElement>('[data-action="select-item-pattern"]')]
+        .map((button) => button.dataset.patternType),
+    ).toEqual([WORKING_DOG]);
+
     game.destroy();
   });
 
@@ -560,11 +642,15 @@ describe("狗了个狗特殊机制", () => {
     const activeFreezeBlocks = root.querySelectorAll<HTMLElement>(
       '[data-testid="dog-block"][data-special-mechanism="freeze"]',
     );
+    const selectableBlockIds = new Set(game.getState().session.selectableBlockIds);
+    const selectableFreezeBlocks = [...activeFreezeBlocks].filter((block) =>
+      selectableBlockIds.has(block.dataset.blockId ?? ""),
+    );
     expect(root.querySelectorAll('[data-item-targetable="true"]')).toHaveLength(
-      activeFreezeBlocks.length,
+      selectableFreezeBlocks.length,
     );
     expect(
-      [...activeFreezeBlocks].every((block) => block.dataset.itemTargetable === "true"),
+      selectableFreezeBlocks.every((block) => block.dataset.itemTargetable === "true"),
     ).toBe(true);
     expect(
       [...root.querySelectorAll<HTMLElement>(

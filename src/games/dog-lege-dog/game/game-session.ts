@@ -227,7 +227,7 @@ export class GameSession {
 
       patterns.push(block.patternType);
     }
-    return Object.freeze(patterns);
+    return Object.freeze(patterns.filter((patternType) => this.canRemoveTriple(patternType)));
   }
 
   getTripleRemovalPlan(
@@ -588,11 +588,7 @@ export class GameSession {
       return null;
     }
 
-    const trayMatchCount = this.tray.filter(
-      (block) =>
-        block.patternType === patternType &&
-        block.specialMechanism === undefined,
-    ).length;
+    const trayMatchCount = this.getTrailingOrdinaryPatternCount(patternType);
     const requiredBlockCount = 3 - trayMatchCount;
     if (trayMatchCount < 1 || trayMatchCount > 2) {
       return null;
@@ -655,6 +651,24 @@ export class GameSession {
     }
 
     return null;
+  }
+
+  private getTrailingOrdinaryPatternCount(patternType: DogPatternType): number {
+    let count = 0;
+    for (let index = this.tray.length - 1; index >= 0; index -= 1) {
+      const block = this.tray[index];
+      if (
+        block === undefined ||
+        block.patternType !== patternType ||
+        block.specialMechanism !== undefined
+      ) {
+        break;
+      }
+
+      count += 1;
+    }
+
+    return count;
   }
 
   private createMeltResult(

@@ -216,52 +216,256 @@ async function loseCurrentLevel(page: Page): Promise<void> {
 }
 
 async function winCurrentLevel(page: Page): Promise<void> {
-  for (let attempt = 0; attempt < 100; attempt += 1) {
+  const solutionPath = await findBrowserSolvablePath(page);
+  for (const blockId of solutionPath) {
     if (await page.locator('[data-result="won"]').isVisible().catch(() => false)) {
       return;
     }
 
-    const blockId = await page
-      .locator('[data-testid="dog-block"]:not([disabled])')
-      .evaluateAll((blocks) => {
-        const trayPatterns = [...document.querySelectorAll<HTMLElement>(
-          '[data-testid="dog-tray-slot"][data-pattern-type]',
-        )]
-          .filter((slot) => slot.dataset.specialMechanismState !== "frozen")
-          .map((slot) => slot.dataset.patternType);
-        const trayCounts = new Map<string, number>();
-        for (const pattern of trayPatterns) {
-          if (pattern !== undefined) {
-            trayCounts.set(pattern, (trayCounts.get(pattern) ?? 0) + 1);
-          }
-        }
-
-        return [...blocks]
-          .sort((first, second) => {
-            const firstPattern = first.dataset.patternType ?? "";
-            const secondPattern = second.dataset.patternType ?? "";
-            return (
-              (trayCounts.get(secondPattern) ?? 0) - (trayCounts.get(firstPattern) ?? 0) ||
-              Number(second.dataset.z ?? 0) - Number(first.dataset.z ?? 0)
-            );
-          })
-          .at(0)?.dataset.blockId ?? null;
-      });
-    const block = page.locator(
-      `[data-testid="dog-block"][data-block-id="${blockId}"]`,
-    );
-    await expect(block).toBeVisible();
-    await block.click();
-    await page.waitForFunction(() => {
-      const game = document.querySelector<HTMLElement>('[data-testid="dog-game"]');
-      return game === null || (
-        game.dataset.inputLocked === "false" &&
-        document.querySelector('[data-testid="dog-flight"]') === null
-      );
-    });
+    await clickBlock(page, blockId);
   }
 
   await expect(page.locator('[data-result="won"]')).toBeVisible();
+}
+
+async function findBrowserSolvablePath(page: Page): Promise<string[]> {
+  const blocks = await page.locator('[data-testid="dog-block"]').evaluateAll((elements) =>
+    elements.map((element): BrowserBlock => {
+      const specialMechanism = element.dataset.specialMechanism;
+      return {
+        id: element.dataset.blockId ?? "",
+        patternType: element.dataset.patternType ?? "",
+        specialMechanism:
+          specialMechanism === "freeze" || specialMechanism === "illusion"
+            ? specialMechanism
+            : undefined,
+        x: Number(element.dataset.x),
+        y: Number(element.dataset.y),
+        z: Number(element.dataset.z),
+      };
+    }),
+  );
+
+  return findIndependentSolvablePath(blocks);
+}
+
+type BrowserSpecialMechanism = "freeze" | "illusion";
+
+interface BrowserBlock {
+  readonly id: string;
+  readonly patternType: string;
+  readonly specialMechanism?: BrowserSpecialMechanism;
+  readonly x: number;
+  readonly y: number;
+  readonly z: number;
+}
+
+interface BrowserTrayBlock {
+  readonly id: string;
+  readonly patternType: string;
+  readonly frozen: boolean;
+  readonly freezeProgress: number;
+}
+
+function findIndependentSolvablePath(
+  blocks: readonly BrowserBlock[],
+): string[] {
+  const remaining = new Set(blocks.map((block) => block.id));
+  const result = searchIndependentSolvability(
+    blocks,
+    remaining,
+    [],
+    [],
+    new Set(),
+    { attempts: 0, maxAttempts: 4096 },
+  );
+  if (result === undefined) {
+    throw new Error("E2E could not find an independent solvable path");
+  }
+
+  return [...result];
+}
+
+function searchIndependentSolvability(
+  blocks: readonly BrowserBlock[],
+  remaining: ReadonlySet<string>,
+  tray: readonly BrowserTrayBlock[],
+  path: readonly string[],
+  failedStates: Set<string>,
+  context: { attempts: number; readonly maxAttempts: number },
+): readonly string[] | undefined {
+  if (remaining.size === 0) {
+    return tray.length === 0 ? path : undefined;
+  }
+
+  const stateKey = `${[...remaining].sort().join(",")}:${tray
+    .map((block) => `${block.id}:${block.patternType}:${block.frozen}:${block.freezeProgress}`)
+    .join(",")}`;
+  if (failedStates.has(stateKey)) {
+    return undefined;
+  }
+
+  const selectable = blocks
+    .filter((block) => remaining.has(block.id))
+    .filter((block) => !blocks.some(
+      (higher) => remaining.has(higher.id) && higher.z > block.z && overlaps(higher, block),
+    ))
+    .sort((first, second) => {
+      const firstMatches = trailingMatchCount(tray, first.patternType);
+      const secondMatches = trailingMatchCount(tray, second.patternType);
+      return (
+        secondMatches - firstMatches ||
+        second.z - first.z ||
+        first.id.localeCompare(second.id)
+      );
+    });
+
+  for (const block of selectable) {
+    context.attempts += 1;
+    if (context.attempts > context.maxAttempts) {
+      return undefined;
+    }
+
+    const nextRemaining = new Set(remaining);
+    nextRemaining.delete(block.id);
+    const nextTray = tray.map((trayBlock) => ({ ...trayBlock }));
+    nextTray.push({
+      id: block.id,
+      patternType: block.patternType,
+      frozen: block.specialMechanism === "freeze",
+      freezeProgress: 0,
+    });
+    resolveIndependentTrayMatches(
+      nextTray,
+      nextRemaining.size === 0 && canResolveAllIndependentTrayBlocks(nextTray),
+    );
+    if (nextTray.length >= 7 && nextRemaining.size > 0) {
+      continue;
+    }
+
+    const result = searchIndependentSolvability(
+      blocks,
+      nextRemaining,
+      nextTray,
+      [...path, block.id],
+      failedStates,
+      context,
+    );
+    if (result !== undefined) {
+      return result;
+    }
+  }
+
+  failedStates.add(stateKey);
+  return undefined;
+}
+
+function overlaps(first: BrowserBlock, second: BrowserBlock): boolean {
+  return (
+    Math.min(first.x + 4, second.x + 4) > Math.max(first.x, second.x) &&
+    Math.min(first.y + 4, second.y + 4) > Math.max(first.y, second.y)
+  );
+}
+
+function trailingMatchCount(
+  tray: readonly BrowserTrayBlock[],
+  patternType: string,
+): number {
+  let count = 0;
+  for (let index = tray.length - 1; index >= 0; index -= 1) {
+    const block = tray[index];
+    if (
+      block === undefined ||
+      block.frozen ||
+      block.patternType !== patternType
+    ) {
+      break;
+    }
+
+    count += 1;
+  }
+
+  return count;
+}
+
+function resolveIndependentTrayMatches(
+  tray: BrowserTrayBlock[],
+  allowFrozenMatches: boolean,
+): void {
+  while (true) {
+    const groups: Array<{ patternType: string; indexes: number[] }> = [];
+    let currentGroup: { patternType: string; indexes: number[] } | undefined;
+    for (let index = 0; index < tray.length; index += 1) {
+      const block = tray[index];
+      const matchable = block !== undefined && (!block.frozen || allowFrozenMatches);
+      if (!matchable) {
+        currentGroup = undefined;
+        continue;
+      }
+
+      if (
+        currentGroup !== undefined &&
+        currentGroup.patternType === block.patternType
+      ) {
+        currentGroup.indexes.push(index);
+      } else {
+        currentGroup = { patternType: block.patternType, indexes: [index] };
+        groups.push(currentGroup);
+      }
+    }
+
+    const removalIndexes = groups.flatMap(({ indexes }) =>
+      indexes.slice(0, Math.floor(indexes.length / 3) * 3),
+    );
+    if (removalIndexes.length === 0) {
+      return;
+    }
+
+    const removalSet = new Set(removalIndexes);
+    const triplePatterns = groups.flatMap(({ patternType, indexes }) =>
+      Array.from({ length: Math.floor(indexes.length / 3) }, () => patternType),
+    );
+    tray.splice(
+      0,
+      tray.length,
+      ...tray.filter((_, index) => !removalSet.has(index)),
+    );
+    for (let index = 0; index < tray.length; index += 1) {
+      const block = tray[index];
+      if (block === undefined || !block.frozen) {
+        continue;
+      }
+
+      const otherTripleCount = triplePatterns.filter(
+        (patternType) => patternType !== block.patternType,
+      ).length;
+      if (otherTripleCount === 0) {
+        continue;
+      }
+
+      const freezeProgress = block.freezeProgress + otherTripleCount;
+      tray[index] = {
+        ...block,
+        frozen: freezeProgress < 2,
+        freezeProgress,
+      };
+    }
+  }
+}
+
+function canResolveAllIndependentTrayBlocks(
+  tray: readonly BrowserTrayBlock[],
+): boolean {
+  const simulatedTray = tray.map((block) => ({ ...block }));
+  while (simulatedTray.length > 0) {
+    const beforeLength = simulatedTray.length;
+    resolveIndependentTrayMatches(simulatedTray, true);
+    if (simulatedTray.length === beforeLength) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 async function leaveActiveGame(page: Page, accept: boolean): Promise<void> {

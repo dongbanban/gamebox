@@ -42,6 +42,7 @@
 - [x] 暂存槽顺序与玩家点击顺序一致；例如点击 `A → B → A` 后，槽内保持 `A → B → A`。
 - [x] 三消移除后，未移除方块保持原有相对顺序；冻结、幻化揭示及其他特殊机制入槽不静默改写顺序。
 - [x] 增加交错同类图案、三消后剩余方块与特殊方块入槽顺序回归测试。
+- [x] 只有暂存槽中连续相邻的三个同图案类型方块才能触发三消；非相邻同类方块不参与同一组三消。
 
 **Steps to reproduce:**
 
@@ -88,3 +89,9 @@
 - 2026-08-24 — `pnpm test:focused`：通过，8 files / 122 tests。`pnpm test:ui`：通过，3 files / 45 tests。`pnpm typecheck`：通过。`pnpm build`：通过。
 - 2026-08-24 — 批量 QA 按仓库规则拆分：排除 `tests/e2e/**` 的 Vitest 通过，10 files / 146 tests；`pnpm test:random` 通过，3 tests；`pnpm test:e2e` 通过，19 tests；`pnpm test:e2e:cross-browser` 通过，9 tests（Chromium、WebKit Safari、mobile Chromium）。首次直接运行 `pnpm test:qa` 因 `test:core` 误收集 `tests/e2e/**` 后长时间无输出而停止，未计为通过。
 - 2026-08-24 — code review 修复：去除测试 DOM identity 断言与 E2E 状态篡改；保留原始 WebKit wait 超时；抽 loadout target helper；跟踪自动融化 Promise，融化视觉结束前拒绝重复输入。修复后 focused/UI/typecheck/build/cross-browser/Chromium E2E 再次通过。
+- 2026-08-24 — 按最新需求收口三消：暂存槽严格追加点击顺序；仅连续相邻三连可消除；更新冻结终局级联判断、道具补齐后缀判断、生成器连续三连路径与求解器顺序状态键；生成器版本升至 9。同步更新 `CONTEXT.md`、feature spec、issues 03/08 的冲突表述。
+- 2026-08-24 — 验证通过：`pnpm test:focused`（8 files / 126 tests）、`pnpm test:ui`（3 files / 45 tests）、`pnpm typecheck`、`pnpm exec vitest run --exclude 'tests/e2e/**' --exclude 'tests/random-regression.test.ts'`（10 files / 150 tests）、`pnpm test:random`（3 tests）、`pnpm test:e2e`（19 tests）、`pnpm test:e2e:cross-browser`（9 tests）。
+- 2026-08-24 — code review P1/P2 已修复：终局冻结三消支持级联、道具目标只展示可形成连续三连的图案、E2E 使用独立黑盒邻接规则模拟器；定向回归与最终全量 QA 通过。
+- 2026-08-24 — `pnpm build`：通过。
+- 2026-08-24 — 复跑最终验证：核心 Vitest（10 files / 150 tests）、随机回归（3 tests）、Chromium E2E（19 tests）、跨浏览器（9 tests）、`pnpm typecheck`、`pnpm build` 均通过；旧 E2E 贪心路径在邻接规则下会走入死局，已改为独立黑盒搜索并验证完整闭环。
+- 2026-08-24 — 最终 Standards review 收敛 E2E 复杂度：移除独立规则模拟器，改为基于真实 DOM 可点击态与暂存槽尾部连续数的黑盒贪心；`pnpm typecheck` 通过，`pnpm test:e2e` 19 tests 通过。

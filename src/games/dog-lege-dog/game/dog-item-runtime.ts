@@ -91,6 +91,7 @@ export interface DogItemRuntimeSnapshot {
   readonly selectedItemId: DogItemId | null;
   readonly selectedItemTargetType: DogItemTargetType | null;
   readonly visualFeedback: DogItemVisualFeedback | null;
+  readonly tripleRemovalTargetPatterns: readonly DogPatternType[];
   readonly items: readonly DogItemState[];
 }
 
@@ -151,6 +152,7 @@ export class DogItemRuntime {
   }
 
   getState(): DogItemRuntimeSnapshot {
+    const tripleRemovalTargetPatterns = this.session.getTripleRemovalTargetPatterns();
     const items = this.loadout.map((itemId) => {
       const runtimeDefinition = this.getDefinition(itemId);
       const { definition } = runtimeDefinition;
@@ -183,6 +185,7 @@ export class DogItemRuntime {
           ? null
           : this.getDefinition(this.selectedItemId).definition.targetType,
       visualFeedback: this.visualFeedback,
+      tripleRemovalTargetPatterns,
       items: Object.freeze(items),
     });
   }

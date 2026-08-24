@@ -286,11 +286,7 @@ function getDogLoadoutTargetPatterns(
     return state.level.patternTypes;
   }
 
-  return [...new Set(
-    state.session.trayBlocks
-      .filter((block) => block.specialMechanism === undefined)
-      .map((block) => block.patternType),
-  )];
+  return state.items?.tripleRemovalTargetPatterns ?? [];
 }
 
 function syncDogLoadoutSummary(
