@@ -13,6 +13,9 @@ import {
   DOG_ILLUSION_MECHANISM_TYPE,
   FIRST_LEVEL,
   startDogLegeDogGame,
+  type DogBlock,
+  type DogLegeDogLevel,
+  type DogPatternType,
 } from "@/games/dog-lege-dog";
 import type { GameLaunchContext } from "@/game-contracts";
 import { renderDogPatternAsset } from "@/games/dog-lege-dog/assets/game-assets";
@@ -612,7 +615,7 @@ describe("狗了个狗首关", () => {
     ).toBe(false);
     expect(
       root.querySelector('[data-testid="dog-loadout-thumbnail"][data-loadout-id="wildcard"]')?.classList.contains("dog-loadout-thumbnail--unavailable"),
-    ).toBe(true);
+    ).toBe(false);
     expect(
       root.querySelector('[data-testid="dog-loadout-thumbnail"][data-loadout-id="tray-capacity"] [data-testid="dog-loadout-thumbnail-uses"]')?.textContent,
     ).toBe("1");
@@ -681,6 +684,106 @@ describe("狗了个狗首关", () => {
       remainingUses: 0,
       available: false,
     });
+    game.destroy();
+  });
+
+  it("万能方块展示本关全部图案，取消无副作用，确认后高亮入槽并锁定动画", async () => {
+    vi.useFakeTimers();
+    const root = document.createElement("div");
+    const level = createWildcardUiLevel();
+    const game = startDogLegeDogGame(root, {
+      level,
+      loadout: ["wildcard", "tray-capacity", "torch"],
+    });
+    const initial = game.getState();
+    const wildcardButton = root.querySelector<HTMLButtonElement>(
+      '[data-action="use-item"][data-item-id="wildcard"]',
+    );
+
+    expect(wildcardButton?.disabled).toBe(false);
+    wildcardButton?.click();
+
+    expect(game.getState().items?.phase).toBe("targeting");
+    expect(game.getState().inputLocked).toBe(true);
+    expect(
+      [...root.querySelectorAll<HTMLElement>('[data-action="select-item-pattern"]')].map(
+        (button) => button.dataset.patternType,
+      ),
+    ).toEqual(level.patternTypes);
+
+    root.querySelector<HTMLButtonElement>('[data-action="cancel-item-target"]')?.click();
+
+    expect(game.getState().items?.phase).toBe("idle");
+    expect(game.getState().items?.items.find((item) => item.id === "wildcard"))
+      .toMatchObject({ remainingUses: 1, available: true });
+    expect(game.getState().session).toEqual(initial.session);
+
+    root.querySelector<HTMLButtonElement>('[data-item-id="wildcard"]')?.click();
+    root.querySelector<HTMLButtonElement>(
+      '[data-action="select-item-pattern"][data-pattern-type="打工狗"]',
+    )?.click();
+
+    expect(game.getState().items?.phase).toBe("animating");
+    expect(game.getState().inputLocked).toBe(true);
+    expect(game.getState().session).toEqual(initial.session);
+    expect(
+      root.querySelector('[data-testid="dog-item-effect"][data-item-id="wildcard"]'),
+    ).not.toBeNull();
+    game.selectBlock("single-cover");
+    expect(game.getState().session.remainingBlocks.map((block) => block.id)).toEqual([
+      "working-hidden",
+      "single-cover",
+    ]);
+
+    await vi.advanceTimersByTimeAsync(DOG_ITEM_FEEDBACK_DURATION_MS);
+
+    expect(game.getState().inputLocked).toBe(false);
+    expect(game.getState().session.remainingBlocks.map((block) => block.id)).toEqual([
+      "single-cover",
+    ]);
+    expect(game.getState().items?.items.find((item) => item.id === "wildcard"))
+      .toMatchObject({ remainingUses: 0, available: false });
+    const wildcardSlot = root.querySelector<HTMLElement>(
+      '[data-testid="dog-tray-slot"][data-visual-marker="wildcard"]',
+    );
+    expect(wildcardSlot).not.toBeNull();
+    expect(wildcardSlot?.classList.contains("dog-tray__slot--wildcard")).toBe(true);
+    expect(wildcardSlot?.dataset.patternType).toBe("打工狗");
+    game.destroy();
+  });
+
+  it("万能方块消除冻结同款后保持三消反馈锁，反馈结束才恢复输入", async () => {
+    vi.useFakeTimers();
+    const root = document.createElement("div");
+    const level = createWildcardMatchUiLevel();
+    const game = startDogLegeDogGame(root, {
+      level,
+      loadout: ["wildcard", "tray-capacity", "torch"],
+    });
+
+    game.selectBlock("frozen-working-1");
+    await vi.runAllTimersAsync();
+    game.selectBlock("frozen-working-2");
+    await vi.runAllTimersAsync();
+    expect(game.getState().session.trayBlocks).toHaveLength(2);
+
+    root.querySelector<HTMLButtonElement>('[data-item-id="wildcard"]')?.click();
+    root.querySelector<HTMLButtonElement>(
+      '[data-action="select-item-pattern"][data-pattern-type="打工狗"]',
+    )?.click();
+    expect(game.getState().items?.phase).toBe("animating");
+
+    await vi.advanceTimersByTimeAsync(DOG_ITEM_FEEDBACK_DURATION_MS);
+
+    expect(game.getState().session.trayBlocks).toEqual([]);
+    expect(game.getState().feedback).toBe("match");
+    expect(game.getState().inputLocked).toBe(true);
+    expect(root.querySelector('[data-testid="dog-match-effect"]')).not.toBeNull();
+
+    await vi.runAllTimersAsync();
+
+    expect(game.getState().feedback).toBe("idle");
+    expect(game.getState().inputLocked).toBe(false);
     game.destroy();
   });
 
@@ -838,4 +941,58 @@ function startTestGame(root: HTMLElement, options: GameLaunchContext = {}) {
     runSeed: DEFAULT_LEVEL_SEED,
     ...options,
   });
+}
+
+function createWildcardUiLevel(): DogLegeDogLevel {
+  const patternTypes = ["打工狗", "单身狗"] as const satisfies readonly DogPatternType[];
+  const blocks: readonly DogBlock[] = [
+    createTestBlock("working-hidden", "打工狗", 0),
+    createTestBlock("single-cover", "单身狗", 1),
+  ];
+  return {
+    ...FIRST_LEVEL,
+    patternTypes,
+    blocks,
+    solutionPath: ["single-cover", "working-hidden"],
+  };
+}
+
+function createWildcardMatchUiLevel(): DogLegeDogLevel {
+  const patternTypes = ["打工狗", "单身狗"] as const satisfies readonly DogPatternType[];
+  const frozenMechanism = {
+    type: "freeze",
+    state: { status: "frozen", completedTriples: 0 },
+  } as const;
+  const blocks: readonly DogBlock[] = [
+    createTestBlock("working-hidden", "打工狗", 0),
+    createTestBlock("single-cover", "单身狗", 1),
+    createTestBlock("frozen-working-1", "打工狗", 0, 8, frozenMechanism),
+    createTestBlock("frozen-working-2", "打工狗", 0, 16, frozenMechanism),
+  ];
+  return {
+    ...FIRST_LEVEL,
+    patternTypes,
+    blocks,
+    solutionPath: blocks.map((block) => block.id),
+  };
+}
+
+function createTestBlock(
+  id: string,
+  patternType: DogPatternType,
+  z: number,
+  x = 0,
+  specialMechanism?: DogBlock["specialMechanism"],
+): DogBlock {
+  return {
+    id,
+    x,
+    y: 0,
+    z,
+    width: 4,
+    height: 4,
+    rotation: 0,
+    patternType,
+    ...(specialMechanism === undefined ? {} : { specialMechanism }),
+  };
 }

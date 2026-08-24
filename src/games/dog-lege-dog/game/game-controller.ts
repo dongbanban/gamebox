@@ -758,7 +758,9 @@ export function createDogLegeDogGame(
       confirmResult(result, false);
     }
     if (
-      (completedEffect?.type === "melt" || completedEffect?.type === "triple-removal") &&
+      (completedEffect?.type === "melt" ||
+        completedEffect?.type === "triple-removal" ||
+        completedEffect?.type === "wildcard") &&
       completedEffect.removedCount > 0
     ) {
       runtime.matchFeedbackActive = true;

@@ -33,6 +33,7 @@ export interface DogSpecialMechanismConfig {
 export interface DogTrayBlock {
   readonly id: string;
   readonly patternType: DogPatternType;
+  readonly visualMarker?: "wildcard";
   readonly specialMechanism?: DogSpecialMechanism;
 }
 

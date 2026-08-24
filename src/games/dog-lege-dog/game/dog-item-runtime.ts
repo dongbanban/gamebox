@@ -3,6 +3,7 @@ import {
   GameSession,
   type GameSessionMeltLocation,
   type GameSessionMeltResult,
+  type GameSessionWildcardResolution,
 } from "@/games/dog-lege-dog/game/game-session";
 import type {
   DogLegeDogLevel,
@@ -40,7 +41,12 @@ export type DogItemEffect =
   | {
       readonly type: "reveal";
       readonly blockId: string;
-    };
+    }
+  | DogWildcardItemEffect;
+
+type DogWildcardItemEffect = {
+  readonly type: "wildcard";
+} & GameSessionWildcardResolution;
 
 export interface DogItemAnimationCompletion {
   readonly success: boolean;
@@ -124,6 +130,7 @@ export class DogItemRuntime {
   private selectedItemId: DogItemId | null = null;
   private visualFeedback: DogItemVisualFeedback | null = null;
   private pendingAnimationCommit: (() => DogItemAnimationCompletion) | null = null;
+  private pendingAnimationItemId: DogItemId | null = null;
   private completedEffect: DogItemEffect | null = null;
 
   constructor(options: DogItemRuntimeOptions) {
@@ -266,17 +273,27 @@ export class DogItemRuntime {
     }
 
     const pendingAnimationCommit = this.pendingAnimationCommit;
+    const pendingAnimationItemId = this.pendingAnimationItemId;
     this.pendingAnimationCommit = null;
+    this.pendingAnimationItemId = null;
     this.completedEffect = null;
+    let commitSucceeded = pendingAnimationCommit === null;
     if (pendingAnimationCommit !== null) {
       try {
         const completion = pendingAnimationCommit();
+        commitSucceeded = completion.success;
         if (completion.success) {
           this.completedEffect = completion.effect ?? null;
         }
       } catch {
+        commitSucceeded = false;
         this.completedEffect = null;
       }
+    }
+    if (!commitSucceeded && pendingAnimationItemId !== null) {
+      const remainingUses = this.remainingUses.get(pendingAnimationItemId) ?? 0;
+      const maxUses = this.maxUses.get(pendingAnimationItemId) ?? 0;
+      this.remainingUses.set(pendingAnimationItemId, Math.min(maxUses, remainingUses + 1));
     }
 
     this.phase = "idle";
@@ -333,6 +350,7 @@ export class DogItemRuntime {
 
     this.remainingUses.set(itemId, remainingUses - 1);
     this.pendingAnimationCommit = result.commitAfterAnimation ?? null;
+    this.pendingAnimationItemId = result.commitAfterAnimation === undefined ? null : itemId;
     this.completedEffect = null;
     this.phase = "animating";
     this.selectedItemId = itemId;
@@ -461,7 +479,43 @@ const DOG_ITEM_BEHAVIORS: Readonly<Record<DogItemId, DogItemBehavior>> = {
       commit: () => session.increaseTrayCapacity(),
     }),
   },
-  wildcard: createUnavailableBehavior("wildcard"),
+  wildcard: {
+    canUse: ({ level, session, target }) => {
+      const patternType = getWildcardPatternTarget(target);
+      if (patternType !== undefined) {
+        return level.patternTypes.includes(patternType) &&
+          session.getWildcardPlan(patternType) !== null;
+      }
+
+      return level.patternTypes.some(
+        (candidatePattern) => session.getWildcardPlan(candidatePattern) !== null,
+      );
+    },
+    execute: ({ level, session, target }) => {
+      const patternType = getWildcardPatternTarget(target);
+      if (patternType === undefined || !level.patternTypes.includes(patternType)) {
+        return { success: false, visualFeedback: "wildcard" };
+      }
+
+      const plan = session.getWildcardPlan(patternType);
+      if (plan === null) {
+        return { success: false, visualFeedback: "wildcard" };
+      }
+
+      return {
+        success: true,
+        visualFeedback: "wildcard",
+        effect: toWildcardEffect(plan),
+        commitAfterAnimation: () => {
+          const completed = session.useWildcard(patternType);
+          return {
+            success: completed.used,
+            effect: completed.used ? toWildcardEffect(completed) : undefined,
+          };
+        },
+      };
+    },
+  },
   torch: {
     canUse: ({ session, target }) => {
       if (target === undefined) {
@@ -553,13 +607,17 @@ const DOG_ITEM_BEHAVIORS: Readonly<Record<DogItemId, DogItemBehavior>> = {
   },
 };
 
-function createUnavailableBehavior(visualFeedback: DogItemVisualFeedback): DogItemBehavior {
+function toWildcardEffect(
+  resolution: GameSessionWildcardResolution,
+): DogWildcardItemEffect {
   return {
-    canUse: () => false,
-    execute: () => ({
-      success: false,
-      visualFeedback,
-    }),
+    type: "wildcard",
+    patternType: resolution.patternType,
+    wildcardBlockId: resolution.wildcardBlockId,
+    compensatedBlockId: resolution.compensatedBlockId,
+    removedCount: resolution.removedCount,
+    tripleCount: resolution.tripleCount,
+    meltedBlockIds: resolution.meltedBlockIds,
   };
 }
 
@@ -617,6 +675,12 @@ function getTripleRemovalTarget(
   target: DogItemTarget | undefined,
 ): string | undefined {
   return target?.type === "tray-block" ? target.blockId : undefined;
+}
+
+function getWildcardPatternTarget(
+  target: DogItemTarget | undefined,
+): DogPatternType | undefined {
+  return target?.type === "pattern" ? target.patternType : undefined;
 }
 
 function getMeltTarget(

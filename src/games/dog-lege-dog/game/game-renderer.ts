@@ -576,8 +576,14 @@ function renderTraySlots(
       ? 'data-item-target-disabled="true" aria-disabled="true"'
       : "";
     const targetDisabledClass = targetDisabled ? " dog-tray__slot--item-target-disabled" : "";
+    const visualMarkerClass = block.visualMarker === "wildcard"
+      ? " dog-tray__slot--wildcard"
+      : "";
+    const visualMarkerAttributes = block.visualMarker === undefined
+      ? ""
+      : `data-visual-marker="${block.visualMarker}"`;
     return `
-      <li class="dog-tray__slot dog-tray__slot--filled${targetClass}${targetDisabledClass} dog-block--${getDogPatternClassName(displayPatternType)}${mechanismClass}" data-testid="dog-tray-slot" data-block-id="${block.id}" data-pattern-type="${block.patternType}" ${mechanismAttributes} ${targetAttributes} ${targetDisabledAttributes} ${illusionStyle} aria-label="${selectingBlockTarget ? "选择道具目标" : block.patternType}">
+      <li class="dog-tray__slot dog-tray__slot--filled${targetClass}${targetDisabledClass}${visualMarkerClass} dog-block--${getDogPatternClassName(displayPatternType)}${mechanismClass}" data-testid="dog-tray-slot" data-block-id="${block.id}" data-pattern-type="${block.patternType}" ${visualMarkerAttributes} ${mechanismAttributes} ${targetAttributes} ${targetDisabledAttributes} ${illusionStyle} aria-label="${selectingBlockTarget ? "选择道具目标" : block.visualMarker === "wildcard" ? `万能方块，${block.patternType}` : block.patternType}">
         <span class="${glyphClass}">${renderDogPatternAsset(displayPatternType)}</span>
       </li>
     `;

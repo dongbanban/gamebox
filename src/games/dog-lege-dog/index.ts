@@ -12,6 +12,9 @@ export {
   type GameSessionStatus,
   type GameSessionTripleRemovalPlan,
   type GameSessionTripleRemovalResult,
+  type GameSessionWildcardPlan,
+  type GameSessionWildcardResolution,
+  type GameSessionWildcardResult,
 } from "@/games/dog-lege-dog/game/game-session";
 
 export {

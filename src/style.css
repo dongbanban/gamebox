@@ -1961,6 +1961,28 @@ h2 {
     inset 0 0 0 1px rgba(22, 68, 93, 0.12);
 }
 
+.dog-tray__slot--wildcard {
+  position: relative;
+  border: 3px solid #ffe78a;
+  box-shadow:
+    0 0 0 3px rgba(255, 209, 102, 0.48),
+    0 0 18px rgba(255, 209, 102, 0.86),
+    4px 5px 0 rgba(22, 68, 93, 0.2),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.92);
+}
+
+.dog-tray__slot--wildcard::after {
+  position: absolute;
+  top: 3px;
+  right: 4px;
+  color: #fffdf8;
+  content: "◇";
+  font-size: clamp(10px, 1.8vw, 16px);
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 1px 3px rgba(22, 68, 93, 0.58);
+}
+
 .dog-tray__slot--item-targetable {
   position: relative;
   z-index: 4;

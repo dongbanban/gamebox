@@ -96,6 +96,127 @@ describe("DogItemRuntime", () => {
     expect(session.getState()).toEqual(initial);
   });
 
+  it("万能方块进入图案选择，取消无副作用，确认后锁定并原子提交", () => {
+    const level = createLevel([
+      createBlock("working-hidden", WORKING_DOG),
+      createBlock("single-cover", SINGLE_DOG, undefined, { z: 1 }),
+    ]);
+    const session = new GameSession(level);
+    const runtime = new DogItemRuntime({
+      level,
+      session,
+      loadout: ["wildcard"],
+    });
+    const initial = session.getState();
+
+    expect(runtime.getState().items[0]).toMatchObject({
+      id: "wildcard",
+      targetType: "pattern",
+      remainingUses: 1,
+      available: true,
+    });
+    expect(runtime.begin("wildcard")).toMatchObject({
+      accepted: true,
+      success: false,
+      requiresTarget: true,
+    });
+    expect(runtime.getState().phase).toBe("targeting");
+    expect(runtime.cancel()).toMatchObject({ phase: "idle" });
+    expect(runtime.getState().items[0]?.remainingUses).toBe(1);
+    expect(session.getState()).toEqual(initial);
+
+    runtime.begin("wildcard");
+    const action = runtime.confirmTarget({ type: "pattern", patternType: WORKING_DOG });
+
+    expect(action).toMatchObject({
+      accepted: true,
+      success: true,
+      itemId: "wildcard",
+      effect: {
+        type: "wildcard",
+        patternType: WORKING_DOG,
+        compensatedBlockId: "working-hidden",
+      },
+    });
+    expect(runtime.getState()).toMatchObject({ phase: "animating" });
+    expect(runtime.getState().items[0]).toMatchObject({
+      remainingUses: 0,
+      available: false,
+    });
+    expect(session.getState()).toEqual(initial);
+
+    runtime.completeAnimation();
+
+    expect(runtime.getState().phase).toBe("idle");
+    expect(session.getState().remainingBlocks.map((block) => block.id)).toEqual([
+      "single-cover",
+    ]);
+    expect(session.getState().trayBlocks[0]).toMatchObject({
+      patternType: WORKING_DOG,
+      visualMarker: "wildcard",
+    });
+    expect(runtime.getLastCompletedEffect()).toMatchObject({
+      type: "wildcard",
+      removedCount: 0,
+      tripleCount: 0,
+    });
+  });
+
+  it("万能方块同一图案可重复选择，每次成功各扣一次", () => {
+    const level = {
+      ...createLevel([
+        createBlock("working-hidden-1", WORKING_DOG),
+        createBlock("single-cover-1", SINGLE_DOG, undefined, { z: 1 }),
+        createBlock("working-hidden-2", WORKING_DOG, undefined, { x: 8 }),
+        createBlock("single-cover-2", SINGLE_DOG, undefined, { x: 8, z: 1 }),
+      ]),
+      number: 2,
+    };
+    const session = new GameSession(level);
+    const runtime = new DogItemRuntime({ level, session, loadout: ["wildcard"] });
+
+    for (const expectedRemainingUses of [1, 0]) {
+      expect(runtime.begin("wildcard")).toMatchObject({
+        accepted: true,
+        requiresTarget: true,
+      });
+      expect(
+        runtime.confirmTarget({ type: "pattern", patternType: WORKING_DOG }),
+      ).toMatchObject({ accepted: true, success: true });
+      runtime.completeAnimation();
+      expect(runtime.getState().items[0]?.remainingUses).toBe(expectedRemainingUses);
+    }
+
+    expect(session.getState().trayBlocks).toHaveLength(2);
+    expect(
+      session.getState().trayBlocks.every(
+        (block) => block.patternType === WORKING_DOG && block.visualMarker === "wildcard",
+      ),
+    ).toBe(true);
+    expect(runtime.begin("wildcard")).toMatchObject({ accepted: false, success: false });
+  });
+
+  it("万能方块所选图案没有不可点击补偿方块时失败且不扣次数", () => {
+    const level = {
+      ...createLevel([
+        createBlock("working-hidden", WORKING_DOG),
+        createBlock("single-cover", SINGLE_DOG, undefined, { z: 1 }),
+      ]),
+      patternTypes: [WORKING_DOG, SINGLE_DOG],
+    };
+    const session = new GameSession(level);
+    const runtime = new DogItemRuntime({ level, session, loadout: ["wildcard"] });
+    const initial = session.getState();
+
+    expect(runtime.begin("wildcard")).toMatchObject({ accepted: true, requiresTarget: true });
+    expect(
+      runtime.confirmTarget({ type: "pattern", patternType: SINGLE_DOG }),
+    ).toMatchObject({ accepted: false, success: false, requiresTarget: true });
+    expect(runtime.getState()).toMatchObject({ phase: "targeting" });
+    expect(runtime.getState().items[0]?.remainingUses).toBe(1);
+    expect(session.getState()).toEqual(initial);
+  });
+
   it("关卡失败后道具不可用且不扣次数", () => {
     const session = new GameSession({
       level: createLevel([createBlock("remaining", WORKING_DOG)]),
@@ -427,6 +548,43 @@ describe("DogItemRuntime", () => {
     expect(runtime.getState().phase).toBe("targeting");
     expect(runtime.getState().items[0]?.remainingUses).toBe(1);
     expect(session.getState().tray).toEqual([]);
+  });
+
+  it("动画后原子提交失败时恢复次数且不留下完成效果", () => {
+    const session = new GameSession(createLevel([createBlock("remaining", WORKING_DOG)]));
+    const wildcardDefinition = DOG_ITEM_DEFINITIONS.find((item) => item.id === "wildcard")!;
+    const runtime = new DogItemRuntime({
+      level: session.getState().level,
+      session,
+      loadout: ["wildcard"],
+      definitions: [{
+        definition: wildcardDefinition,
+        getUses: () => 1,
+        canUse: () => true,
+        execute: () => ({
+          success: true,
+          visualFeedback: "wildcard",
+          commitAfterAnimation: () => ({ success: false }),
+        }),
+      }],
+    });
+    const initial = session.getState();
+
+    runtime.begin("wildcard");
+    expect(
+      runtime.confirmTarget({ type: "pattern", patternType: WORKING_DOG }),
+    ).toMatchObject({ accepted: true, success: true });
+    expect(runtime.getState().items[0]?.remainingUses).toBe(0);
+
+    runtime.completeAnimation();
+
+    expect(runtime.getState()).toMatchObject({ phase: "idle" });
+    expect(runtime.getState().items[0]).toMatchObject({
+      remainingUses: 1,
+      available: true,
+    });
+    expect(runtime.getLastCompletedEffect()).toBeNull();
+    expect(session.getState()).toEqual(initial);
   });
 
   it("火把只接受冻结方块目标，取消与无效目标不扣次", () => {

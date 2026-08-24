@@ -96,6 +96,32 @@ export interface GameSessionTripleRemovalResult extends GameSessionSnapshot {
   readonly snapshot: GameSessionSnapshot;
 }
 
+export interface GameSessionWildcardResolution {
+  readonly patternType: DogPatternType;
+  readonly wildcardBlockId: string;
+  readonly compensatedBlockId: string;
+  readonly removedCount: number;
+  readonly tripleCount: number;
+  readonly meltedBlockIds: readonly string[];
+}
+
+export type GameSessionWildcardPlan = GameSessionWildcardResolution;
+
+interface GameSessionWildcardResultBase extends GameSessionSnapshot {
+  readonly patternType: DogPatternType;
+  readonly snapshot: GameSessionSnapshot;
+}
+
+export type GameSessionWildcardResult =
+  | (GameSessionWildcardResultBase & { readonly used: false })
+  | (GameSessionWildcardResultBase &
+      GameSessionWildcardResolution & { readonly used: true });
+
+interface InternalGameSessionWildcardPlan extends GameSessionWildcardPlan {
+  readonly nextTray: readonly DogTrayBlock[];
+  readonly wildcardSequence: number;
+}
+
 export class GameSession {
   private readonly level: DogLegeDogLevel;
   private readonly graph: BlockGraph;
@@ -110,6 +136,11 @@ export class GameSession {
     string,
     GameSessionTripleRemovalPlan | null
   >();
+  private readonly wildcardPlanCache = new Map<
+    DogPatternType,
+    InternalGameSessionWildcardPlan | null
+  >();
+  private wildcardSequence = 0;
 
   constructor(level?: DogLegeDogLevel);
   constructor(options?: GameSessionOptions);
@@ -214,8 +245,48 @@ export class GameSession {
     }
 
     this.trayCapacity += 1;
-    this.tripleRemovalPlanCache.clear();
+    this.clearItemPlanCaches();
     return true;
+  }
+
+  getWildcardPlan(patternType: DogPatternType): GameSessionWildcardPlan | null {
+    if (this.wildcardPlanCache.has(patternType)) {
+      return this.wildcardPlanCache.get(patternType) ?? null;
+    }
+
+    const plan = this.findWildcardPlan(patternType);
+    this.wildcardPlanCache.set(patternType, plan);
+    return plan;
+  }
+
+  useWildcard(patternType: DogPatternType): GameSessionWildcardResult {
+    const plan = this.wildcardPlanCache.get(patternType) ?? this.findWildcardPlan(patternType);
+    if (plan === null) {
+      return this.createFailedWildcardResult(patternType);
+    }
+
+    const compensatedBlock = this.remainingBlocks.get(plan.compensatedBlockId);
+    const compensatedBlockIndex = this.graph.indexById.get(plan.compensatedBlockId);
+    if (
+      compensatedBlock === undefined ||
+      compensatedBlockIndex === undefined ||
+      compensatedBlock.patternType !== patternType ||
+      compensatedBlock.specialMechanism?.type === DOG_FREEZE_MECHANISM_TYPE ||
+      this.canSelectBlock(plan.compensatedBlockId)
+    ) {
+      this.clearItemPlanCaches();
+      return this.createFailedWildcardResult(patternType);
+    }
+
+    this.remainingBlocks.delete(plan.compensatedBlockId);
+    for (const lowerBlockIndex of this.graph.lowerBlockIndicesByHigher[compensatedBlockIndex]) {
+      this.higherBlockCounts[lowerBlockIndex] -= 1;
+    }
+    this.tray = plan.nextTray.map(cloneTrayBlock);
+    this.wildcardSequence = plan.wildcardSequence;
+    this.clearItemPlanCaches();
+    this.updateResult();
+    return this.createWildcardResult(plan);
   }
 
   getTripleRemovalTargetBlockIds(): readonly string[] {
@@ -333,7 +404,7 @@ export class GameSession {
       return block;
     });
     if (selectedBlocks.some((block) => block === undefined)) {
-      this.tripleRemovalPlanCache.clear();
+      this.clearItemPlanCaches();
       return this.createTripleRemovalResult(false, plan.patternType, [], 0, 0, []);
     }
 
@@ -344,7 +415,7 @@ export class GameSession {
 
       const blockIndex = this.graph.indexById.get(block.id);
       if (blockIndex === undefined) {
-        this.tripleRemovalPlanCache.clear();
+        this.clearItemPlanCaches();
         return this.createTripleRemovalResult(false, plan.patternType, [], 0, 0, []);
       }
 
@@ -362,7 +433,7 @@ export class GameSession {
       [plan.patternType],
     );
 
-    this.tripleRemovalPlanCache.clear();
+    this.clearItemPlanCaches();
     this.updateResult();
     return this.createTripleRemovalResult(
       true,
@@ -413,7 +484,7 @@ export class GameSession {
     }
 
     this.remainingBlocks.set(blockId, removeSpecialMechanism(block));
-    this.tripleRemovalPlanCache.clear();
+    this.clearItemPlanCaches();
     this.updateResult();
     return this.createRevealResult(true, blockId);
   }
@@ -433,7 +504,7 @@ export class GameSession {
       }
 
       this.remainingBlocks.set(blockId, removeSpecialMechanism(block));
-      this.tripleRemovalPlanCache.clear();
+      this.clearItemPlanCaches();
       this.updateResult();
       return this.createMeltResult(true, blockId, location, 0, 0, [blockId]);
     }
@@ -446,7 +517,7 @@ export class GameSession {
 
     this.tray[trayIndex] = removeSpecialMechanism(block);
     const resolution = resolveDogTrayMatches(this.tray, this.specialMechanismHandlers);
-    this.tripleRemovalPlanCache.clear();
+    this.clearItemPlanCaches();
     this.updateResult();
     return this.createMeltResult(
       true,
@@ -493,7 +564,7 @@ export class GameSession {
       this.specialMechanismHandlers,
       { allowFrozenFinalTriple: this.remainingBlocks.size === 0 },
     );
-    this.tripleRemovalPlanCache.clear();
+    this.clearItemPlanCaches();
     this.updateResult();
 
     return this.createSelectionResult(
@@ -528,7 +599,7 @@ export class GameSession {
       return false;
     }
 
-    this.tripleRemovalPlanCache.clear();
+    this.clearItemPlanCaches();
     this.remainingBlocks.delete(blockId);
     for (const lowerBlockIndex of this.graph.lowerBlockIndicesByHigher[blockIndex]) {
       this.higherBlockCounts[lowerBlockIndex] -= 1;
@@ -648,6 +719,170 @@ export class GameSession {
     return Object.freeze(result);
   }
 
+  private findWildcardPlan(
+    patternType: DogPatternType,
+  ): InternalGameSessionWildcardPlan | null {
+    if (
+      this.status !== "playing" ||
+      this.pendingSelection !== null ||
+      !this.level.patternTypes.includes(patternType)
+    ) {
+      return null;
+    }
+
+    const compensatedCandidates = [...this.remainingBlocks.values()].filter(
+      (block) =>
+        block.patternType === patternType &&
+        block.specialMechanism?.type !== DOG_FREEZE_MECHANISM_TYPE &&
+        !this.canSelectBlock(block.id),
+    );
+    const solvabilityLevel = this.createCurrentSolvabilityLevel();
+    const wildcardIdentity = this.getNextWildcardIdentity();
+    for (const compensatedBlock of compensatedCandidates) {
+      const nextTray = this.tray.map(cloneTrayBlock);
+      const resolution = resolveWildcardTrayInsertion(
+        nextTray,
+        {
+          id: wildcardIdentity.id,
+          patternType,
+          visualMarker: "wildcard",
+        },
+        this.specialMechanismHandlers,
+      );
+      const solvability = findSolvabilityFromState(solvabilityLevel, {
+        remainingBlockIds: [...this.remainingBlocks.keys()].filter(
+          (blockId) => blockId !== compensatedBlock.id,
+        ),
+        initialTray: nextTray,
+        trayCapacity: this.trayCapacity,
+        branchBudget: Math.max(64, this.remainingBlocks.size * 2),
+        specialMechanismHandlers: [...this.specialMechanismHandlers.values()],
+      });
+      if (solvability.status !== "solvable") {
+        continue;
+      }
+
+      return Object.freeze({
+        patternType,
+        wildcardBlockId: wildcardIdentity.id,
+        compensatedBlockId: compensatedBlock.id,
+        removedCount: resolution.removedCount,
+        tripleCount: resolution.tripleCount,
+        meltedBlockIds: Object.freeze([...resolution.meltedBlockIds]),
+        nextTray: Object.freeze(nextTray.map(cloneTrayBlock)),
+        wildcardSequence: wildcardIdentity.sequence,
+      });
+    }
+
+    return null;
+  }
+
+  private getNextWildcardIdentity(): { readonly id: string; readonly sequence: number } {
+    const currentIds = new Set([
+      ...this.remainingBlocks.keys(),
+      ...this.tray.map((block) => block.id),
+    ]);
+    let sequence = this.wildcardSequence + 1;
+    while (currentIds.has(`wildcard-${sequence}`)) {
+      sequence += 1;
+    }
+    return { id: `wildcard-${sequence}`, sequence };
+  }
+
+  private createWildcardResult(
+    resolution: GameSessionWildcardResolution,
+  ): GameSessionWildcardResult {
+    const snapshot = this.getState();
+    const result = {
+      ...snapshot,
+    } as GameSessionWildcardResult;
+    Object.defineProperties(result, {
+      used: { configurable: false, enumerable: false, value: true, writable: false },
+      patternType: {
+        configurable: false,
+        enumerable: false,
+        value: resolution.patternType,
+        writable: false,
+      },
+      wildcardBlockId: {
+        configurable: false,
+        enumerable: false,
+        value: resolution.wildcardBlockId,
+        writable: false,
+      },
+      compensatedBlockId: {
+        configurable: false,
+        enumerable: false,
+        value: resolution.compensatedBlockId,
+        writable: false,
+      },
+      removedCount: {
+        configurable: false,
+        enumerable: false,
+        value: resolution.removedCount,
+        writable: false,
+      },
+      tripleCount: {
+        configurable: false,
+        enumerable: false,
+        value: resolution.tripleCount,
+        writable: false,
+      },
+      meltedBlockIds: {
+        configurable: false,
+        enumerable: false,
+        value: Object.freeze([...resolution.meltedBlockIds]),
+        writable: false,
+      },
+      snapshot: {
+        configurable: false,
+        enumerable: false,
+        value: snapshot,
+        writable: false,
+      },
+    });
+    return Object.freeze(result);
+  }
+
+  private createFailedWildcardResult(
+    patternType: DogPatternType,
+  ): GameSessionWildcardResult {
+    const snapshot = this.getState();
+    const result = {
+      ...snapshot,
+    } as GameSessionWildcardResult;
+    Object.defineProperties(result, {
+      used: { configurable: false, enumerable: false, value: false, writable: false },
+      patternType: {
+        configurable: false,
+        enumerable: false,
+        value: patternType,
+        writable: false,
+      },
+      snapshot: {
+        configurable: false,
+        enumerable: false,
+        value: snapshot,
+        writable: false,
+      },
+    });
+    return Object.freeze(result);
+  }
+
+  private clearItemPlanCaches(): void {
+    this.tripleRemovalPlanCache.clear();
+    this.wildcardPlanCache.clear();
+  }
+
+  private createCurrentSolvabilityLevel(): DogLegeDogLevel {
+    return {
+      ...this.level,
+      blocks: this.level.blocks.map(
+        (block) => this.remainingBlocks.get(block.id) ?? block,
+      ),
+    };
+  }
+
   private findTripleRemovalPlan(
     trayBlockIds: readonly [string, string],
   ): GameSessionTripleRemovalPlan | null {
@@ -687,12 +922,13 @@ export class GameSession {
       );
     });
 
+    const solvabilityLevel = this.createCurrentSolvabilityLevel();
     for (const candidate of candidates) {
       const candidateIdSet = new Set([candidate.id]);
       const simulatedTray = this.tray
         .filter((block) => !trayBlockIds.includes(block.id))
         .map(cloneTrayBlock);
-      const solvability = findSolvabilityFromState(this.level, {
+      const solvability = findSolvabilityFromState(solvabilityLevel, {
         remainingBlockIds: [...this.remainingBlocks.keys()].filter(
           (blockId) => !candidateIdSet.has(blockId),
         ),
@@ -878,6 +1114,63 @@ function isOrdinaryMatchingPair(
 function removeSpecialMechanism<T extends DogBlock | DogTrayBlock>(block: T): T {
   const { specialMechanism: _specialMechanism, ...meltedBlock } = block;
   return meltedBlock as T;
+}
+
+function resolveWildcardTrayInsertion(
+  tray: DogTrayBlock[],
+  wildcardBlock: DogTrayBlock,
+  handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
+): {
+  readonly removedCount: number;
+  readonly tripleCount: number;
+  readonly meltedBlockIds: readonly string[];
+} {
+  const pairIndex = findWildcardSuffixPairIndex(tray, wildcardBlock.patternType);
+  if (pairIndex < 0) {
+    return insertDogBlockIntoTray(tray, wildcardBlock, handlers);
+  }
+
+  tray.splice(pairIndex, 2);
+  const meltedBlockIds = applyDogTraySuccessfulTripleEffects(
+    tray,
+    handlers,
+    1,
+    [wildcardBlock.patternType],
+  );
+  const cascaded = resolveDogTrayMatches(tray, handlers);
+  return {
+    removedCount: 3 + cascaded.removedCount,
+    tripleCount: 1 + cascaded.tripleCount,
+    meltedBlockIds: Object.freeze([
+      ...meltedBlockIds,
+      ...cascaded.meltedBlockIds,
+    ]),
+  };
+}
+
+function findWildcardSuffixPairIndex(
+  tray: readonly DogTrayBlock[],
+  patternType: DogPatternType,
+): number {
+  const pairIndex = tray.length - 2;
+  const first = tray[pairIndex];
+  const second = tray[pairIndex + 1];
+  return (
+    first?.patternType === patternType &&
+    second?.patternType === patternType &&
+    isWildcardMatchParticipant(first) &&
+    isWildcardMatchParticipant(second)
+  )
+    ? pairIndex
+    : -1;
+}
+
+function isWildcardMatchParticipant(block: DogTrayBlock): boolean {
+  return block.specialMechanism === undefined || isFrozenTrayBlock(block);
+}
+
+function isFrozenTrayBlock(block: DogTrayBlock): boolean {
+  return block.specialMechanism?.type === DOG_FREEZE_MECHANISM_TYPE;
 }
 
 function isLevel(value: DogLegeDogLevel | GameSessionOptions): value is DogLegeDogLevel {

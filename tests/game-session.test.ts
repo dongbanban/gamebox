@@ -222,6 +222,250 @@ describe("GameSession", () => {
     expect(session.getState().trayCapacity).toBe(8);
   });
 
+  it("万能方块原子补偿一个被遮挡同图案方块并以万能标记入槽", () => {
+    const session = new GameSession(
+      createLevel([
+        createBlock("working-hidden", 0, 0, 0, WORKING_DOG),
+        createBlock("single-cover", 0, 0, 1, SINGLE_DOG),
+      ]),
+    );
+
+    const plan = session.getWildcardPlan(WORKING_DOG);
+
+    expect(plan).toMatchObject({
+      patternType: WORKING_DOG,
+      compensatedBlockId: "working-hidden",
+      removedCount: 0,
+      tripleCount: 0,
+    });
+    expect(session.getState().remainingBlocks.map((block) => block.id)).toEqual([
+      "working-hidden",
+      "single-cover",
+    ]);
+    expect(session.getState().trayBlocks).toEqual([]);
+
+    const result = session.useWildcard(WORKING_DOG);
+    if (!result.used) {
+      throw new Error("expected wildcard use to succeed");
+    }
+
+    expect(result).toMatchObject({
+      used: true,
+      patternType: WORKING_DOG,
+      compensatedBlockId: "working-hidden",
+      removedCount: 0,
+      tripleCount: 0,
+    });
+    expect(result.wildcardBlockId).toMatch(/^wildcard-/);
+    expect(result.snapshot.remainingBlocks.map((block) => block.id)).toEqual(["single-cover"]);
+    expect(result.snapshot.trayBlocks).toEqual([
+      {
+        id: result.wildcardBlockId,
+        patternType: WORKING_DOG,
+        visualMarker: "wildcard",
+      },
+    ]);
+    expect(result.snapshot.status).toBe("playing");
+  });
+
+  it("万能方块优先与两个相邻冻结同款三消并保留未参与普通同款", () => {
+    const session = new GameSession({
+      level: createLevel([
+        createBlock("working-hidden", 0, 0, 0, WORKING_DOG),
+        createBlock("single-cover", 0, 0, 1, SINGLE_DOG),
+      ]),
+      initialTrayBlocks: [
+        { id: "ordinary-working", patternType: WORKING_DOG },
+        createFrozenTrayBlock("frozen-working-1", WORKING_DOG),
+        createFrozenTrayBlock("frozen-working-2", WORKING_DOG),
+      ],
+    });
+
+    expect(session.getWildcardPlan(WORKING_DOG)).toMatchObject({
+      removedCount: 3,
+      tripleCount: 1,
+    });
+
+    const result = session.useWildcard(WORKING_DOG);
+
+    expect(result).toMatchObject({ used: true, removedCount: 3, tripleCount: 1 });
+    expect(result.snapshot.trayBlocks).toEqual([
+      { id: "ordinary-working", patternType: WORKING_DOG },
+    ]);
+  });
+
+  it("万能方块不跨过槽内间隔与非后缀冻结同款三消", () => {
+    const session = new GameSession({
+      level: createLevel([
+        createBlock("working-hidden", 0, 0, 0, WORKING_DOG),
+        createBlock("single-cover", 0, 0, 1, SINGLE_DOG),
+        createBlock("working-1", 8, 0, 0, WORKING_DOG),
+        createBlock("working-2", 16, 0, 0, WORKING_DOG),
+        createBlock("working-3", 24, 0, 0, WORKING_DOG),
+        createBlock("single-2", 8, 8, 0, SINGLE_DOG),
+        createBlock("licking-1", 16, 8, 0, LICKING_DOG),
+        createBlock("licking-2", 24, 8, 0, LICKING_DOG),
+        createBlock("licking-3", 32, 8, 0, LICKING_DOG),
+      ]),
+      initialTrayBlocks: [
+        createFrozenTrayBlock("frozen-working-1", WORKING_DOG),
+        createFrozenTrayBlock("frozen-working-2", WORKING_DOG),
+        { id: "ordinary-single", patternType: SINGLE_DOG },
+      ],
+    });
+
+    expect(session.getWildcardPlan(WORKING_DOG)).not.toBeNull();
+
+    const result = session.useWildcard(WORKING_DOG);
+    if (!result.used) {
+      throw new Error("expected wildcard use to succeed");
+    }
+
+    expect(result).toMatchObject({ used: true, removedCount: 0, tripleCount: 0 });
+    expect(result.snapshot.trayBlocks).toEqual([
+      createFrozenTrayBlock("frozen-working-1", WORKING_DOG),
+      createFrozenTrayBlock("frozen-working-2", WORKING_DOG),
+      { id: "ordinary-single", patternType: SINGLE_DOG },
+      {
+        id: result.wildcardBlockId,
+        patternType: WORKING_DOG,
+        visualMarker: "wildcard",
+      },
+    ]);
+  });
+
+  it("万能方块不把棋盘冻结方块作为补偿删除", () => {
+    const session = new GameSession(
+      createLevel([
+        {
+          ...createBlock("working-hidden", 0, 0, 0, WORKING_DOG),
+          specialMechanism: {
+            type: "freeze",
+            state: { status: "frozen", completedTriples: 0 },
+          },
+        },
+        createBlock("single-cover", 0, 0, 1, SINGLE_DOG),
+        createBlock("working-2", 8, 0, 0, WORKING_DOG),
+        createBlock("working-3", 16, 0, 0, WORKING_DOG),
+        createBlock("single-2", 8, 8, 0, SINGLE_DOG),
+        createBlock("single-3", 16, 8, 0, SINGLE_DOG),
+      ]),
+    );
+
+    expect(session.getWildcardPlan(WORKING_DOG)).toBeNull();
+    const result = session.useWildcard(WORKING_DOG);
+    expect(result).toMatchObject({ used: false, patternType: WORKING_DOG });
+    expect(result).not.toHaveProperty("wildcardBlockId");
+    expect(result).not.toHaveProperty("compensatedBlockId");
+    expect(session.getState().remainingBlocks.find(
+      (block) => block.id === "working-hidden",
+    )).toHaveProperty("specialMechanism.type", "freeze");
+  });
+
+  it("万能方块可以把被遮挡幻化同款作为棋盘补偿", () => {
+    const session = new GameSession(
+      createLevel([
+        {
+          ...createBlock("working-hidden", 0, 0, 0, WORKING_DOG),
+          specialMechanism: {
+            type: "illusion",
+            state: { status: "masked", disguisedPatternType: SINGLE_DOG },
+          },
+        },
+        createBlock("single-cover", 0, 0, 1, SINGLE_DOG),
+        createBlock("working-2", 8, 0, 0, WORKING_DOG),
+        createBlock("working-3", 16, 0, 0, WORKING_DOG),
+        createBlock("single-2", 8, 8, 0, SINGLE_DOG),
+        createBlock("single-3", 16, 8, 0, SINGLE_DOG),
+      ]),
+    );
+
+    expect(session.getWildcardPlan(WORKING_DOG)).toMatchObject({
+      compensatedBlockId: "working-hidden",
+    });
+    expect(session.useWildcard(WORKING_DOG)).toMatchObject({ used: true });
+  });
+
+  it("万能方块以一个冻结与一个普通同款补足三消，不融化未参与冻结同款", () => {
+    const session = new GameSession({
+      level: createLevel([
+        createBlock("working-hidden", 0, 0, 0, WORKING_DOG),
+        createBlock("single-cover", 0, 0, 1, SINGLE_DOG),
+        createBlock("single-2", 8, 0, 0, SINGLE_DOG),
+        createBlock("single-3", 16, 0, 0, SINGLE_DOG),
+        createBlock("working-final", 24, 0, 0, WORKING_DOG),
+        createBlock("licking-1", 8, 8, 0, LICKING_DOG),
+        createBlock("licking-2", 16, 8, 0, LICKING_DOG),
+        createBlock("licking-3", 24, 8, 0, LICKING_DOG),
+      ]),
+      initialTrayBlocks: [
+        createFrozenTrayBlock("frozen-working-1", WORKING_DOG),
+        { id: "ordinary-working-1", patternType: WORKING_DOG },
+        { id: "ordinary-working-2", patternType: WORKING_DOG },
+        createFrozenTrayBlock("frozen-working-2", WORKING_DOG, 1),
+      ],
+    });
+
+    const result = session.useWildcard(WORKING_DOG);
+
+    expect(result).toMatchObject({ used: true, removedCount: 3, tripleCount: 1 });
+    expect(result.snapshot.trayBlocks).toEqual([
+      createFrozenTrayBlock("frozen-working-1", WORKING_DOG),
+      { id: "ordinary-working-1", patternType: WORKING_DOG },
+    ]);
+  });
+
+  it("万能方块会填满暂存槽并破坏无道具可解性时拒绝且保持原子不变", () => {
+    const session = new GameSession({
+      level: createLevel([
+        createBlock("working-hidden", 0, 0, 0, WORKING_DOG),
+        createBlock("single-cover", 0, 0, 1, SINGLE_DOG),
+      ]),
+      initialTray: [
+        SINGLE_DOG,
+        LICKING_DOG,
+        GUARD_DOG,
+        "拆家狗",
+        "龇牙狗",
+        "社恐狗",
+      ],
+    });
+    const initial = session.getState();
+
+    expect(session.getWildcardPlan(WORKING_DOG)).toBeNull();
+    expect(session.useWildcard(WORKING_DOG)).toMatchObject({ used: false });
+    expect(session.getState()).toEqual(initial);
+  });
+
+  it("棋盘机制被火把更新后按实时状态判断万能方块可解性", () => {
+    const session = new GameSession(
+      createLevel([
+        createBlock("working-hidden", 0, 0, 0, WORKING_DOG),
+        createBlock("working-2", 8, 0, 0, WORKING_DOG),
+        createBlock("working-3", 16, 0, 0, WORKING_DOG),
+        {
+          ...createBlock("single-cover", 0, 0, 1, SINGLE_DOG),
+          specialMechanism: {
+            type: "freeze",
+            state: { status: "frozen", completedTriples: 0 },
+          },
+        },
+        createBlock("single-2", 8, 8, 0, SINGLE_DOG),
+        createBlock("single-3", 16, 8, 0, SINGLE_DOG),
+      ]),
+    );
+
+    expect(session.getWildcardPlan(WORKING_DOG)).toBeNull();
+    expect(session.meltFrozenBlock("single-cover", "board")).toMatchObject({
+      melted: true,
+    });
+
+    expect(session.getWildcardPlan(WORKING_DOG)).toMatchObject({
+      compensatedBlockId: "working-hidden",
+    });
+    expect(session.useWildcard(WORKING_DOG)).toMatchObject({ used: true });
+  });
+
   it("棋盘方块全部清空时通关", () => {
     const session = new GameSession(
       createLevel([
@@ -266,4 +510,19 @@ function createBlock(
     rotation: 0,
     patternType,
   };
+}
+
+function createFrozenTrayBlock(
+  id: string,
+  patternType: DogPatternType,
+  completedTriples = 0,
+) {
+  return {
+    id,
+    patternType,
+    specialMechanism: {
+      type: "freeze",
+      state: { status: "frozen", completedTriples },
+    },
+  } as const;
 }
