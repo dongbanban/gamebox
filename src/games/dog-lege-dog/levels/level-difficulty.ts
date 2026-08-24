@@ -4,7 +4,10 @@ import type {
   DogLevelGeometry,
   DogSafeChoiceSearchStatus,
 } from "@/games/dog-lege-dog/levels/level-types";
-import { getDifficultyTarget } from "@/games/dog-lege-dog/levels/level-progression";
+import { LEVEL_GENERATOR_VERSION } from "@/games/dog-lege-dog/game/game-config";
+import {
+  getDifficultyTargetForGeneratorVersion,
+} from "@/games/dog-lege-dog/levels/level-progression";
 import {
   countSafeChoiceMetrics,
   findSolvability,
@@ -28,6 +31,8 @@ export function isDifficultyWithinTarget(
     difficulty.safeChoiceSearchStatus === "complete" &&
     difficulty.certainty === "certain" &&
     isWithinRange(difficulty.safeChoiceCount, target.safeChoiceCount) &&
+    (target.safeChoiceRate === undefined ||
+      isWithinRange(difficulty.safeChoiceRate, target.safeChoiceRate)) &&
     isWithinRange(difficulty.estimatedDurationMinutes, target.durationMinutes)
   );
 }
@@ -51,7 +56,10 @@ export function calculateDifficultyMetrics(
       : toPathVerification(discoveredSolvability));
   const graph = createBlockGraph(level.blocks);
   const initialSelectable = graph.higherBlockCounts.filter((count) => count === 0).length;
-  const target = getDifficultyTarget(level.number);
+  const target = getDifficultyTargetForGeneratorVersion(
+    level.number,
+    level.generatorVersion,
+  );
   const solvabilityStatus =
     discoveredSolvability?.status ?? verification.status;
   const safeChoiceMetrics =
@@ -70,12 +78,19 @@ export function calculateDifficultyMetrics(
   const safeChoiceCount = safeChoiceMetrics.safeChoiceCount;
   const coveredBlocks = graph.higherBlockCounts.filter((count) => count > 0).length;
   const coverageRate = level.blocks.length === 0 ? 0 : coveredBlocks / level.blocks.length;
-  const shapeComplexity = calculateShapeComplexity(level);
+  const overlapMetrics = calculateCrossLayerOverlapMetrics(level);
+  const shapeComplexity = calculateShapeComplexity(level, overlapMetrics.ratios);
   const specialMechanismComposition = getDogSpecialMechanismComposition(
     level.blocks,
     level.maxLayers,
     level.specialMechanisms ?? [],
   );
+  const logicalBlockCount = level.blocks.length -
+    specialMechanismComposition.specialMechanismCount +
+    specialMechanismComposition.logicalUnitCount;
+  const safeChoiceRate = logicalBlockCount === 0
+    ? 0
+    : safeChoiceCount / logicalBlockCount;
   const specialMechanismDifficulty = Math.round(
     (specialMechanismComposition.specialMechanismDensity * 100 +
       specialMechanismComposition.specialMechanismCount * 0.25) *
@@ -88,6 +103,10 @@ export function calculateDifficultyMetrics(
     verification.trayPeakPressure,
     shapeComplexity,
     specialMechanismDifficulty,
+    safeChoiceRate,
+    overlapMetrics.partialOverlapRate,
+    level.patternTypes.length,
+    logicalBlockCount,
   );
   const difficulty = {
     blockCount: level.blocks.length,
@@ -96,13 +115,20 @@ export function calculateDifficultyMetrics(
     initialSelectableCount: initialSelectable,
     rawSafeChoiceCount,
     safeChoiceCount,
+    safeChoiceRate,
     solvabilityStatus,
     safeChoiceSearchStatus: safeChoiceMetrics.searchStatus,
     certainty: safeChoiceMetrics.searchStatus === "complete" ? "certain" : "uncertain",
     trayPeakPressure: verification.trayPeakPressure,
     shapeComplexity,
     patternTypeCount: level.patternTypes.length,
+    logicalBlockCount,
+    solutionPathLength: path.length,
+    crossLayerOverlapCount: overlapMetrics.ratios.length,
+    partialOverlapRate: overlapMetrics.partialOverlapRate,
+    alignedOverlapRate: overlapMetrics.alignedOverlapRate,
     specialMechanismCount: specialMechanismComposition.specialMechanismCount,
+    specialMechanismLogicalUnitCount: specialMechanismComposition.logicalUnitCount,
     specialMechanismDensity: specialMechanismComposition.specialMechanismDensity,
     specialMechanismDifficulty,
     estimatedDurationMinutes,
@@ -119,8 +145,12 @@ export function calculateDifficultyMetrics(
 export function getRelaxedDifficultyTarget(
   levelNumber: number,
   attempt: number,
+  generatorVersion?: number,
 ): DogDifficultyTarget {
-  const target = getDifficultyTarget(levelNumber);
+  const target = getDifficultyTargetForGeneratorVersion(levelNumber, generatorVersion);
+  if (generatorVersion === undefined || generatorVersion >= LEVEL_GENERATOR_VERSION) {
+    return target;
+  }
   const relaxationSteps = Math.floor(Math.max(0, attempt - 1) / 25);
   return {
     safeChoiceCount: {
@@ -168,7 +198,10 @@ function difficultyDistance(difficulty: DogLevelDifficulty): number {
     difficulty.estimatedDurationMinutes,
     difficulty.target.durationMinutes,
   );
-  return safeDistance * 10 + durationDistance;
+  const safeRateDistance = difficulty.target.safeChoiceRate === undefined
+    ? 0
+    : rangeDistance(difficulty.safeChoiceRate, difficulty.target.safeChoiceRate);
+  return safeDistance * 10 + safeRateDistance * 100 + durationDistance;
 }
 
 function rangeDistance(value: number, range: { min: number; max: number }): number {
@@ -197,12 +230,18 @@ function estimateDurationMinutes(
   trayPeakPressure: number,
   shapeComplexity: number,
   specialMechanismDifficulty: number,
+  safeChoiceRate: number,
+  partialOverlapRate: number,
+  patternTypeCount: number,
+  logicalBlockCount: number,
 ): number {
   const shapeScore = shapeComplexity / 4;
-  const blockScore = level.blocks.length / 180;
+  const blockScore = logicalBlockCount / 180;
   const layerScore = level.maxLayers / 6;
   const pressureScore = trayPeakPressure / 7;
   const safeChoiceScore = 1 / Math.max(1, safeChoiceCount);
+  const choicePressureScore = Math.max(0, 1 - safeChoiceRate);
+  const patternScore = Math.max(0, (patternTypeCount - 6) / 4);
   const rawDuration =
     3.8 +
     3 * blockScore +
@@ -211,11 +250,17 @@ function estimateDurationMinutes(
     0.7 * shapeScore +
     0.4 * pressureScore +
     0.4 * safeChoiceScore +
-    0.1 * specialMechanismDifficulty;
+    0.1 * specialMechanismDifficulty +
+    0.15 * choicePressureScore +
+    0.1 * partialOverlapRate +
+    0.15 * patternScore;
   return Math.round(rawDuration * 10) / 10;
 }
 
-function calculateShapeComplexity(level: DogLevelGeometry): number {
+function calculateShapeComplexity(
+  level: DogLevelGeometry,
+  overlapRatios = calculateCrossLayerOverlapMetrics(level).ratios,
+): number {
   const playableCells = new Set(level.board.playableCells.map((cell) => `${cell.x}:${cell.y}`));
   let boundaryEdges = 0;
   let concaveCells = 0;
@@ -237,7 +282,6 @@ function calculateShapeComplexity(level: DogLevelGeometry): number {
     (boundaryEdges / Math.max(1, level.board.playableCells.length)) * 2 +
       concaveCells / Math.max(1, level.board.playableCells.length),
   );
-  const overlapRatios = getCrossLayerOverlapRatios(level);
   const partialOverlapRate = overlapRatios.length === 0
     ? 0
     : overlapRatios.filter((ratio) => ratio === 0.25 || ratio === 0.5).length /
@@ -266,7 +310,15 @@ function calculateShapeComplexity(level: DogLevelGeometry): number {
   ) / 10;
 }
 
-function getCrossLayerOverlapRatios(level: DogLevelGeometry): readonly number[] {
+interface CrossLayerOverlapMetrics {
+  readonly ratios: readonly number[];
+  readonly partialOverlapRate: number;
+  readonly alignedOverlapRate: number;
+}
+
+function calculateCrossLayerOverlapMetrics(
+  level: DogLevelGeometry,
+): CrossLayerOverlapMetrics {
   const ratios: number[] = [];
   for (let firstIndex = 0; firstIndex < level.blocks.length; firstIndex += 1) {
     const first = level.blocks[firstIndex];
@@ -281,5 +333,13 @@ function getCrossLayerOverlapRatios(level: DogLevelGeometry): readonly number[] 
       }
     }
   }
-  return ratios;
+  return {
+    ratios,
+    partialOverlapRate: ratios.length === 0
+      ? 0
+      : ratios.filter((ratio) => ratio === 0.25 || ratio === 0.5).length / ratios.length,
+    alignedOverlapRate: ratios.length === 0
+      ? 0
+      : ratios.filter((ratio) => ratio === 1).length / ratios.length,
+  };
 }

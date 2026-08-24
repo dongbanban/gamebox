@@ -4,7 +4,7 @@ import type {
 } from "@/games/dog-lege-dog/levels/level-types";
 
 const GAME_ID = "dog-lege-dog" as const;
-const GENERATOR_VERSION = 9 as const;
+const GENERATOR_VERSION = 10 as const;
 
 export const DOG_GAME_RESULT_DISPLAY = Object.freeze({
   won: Object.freeze({
@@ -26,7 +26,8 @@ export const DOG_LEGE_DOG_CONFIG = Object.freeze({
   defaultSeed: GAME_ID,
   defaultReward: 100 as const,
   firstLevelNumber: 1 as const,
-  firstLevelSeed: `${GAME_ID}:first-level:v${GENERATOR_VERSION}`,
+  // Keep fixed first-level geometry stable across generator versions.
+  firstLevelSeed: `${GAME_ID}:first-level:v9`,
   firstLevelBlockCount: 90 as const,
   firstLevelMaxLayers: 3 as const,
   firstLevelPatternTypes: Object.freeze([

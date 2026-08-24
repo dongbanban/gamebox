@@ -179,6 +179,12 @@ function assertLevelInvariants(
   expect(difficulty.safeChoiceCount).toBeGreaterThanOrEqual(
     difficulty.target.safeChoiceCount.min,
   );
+  expect(Number.isFinite(difficulty.target.safeChoiceCount.max)).toBe(true);
+  if (difficulty.target.safeChoiceRate !== undefined) {
+    expect(difficulty.safeChoiceRate).toBeGreaterThanOrEqual(
+      difficulty.target.safeChoiceRate.min,
+    );
+  }
   expect(difficulty.estimatedDurationMinutes).toBeGreaterThanOrEqual(
     difficulty.target.durationMinutes.min,
   );
@@ -186,6 +192,11 @@ function assertLevelInvariants(
     if (Number.isFinite(difficulty.target.safeChoiceCount.max)) {
       expect(difficulty.safeChoiceCount).toBeLessThanOrEqual(
         difficulty.target.safeChoiceCount.max,
+      );
+    }
+    if (difficulty.target.safeChoiceRate !== undefined) {
+      expect(difficulty.safeChoiceRate).toBeLessThanOrEqual(
+        difficulty.target.safeChoiceRate.max,
       );
     }
     if (Number.isFinite(difficulty.target.durationMinutes.max)) {

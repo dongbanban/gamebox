@@ -79,7 +79,7 @@ import {
 } from "@/games/dog-lege-dog/levels/level-replay";
 
 export const MAX_LEVEL_GENERATION_ATTEMPTS = 100 as const;
-// Default target search gets one relaxed-target window before using closest proven candidate.
+// Legacy generator versions keep their historical relaxed retry window for replay.
 const MAX_DIFFICULTY_TARGET_ATTEMPTS = 32 as const;
 
 type TemplateFactory = (random: SeededRandom) => DogShapeTemplate;
@@ -149,7 +149,11 @@ export class GeneratedLevelGenerator {
           candidate.difficulty.solvabilityStatus === "solvable" &&
           this.candidateFilter(
             candidate.difficulty,
-            getRelaxedDifficultyTarget(request.levelNumber, attempt),
+            getRelaxedDifficultyTarget(
+              request.levelNumber,
+              attempt,
+              request.generatorVersion,
+            ),
             attempt,
           )
         ) {
@@ -175,6 +179,7 @@ export class GeneratedLevelGenerator {
 
         if (
           this.usesDefaultCandidateFilter &&
+          request.generatorVersion < LEVEL_GENERATOR_VERSION &&
           attempt >= MAX_DIFFICULTY_TARGET_ATTEMPTS
         ) {
           break;
@@ -194,10 +199,17 @@ export class GeneratedLevelGenerator {
       }
     }
 
-    let fallback = closestCandidate;
+    let fallback = closestCandidate !== undefined &&
+        meetsDifficultyMinimum(closestCandidate.difficulty)
+      ? closestCandidate
+      : undefined;
     if (fallback === undefined) {
       try {
-        fallback = this.createFallbackCandidate(request, levelSeed, testSeed);
+        const candidate = this.createFallbackCandidate(request, levelSeed, testSeed);
+        if (!meetsDifficultyMinimum(candidate.difficulty)) {
+          throw new Error("fallback candidate is below the current difficulty minimum");
+        }
+        fallback = candidate;
       } catch (error) {
         failures.push(
           createGenerationFailure(
@@ -215,7 +227,11 @@ export class GeneratedLevelGenerator {
           ),
         );
         try {
-          fallback = this.createEmergencyCandidate(request, levelSeed, testSeed);
+          const candidate = this.createEmergencyCandidate(request, levelSeed, testSeed);
+          if (!meetsDifficultyMinimum(candidate.difficulty)) {
+            throw new Error("emergency fallback is below the current difficulty minimum");
+          }
+          fallback = candidate;
         } catch (emergencyError) {
           failures.push(
             createGenerationFailure(
@@ -230,9 +246,19 @@ export class GeneratedLevelGenerator {
               getGuaranteedRandomSeed(this.gameId, levelSeed),
             ),
           );
-          fallback = this.createLastResortCandidate(request, levelSeed, testSeed);
+          const candidate = this.createLastResortCandidate(request, levelSeed, testSeed);
+          if (!meetsDifficultyMinimum(candidate.difficulty)) {
+            throw new Error("last-resort fallback is below the current difficulty minimum");
+          }
+          fallback = candidate;
         }
       }
+    }
+
+    if (fallback === undefined || !meetsDifficultyMinimum(fallback.difficulty)) {
+      throw new Error(
+        "LevelGenerator fallback did not satisfy the current difficulty minimum",
+      );
     }
 
     return finalizeCandidate(fallback, attempts, true, failures);
@@ -519,6 +545,7 @@ function createCandidateLevel(
 ): GeneratedLevelCandidate {
   const geometry: DogLevelGeometry = {
     number: request.levelNumber,
+    generatorVersion: request.generatorVersion,
     maxLayers,
     board,
     patternTypes,
@@ -608,13 +635,27 @@ function getTemplateById(templateId: string, label: string): DogShapeTemplate {
   return template;
 }
 
+function meetsDifficultyMinimum(difficulty: DogLevelDifficulty): boolean {
+  return (
+    difficulty.solvabilityStatus === "solvable" &&
+    difficulty.safeChoiceSearchStatus === "complete" &&
+    difficulty.certainty === "certain" &&
+    difficulty.safeChoiceCount >= difficulty.target.safeChoiceCount.min &&
+    (difficulty.target.safeChoiceRate === undefined ||
+      difficulty.safeChoiceRate >= difficulty.target.safeChoiceRate.min) &&
+    difficulty.estimatedDurationMinutes >= difficulty.target.durationMinutes.min
+  );
+}
+
 function getLevelSeed(request: NormalizedLevelGeneratorRequest): string {
   if (
     request.levelNumber === FIRST_LEVEL_NUMBER &&
     request.seed === DEFAULT_LEVEL_SEED &&
-    request.generatorVersion === LEVEL_GENERATOR_VERSION
+    request.generatorVersion >= 1
   ) {
-    return FIRST_LEVEL_SEED;
+    return request.generatorVersion === LEVEL_GENERATOR_VERSION
+      ? FIRST_LEVEL_SEED
+      : `${DOG_GAME_ID}:first-level:v${request.generatorVersion}`;
   }
 
   return `${request.seed}:v${request.generatorVersion}:level-${request.levelNumber}`;

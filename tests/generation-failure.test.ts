@@ -22,6 +22,15 @@ describe("LevelGenerator 候选筛选失败", () => {
 
     expect(level.generation.fallbackUsed).toBe(true);
     expect(level.generation.attempts).toBe(MAX_LEVEL_GENERATION_ATTEMPTS);
+    expect(level.difficulty.safeChoiceCount).toBeGreaterThanOrEqual(
+      level.difficulty.target.safeChoiceCount.min,
+    );
+    expect(level.difficulty.safeChoiceRate).toBeGreaterThanOrEqual(
+      level.difficulty.target.safeChoiceRate?.min ?? 0,
+    );
+    expect(level.difficulty.estimatedDurationMinutes).toBeGreaterThanOrEqual(
+      level.difficulty.target.durationMinutes.min,
+    );
     expect(level.generation.failures).toHaveLength(MAX_LEVEL_GENERATION_ATTEMPTS);
     expect(failure).toMatchObject({
       levelNumber: request.levelNumber,

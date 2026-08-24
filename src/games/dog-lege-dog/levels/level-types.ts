@@ -99,6 +99,8 @@ export interface DogDifficultyRange {
 
 export interface DogDifficultyTarget {
   readonly safeChoiceCount: DogDifficultyRange;
+  /** Normalizes safe choices across levels with different block counts. */
+  readonly safeChoiceRate?: DogDifficultyRange;
   readonly durationMinutes: DogDifficultyRange;
 }
 
@@ -109,13 +111,20 @@ export interface DogLevelDifficulty {
   readonly initialSelectableCount: number;
   readonly rawSafeChoiceCount: number;
   readonly safeChoiceCount: number;
+  readonly safeChoiceRate: number;
   readonly solvabilityStatus: DogSolvabilityStatus;
   readonly safeChoiceSearchStatus: DogSafeChoiceSearchStatus;
   readonly certainty: DogDifficultyCertainty;
   readonly trayPeakPressure: number;
   readonly shapeComplexity: number;
   readonly patternTypeCount: number;
+  readonly logicalBlockCount: number;
+  readonly solutionPathLength: number;
+  readonly crossLayerOverlapCount: number;
+  readonly partialOverlapRate: number;
+  readonly alignedOverlapRate: number;
   readonly specialMechanismCount: number;
+  readonly specialMechanismLogicalUnitCount: number;
   readonly specialMechanismDensity: number;
   readonly specialMechanismDifficulty: number;
   readonly estimatedDurationMinutes: number;
@@ -153,6 +162,8 @@ export interface DogLevelGeneration {
 
 export interface DogLevelGeometry {
   readonly number: number;
+  /** Optional for hand-built test geometry; generated levels always provide it. */
+  readonly generatorVersion?: number;
   readonly maxLayers: number;
   readonly board: DogBoard;
   readonly patternTypes: readonly DogPatternType[];
