@@ -406,14 +406,38 @@ export class DogItemRuntime {
 }
 
 export function getDogItemUses(
-  level: Pick<DogLegeDogLevel, "number">,
+  level: Pick<DogLegeDogLevel, "number"> &
+    Partial<Pick<DogLegeDogLevel, "specialMechanisms">>,
   itemId: DogItemId,
 ): number {
   if (itemId === "tray-capacity") {
     return 1;
   }
 
-  return level.number % 2 === 0 ? 2 : 1;
+  const baseUses = level.number % 2 === 0 ? 2 : 1;
+  const mechanismType = itemId === "torch" || itemId === "wildcard"
+    ? "freeze"
+    : itemId === "detector"
+      ? "illusion"
+      : undefined;
+  if (mechanismType === undefined) {
+    return baseUses;
+  }
+
+  const configuration = level.specialMechanisms?.find(
+    (candidate) => candidate.type === mechanismType,
+  );
+  if (configuration === undefined) {
+    return baseUses;
+  }
+
+  const rangeBonus = Math.max(0, Math.ceil((configuration.max - 2) / 2));
+  const densityBonus = Math.max(
+    0,
+    Math.ceil((configuration.densityWeight ?? 1) - 1),
+  );
+  const configuredBonus = configuration.itemUseBonus ?? 0;
+  return baseUses + Math.max(rangeBonus, densityBonus, configuredBonus);
 }
 
 interface DogItemBehavior {

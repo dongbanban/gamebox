@@ -52,6 +52,7 @@ export function finalizeCandidate(
     rewardConfigVersion: candidate.rewardConfigVersion,
     mode: candidate.replayMode,
     randomSeed: candidate.randomSeed,
+    accepted: true,
   });
   const generation: DogLevelGeneration = Object.freeze({
     attempts,
@@ -89,6 +90,7 @@ export function createGenerationFailure(
     mode,
     randomSeed,
     reason,
+    accepted: false,
   };
 }
 

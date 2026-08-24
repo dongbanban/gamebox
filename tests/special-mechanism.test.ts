@@ -19,6 +19,9 @@ import {
   GameSession,
   LEVEL_GENERATOR_VERSION,
   LevelGenerator,
+  createDogSpecialMechanism,
+  getDogSpecialMechanismComposition,
+  validateDogSpecialMechanismComposition,
   type DogBlock,
   type DogLegeDogLevel,
   type DogPatternType,
@@ -425,6 +428,71 @@ describe("狗了个狗特殊机制", () => {
     expect(repeated).toEqual(first);
     expect(different).not.toEqual(first);
     expect(generator.findSolvability(first).status).toBe("solvable");
+  });
+
+  it("组合特殊机制只分配到高层，且中间层占比至少七成", () => {
+    const generator = new LevelGenerator();
+
+    for (const levelNumber of [1, 6, 31]) {
+      const level = generator.generate({
+        levelNumber,
+        runSeed: `composition-layer-${levelNumber}`,
+        generatorVersion: LEVEL_GENERATOR_VERSION,
+      });
+      const specialBlocks = level.blocks.filter(
+        (block) => block.specialMechanism !== undefined,
+      );
+      const middleBlocks = specialBlocks.filter(
+        (block) => block.z > 0 && block.z < level.maxLayers - 1,
+      );
+
+      expect(specialBlocks.length).toBeGreaterThan(1);
+      expect(specialBlocks.every((block) => block.z > 0)).toBe(true);
+      expect(middleBlocks.length / specialBlocks.length).toBeGreaterThanOrEqual(0.7);
+      expect(new Set(specialBlocks.map((block) => block.id)).size).toBe(
+        specialBlocks.length,
+      );
+      expect(level.difficulty.specialMechanismDensity).toBeGreaterThan(0);
+    }
+  });
+
+  it("组合校验拒绝底层位置与超过六%的机制密度", () => {
+    const configurations = [
+      { type: DOG_FREEZE_MECHANISM_TYPE, min: 1, max: 1 },
+      { type: DOG_ILLUSION_MECHANISM_TYPE, min: 1, max: 1 },
+    ] as const;
+    const bottomBlock = {
+      ...createBlock("bottom-freeze", 0, 0, WORKING_DOG, createDogSpecialMechanism("freeze")),
+      z: 0,
+    };
+    expect(
+      validateDogSpecialMechanismComposition(
+        [bottomBlock],
+        3,
+        configurations,
+      ),
+    ).toContain("base layer");
+
+    const denseBlocks = Array.from({ length: 10 }, (_, index) => ({
+      ...createBlock(`dense-${index}`, index * BLOCK_WIDTH, 0, WORKING_DOG),
+      z: index === 0 ? 1 : 0,
+      ...(index === 0
+        ? { specialMechanism: createDogSpecialMechanism("freeze") }
+        : {}),
+    }));
+    const composition = getDogSpecialMechanismComposition(
+      denseBlocks,
+      3,
+      [configurations[0]],
+    );
+    expect(composition.specialMechanismDensity).toBe(0.1);
+    expect(
+      validateDogSpecialMechanismComposition(
+        denseBlocks,
+        3,
+        [configurations[0]],
+      ),
+    ).toContain("6%");
   });
 
   it("幻化方块直接进入暂存槽时揭示真实图案并按真实图案三消", () => {

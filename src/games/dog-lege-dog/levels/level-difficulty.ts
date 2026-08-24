@@ -15,6 +15,9 @@ import {
 } from "@/games/dog-lege-dog/levels/level-solvability";
 import { createBlockGraph } from "@/games/dog-lege-dog/levels/level-graph";
 import { getPositiveOverlapArea } from "@/games/dog-lege-dog/levels/level-rules";
+import {
+  getDogSpecialMechanismComposition,
+} from "@/games/dog-lege-dog/game/special-mechanisms";
 
 export function isDifficultyWithinTarget(
   difficulty: DogLevelDifficulty,
@@ -68,12 +71,23 @@ export function calculateDifficultyMetrics(
   const coveredBlocks = graph.higherBlockCounts.filter((count) => count > 0).length;
   const coverageRate = level.blocks.length === 0 ? 0 : coveredBlocks / level.blocks.length;
   const shapeComplexity = calculateShapeComplexity(level);
+  const specialMechanismComposition = getDogSpecialMechanismComposition(
+    level.blocks,
+    level.maxLayers,
+    level.specialMechanisms ?? [],
+  );
+  const specialMechanismDifficulty = Math.round(
+    (specialMechanismComposition.specialMechanismDensity * 100 +
+      specialMechanismComposition.specialMechanismCount * 0.25) *
+      10,
+  ) / 10;
   const estimatedDurationMinutes = estimateDurationMinutes(
     level,
     coverageRate,
     safeChoiceCount,
     verification.trayPeakPressure,
     shapeComplexity,
+    specialMechanismDifficulty,
   );
   const difficulty = {
     blockCount: level.blocks.length,
@@ -88,6 +102,9 @@ export function calculateDifficultyMetrics(
     trayPeakPressure: verification.trayPeakPressure,
     shapeComplexity,
     patternTypeCount: level.patternTypes.length,
+    specialMechanismCount: specialMechanismComposition.specialMechanismCount,
+    specialMechanismDensity: specialMechanismComposition.specialMechanismDensity,
+    specialMechanismDifficulty,
     estimatedDurationMinutes,
     target,
     withinTarget: false,
@@ -179,6 +196,7 @@ function estimateDurationMinutes(
   safeChoiceCount: number,
   trayPeakPressure: number,
   shapeComplexity: number,
+  specialMechanismDifficulty: number,
 ): number {
   const shapeScore = shapeComplexity / 4;
   const blockScore = level.blocks.length / 180;
@@ -192,7 +210,8 @@ function estimateDurationMinutes(
     1.2 * coverageRate +
     0.7 * shapeScore +
     0.4 * pressureScore +
-    0.4 * safeChoiceScore;
+    0.4 * safeChoiceScore +
+    0.1 * specialMechanismDifficulty;
   return Math.round(rawDuration * 10) / 10;
 }
 

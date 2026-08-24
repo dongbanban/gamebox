@@ -15,6 +15,7 @@ import {
 } from "@/games/dog-lege-dog/game/dog-loadout";
 import {
   DogItemRuntime,
+  getDogItemUses,
   type DogItemRuntimeDefinition,
   type DogItemTarget,
 } from "@/games/dog-lege-dog/game/dog-item-runtime";
@@ -25,6 +26,58 @@ const LICKING_DOG: DogPatternType = "舔狗";
 const GUARD_DOG: DogPatternType = "看门狗";
 
 describe("DogItemRuntime", () => {
+  it("按关卡机制配置增加对应道具次数，不读取本次实际机制数量", () => {
+    const baseLevel = {
+      ...FIRST_LEVEL,
+      number: 1,
+      specialMechanisms: [
+        { type: DOG_FREEZE_MECHANISM_TYPE, min: 1, max: 2 },
+        { type: DOG_ILLUSION_MECHANISM_TYPE, min: 1, max: 2 },
+      ],
+    } satisfies DogLegeDogLevel;
+    const highMechanismLevel = {
+      ...baseLevel,
+      specialMechanisms: [
+        { type: DOG_FREEZE_MECHANISM_TYPE, min: 3, max: 4 },
+        { type: DOG_ILLUSION_MECHANISM_TYPE, min: 3, max: 5 },
+      ],
+    } satisfies DogLegeDogLevel;
+
+    expect(getDogItemUses(highMechanismLevel, "torch")).toBeGreaterThan(
+      getDogItemUses(baseLevel, "torch"),
+    );
+    expect(getDogItemUses(highMechanismLevel, "wildcard")).toBeGreaterThan(
+      getDogItemUses(baseLevel, "wildcard"),
+    );
+    expect(getDogItemUses(highMechanismLevel, "detector")).toBeGreaterThan(
+      getDogItemUses(baseLevel, "detector"),
+    );
+
+    const weightedMechanismLevel = {
+      ...baseLevel,
+      specialMechanisms: [
+        { type: DOG_FREEZE_MECHANISM_TYPE, min: 1, max: 2 },
+        {
+          type: DOG_ILLUSION_MECHANISM_TYPE,
+          min: 1,
+          max: 2,
+          densityWeight: 2,
+        },
+      ],
+    } satisfies DogLegeDogLevel;
+    expect(getDogItemUses(weightedMechanismLevel, "detector")).toBeGreaterThan(
+      getDogItemUses(baseLevel, "detector"),
+    );
+
+    const sameConfigDifferentBlocks = {
+      ...highMechanismLevel,
+      blocks: highMechanismLevel.blocks.slice(0, 3),
+    } as DogLegeDogLevel;
+    expect(getDogItemUses(sameConfigDifferentBlocks, "torch")).toBe(
+      getDogItemUses(highMechanismLevel, "torch"),
+    );
+  });
+
   it("容量提升无目标直执行，成功扣次并在动画完成后重新计算可用性", () => {
     const session = new GameSession(createLevel([createBlock("remaining", WORKING_DOG)]));
     const runtime = new DogItemRuntime({

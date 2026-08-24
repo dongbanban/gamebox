@@ -100,11 +100,21 @@ export {
   DOG_FREEZE_MELT_TRIPLE_COUNT,
   DOG_ILLUSION_MECHANISM_TYPE,
   DOG_ILLUSION_MASK_STATUS,
+  DOG_SPECIAL_MECHANISM_DENSITY_LIMIT,
+  DOG_SPECIAL_MECHANISM_MIDDLE_LAYER_RATIO,
   DOG_SPECIAL_MECHANISM_HANDLERS,
+  assignDogSpecialMechanisms,
   createDogSpecialMechanism,
   createDogIllusionMechanism,
+  createDogSpecialMechanismHandlerMap,
+  getDogSpecialMechanismComposition,
   getDogIllusionDisguisedPattern,
   getDogSpecialMechanismConfigs,
+  validateDogSpecialMechanismComposition,
+} from "@/games/dog-lege-dog/game/special-mechanisms";
+export type {
+  DogSpecialMechanismAssignmentOptions,
+  DogSpecialMechanismComposition,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
 
 export {

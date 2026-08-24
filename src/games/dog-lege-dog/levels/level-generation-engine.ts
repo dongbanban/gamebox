@@ -51,6 +51,7 @@ import {
 } from "@/games/dog-lege-dog/levels/level-random";
 import {
   assignDogSpecialMechanisms,
+  validateDogSpecialMechanismComposition,
   getDogSpecialMechanismConfigs,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
 import type {
@@ -280,6 +281,20 @@ export class GeneratedLevelGenerator {
 
   replayAttempt(replay: DogLevelReplay): DogLegeDogLevel {
     validateReplay(replay);
+    if (replay.mode === "generated" && replay.accepted === true) {
+      const generated = this.generate({
+        levelNumber: replay.levelNumber,
+        runSeed: replay.runSeed ?? replay.seed,
+        testSeed: replay.testSeed,
+        generatorVersion: replay.generatorVersion,
+      });
+      if (
+        generated.generation.replay.attempt === replay.attempt &&
+        generated.generation.replay.randomSeed === replay.randomSeed
+      ) {
+        return generated;
+      }
+    }
     const runSeed = replay.runSeed ?? replay.seed;
     const request: NormalizedLevelGeneratorRequest = {
       levelNumber: replay.levelNumber,
@@ -380,7 +395,7 @@ export class GeneratedLevelGenerator {
       random,
       removalPlan,
     );
-    const specialMechanisms = getDogSpecialMechanismConfigs(blockCount);
+    const specialMechanisms = getDogSpecialMechanismConfigs(request.levelNumber);
     const board = createBoard(shape);
     const placementGraph = createBlockGraph(ordinaryBlocks);
     const blocks = assignDogSpecialMechanisms(
@@ -400,6 +415,7 @@ export class GeneratedLevelGenerator {
           solutionPath,
           placementGraph,
         ).solvable,
+      { maxLayers },
     );
     return createCandidateLevel(
       request,
@@ -518,6 +534,14 @@ function createCandidateLevel(
     if (spatialError !== undefined) {
       throw new Error(spatialError);
     }
+  }
+  const mechanismCompositionError = validateDogSpecialMechanismComposition(
+    blocks,
+    maxLayers,
+    specialMechanisms,
+  );
+  if (mechanismCompositionError !== undefined) {
+    throw new Error(mechanismCompositionError);
   }
   const verification = verifyRemovalPath(geometry, solutionPath);
   if (!verification.solvable) {
