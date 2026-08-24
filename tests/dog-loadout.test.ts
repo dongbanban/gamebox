@@ -23,7 +23,7 @@ describe("狗了个狗道具组", () => {
     expect(DOG_ITEM_DEFINITIONS).toHaveLength(5);
     expect(DOG_ITEM_DEFINITIONS.every((item) => item.name && item.description && item.icon)).toBe(true);
     expect(DOG_ITEM_DEFINITIONS.map((item) => item.targetType)).toEqual([
-      "tray-pattern",
+      "tray-block",
       "none",
       "pattern",
       "block",
@@ -120,8 +120,8 @@ describe("狗了个狗道具组", () => {
       [],
       { targetType: "block", patterns: [] },
     );
-    expect(blockTargetingSummary).not.toContain("选择道具目标");
-    expect(blockTargetingSummary).not.toContain("dog-item-targeting");
+    expect(blockTargetingSummary).toContain("选择道具目标");
+    expect(blockTargetingSummary).toContain("dog-item-targeting");
     expect(blockTargetingSummary).toContain('data-action="cancel-item-target"');
   });
 });

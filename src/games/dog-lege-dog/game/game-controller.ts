@@ -650,8 +650,11 @@ export function createDogLegeDogGame(
     const targetRect = target.type === "pattern"
       ? findTrayTarget(root, target.patternType)?.getBoundingClientRect() ?? null
       : findItemTargetElement(root, target)?.getBoundingClientRect() ?? null;
-    const tripleSourceRects = target.type === "pattern"
-      ? captureTripleRemovalSourceRects(root, target.patternType)
+    const tripleSourceRects = target.type === "tray-block"
+      ? captureTripleRemovalSourceRects(
+          root,
+          runtime.session.getTripleRemovalPlanForTrayBlock(target.blockId)?.blockIds ?? [],
+        )
       : new Map<string, DOMRect>();
     const action = runtime.itemRuntime.confirmTarget(target);
     applyItemAction(action, targetRect, tripleSourceRects);
@@ -799,7 +802,10 @@ export function createDogLegeDogGame(
 
     const targetElement = target.closest<HTMLElement>('[data-item-targetable="true"]');
     const itemTargetType = runtime.itemRuntime?.getState().selectedItemTargetType;
-    if (targetElement === null || itemTargetType !== "block") {
+    if (
+      targetElement === null ||
+      (itemTargetType !== "block" && itemTargetType !== "tray-block")
+    ) {
       return undefined;
     }
 
@@ -1126,17 +1132,16 @@ function findItemTargetElement(
 
 function captureTripleRemovalSourceRects(
   root: HTMLElement,
-  patternType: DogPatternType,
+  blockIds: readonly string[],
 ): ReadonlyMap<string, DOMRect> {
   const rects = new Map<string, DOMRect>();
-  for (const block of root.querySelectorAll<HTMLElement>(
-    '[data-testid="dog-block"][data-pattern-type]',
-  )) {
-    if (block.dataset.patternType !== patternType || block.dataset.blockId === undefined) {
+  for (const blockId of blockIds) {
+    const block = findBlockElement(root, blockId);
+    if (block === null) {
       continue;
     }
 
-    rects.set(block.dataset.blockId, block.getBoundingClientRect());
+    rects.set(blockId, block.getBoundingClientRect());
   }
   return rects;
 }

@@ -74,6 +74,38 @@ export function prepareDogTrayBlock(
   return getHandler(block, handlers).onEnterTray?.(block) ?? block;
 }
 
+export function applyDogTraySuccessfulTripleEffects(
+  tray: DogTrayBlock[],
+  handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
+  tripleCount: number,
+  triplePatterns: readonly DogPatternType[],
+): readonly string[] {
+  if (tripleCount <= 0) {
+    return [];
+  }
+
+  const meltedBlockIds: string[] = [];
+  for (let index = 0; index < tray.length; index += 1) {
+    const block = tray[index];
+    if (block?.specialMechanism === undefined) {
+      continue;
+    }
+
+    const handler = getHandler(block, handlers);
+    const nextBlock = handler.onSuccessfulTriples(
+      block,
+      tripleCount,
+      triplePatterns,
+    );
+    if (nextBlock.specialMechanism === undefined) {
+      meltedBlockIds.push(block.id);
+    }
+    tray[index] = nextBlock;
+  }
+
+  return Object.freeze(meltedBlockIds);
+}
+
 export function resolveDogTrayMatches(
   tray: DogTrayBlock[],
   handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
@@ -111,26 +143,14 @@ export function resolveDogTrayMatches(
       break;
     }
 
-    for (let index = 0; index < tray.length; index += 1) {
-      const block = tray[index];
-      if (block?.specialMechanism === undefined) {
-        continue;
-      }
-
-      const handler = getHandler(block, handlers);
-      const nextBlock = handler.onSuccessfulTriples(
-        block,
+    meltedBlockIds.push(
+      ...applyDogTraySuccessfulTripleEffects(
+        tray,
+        handlers,
         roundTripleCount,
         roundTriplePatterns,
-      );
-      if (
-        block.specialMechanism !== undefined &&
-        nextBlock.specialMechanism === undefined
-      ) {
-        meltedBlockIds.push(block.id);
-      }
-      tray[index] = nextBlock;
-    }
+      ),
+    );
   }
 
   return {

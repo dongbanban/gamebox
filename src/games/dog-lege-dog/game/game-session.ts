@@ -9,6 +9,7 @@ import {
 import { createBlockGraph, type BlockGraph } from "@/games/dog-lege-dog/levels/level-graph";
 import { freezeDogLegeDogLevel } from "@/games/dog-lege-dog/levels/level-immutability";
 import {
+  applyDogTraySuccessfulTripleEffects,
   insertDogTrayBlock,
   insertDogBlockIntoTray,
   resolveDogTrayMatches,
@@ -78,6 +79,7 @@ export interface GameSessionRevealResult extends GameSessionSnapshot {
 
 export interface GameSessionTripleRemovalPlan {
   readonly patternType: DogPatternType;
+  readonly trayBlockIds: readonly string[];
   readonly blockIds: readonly string[];
   readonly removedCount: 3;
   readonly tripleCount: 1;
@@ -86,6 +88,7 @@ export interface GameSessionTripleRemovalPlan {
 export interface GameSessionTripleRemovalResult extends GameSessionSnapshot {
   readonly removed: boolean;
   readonly patternType: DogPatternType;
+  readonly trayBlockIds: readonly string[];
   readonly blockIds: readonly string[];
   readonly removedCount: number;
   readonly tripleCount: number;
@@ -104,7 +107,7 @@ export class GameSession {
   private trayCapacity: number;
   private status: GameSessionStatus = "playing";
   private readonly tripleRemovalPlanCache = new Map<
-    DogPatternType,
+    string,
     GameSessionTripleRemovalPlan | null
   >();
 
@@ -215,30 +218,85 @@ export class GameSession {
     return true;
   }
 
+  getTripleRemovalTargetBlockIds(): readonly string[] {
+    const targetBlockIds: string[] = [];
+    for (let index = 0; index < this.tray.length - 1; index += 1) {
+      const first = this.tray[index];
+      const second = this.tray[index + 1];
+      if (!isOrdinaryMatchingPair(first, second)) {
+        continue;
+      }
+
+      const plan = this.getTripleRemovalPlanForTrayBlock(first.id);
+      if (plan === null) {
+        continue;
+      }
+
+      targetBlockIds.push(...plan.trayBlockIds);
+    }
+
+    return Object.freeze(targetBlockIds);
+  }
+
   getTripleRemovalTargetPatterns(): readonly DogPatternType[] {
     const patterns: DogPatternType[] = [];
-    for (const block of this.tray) {
+    for (let index = 0; index < this.tray.length - 1; index += 1) {
+      const first = this.tray[index];
+      const second = this.tray[index + 1];
       if (
-        block.specialMechanism !== undefined ||
-        patterns.includes(block.patternType)
+        !isOrdinaryMatchingPair(first, second) ||
+        patterns.includes(first.patternType) ||
+        this.getTripleRemovalPlanForTrayBlock(first.id) === null
       ) {
         continue;
       }
 
-      patterns.push(block.patternType);
+      patterns.push(first.patternType);
     }
-    return Object.freeze(patterns.filter((patternType) => this.canRemoveTriple(patternType)));
+    return Object.freeze(patterns);
   }
 
   getTripleRemovalPlan(
     patternType: DogPatternType,
   ): GameSessionTripleRemovalPlan | null {
-    if (this.tripleRemovalPlanCache.has(patternType)) {
-      return this.tripleRemovalPlanCache.get(patternType) ?? null;
+    for (let index = 0; index < this.tray.length - 1; index += 1) {
+      const first = this.tray[index];
+      const second = this.tray[index + 1];
+      if (
+        first?.patternType === patternType &&
+        isOrdinaryMatchingPair(first, second)
+      ) {
+        const plan = this.getTripleRemovalPlanForTrayBlock(first.id);
+        if (plan !== null) {
+          return plan;
+        }
+      }
+    }
+    return null;
+  }
+
+  getTripleRemovalPlanForTrayBlock(
+    blockId: string,
+  ): GameSessionTripleRemovalPlan | null {
+    let index = this.tray.findIndex((block) => block.id === blockId);
+    let first = this.tray[index];
+    let second = this.tray[index + 1];
+    if (!isOrdinaryMatchingPair(first, second)) {
+      index -= 1;
+      first = this.tray[index];
+      second = this.tray[index + 1];
+    }
+    if (!isOrdinaryMatchingPair(first, second)) {
+      return null;
     }
 
-    const plan = this.findTripleRemovalPlan(patternType);
-    this.tripleRemovalPlanCache.set(patternType, plan);
+    const cacheKey = `${first.id}:${second.id}`;
+    if (this.tripleRemovalPlanCache.has(cacheKey)) {
+      return this.tripleRemovalPlanCache.get(cacheKey) ?? null;
+    }
+
+    const plan = this.findTripleRemovalPlan([first.id, second.id]);
+    this.tripleRemovalPlanCache.set(cacheKey, plan);
     return plan;
   }
 
@@ -252,16 +310,31 @@ export class GameSession {
       return this.createTripleRemovalResult(false, patternType, [], 0, 0, []);
     }
 
-    const selectedBlocks = plan.blockIds.map((blockId) => {
-      const block = this.remainingBlocks.get(blockId);
-      if (block === undefined || !this.canSelectBlock(blockId)) {
+    return this.removeTripleForTrayBlock(plan.trayBlockIds[0] ?? "");
+  }
+
+  removeTripleForTrayBlock(blockId: string): GameSessionTripleRemovalResult {
+    const targetBlock = this.tray.find((block) => block.id === blockId);
+    const fallbackPattern = targetBlock?.patternType ?? this.level.patternTypes[0]!;
+    const plan = this.getTripleRemovalPlanForTrayBlock(blockId);
+    if (plan === null) {
+      return this.createTripleRemovalResult(false, fallbackPattern, [], 0, 0, []);
+    }
+
+    const selectedBlocks = plan.blockIds.map((candidateBlockId) => {
+      const block = this.remainingBlocks.get(candidateBlockId);
+      if (
+        block === undefined ||
+        block.specialMechanism !== undefined ||
+        !this.canSelectBlock(candidateBlockId)
+      ) {
         return undefined;
       }
       return block;
     });
     if (selectedBlocks.some((block) => block === undefined)) {
       this.tripleRemovalPlanCache.clear();
-      return this.createTripleRemovalResult(false, patternType, [], 0, 0, []);
+      return this.createTripleRemovalResult(false, plan.patternType, [], 0, 0, []);
     }
 
     for (const block of selectedBlocks) {
@@ -272,7 +345,7 @@ export class GameSession {
       const blockIndex = this.graph.indexById.get(block.id);
       if (blockIndex === undefined) {
         this.tripleRemovalPlanCache.clear();
-        return this.createTripleRemovalResult(false, patternType, [], 0, 0, []);
+        return this.createTripleRemovalResult(false, plan.patternType, [], 0, 0, []);
       }
 
       this.remainingBlocks.delete(block.id);
@@ -281,37 +354,24 @@ export class GameSession {
       }
     }
 
-    let removedCount = 0;
-    let tripleCount = 0;
-    const meltedBlockIds: string[] = [];
-    for (const [index, block] of selectedBlocks.entries()) {
-      if (block === undefined) {
-        continue;
-      }
-
-      const resolution = insertDogBlockIntoTray(
-        this.tray,
-        toTrayBlock(block),
-        this.specialMechanismHandlers,
-        {
-          allowFrozenFinalTriple:
-            index === selectedBlocks.length - 1 && this.remainingBlocks.size === 0,
-        },
-      );
-      removedCount += resolution.removedCount;
-      tripleCount += resolution.tripleCount;
-      meltedBlockIds.push(...resolution.meltedBlockIds);
-    }
+    this.tray = this.tray.filter((block) => !plan.trayBlockIds.includes(block.id));
+    const meltedBlockIds = applyDogTraySuccessfulTripleEffects(
+      this.tray,
+      this.specialMechanismHandlers,
+      plan.tripleCount,
+      [plan.patternType],
+    );
 
     this.tripleRemovalPlanCache.clear();
     this.updateResult();
     return this.createTripleRemovalResult(
-      removedCount === 3 && tripleCount === 1,
-      patternType,
+      true,
+      plan.patternType,
       plan.blockIds,
-      removedCount,
-      tripleCount,
+      plan.removedCount,
+      plan.tripleCount,
       meltedBlockIds,
+      plan.trayBlockIds,
     );
   }
 
@@ -529,6 +589,7 @@ export class GameSession {
     removedCount: number,
     tripleCount: number,
     meltedBlockIds: readonly string[],
+    trayBlockIds: readonly string[] = [],
   ): GameSessionTripleRemovalResult {
     const snapshot = this.getState();
     const result = {
@@ -545,6 +606,12 @@ export class GameSession {
         configurable: false,
         enumerable: false,
         value: patternType,
+        writable: false,
+      },
+      trayBlockIds: {
+        configurable: false,
+        enumerable: false,
+        value: Object.freeze([...trayBlockIds]),
         writable: false,
       },
       blockIds: {
@@ -582,22 +649,32 @@ export class GameSession {
   }
 
   private findTripleRemovalPlan(
-    patternType: DogPatternType,
+    trayBlockIds: readonly [string, string],
   ): GameSessionTripleRemovalPlan | null {
     if (this.status !== "playing" || this.pendingSelection !== null) {
       return null;
     }
 
-    const trayMatchCount = this.getTrailingOrdinaryPatternCount(patternType);
-    const requiredBlockCount = 3 - trayMatchCount;
-    if (trayMatchCount < 1 || trayMatchCount > 2) {
+    const [firstTrayBlockId, secondTrayBlockId] = trayBlockIds;
+    const firstTrayBlockIndex = this.tray.findIndex((block) => block.id === firstTrayBlockId);
+    const firstTrayBlock = this.tray[firstTrayBlockIndex];
+    const secondTrayBlock = this.tray[firstTrayBlockIndex + 1];
+    if (
+      !isOrdinaryMatchingPair(firstTrayBlock, secondTrayBlock) ||
+      firstTrayBlock.id !== firstTrayBlockId ||
+      secondTrayBlock.id !== secondTrayBlockId
+    ) {
       return null;
     }
+    const patternType = firstTrayBlock.patternType;
 
     const candidates = [...this.remainingBlocks.values()].filter(
-      (block) => block.patternType === patternType && this.canSelectBlock(block.id),
+      (block) =>
+        block.patternType === patternType &&
+        block.specialMechanism === undefined &&
+        this.canSelectBlock(block.id),
     );
-    if (candidates.length < requiredBlockCount) {
+    if (candidates.length === 0) {
       return null;
     }
     candidates.sort((first, second) => {
@@ -610,25 +687,11 @@ export class GameSession {
       );
     });
 
-    for (const candidateBlocks of combinations(candidates, requiredBlockCount)) {
-      const candidateIds = candidateBlocks.map((block) => block.id);
-      const simulatedTray = this.tray.map(cloneTrayBlock);
-      let removedCount = 0;
-      let tripleCount = 0;
-      for (const block of candidateBlocks) {
-        const resolution = insertDogBlockIntoTray(
-          simulatedTray,
-          toTrayBlock(block),
-          this.specialMechanismHandlers,
-        );
-        removedCount += resolution.removedCount;
-        tripleCount += resolution.tripleCount;
-      }
-      if (removedCount !== 3 || tripleCount !== 1) {
-        continue;
-      }
-
-      const candidateIdSet = new Set(candidateIds);
+    for (const candidate of candidates) {
+      const candidateIdSet = new Set([candidate.id]);
+      const simulatedTray = this.tray
+        .filter((block) => !trayBlockIds.includes(block.id))
+        .map(cloneTrayBlock);
       const solvability = findSolvabilityFromState(this.level, {
         remainingBlockIds: [...this.remainingBlocks.keys()].filter(
           (blockId) => !candidateIdSet.has(blockId),
@@ -644,31 +707,14 @@ export class GameSession {
 
       return Object.freeze({
         patternType,
-        blockIds: Object.freeze(candidateIds),
+        trayBlockIds: Object.freeze([...trayBlockIds]),
+        blockIds: Object.freeze([candidate.id]),
         removedCount: 3,
         tripleCount: 1,
       });
     }
 
     return null;
-  }
-
-  private getTrailingOrdinaryPatternCount(patternType: DogPatternType): number {
-    let count = 0;
-    for (let index = this.tray.length - 1; index >= 0; index -= 1) {
-      const block = this.tray[index];
-      if (
-        block === undefined ||
-        block.patternType !== patternType ||
-        block.specialMechanism !== undefined
-      ) {
-        break;
-      }
-
-      count += 1;
-    }
-
-    return count;
   }
 
   private createMeltResult(
@@ -818,23 +864,15 @@ function toTrayBlock(block: DogBlock): DogTrayBlock {
   };
 }
 
-function* combinations<T>(
-  items: readonly T[],
-  size: number,
-  start = 0,
-  selected: T[] = [],
-): Generator<readonly T[]> {
-  if (selected.length === size) {
-    yield [...selected];
-    return;
-  }
-
-  const remaining = size - selected.length;
-  for (let index = start; index <= items.length - remaining; index += 1) {
-    selected.push(items[index]!);
-    yield* combinations(items, size, index + 1, selected);
-    selected.pop();
-  }
+function isOrdinaryMatchingPair(
+  first: DogTrayBlock | undefined,
+  second: DogTrayBlock | undefined,
+): first is DogTrayBlock {
+  return first !== undefined &&
+    second !== undefined &&
+    first.specialMechanism === undefined &&
+    second.specialMechanism === undefined &&
+    first.patternType === second.patternType;
 }
 
 function removeSpecialMechanism<T extends DogBlock | DogTrayBlock>(block: T): T {

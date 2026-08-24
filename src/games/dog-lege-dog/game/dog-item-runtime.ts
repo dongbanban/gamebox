@@ -25,6 +25,7 @@ export type DogItemEffect =
   | {
       readonly type: "triple-removal";
       readonly patternType: DogPatternType;
+      readonly trayBlockIds: readonly string[];
       readonly blockIds: readonly string[];
       readonly removedCount: number;
       readonly tripleCount: number;
@@ -92,6 +93,7 @@ export interface DogItemRuntimeSnapshot {
   readonly selectedItemTargetType: DogItemTargetType | null;
   readonly visualFeedback: DogItemVisualFeedback | null;
   readonly tripleRemovalTargetPatterns: readonly DogPatternType[];
+  readonly tripleRemovalTargetBlockIds: readonly string[];
   readonly items: readonly DogItemState[];
 }
 
@@ -153,6 +155,7 @@ export class DogItemRuntime {
 
   getState(): DogItemRuntimeSnapshot {
     const tripleRemovalTargetPatterns = this.session.getTripleRemovalTargetPatterns();
+    const tripleRemovalTargetBlockIds = this.session.getTripleRemovalTargetBlockIds();
     const items = this.loadout.map((itemId) => {
       const runtimeDefinition = this.getDefinition(itemId);
       const { definition } = runtimeDefinition;
@@ -186,6 +189,7 @@ export class DogItemRuntime {
           : this.getDefinition(this.selectedItemId).definition.targetType,
       visualFeedback: this.visualFeedback,
       tripleRemovalTargetPatterns,
+      tripleRemovalTargetBlockIds,
       items: Object.freeze(items),
     });
   }
@@ -398,20 +402,18 @@ interface DogItemBehavior {
 const DOG_ITEM_BEHAVIORS: Readonly<Record<DogItemId, DogItemBehavior>> = {
   "triple-removal": {
     canUse: ({ session, target }) => {
-      const patternType = getPatternTarget(target);
-      if (patternType !== undefined) {
-        return session.canRemoveTriple(patternType);
+      const targetBlockId = getTripleRemovalTarget(target);
+      if (targetBlockId !== undefined) {
+        return session.getTripleRemovalPlanForTrayBlock(targetBlockId) !== null;
       }
 
-      return session.getTripleRemovalTargetPatterns().some((candidatePatternType) =>
-        session.canRemoveTriple(candidatePatternType),
-      );
+      return session.getTripleRemovalTargetBlockIds().length > 0;
     },
     execute: ({ session, target }) => {
-      const patternType = getPatternTarget(target);
-      const plan = patternType === undefined
+      const targetBlockId = getTripleRemovalTarget(target);
+      const plan = targetBlockId === undefined
         ? null
-        : session.getTripleRemovalPlan(patternType);
+        : session.getTripleRemovalPlanForTrayBlock(targetBlockId);
       if (plan === null) {
         return { success: false, visualFeedback: "triple-removal" };
       }
@@ -423,19 +425,21 @@ const DOG_ITEM_BEHAVIORS: Readonly<Record<DogItemId, DogItemBehavior>> = {
         effect: {
           type: "triple-removal" as const,
           patternType: plan.patternType,
+          trayBlockIds: plan.trayBlockIds,
           blockIds: plan.blockIds,
           removedCount: plan.removedCount,
           tripleCount: plan.tripleCount,
         },
         commit: () => true,
         commitAfterAnimation: () => {
-          completed = session.removeTriple(plan.patternType);
+          completed = session.removeTripleForTrayBlock(plan.trayBlockIds[0] ?? "");
           return {
             success: completed.removed,
             effect: completed.removed
               ? {
                   type: "triple-removal" as const,
                   patternType: completed.patternType,
+                  trayBlockIds: completed.trayBlockIds,
                   blockIds: completed.blockIds,
                   removedCount: completed.removedCount,
                   tripleCount: completed.tripleCount,
@@ -577,6 +581,10 @@ function matchesTargetType(
     return target.type === "block" || target.type === "tray-block";
   }
 
+  if (targetType === "tray-block") {
+    return target.type === "tray-block";
+  }
+
   if (targetType === "pattern" || targetType === "tray-pattern") {
     return target.type === "pattern";
   }
@@ -605,10 +613,10 @@ function getDetectorTarget(
   return target.type === "block" ? { blockId: target.blockId } : undefined;
 }
 
-function getPatternTarget(
+function getTripleRemovalTarget(
   target: DogItemTarget | undefined,
-): DogPatternType | undefined {
-  return target?.type === "pattern" ? target.patternType : undefined;
+): string | undefined {
+  return target?.type === "tray-block" ? target.blockId : undefined;
 }
 
 function getMeltTarget(

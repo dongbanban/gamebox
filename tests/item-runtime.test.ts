@@ -183,7 +183,7 @@ describe("DogItemRuntime", () => {
     );
   });
 
-  it("槽内已有 1 个图案时自动补 2 个并一次三消", () => {
+  it("槽内只有 1 个图案时不能使用三消移除，也不自动补 2 个", () => {
     const session = new GameSession({
       level: createLevel([
         createBlock("working-1", WORKING_DOG),
@@ -198,57 +198,91 @@ describe("DogItemRuntime", () => {
     });
 
     expect(runtime.getState().items[0]).toMatchObject({
-      available: true,
+      available: false,
       remainingUses: 1,
     });
+    expect(runtime.getState().tripleRemovalTargetBlockIds).toEqual([]);
     expect(runtime.begin("triple-removal")).toMatchObject({
-      accepted: true,
+      accepted: false,
       success: false,
-      requiresTarget: true,
+      requiresTarget: false,
     });
-
-    const action = runtime.confirmTarget({ type: "pattern", patternType: WORKING_DOG });
-
-    expect(action).toMatchObject({
-      accepted: true,
-      success: true,
-      itemId: "triple-removal",
-      effect: {
-        type: "triple-removal",
-        patternType: WORKING_DOG,
-        blockIds: ["working-1", "working-2"],
-        removedCount: 3,
-        tripleCount: 1,
-      },
-    });
-    expect(session.getState().remainingBlocks).toHaveLength(2);
+    expect(session.getState().remainingBlocks.map((block) => block.id)).toEqual([
+      "working-1",
+      "working-2",
+    ]);
     expect(session.getState().tray).toEqual([WORKING_DOG]);
-    expect(session.getState().status).toBe("playing");
-    expect(runtime.getState().phase).toBe("animating");
-    expect(runtime.getState().items[0]?.remainingUses).toBe(0);
-
-    runtime.completeAnimation();
-
-    expect(runtime.getState().phase).toBe("idle");
-    expect(session.getState().remainingBlocks).toEqual([]);
-    expect(session.getState().tray).toEqual([]);
-    expect(session.getState().status).toBe("won");
-    expect(runtime.getLastCompletedEffect()).toMatchObject({
-      type: "triple-removal",
-      removedCount: 3,
-      tripleCount: 1,
-    });
   });
 
-  it("道具按暂存槽尾部连续图案补齐，不按全槽数量计算", () => {
+  it("道具选择暂存槽内任意位置的相邻图案对，并自动补 1 个棋盘方块", () => {
     const session = new GameSession({
       level: createLevel([
         createBlock("working-board", WORKING_DOG),
         createBlock("single-1", SINGLE_DOG),
         createBlock("single-2", SINGLE_DOG),
-        createBlock("single-3", SINGLE_DOG),
       ]),
-      initialTray: [WORKING_DOG, SINGLE_DOG, WORKING_DOG, WORKING_DOG],
+      initialTray: [WORKING_DOG, WORKING_DOG, SINGLE_DOG],
+    });
+    const runtime = new DogItemRuntime({
+      level: session.getState().level,
+      session,
+      loadout: ["triple-removal"],
+    });
+
+    expect(runtime.getState().items[0]).toMatchObject({
+      targetType: "tray-block",
+      available: true,
+    });
+    expect(runtime.getState().tripleRemovalTargetBlockIds).toEqual([
+      "initial-tray-1",
+      "initial-tray-2",
+    ]);
+    runtime.begin("triple-removal");
+    const action = runtime.confirmTarget({ type: "tray-block", blockId: "initial-tray-1" });
+
+    expect(action).toMatchObject({
+      accepted: true,
+      success: true,
+      effect: {
+        patternType: WORKING_DOG,
+        blockIds: ["working-board"],
+        trayBlockIds: ["initial-tray-1", "initial-tray-2"],
+        removedCount: 3,
+        tripleCount: 1,
+      },
+    });
+    expect(session.getState().trayBlocks.map((block) => block.id)).toEqual([
+      "initial-tray-1",
+      "initial-tray-2",
+      "initial-tray-3",
+    ]);
+    runtime.completeAnimation();
+    expect(session.getState().trayBlocks.map((block) => block.id)).toEqual(["initial-tray-3"]);
+  });
+
+  it("三消道具成功后计入暂存槽冻结方块的后续三消进度", () => {
+    const session = new GameSession({
+      level: createLevel([
+        createBlock("working-board", WORKING_DOG),
+        createBlock("single-1", SINGLE_DOG, undefined, { x: 4 }),
+        createBlock("single-2", SINGLE_DOG, undefined, { x: 8 }),
+        createBlock("single-3", SINGLE_DOG, undefined, { x: 12 }),
+        createBlock("licking-1", LICKING_DOG, undefined, { x: 16 }),
+        createBlock("licking-2", LICKING_DOG, undefined, { x: 20 }),
+        createBlock("licking-3", LICKING_DOG, undefined, { x: 24 }),
+      ]),
+      initialTrayBlocks: [
+        {
+          id: "frozen-single",
+          patternType: SINGLE_DOG,
+          specialMechanism: {
+            type: DOG_FREEZE_MECHANISM_TYPE,
+            state: { status: "frozen", completedTriples: 1 },
+          },
+        },
+        { id: "working-1", patternType: WORKING_DOG },
+        { id: "working-2", patternType: WORKING_DOG },
+      ],
     });
     const runtime = new DogItemRuntime({
       level: session.getState().level,
@@ -258,12 +292,18 @@ describe("DogItemRuntime", () => {
 
     expect(runtime.getState().items[0]?.available).toBe(true);
     runtime.begin("triple-removal");
-    const action = runtime.confirmTarget({ type: "pattern", patternType: WORKING_DOG });
-
-    expect(action).toMatchObject({
+    expect(runtime.confirmTarget({ type: "tray-block", blockId: "working-1" })).toMatchObject({
       accepted: true,
       success: true,
-      effect: { blockIds: ["working-board"] },
+    });
+    runtime.completeAnimation();
+
+    expect(session.getState().trayBlocks).toEqual([
+      { id: "frozen-single", patternType: SINGLE_DOG },
+    ]);
+    expect(runtime.getLastCompletedEffect()).toMatchObject({
+      type: "triple-removal",
+      meltedBlockIds: ["frozen-single"],
     });
   });
 
@@ -316,7 +356,7 @@ describe("DogItemRuntime", () => {
     });
 
     runtime.begin("triple-removal");
-    const action = runtime.confirmTarget({ type: "pattern", patternType: WORKING_DOG });
+    const action = runtime.confirmTarget({ type: "tray-block", blockId: "initial-tray-1" });
 
     expect(action).toMatchObject({
       accepted: true,

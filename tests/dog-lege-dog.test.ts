@@ -690,16 +690,18 @@ describe("狗了个狗首关", () => {
     const game = startTestGame(root, {
       loadout: ["triple-removal", "tray-capacity", "wildcard"],
     });
-    let targetPattern: string | undefined;
+    let targetBlockId: string | undefined;
 
     for (const blockId of game.getState().level.solutionPath) {
       const state = game.getState();
       const tripleRemoval = state.items?.items.find((item) => item.id === "triple-removal");
-      const targetBlock = state.session.trayBlocks.find(
-        (block) => block.specialMechanism === undefined,
+      const targetBlock = state.session.trayBlocks.find((block, index) =>
+        block.specialMechanism === undefined &&
+        state.session.trayBlocks[index + 1]?.specialMechanism === undefined &&
+        state.session.trayBlocks[index + 1]?.patternType === block.patternType,
       );
       if (tripleRemoval?.available && targetBlock !== undefined) {
-        targetPattern = targetBlock.patternType;
+        targetBlockId = targetBlock.id;
         break;
       }
 
@@ -710,7 +712,7 @@ describe("狗了个狗首关", () => {
       await vi.runAllTimersAsync();
     }
 
-    expect(targetPattern).toBeDefined();
+    expect(targetBlockId).toBeDefined();
     const itemButton = root.querySelector<HTMLButtonElement>(
       '[data-action="use-item"][data-item-id="triple-removal"]',
     );
@@ -719,11 +721,11 @@ describe("狗了个狗首关", () => {
 
     expect(game.getState().items?.phase).toBe("targeting");
     expect(game.getState().inputLocked).toBe(true);
-    const targetButton = root.querySelector<HTMLButtonElement>(
-      `[data-action="select-item-pattern"][data-pattern-type="${targetPattern}"]`,
+    const targetButton = root.querySelector<HTMLElement>(
+      `[data-testid="dog-tray-slot"][data-block-id="${targetBlockId}"][data-item-targetable="true"]`,
     );
     expect(targetButton).not.toBeNull();
-    targetButton?.click();
+    targetButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 
     expect(game.getState().items?.phase).toBe("animating");
     expect(game.getState().inputLocked).toBe(true);

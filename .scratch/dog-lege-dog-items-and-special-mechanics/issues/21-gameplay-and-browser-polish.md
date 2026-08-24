@@ -75,6 +75,14 @@
 2. 记录方块入槽后到棋盘再次可操作的等待时间。
 3. 在缩短后的时序下快速连续选择，确认交互更快且状态结算仍保持原子性。
 
+### 6. 道具目标筛选与三消移除交互
+
+- [x] 道具三消移除只有在暂存槽存在两个相邻、同图案、非特殊方块时可用；不再支持槽内只有一个同图案时自动补两个。
+- [x] 三消移除目标改为暂存槽内符合条件的方块对；成功时自动补充至多一个当前可点击的同图案普通棋盘方块，并移除选中的两个槽内方块与该棋盘方块。
+- [x] 目标选择期间，所有符合条件的槽内方块高亮；槽内其他已填方块与当前不可选棋盘方块保持统一置灰，不可被点击。
+- [x] 火把、检测仪及其他需要选择目标的道具复用同一目标高亮与非目标置灰交互；取消、无效目标不扣次数、不改局面。
+- [x] 增加相邻方块对、非相邻方块、自动补一个、目标高亮/置灰与所有目标型道具交互回归测试。
+
 ## Verification
 
 - 普通规则改动：运行 `pnpm test:focused`。
@@ -95,3 +103,6 @@
 - 2026-08-24 — `pnpm build`：通过。
 - 2026-08-24 — 复跑最终验证：核心 Vitest（10 files / 150 tests）、随机回归（3 tests）、Chromium E2E（19 tests）、跨浏览器（9 tests）、`pnpm typecheck`、`pnpm build` 均通过；旧 E2E 贪心路径在邻接规则下会走入死局，已改为独立黑盒搜索并验证完整闭环。
 - 2026-08-24 — 最终 Standards review 收敛 E2E 复杂度：移除独立规则模拟器，改为基于真实 DOM 可点击态与暂存槽尾部连续数的黑盒贪心；`pnpm typecheck` 通过，`pnpm test:e2e` 19 tests 通过。
+- 2026-08-24 — 按最新需求重新认领：三消道具只接受暂存槽内相邻普通同图案对，不再支持自动补两个；目标选择统一高亮合法槽内方块、置灰其他已填槽位与棋盘非目标方块。
+- 2026-08-24 — 完成最新目标交互：三消移除改为点击合法槽内方块对；棋盘只自动补一个当前可点击普通同图案方块；火把、检测仪、三消移除统一高亮合法目标，其他已填槽位与棋盘非目标置灰。冻结方块成功三消计数同步保留。
+- 2026-08-24 — 验证通过：`pnpm test:focused`（8 files / 127 tests）、`pnpm test:ui`（3 files / 45 tests）、定向 Vitest（4 files / 64 tests）、`pnpm typecheck`、核心 Vitest 排除 E2E/随机（10 files / 150 tests）、`DOG_RANDOM_LEVEL_COUNT=1 DOG_RANDOM_LEVEL_NUMBER=1 DOG_STRESS_LEVEL_COUNT=100 pnpm exec vitest run tests/random-regression.test.ts --reporter dot`（3 tests）、`pnpm test:e2e`（19/19）、`pnpm test:e2e:cross-browser`（9/9）、`pnpm build`、`git diff --check`。Code review P1/P2 已修复。

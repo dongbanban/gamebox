@@ -13,7 +13,12 @@ export const DOG_ITEM_IDS = Object.freeze([
 
 export type DogItemId = (typeof DOG_ITEM_IDS)[number];
 
-export type DogItemTargetType = "none" | "tray-pattern" | "pattern" | "block";
+export type DogItemTargetType =
+  | "none"
+  | "tray-pattern"
+  | "tray-block"
+  | "pattern"
+  | "block";
 
 export type DogItemVisualFeedback = DogItemId;
 
@@ -31,8 +36,8 @@ export const DOG_ITEM_DEFINITIONS: readonly DogItemDefinition[] = Object.freeze(
     id: "triple-removal",
     name: "道具三消移除",
     icon: "✦",
-    description: "补齐槽内图案并一次移除",
-    targetType: "tray-pattern",
+    description: "选择槽内相邻方块并一次移除",
+    targetType: "tray-block",
     visualFeedback: "triple-removal",
   }),
   Object.freeze({
@@ -224,6 +229,7 @@ export function renderDogLoadoutSummary(
 ): string {
   const targetType = targetState?.targetType ?? null;
   const isPatternTarget = targetType === "pattern" || targetType === "tray-pattern";
+  const isTargeting = targetType !== null;
   const patternTargets = isPatternTarget
     ? `
         <div class="dog-item-pattern-targets" data-testid="dog-item-pattern-targets">
@@ -238,7 +244,7 @@ export function renderDogLoadoutSummary(
         </div>
       `
     : "";
-  const targetPrompt = isPatternTarget
+  const targetPrompt = isTargeting
     ? `
         <div class="dog-item-targeting" data-testid="dog-item-targeting" role="status">
           <span class="dog-item-targeting__label">选择道具目标</span>

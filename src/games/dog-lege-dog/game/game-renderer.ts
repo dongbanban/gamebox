@@ -110,6 +110,7 @@ export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameSta
                   state.inputLocked,
                   state.items?.selectedItemTargetType ?? null,
                   state.items?.selectedItemId ?? null,
+                  state.items?.tripleRemovalTargetBlockIds ?? [],
                 ),
               )
               .join("")}
@@ -122,6 +123,7 @@ export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameSta
         state.feedback,
         state.items?.selectedItemTargetType ?? null,
         state.items?.selectedItemId ?? null,
+        state.items?.tripleRemovalTargetBlockIds ?? [],
       )}
       <div class="dog-animation-layer" data-testid="dog-animation-layer"></div>
     </section>
@@ -178,6 +180,7 @@ function updateDogLegeDogGame(
           state.inputLocked,
           state.items?.selectedItemTargetType ?? null,
           state.items?.selectedItemId ?? null,
+          state.items?.tripleRemovalTargetBlockIds ?? [],
         ),
       )
       .join("");
@@ -192,6 +195,7 @@ function updateDogLegeDogGame(
       state.session,
       state.items?.selectedItemTargetType ?? null,
       state.items?.selectedItemId ?? null,
+      state.items?.tripleRemovalTargetBlockIds ?? [],
     );
   }
 
@@ -364,6 +368,7 @@ function renderBlock(
   inputLocked: boolean,
   itemTargetType: DogItemTargetType | null,
   itemTargetId: DogItemId | null,
+  targetBlockIds: readonly string[],
 ): string {
   const displayPatternType = getDogIllusionDisguisedPattern(block);
   const className = getDogPatternClassName(displayPatternType);
@@ -393,14 +398,17 @@ function renderBlock(
     itemTargetType,
     itemTargetId,
     selectableBlockIds.includes(block.id),
+    block.id,
+    targetBlockIds,
   );
   const selectable = selectingBlockTarget || (!inputLocked && selectableBlockIds.includes(block.id));
   const targetAttributes = selectingBlockTarget ? 'data-item-targetable="true"' : "";
+  const targetClass = selectingBlockTarget ? " dog-block--item-targetable" : "";
 
   return `
     <button
       type="button"
-      class="dog-block dog-block--${className}${mechanismClass}"
+      class="dog-block dog-block--${className}${mechanismClass}${targetClass}"
       data-testid="dog-block"
       data-block-id="${block.id}"
       data-pattern-type="${block.patternType}"
@@ -429,11 +437,12 @@ function renderTray(
   feedback: DogVisualFeedback,
   itemTargetType: DogItemTargetType | null,
   itemTargetId: DogItemId | null,
+  targetBlockIds: readonly string[],
 ): string {
   return `
     <section class="dog-tray" data-testid="dog-tray-region" aria-label="暂存槽">
       ${renderMatchFeedback(feedback)}
-      <ol class="dog-tray__slots" data-testid="dog-tray" data-tray-capacity="${session.trayCapacity}" style="--dog-tray-columns: ${session.trayCapacity};">${renderTraySlots(session, itemTargetType, itemTargetId)}</ol>
+      <ol class="dog-tray__slots" data-testid="dog-tray" data-tray-capacity="${session.trayCapacity}" style="--dog-tray-columns: ${session.trayCapacity};">${renderTraySlots(session, itemTargetType, itemTargetId, targetBlockIds)}</ol>
       <p class="dog-game__status dog-game__status--${session.status}" data-testid="dog-status" role="status">${renderStatusMessage(session.status)}</p>
       <div class="dog-effects-layer" data-testid="dog-effects-layer">
         <canvas class="dog-effects-canvas" data-testid="dog-effects-canvas"></canvas>
@@ -532,6 +541,7 @@ function renderTraySlots(
   session: GameSessionSnapshot,
   itemTargetType: DogItemTargetType | null = null,
   itemTargetId: DogItemId | null = null,
+  targetBlockIds: readonly string[] = [],
 ): string {
   return Array.from({ length: session.trayCapacity }, (_, index) => {
     const block = session.trayBlocks[index];
@@ -553,13 +563,21 @@ function renderTraySlots(
       block.specialMechanism,
       itemTargetType,
       itemTargetId,
+      true,
+      block.id,
+      targetBlockIds,
     );
     const targetAttributes = selectingBlockTarget
       ? 'data-item-targetable="true" role="button" tabindex="0"'
       : "";
     const targetClass = selectingBlockTarget ? " dog-tray__slot--item-targetable" : "";
+    const targetDisabled = itemTargetType !== null && !selectingBlockTarget;
+    const targetDisabledAttributes = targetDisabled
+      ? 'data-item-target-disabled="true" aria-disabled="true"'
+      : "";
+    const targetDisabledClass = targetDisabled ? " dog-tray__slot--item-target-disabled" : "";
     return `
-      <li class="dog-tray__slot dog-tray__slot--filled${targetClass} dog-block--${getDogPatternClassName(displayPatternType)}${mechanismClass}" data-testid="dog-tray-slot" data-block-id="${block.id}" data-pattern-type="${block.patternType}" ${mechanismAttributes} ${targetAttributes} ${illusionStyle} aria-label="${selectingBlockTarget ? "选择道具目标" : block.patternType}">
+      <li class="dog-tray__slot dog-tray__slot--filled${targetClass}${targetDisabledClass} dog-block--${getDogPatternClassName(displayPatternType)}${mechanismClass}" data-testid="dog-tray-slot" data-block-id="${block.id}" data-pattern-type="${block.patternType}" ${mechanismAttributes} ${targetAttributes} ${targetDisabledAttributes} ${illusionStyle} aria-label="${selectingBlockTarget ? "选择道具目标" : block.patternType}">
         <span class="${glyphClass}">${renderDogPatternAsset(displayPatternType)}</span>
       </li>
     `;
@@ -571,8 +589,18 @@ function isItemTargetable(
   itemTargetType: DogItemTargetType | null,
   itemTargetId: DogItemId | null,
   selectable = true,
+  blockId = "",
+  targetBlockIds: readonly string[] = [],
 ): boolean {
-  if (itemTargetType !== "block" || !selectable) {
+  if (!selectable) {
+    return false;
+  }
+
+  if (itemTargetType === "tray-block") {
+    return itemTargetId === "triple-removal" && targetBlockIds.includes(blockId);
+  }
+
+  if (itemTargetType !== "block") {
     return false;
   }
 

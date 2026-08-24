@@ -231,7 +231,7 @@ describe("狗了个狗特殊机制", () => {
     game.destroy();
   });
 
-  it("三消道具目标只展示能形成连续三连的暂存槽图案", async () => {
+  it("三消道具只高亮相邻暂存槽方块对并置灰其他目标", async () => {
     vi.useFakeTimers();
     const root = document.createElement("div");
     const game = startDogLegeDogGame(root, {
@@ -245,16 +245,12 @@ describe("狗了个狗特殊机制", () => {
       loadout: ["triple-removal", "tray-capacity", "wildcard"],
     });
 
-    for (const blockId of ["working-1", "single", "working-2"]) {
+    for (const blockId of ["working-1", "working-2", "single"]) {
       game.selectBlock(blockId);
       await vi.runAllTimersAsync();
     }
 
-    expect(game.getState().session.tray).toEqual([
-      WORKING_DOG,
-      SINGLE_DOG,
-      WORKING_DOG,
-    ]);
+    expect(game.getState().session.tray).toEqual([WORKING_DOG, WORKING_DOG, SINGLE_DOG]);
     expect(
       root.querySelector<HTMLButtonElement>('[data-action="use-item"][data-item-id="triple-removal"]')
         ?.disabled,
@@ -264,10 +260,29 @@ describe("狗了个狗特殊机制", () => {
       '[data-action="use-item"][data-item-id="triple-removal"]',
     )?.click();
 
-    expect(
-      [...root.querySelectorAll<HTMLElement>('[data-action="select-item-pattern"]')]
-        .map((button) => button.dataset.patternType),
-    ).toEqual([WORKING_DOG]);
+    expect(game.getState().items?.selectedItemTargetType).toBe("tray-block");
+    expect(root.querySelector('[data-testid="dog-item-targeting"]')).not.toBeNull();
+    expect(root.querySelector('[data-testid="dog-item-targeting"]')?.textContent).toContain("选择道具目标");
+    const targetableSlots = root.querySelectorAll<HTMLElement>(
+      '[data-testid="dog-tray-slot"][data-item-targetable="true"]',
+    );
+    expect(targetableSlots).toHaveLength(2);
+    expect([...targetableSlots].map((slot) => slot.dataset.patternType)).toEqual([
+      WORKING_DOG,
+      WORKING_DOG,
+    ]);
+    const blockedTraySlots = root.querySelectorAll<HTMLElement>(
+      '[data-testid="dog-tray-slot"][data-item-target-disabled="true"]',
+    );
+    expect(blockedTraySlots).toHaveLength(1);
+    expect([...blockedTraySlots].every((slot) =>
+      slot.classList.contains("dog-tray__slot--item-target-disabled") &&
+      slot.getAttribute("aria-disabled") === "true",
+    )).toBe(true);
+    expect(root.querySelectorAll('[data-testid="dog-block"][data-item-targetable="true"]')).toHaveLength(0);
+
+    targetableSlots[1]?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(game.getState().items?.phase).toBe("animating");
 
     game.destroy();
   });
@@ -632,7 +647,7 @@ describe("狗了个狗特殊机制", () => {
     torchButton?.click();
 
     expect(game.getState().items?.phase).toBe("targeting");
-    expect(root.querySelector('[data-testid="dog-item-targeting"]')).toBeNull();
+    expect(root.querySelector('[data-testid="dog-item-targeting"]')).not.toBeNull();
     expect(
       root.querySelector('[data-testid="dog-loadout-actions"] [data-action="edit-loadout"]'),
     ).not.toBeNull();
@@ -653,6 +668,9 @@ describe("狗了个狗特殊机制", () => {
       selectableFreezeBlocks.every((block) => block.dataset.itemTargetable === "true"),
     ).toBe(true);
     expect(
+      selectableFreezeBlocks.every((block) => block.classList.contains("dog-block--item-targetable")),
+    ).toBe(true);
+    expect(
       [...root.querySelectorAll<HTMLElement>(
         '[data-testid="dog-block"][data-special-mechanism="freeze"]',
       )].every((block) =>
@@ -662,6 +680,8 @@ describe("狗了个狗特殊机制", () => {
       ),
     ).toBe(true);
     expect(ordinaryBlock?.dataset.itemTargetable).toBeUndefined();
+    expect(ordinaryBlock?.classList.contains("dog-block--item-targetable")).toBe(false);
+    expect(ordinaryBlock?.hasAttribute("disabled")).toBe(true);
 
     root.querySelector<HTMLButtonElement>('[data-action="cancel-item-target"]')?.click();
 
@@ -715,6 +735,15 @@ describe("狗了个狗特殊机制", () => {
       [...root.querySelectorAll<HTMLElement>('[data-testid="dog-tray-slot"]')]
         .filter((slot) => slot.dataset.itemTargetable !== "true")
         .every((slot) => !slot.classList.contains("dog-tray__slot--item-targetable")),
+    ).toBe(true);
+    expect(
+      [...root.querySelectorAll<HTMLElement>('[data-testid="dog-tray-slot"][data-pattern-type]')]
+        .filter((slot) => slot.dataset.itemTargetable !== "true")
+        .every((slot) =>
+          slot.dataset.itemTargetDisabled === "true" &&
+          slot.classList.contains("dog-tray__slot--item-target-disabled") &&
+          slot.getAttribute("aria-disabled") === "true",
+        ),
     ).toBe(true);
 
     root.querySelector<HTMLButtonElement>('[data-action="cancel-item-target"]')?.click();
@@ -922,6 +951,7 @@ describe("狗了个狗特殊机制", () => {
       selectedItemId: "detector",
       selectedItemTargetType: "block",
     });
+    expect(root.querySelector('[data-testid="dog-item-targeting"]')?.textContent).toContain("选择道具目标");
     expect(
       root.querySelectorAll<HTMLElement>('[data-testid="dog-block"][data-item-targetable="true"]'),
     ).toHaveLength(
@@ -947,7 +977,20 @@ describe("狗了个狗特殊机制", () => {
         `[data-testid="dog-block"][data-block-id="${ordinary.id}"]`,
       )?.dataset.itemTargetable,
     ).toBeUndefined();
+    expect(
+      root.querySelector<HTMLElement>(
+        `[data-testid="dog-block"][data-block-id="${illusion.id}"]`,
+      )?.classList.contains("dog-block--item-targetable"),
+    ).toBe(true);
     expect(root.querySelector('[data-testid="dog-tray-slot"][data-item-targetable="true"]')).toBeNull();
+    expect(
+      [...root.querySelectorAll<HTMLElement>('[data-testid="dog-tray-slot"][data-pattern-type]')]
+        .every((slot) =>
+          slot.dataset.itemTargetDisabled === "true" &&
+          slot.classList.contains("dog-tray__slot--item-target-disabled") &&
+          slot.getAttribute("aria-disabled") === "true",
+        ),
+    ).toBe(true);
 
     root.querySelector<HTMLButtonElement>(
       `[data-testid="dog-block"][data-block-id="${ordinary.id}"]`,
