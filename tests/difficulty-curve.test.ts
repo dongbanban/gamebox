@@ -95,7 +95,7 @@ describe("狗了个狗难度曲线", () => {
 
   it("不同 runSeed 保留目标内自然波动，旧 generator version 使用旧目标语义", () => {
     const generator = new LevelGenerator();
-    const levels = ["difficulty-curve-seed-a", "difficulty-curve-seed-d"].map((runSeed) =>
+    const levels = ["difficulty-curve-seed-a", "difficulty-curve-seed-b"].map((runSeed) =>
       generator.generate({
         levelNumber: 5,
         runSeed,

@@ -464,7 +464,7 @@ const DOG_SPECIAL_MECHANISM_PRESENTATIONS: Readonly<Record<string, DogSpecialMec
   Object.freeze({
     freeze: Object.freeze({
       name: "冻结方块",
-      description: "冻结方块进入暂存槽后暂不参与三消；其他图案完成 2 次三消后自动融化。火把可将其解冻为普通方块，万能方块可直接消除。",
+      description: "冻结方块进入暂存槽后暂不参与三消；其后的成功三消累计 2 次后自动融化。火把可将其解冻为普通方块，万能方块可直接消除。",
     }),
     illusion: Object.freeze({
       name: "幻化方块",

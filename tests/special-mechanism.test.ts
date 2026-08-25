@@ -32,7 +32,10 @@ import {
   startDogLegeDogGame,
 } from "@/games/dog-lege-dog";
 import { createDogSpecialMechanismHandlerMap } from "@/games/dog-lege-dog/game/special-mechanisms";
-import { resolveDogTrayMatches } from "@/games/dog-lege-dog/levels/level-rules";
+import {
+  applyDogTraySuccessfulTripleEffects,
+  resolveDogTrayMatches,
+} from "@/games/dog-lege-dog/levels/level-rules";
 
 const WORKING_DOG: DogPatternType = "打工狗";
 const SINGLE_DOG: DogPatternType = "单身狗";
@@ -141,20 +144,40 @@ describe("狗了个狗特殊机制", () => {
 
     const samePatternTriple = session.selectBlock("working-3");
     expect(samePatternTriple.removedCount).toBe(3);
-    expect(samePatternTriple.snapshot.trayBlocks[0]?.specialMechanism?.state.completedTriples).toBe(0);
+    expect(samePatternTriple.snapshot.trayBlocks[0]?.specialMechanism?.state.completedTriples).toBe(1);
 
     const firstTriple = selectAll(session, ["single-1", "single-2", "single-3"]);
-    expect(firstTriple.snapshot.trayBlocks[0]?.specialMechanism?.state.completedTriples).toBe(1);
+    expect(firstTriple.meltedBlockIds).toEqual(["freeze"]);
+    expect(firstTriple.snapshot.trayBlocks[0]).not.toHaveProperty("specialMechanism");
 
     const secondTriple = selectAll(session, ["licking-1", "licking-2", "licking-3"]);
     expect(secondTriple.removedCount).toBe(3);
-    expect(secondTriple.meltedBlockIds).toEqual(["freeze"]);
+    expect(secondTriple.meltedBlockIds).toEqual([]);
     expect(secondTriple.snapshot.tray).toEqual([WORKING_DOG]);
 
     const finalTriple = selectAll(session, ["working-4", "working-5"]);
     expect(finalTriple.removedCount).toBe(3);
     expect(finalTriple.snapshot.tray).toEqual([]);
     expect(finalTriple.snapshot.status).toBe("won");
+  });
+
+  it("同图案普通三消也计入冻结方块融化次数", () => {
+    const tray = [
+      createTrayBlock("freeze", WORKING_DOG, {
+        type: DOG_FREEZE_MECHANISM_TYPE,
+        state: { status: "frozen", completedTriples: 1 },
+      }),
+    ];
+
+    const meltedBlockIds = applyDogTraySuccessfulTripleEffects(
+      tray,
+      createDogSpecialMechanismHandlerMap(),
+      1,
+      [WORKING_DOG],
+    );
+
+    expect(meltedBlockIds).toEqual(["freeze"]);
+    expect(tray[0]).not.toHaveProperty("specialMechanism");
   });
 
   it("规则 seam 允许终局完整三消组直接移除冻结方块", () => {

@@ -540,20 +540,14 @@ export function assignDogSpecialMechanisms(
 function freezeAfterSuccessfulTriples(
   block: DogTrayBlock,
   tripleCount: number,
-  triplePatterns: readonly DogPatternType[],
+  _triplePatterns: readonly DogPatternType[],
 ): DogTrayBlock {
   const mechanism = block.specialMechanism;
   if (mechanism?.type !== DOG_FREEZE_MECHANISM_TYPE || tripleCount <= 0) {
     return block;
   }
 
-  const otherTripleCount = triplePatterns.length === 0
-    ? tripleCount
-    : triplePatterns.filter((patternType) => patternType !== block.patternType).length;
-  const completedTriples = getCompletedTriples(mechanism) + otherTripleCount;
-  if (otherTripleCount === 0) {
-    return block;
-  }
+  const completedTriples = getCompletedTriples(mechanism) + tripleCount;
   if (completedTriples >= DOG_FREEZE_MELT_TRIPLE_COUNT) {
     const { specialMechanism: _specialMechanism, ...meltedBlock } = block;
     return meltedBlock;

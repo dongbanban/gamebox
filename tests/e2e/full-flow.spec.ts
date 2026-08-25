@@ -436,14 +436,12 @@ function resolveIndependentTrayMatches(
         continue;
       }
 
-      const otherTripleCount = triplePatterns.filter(
-        (patternType) => patternType !== block.patternType,
-      ).length;
-      if (otherTripleCount === 0) {
+      const successfulTripleCount = triplePatterns.length;
+      if (successfulTripleCount === 0) {
         continue;
       }
 
-      const freezeProgress = block.freezeProgress + otherTripleCount;
+      const freezeProgress = block.freezeProgress + successfulTripleCount;
       tray[index] = {
         ...block,
         frozen: freezeProgress < 2,

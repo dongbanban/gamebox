@@ -428,7 +428,7 @@ describe("GameSession", () => {
 
     expect(result).toMatchObject({ used: true, removedCount: 3, tripleCount: 1 });
     expect(result.snapshot.trayBlocks).toEqual([
-      createFrozenTrayBlock("frozen-working-1", WORKING_DOG),
+      createFrozenTrayBlock("frozen-working-1", WORKING_DOG, 1),
       { id: "ordinary-working-1", patternType: WORKING_DOG },
     ]);
   });
