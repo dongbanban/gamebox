@@ -15,6 +15,7 @@ import { renderDogPatternAsset } from "@/games/dog-lege-dog/assets/game-assets";
 import {
   DOG_GAME_ID,
   DOG_GAME_RESULT_DISPLAY,
+  loadDogV13Config,
   MAX_LEVEL_NUMBER,
 } from "@/games/dog-lege-dog/game/game-config";
 import {
@@ -100,6 +101,7 @@ export function createDogLegeDogGame(
   root: HTMLElement,
   options: DogLegeDogGameOptions = {},
 ): DogLegeDogGame {
+  loadDogV13Config(options.config);
   const level = options.level ?? getDogLegeDogLevel(
     options.levelNumber ?? FIRST_LEVEL.number,
     options.runSeed ?? createRunSeed(),

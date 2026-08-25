@@ -26,6 +26,7 @@ export const DOG_ILLUSION_MECHANISM_TYPE = "illusion" as const;
 export const DOG_ILLUSION_MASK_STATUS = "masked" as const;
 export const DOG_MAGNETIC_MECHANISM_TYPE = "magnetic" as const;
 export const DOG_TWIN_MECHANISM_TYPE = "twin" as const;
+/** Legacy adapter. v13 budget/density is declared in DOG_V13_CONFIG. */
 export const DOG_SPECIAL_MECHANISM_DENSITY_LIMIT = 0.06 as const;
 export const DOG_SPECIAL_MECHANISM_MIDDLE_LAYER_RATIO = 0.7 as const;
 // Keep retry search bounded. Pool still covers enough high-layer positions for

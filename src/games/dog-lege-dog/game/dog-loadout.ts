@@ -1,18 +1,15 @@
 import { renderDogItemAsset } from "@/games/dog-lege-dog/assets/item-assets";
+import {
+  DOG_V13_CONFIG,
+  type DogV13ItemId,
+} from "@/games/dog-lege-dog/game/game-config";
 
-export const DOG_LOADOUT_SIZE = 3 as const;
+/** Migration adapter. Item identity and quota policy live in v13 config. */
+export const DOG_LOADOUT_SIZE = DOG_V13_CONFIG.items.loadoutSize;
 
-export const DOG_ITEM_IDS = Object.freeze([
-  "triple-removal",
-  "tray-capacity",
-  "wildcard",
-  "torch",
-  "detector",
-  "demagnetizer",
-  "key",
-] as const);
+export const DOG_ITEM_IDS = DOG_V13_CONFIG.items.ids;
 
-export type DogItemId = (typeof DOG_ITEM_IDS)[number];
+export type DogItemId = DogV13ItemId;
 
 export type DogItemTargetType =
   | "none"

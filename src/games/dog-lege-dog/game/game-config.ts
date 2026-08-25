@@ -1,14 +1,50 @@
 import type {
-  DogPatternType,
   DogSpecialMechanismConfig,
 } from "@/games/dog-lege-dog/levels/level-types";
+import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
 
-const GAME_ID = "dog-lege-dog" as const;
+export {
+  DOG_V13_CONFIG,
+  DOG_V13_SCHEMA_VERSION,
+  DogV13ConfigError,
+  assertDogV13Config,
+  getDogTestProfile,
+  getDogV13ConfigIssues,
+  getDogV13DifficultyTarget,
+  getDogV13ItemUses,
+  getDogV13LevelStage,
+  getDogV13LevelStageIndex,
+  getDogV13LogicalBlockCount,
+  getDogV13MechanismPlan,
+  getDogV13SpecialMechanismBudget,
+  loadDogV13Config,
+  selectDogTestProfile,
+  validateDogV13Config,
+} from "@/games/dog-lege-dog/game/v13-config";
+export type {
+  DogConfigChangeArea,
+  DogV13Config,
+  DogV13ConfigIssue,
+  DogV13DifficultyTarget,
+  DogV13ItemId,
+  DogV13MechanismDefinition,
+  DogV13MechanismPlan,
+  DogV13MechanismType,
+  DogV13Range,
+  DogV13SoundEffectProfile,
+  DogV13SoundWaveform,
+  DogV13StructureStage,
+  DogV13TestProfile,
+  DogV13TestProfileName,
+} from "@/games/dog-lege-dog/game/v13-config";
+
+const GAME_ID = DOG_V13_CONFIG.game.id;
+// Legacy adapter. Ticket 24 will move the generator to DOG_V13_CONFIG.game.generatorVersion.
 const GENERATOR_VERSION = 12 as const;
-export const MAX_LEVEL_NUMBER = 99 as const;
-export const DOG_BASE_TRAY_CAPACITY = 7 as const;
-export const DOG_MAX_LOCKED_TRAY_SLOTS = 2 as const;
-export const DOG_KEY_DROP_RATE = 0.3 as const;
+export const MAX_LEVEL_NUMBER = DOG_V13_CONFIG.game.maxLevelNumber;
+export const DOG_BASE_TRAY_CAPACITY = DOG_V13_CONFIG.tray.baseCapacity;
+export const DOG_MAX_LOCKED_TRAY_SLOTS = DOG_V13_CONFIG.tray.maxLockedSlotCount;
+export const DOG_KEY_DROP_RATE = DOG_V13_CONFIG.items.key.dropRate;
 
 export const DOG_GAME_RESULT_DISPLAY = Object.freeze({
   won: Object.freeze({
@@ -32,23 +68,17 @@ export const DOG_GAME_RESULT_DISPLAY = Object.freeze({
 export const DOG_LEGE_DOG_CONFIG = Object.freeze({
   id: GAME_ID,
   generatorVersion: GENERATOR_VERSION,
-  defaultSeed: GAME_ID,
-  defaultReward: 100 as const,
-  firstLevelNumber: 1 as const,
+  defaultSeed: DOG_V13_CONFIG.game.defaultSeed,
+  defaultReward: DOG_V13_CONFIG.game.defaultReward,
+  firstLevelNumber: DOG_V13_CONFIG.game.firstLevelNumber,
   maxLevelNumber: MAX_LEVEL_NUMBER,
-  // Keep fixed first-level geometry stable across generator versions.
-  firstLevelSeed: `${GAME_ID}:first-level:v9`,
-  firstLevelBlockCount: 90 as const,
-  firstLevelMaxLayers: 3 as const,
-  firstLevelPatternTypes: Object.freeze([
-    "打工狗",
-    "单身狗",
-    "舔狗",
-    "看门狗",
-    "疯狗",
-    "拆家狗",
-  ] as readonly DogPatternType[]),
-  firstLevelTemplateId: "irregular-first-level-v2" as const,
+  // Legacy adapter. New code reads DOG_V13_CONFIG directly.
+  firstLevelSeed: DOG_V13_CONFIG.firstLevel.seed,
+  firstLevelBlockCount: DOG_V13_CONFIG.firstLevel.blockCount,
+  firstLevelMaxLayers: DOG_V13_CONFIG.firstLevel.maxLayers,
+  firstLevelPatternTypes: DOG_V13_CONFIG.firstLevel.patternTypes,
+  firstLevelTemplateId: DOG_V13_CONFIG.firstLevel.templateId,
+  // Legacy adapter. v13 mechanism definitions live in DOG_V13_CONFIG.specialMechanisms.
   specialMechanisms: Object.freeze([
     Object.freeze({
       type: "freeze",

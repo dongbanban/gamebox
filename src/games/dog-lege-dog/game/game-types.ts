@@ -43,4 +43,6 @@ export interface DogLegeDogGame {
 export interface DogLegeDogGameOptions extends GameLaunchContext {
   /** Deterministic controller seam for focused gameplay tests. */
   readonly level?: DogLegeDogLevel;
+  /** Config validation seam. Invalid config must block game startup. */
+  readonly config?: unknown;
 }

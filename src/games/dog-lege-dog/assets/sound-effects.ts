@@ -1,6 +1,9 @@
+import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/game-config";
+
 export type DogSoundEffect = "select" | "match" | "won" | "lost";
 
-export const DOG_MUSIC_ASSET_PATH = "audio/levelmusicloop-tigrun.ogg";
+/** Migration adapter. Music and effect profiles are owned by v13 config. */
+export const DOG_MUSIC_ASSET_PATH = DOG_V13_CONFIG.audio.music.path;
 
 export interface SoundEffects {
   initialize(): void;
@@ -18,35 +21,22 @@ interface SoundProfile {
 }
 
 const SOUND_PROFILES: Record<DogSoundEffect, SoundProfile> = {
-  select: {
-    frequencies: [660, 880],
-    duration: 0.14,
-    type: "triangle",
-    volume: 0.16,
-    noteSpacing: 0.035,
-  },
-  match: {
-    frequencies: [523, 659, 784, 1046],
-    duration: 0.4,
-    type: "sine",
-    volume: 0.3,
-    noteSpacing: 0.055,
-  },
-  won: {
-    frequencies: [659, 784, 988, 1318],
-    duration: 0.5,
-    type: "sine",
-    volume: 0.22,
-    noteSpacing: 0.07,
-  },
-  lost: {
-    frequencies: [220, 174],
-    duration: 0.32,
-    type: "sawtooth",
-    volume: 0.12,
-    noteSpacing: 0.08,
-  },
+  select: toSoundProfile("select"),
+  match: toSoundProfile("match"),
+  won: toSoundProfile("won"),
+  lost: toSoundProfile("lost"),
 };
+
+function toSoundProfile(effect: DogSoundEffect): SoundProfile {
+  const profile = DOG_V13_CONFIG.audio.effects[effect];
+  return {
+    frequencies: profile.frequencies,
+    duration: profile.durationSeconds,
+    type: profile.waveform,
+    volume: profile.volume,
+    noteSpacing: profile.noteSpacingSeconds,
+  };
+}
 
 type AudioContextConstructor = new () => AudioContext;
 

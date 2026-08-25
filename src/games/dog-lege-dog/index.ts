@@ -99,6 +99,9 @@ export {
   getDogTrayLockCount,
 } from "@/games/dog-lege-dog/levels/level-random";
 export {
+  DOG_V13_CONFIG,
+  DOG_V13_SCHEMA_VERSION,
+  assertDogV13Config,
   DOG_BASE_TRAY_CAPACITY,
   DOG_DIFFICULTY_CURVE_GENERATOR_VERSION,
   DOG_FREEZE_GENERATOR_VERSION,
@@ -108,6 +111,37 @@ export {
   DOG_MAX_LOCKED_TRAY_SLOTS,
   DOG_SPECIAL_MECHANISM_GENERATOR_VERSION,
   DOG_TRAY_LOCKS_GENERATOR_VERSION,
+  getDogTestProfile,
+  getDogV13ConfigIssues,
+  getDogV13DifficultyTarget,
+  getDogV13ItemUses,
+  getDogV13LevelStage,
+  getDogV13LevelStageIndex,
+  getDogV13LogicalBlockCount,
+  getDogV13MechanismPlan,
+  getDogV13SpecialMechanismBudget,
+  loadDogV13Config,
+  selectDogTestProfile,
+  validateDogV13Config,
+} from "@/games/dog-lege-dog/game/game-config";
+export {
+  DogV13ConfigError,
+} from "@/games/dog-lege-dog/game/game-config";
+export type {
+  DogConfigChangeArea,
+  DogV13Config,
+  DogV13ConfigIssue,
+  DogV13DifficultyTarget,
+  DogV13ItemId,
+  DogV13MechanismDefinition,
+  DogV13MechanismPlan,
+  DogV13MechanismType,
+  DogV13Range,
+  DogV13SoundEffectProfile,
+  DogV13SoundWaveform,
+  DogV13StructureStage,
+  DogV13TestProfile,
+  DogV13TestProfileName,
 } from "@/games/dog-lege-dog/game/game-config";
 
 export {

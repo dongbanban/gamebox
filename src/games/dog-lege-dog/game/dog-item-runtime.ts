@@ -461,6 +461,7 @@ export function getDogItemUses(
     Partial<Pick<DogLegeDogLevel, "specialMechanisms">>,
   itemId: DogItemId,
 ): number {
+  // Legacy adapter. v13 quota source is getDogV13ItemUses; runtime migration is ticket 27.
   if (itemId === "key") {
     return 0;
   }

@@ -1,5 +1,6 @@
 import {
   DEFAULT_LEVEL_SEED,
+  loadDogV13Config,
   LEVEL_GENERATOR_VERSION,
 } from "@/games/dog-lege-dog/game/game-config";
 import { createRunSeed } from "@/games/dog-lege-dog/levels/level-random";
@@ -32,6 +33,7 @@ export class DogLevelProvider {
   private readonly generatedLevels: GeneratedLevelGenerator;
 
   constructor(options: LevelGeneratorOptions = {}) {
+    loadDogV13Config(options.config);
     this.generatedLevels = new GeneratedLevelGenerator(options);
   }
 

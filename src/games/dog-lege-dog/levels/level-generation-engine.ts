@@ -6,7 +6,9 @@ import {
   FIRST_LEVEL_NUMBER,
   FIRST_LEVEL_SEED,
   LEVEL_GENERATOR_VERSION,
+  loadDogV13Config,
 } from "@/games/dog-lege-dog/game/game-config";
+import type { DogV13Config } from "@/games/dog-lege-dog/game/game-config";
 import {
   getBlockCount,
   getMaxLayers,
@@ -107,12 +109,14 @@ interface CandidateGenerationPlan {
 }
 
 export class GeneratedLevelGenerator {
+  private readonly config: DogV13Config;
   private readonly gameId: string;
   private readonly candidateFilter: LevelCandidateFilter;
   private readonly usesDefaultCandidateFilter: boolean;
 
   constructor(options: LevelGeneratorOptions = {}) {
-    this.gameId = options.gameId ?? DOG_GAME_ID;
+    this.config = loadDogV13Config(options.config);
+    this.gameId = options.gameId ?? this.config.game.id ?? DOG_GAME_ID;
     this.usesDefaultCandidateFilter = options.candidateFilter === undefined;
     this.candidateFilter =
       options.candidateFilter ??

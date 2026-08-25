@@ -34,4 +34,6 @@ export type LevelCandidateFilter = (
 export interface LevelGeneratorOptions {
   readonly gameId?: string;
   readonly candidateFilter?: LevelCandidateFilter;
+  /** Optional validated-config seam for generator and QA profile callers. */
+  readonly config?: unknown;
 }

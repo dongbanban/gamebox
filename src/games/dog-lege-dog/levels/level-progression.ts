@@ -3,10 +3,14 @@ import {
   DOG_DIFFICULTY_CURVE_GENERATOR_VERSION,
   LEVEL_GENERATOR_VERSION,
   MAX_LEVEL_NUMBER,
+  getDogV13LevelStage,
+  getDogV13LevelStageIndex,
+  getDogV13LogicalBlockCount,
 } from "@/games/dog-lege-dog/game/game-config";
 
 export type ProgressStage = 0 | 1 | 2 | 3;
 
+/** Legacy adapter. v13 target ranges live in DOG_V13_CONFIG. */
 const LEGACY_DIFFICULTY_TARGETS: readonly DogDifficultyTarget[] = [
   {
     safeChoiceCount: { min: 3, max: Number.MAX_SAFE_INTEGER },
@@ -131,16 +135,15 @@ const PREVIOUS_CURRENT_DIFFICULTY_TARGETS: readonly DogDifficultyTarget[] =
 
 export function getBlockCount(levelNumber: number): number {
   validateLevelNumber(levelNumber);
-  const stage = Math.min(5, Math.floor((levelNumber - 1) / 5));
-  return 90 + stage * 18;
+  return getDogV13LogicalBlockCount(levelNumber);
 }
 
 export function getMaxLayers(levelNumber: number): number {
-  return [3, 4, 5, 6][getProgressStage(levelNumber)];
+  return getDogV13LevelStage(levelNumber).maxLayers;
 }
 
 export function getPatternTypeCount(levelNumber: number): number {
-  return [6, 8, 10, 10][getProgressStage(levelNumber)];
+  return getDogV13LevelStage(levelNumber).patternTypeCount;
 }
 
 export function getDifficultyTarget(levelNumber: number): DogDifficultyTarget {
@@ -195,19 +198,7 @@ function getCurrentDifficultyTarget(
 
 export function getProgressStage(levelNumber: number): ProgressStage {
   validateLevelNumber(levelNumber);
-  if (levelNumber <= 5) {
-    return 0;
-  }
-
-  if (levelNumber <= 15) {
-    return 1;
-  }
-
-  if (levelNumber <= 30) {
-    return 2;
-  }
-
-  return 3;
+  return getDogV13LevelStageIndex(levelNumber) as ProgressStage;
 }
 
 function validateLevelNumber(levelNumber: number): void {
