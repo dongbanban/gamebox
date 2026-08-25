@@ -93,6 +93,12 @@ export interface GameSessionRevealResult extends GameSessionSnapshot {
   readonly snapshot: GameSessionSnapshot;
 }
 
+export interface GameSessionDemagnetizeResult extends GameSessionSnapshot {
+  readonly demagnetized: boolean;
+  readonly blockId: string;
+  readonly snapshot: GameSessionSnapshot;
+}
+
 export interface GameSessionTripleRemovalPlan {
   readonly patternType: DogPatternType;
   readonly trayBlockIds: readonly string[];
@@ -519,6 +525,42 @@ export class GameSession {
     this.clearItemPlanCaches();
     this.updateResult();
     return this.createRevealResult(true, blockId);
+  }
+
+  getDemagnetizerTargetBlockIds(): readonly string[] {
+    if (this.status !== "playing" || this.isSelectionPending()) {
+      return Object.freeze([]);
+    }
+
+    return Object.freeze(
+      [...this.remainingBlocks.values()]
+        .filter((block) => this.canDemagnetizeMagneticBlock(block.id))
+        .map((block) => block.id),
+    );
+  }
+
+  canDemagnetizeMagneticBlock(blockId: string): boolean {
+    if (this.status !== "playing" || this.isSelectionPending() || !this.canSelectBlock(blockId)) {
+      return false;
+    }
+
+    return this.remainingBlocks.get(blockId)?.specialMechanism?.type === DOG_MAGNETIC_MECHANISM_TYPE;
+  }
+
+  demagnetizeMagneticBlock(blockId: string): GameSessionDemagnetizeResult {
+    if (!this.canDemagnetizeMagneticBlock(blockId)) {
+      return this.createDemagnetizeResult(false, blockId);
+    }
+
+    const block = this.remainingBlocks.get(blockId);
+    if (block === undefined) {
+      return this.createDemagnetizeResult(false, blockId);
+    }
+
+    this.remainingBlocks.set(blockId, removeSpecialMechanism(block));
+    this.clearItemPlanCaches();
+    this.updateResult();
+    return this.createDemagnetizeResult(true, blockId);
   }
 
   meltFrozenBlock(
@@ -1170,6 +1212,37 @@ export class GameSession {
         configurable: false,
         enumerable: false,
         value: revealed,
+        writable: false,
+      },
+      blockId: {
+        configurable: false,
+        enumerable: false,
+        value: blockId,
+        writable: false,
+      },
+      snapshot: {
+        configurable: false,
+        enumerable: false,
+        value: snapshot,
+        writable: false,
+      },
+    });
+    return Object.freeze(result);
+  }
+
+  private createDemagnetizeResult(
+    demagnetized: boolean,
+    blockId: string,
+  ): GameSessionDemagnetizeResult {
+    const snapshot = this.getState();
+    const result = {
+      ...snapshot,
+    } as GameSessionDemagnetizeResult;
+    Object.defineProperties(result, {
+      demagnetized: {
+        configurable: false,
+        enumerable: false,
+        value: demagnetized,
         writable: false,
       },
       blockId: {

@@ -293,6 +293,10 @@ function getActiveItemTargetBlockIds(state: DogLegeDogGameState): readonly strin
     return state.items.tripleRemovalTargetBlockIds;
   }
 
+  if (state.items.selectedItemId === "demagnetizer") {
+    return state.items.demagnetizerTargetBlockIds;
+  }
+
   return [];
 }
 
@@ -632,6 +636,10 @@ function isItemTargetable(
 
   if (itemTargetId === "detector") {
     return mechanism?.type === DOG_ILLUSION_MECHANISM_TYPE;
+  }
+
+  if (itemTargetId === "demagnetizer") {
+    return mechanism?.type === DOG_MAGNETIC_MECHANISM_TYPE;
   }
 
   return false;

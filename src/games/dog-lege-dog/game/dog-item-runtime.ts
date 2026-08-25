@@ -38,6 +38,10 @@ export type DogItemEffect =
       "blockId" | "location" | "removedCount" | "tripleCount" | "meltedBlockIds"
     >)
   | {
+      readonly type: "demagnetize";
+      readonly blockId: string;
+    }
+  | {
       readonly type: "reveal";
       readonly blockId: string;
     }
@@ -100,6 +104,7 @@ export interface DogItemRuntimeSnapshot {
   readonly tripleRemovalTargetPatterns: readonly DogPatternType[];
   readonly tripleRemovalTargetBlockIds: readonly string[];
   readonly wildcardTargetBlockIds: readonly string[];
+  readonly demagnetizerTargetBlockIds: readonly string[];
   readonly items: readonly DogItemState[];
 }
 
@@ -166,6 +171,10 @@ export class DogItemRuntime {
     const wildcardTargetBlockIds = this.selectedItemId === "wildcard"
       ? this.session.getWildcardTargetBlockIds()
       : [];
+    const demagnetizerTargetBlockIds = this.phase === "targeting" &&
+        this.selectedItemId === "demagnetizer"
+      ? this.session.getDemagnetizerTargetBlockIds()
+      : [];
     const items = this.loadout.map((itemId) => {
       const runtimeDefinition = this.getDefinition(itemId);
       const { definition } = runtimeDefinition;
@@ -201,6 +210,7 @@ export class DogItemRuntime {
       tripleRemovalTargetPatterns,
       tripleRemovalTargetBlockIds,
       wildcardTargetBlockIds,
+      demagnetizerTargetBlockIds,
       items: Object.freeze(items),
     });
   }
@@ -605,11 +615,11 @@ const DOG_ITEM_BEHAVIORS: Readonly<Record<DogItemId, DogItemBehavior>> = {
         return hasRevealableIllusionBlock(session);
       }
 
-      const revealTarget = getDetectorTarget(target);
+      const revealTarget = getBoardBlockTarget(target);
       return revealTarget !== undefined && session.canRevealIllusionBlock(revealTarget.blockId);
     },
     execute: ({ session, target }) => {
-      const revealTarget = target === undefined ? undefined : getDetectorTarget(target);
+      const revealTarget = target === undefined ? undefined : getBoardBlockTarget(target);
       if (revealTarget === undefined || !session.canRevealIllusionBlock(revealTarget.blockId)) {
         return { success: false, visualFeedback: "detector" };
       }
@@ -637,11 +647,48 @@ const DOG_ITEM_BEHAVIORS: Readonly<Record<DogItemId, DogItemBehavior>> = {
     },
   },
   demagnetizer: {
-    canUse: () => false,
-    execute: () => ({
-      success: false,
-      visualFeedback: "demagnetizer",
-    }),
+    canUse: ({ session, target }) => {
+      if (target === undefined) {
+        return session.getDemagnetizerTargetBlockIds().length > 0;
+      }
+
+      const demagnetizerTarget = getBoardBlockTarget(target);
+      return demagnetizerTarget !== undefined && session.canDemagnetizeMagneticBlock(
+        demagnetizerTarget.blockId,
+      );
+    },
+    execute: ({ session, target }) => {
+      const demagnetizerTarget = target === undefined
+        ? undefined
+        : getBoardBlockTarget(target);
+      if (
+        demagnetizerTarget === undefined ||
+        !session.canDemagnetizeMagneticBlock(demagnetizerTarget.blockId)
+      ) {
+        return { success: false, visualFeedback: "demagnetizer" };
+      }
+
+      return {
+        success: true,
+        visualFeedback: "demagnetizer",
+        effect: {
+          type: "demagnetize" as const,
+          blockId: demagnetizerTarget.blockId,
+        },
+        commitAfterAnimation: () => {
+          const completed = session.demagnetizeMagneticBlock(demagnetizerTarget.blockId);
+          return {
+            success: completed.demagnetized,
+            effect: completed.demagnetized
+              ? {
+                  type: "demagnetize" as const,
+                  blockId: completed.blockId,
+                }
+              : undefined,
+          };
+        },
+      };
+    },
   },
   key: {
     canUse: () => false,
@@ -706,7 +753,7 @@ function hasRevealableIllusionBlock(session: GameSession): boolean {
   );
 }
 
-function getDetectorTarget(
+function getBoardBlockTarget(
   target: DogItemTarget,
 ): { readonly blockId: string } | undefined {
   return target.type === "block" ? { blockId: target.blockId } : undefined;

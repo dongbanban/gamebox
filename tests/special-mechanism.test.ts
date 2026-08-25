@@ -3,6 +3,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   BLOCK_FLIGHT_DURATION_MS,
+  DOG_DEMAGNETIZER_DURATION_MS,
   DOG_MAGNETIC_ATTRACTION_DURATION_MS,
   DOG_FREEZE_MELT_DURATION_MS,
   DOG_DETECTOR_REVEAL_DURATION_MS,
@@ -1810,6 +1811,90 @@ describe("狗了个狗特殊机制", () => {
       .toBeUndefined();
     expect(root.querySelector<HTMLElement>('[data-testid="dog-flight"] img')?.getAttribute("src"))
       .toBe(getDogPatternAssetUrl(illusion.patternType));
+    game.destroy();
+  });
+
+  it("消磁仪只高亮可点击磁吸方块，原位播放动效并在结束后恢复普通视觉", async () => {
+    vi.useFakeTimers();
+    const root = document.createElement("div");
+    const magnetic = createBlock("magnetic", 0, 0, WORKING_DOG, {
+      type: DOG_MAGNETIC_MECHANISM_TYPE,
+      state: { status: DOG_MAGNETIC_MECHANISM_TYPE },
+    });
+    const ordinary = createBlock("ordinary", 4, 0, SINGLE_DOG);
+    const game = startDogLegeDogGame(root, {
+      level: createLevel([magnetic, ordinary]),
+      loadout: ["demagnetizer", "tray-capacity", "wildcard"],
+    });
+
+    const magneticElement = root.querySelector<HTMLElement>(
+      '[data-testid="dog-block"][data-block-id="magnetic"]',
+    );
+    expect(magneticElement?.classList.contains("dog-block--special-magnetic")).toBe(true);
+
+    root.querySelector<HTMLButtonElement>('[data-item-id="demagnetizer"]')?.click();
+
+    expect(game.getState().items).toMatchObject({
+      phase: "targeting",
+      selectedItemId: "demagnetizer",
+      selectedItemTargetType: "block",
+      demagnetizerTargetBlockIds: ["magnetic"],
+    });
+    expect(root.querySelectorAll('[data-item-targetable="true"]')).toHaveLength(1);
+    expect(
+      root.querySelector<HTMLElement>('[data-testid="dog-block"][data-block-id="magnetic"]')
+        ?.classList.contains("dog-block--item-targetable"),
+    ).toBe(true);
+    expect(
+      root.querySelector<HTMLElement>('[data-testid="dog-block"][data-block-id="ordinary"]')
+        ?.dataset.itemTargetable,
+    ).toBeUndefined();
+    expect(
+      root.querySelector<HTMLElement>('[data-testid="dog-block"][data-block-id="ordinary"]')
+        ?.hasAttribute("disabled"),
+    ).toBe(true);
+
+    root.querySelector<HTMLButtonElement>(
+      '[data-testid="dog-block"][data-block-id="magnetic"]',
+    )?.click();
+
+    expect(game.getState()).toMatchObject({
+      inputLocked: true,
+      items: {
+        phase: "animating",
+        selectedItemId: "demagnetizer",
+        demagnetizerTargetBlockIds: [],
+      },
+    });
+    expect(game.getState().session.remainingBlocks.find((block) => block.id === "magnetic"))
+      .toHaveProperty("specialMechanism.type", DOG_MAGNETIC_MECHANISM_TYPE);
+    expect(
+      root.querySelector<HTMLElement>('[data-testid="dog-demagnetizer-effect"]'),
+    ).toMatchObject({
+      dataset: { blockId: "magnetic", itemId: "demagnetizer" },
+    });
+
+    await vi.advanceTimersByTimeAsync(DOG_DEMAGNETIZER_DURATION_MS - 1);
+    expect(game.getState().inputLocked).toBe(true);
+    expect(game.getState().session.remainingBlocks.find((block) => block.id === "magnetic"))
+      .toHaveProperty("specialMechanism.type", DOG_MAGNETIC_MECHANISM_TYPE);
+
+    await vi.advanceTimersByTimeAsync(1);
+    await vi.runAllTimersAsync();
+
+    expect(game.getState().inputLocked).toBe(false);
+    expect(game.getState().items?.phase).toBe("idle");
+    expect(game.getState().items?.items.find((item) => item.id === "demagnetizer"))
+      .toMatchObject({ remainingUses: 0, available: false });
+    expect(
+      game.getState().session.remainingBlocks.find((block) => block.id === "magnetic"),
+    ).not.toHaveProperty("specialMechanism");
+    expect(
+      root.querySelector<HTMLElement>('[data-testid="dog-block"][data-block-id="magnetic"]')
+        ?.classList.contains("dog-block--special-magnetic"),
+    ).toBe(false);
+    expect(root.querySelector('[data-testid="dog-demagnetizer-effect"]')).toBeNull();
+    expect(game.getState().session.selectableBlockIds).toContain("magnetic");
     game.destroy();
   });
 });

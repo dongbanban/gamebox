@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   DOG_FREEZE_MECHANISM_TYPE,
   DOG_ILLUSION_MECHANISM_TYPE,
+  DOG_MAGNETIC_MECHANISM_TYPE,
   FIRST_LEVEL,
   GameSession,
   type DogBlock,
@@ -65,6 +66,8 @@ describe("DogItemRuntime", () => {
         { type: "magnetic", min: 3, max: 4 },
       ],
     };
+    expect(getDogItemUses(magneticLevel, "demagnetizer")).toBe(1);
+    expect(getDogItemUses({ ...magneticLevel, number: 2 }, "demagnetizer")).toBe(2);
     expect(getDogItemUses(highMagneticLevel, "demagnetizer")).toBeGreaterThan(
       getDogItemUses(magneticLevel, "demagnetizer"),
     );
@@ -128,6 +131,139 @@ describe("DogItemRuntime", () => {
       success: false,
     });
     expect(session.getState().tray).toEqual([]);
+  });
+
+  it("消磁仪只暴露可点击磁吸方块，取消和无效目标不改局面，成功后原位去磁", () => {
+    const magneticMechanism = {
+      type: DOG_MAGNETIC_MECHANISM_TYPE,
+      state: { status: DOG_MAGNETIC_MECHANISM_TYPE },
+    } as const;
+    const level = createLevel([
+      createBlock("magnetic-clickable", WORKING_DOG, magneticMechanism),
+      createBlock("magnetic-blocked", SINGLE_DOG, magneticMechanism, { x: 8 }),
+      createBlock("magnetic-cover", LICKING_DOG, undefined, { x: 8, z: 1 }),
+      createBlock("freeze", GUARD_DOG, {
+        type: DOG_FREEZE_MECHANISM_TYPE,
+        state: { status: "frozen", completedTriples: 0 },
+      }, { x: 16 }),
+      createBlock("ordinary", "疯狗", undefined, { x: 24 }),
+    ]);
+    const session = new GameSession({
+      level,
+      initialTrayBlocks: [{ id: "tray-target", patternType: "拆家狗" }],
+    });
+    const runtime = new DogItemRuntime({
+      level,
+      session,
+      loadout: ["demagnetizer"],
+    });
+    const initial = session.getState();
+
+    expect(runtime.getState()).toMatchObject({
+      phase: "idle",
+      demagnetizerTargetBlockIds: [],
+      items: [expect.objectContaining({ available: true, remainingUses: 1 })],
+    });
+
+    expect(runtime.begin("demagnetizer")).toMatchObject({
+      accepted: true,
+      success: false,
+      requiresTarget: true,
+    });
+    expect(runtime.getState()).toMatchObject({
+      phase: "targeting",
+      demagnetizerTargetBlockIds: ["magnetic-clickable"],
+    });
+
+    for (const invalidTarget of [
+      { type: "block", blockId: "ordinary" },
+      { type: "block", blockId: "magnetic-blocked" },
+      { type: "block", blockId: "freeze" },
+      { type: "tray-block", blockId: "tray-target" },
+    ] as const) {
+      expect(runtime.confirmTarget(invalidTarget)).toMatchObject({
+        accepted: false,
+        success: false,
+        requiresTarget: true,
+      });
+      expect(session.getState()).toEqual(initial);
+      expect(runtime.getState().items[0]?.remainingUses).toBe(1);
+    }
+
+    runtime.cancel();
+    expect(runtime.getState()).toMatchObject({ phase: "idle" });
+    expect(runtime.getState().items[0]?.remainingUses).toBe(1);
+    expect(session.getState()).toEqual(initial);
+
+    runtime.begin("demagnetizer");
+    const action = runtime.confirmTarget({
+      type: "block",
+      blockId: "magnetic-clickable",
+    });
+    expect(action).toMatchObject({
+      accepted: true,
+      success: true,
+      itemId: "demagnetizer",
+      effect: { type: "demagnetize", blockId: "magnetic-clickable" },
+    });
+    expect(runtime.getState()).toMatchObject({
+      phase: "animating",
+      demagnetizerTargetBlockIds: [],
+      items: [expect.objectContaining({ remainingUses: 0, available: false })],
+    });
+    expect(session.getState()).toEqual(initial);
+
+    runtime.completeAnimation();
+
+    const completed = session.getState();
+    const demagnetized = completed.remainingBlocks.find(
+      (block) => block.id === "magnetic-clickable",
+    );
+    expect(demagnetized).toMatchObject({
+      id: "magnetic-clickable",
+      x: 0,
+      y: 0,
+      z: 0,
+      patternType: WORKING_DOG,
+    });
+    expect(demagnetized?.specialMechanism).toBeUndefined();
+    expect(completed.selectableBlockIds).toContain("magnetic-clickable");
+    expect(completed.trayBlocks).toEqual(initial.trayBlocks);
+    expect(runtime.begin("demagnetizer")).toMatchObject({
+      accepted: false,
+      success: false,
+    });
+  });
+
+  it("消磁仪没有可点击磁吸目标时不可用且不扣次数", () => {
+    const level = createLevel([
+      createBlock("magnetic-blocked", WORKING_DOG, {
+        type: DOG_MAGNETIC_MECHANISM_TYPE,
+        state: { status: DOG_MAGNETIC_MECHANISM_TYPE },
+      }),
+      createBlock("cover", SINGLE_DOG, undefined, { z: 1 }),
+    ]);
+    const session = new GameSession(level);
+    const runtime = new DogItemRuntime({
+      level,
+      session,
+      loadout: ["demagnetizer"],
+    });
+
+    expect(runtime.getState().demagnetizerTargetBlockIds).toEqual([]);
+    expect(runtime.getState().items[0]).toMatchObject({
+      available: false,
+      remainingUses: 1,
+    });
+    expect(runtime.begin("demagnetizer")).toMatchObject({
+      accepted: false,
+      success: false,
+    });
+    expect(runtime.getState().items[0]?.remainingUses).toBe(1);
+    expect(session.getState().remainingBlocks.map((block) => block.id)).toEqual([
+      "magnetic-blocked",
+      "cover",
+    ]);
   });
 
   it("容量提升无目标直执行，成功扣次并在动画完成后重新计算可用性", () => {

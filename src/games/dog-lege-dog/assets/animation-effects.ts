@@ -4,6 +4,7 @@ export const BLOCK_FLIGHT_DURATION_MS = 180;
 export const DOG_ILLUSION_REVEAL_DURATION_MS = 420;
 export const DOG_ITEM_FEEDBACK_DURATION_MS = 360;
 export const DOG_DETECTOR_REVEAL_DURATION_MS = DOG_ITEM_FEEDBACK_DURATION_MS;
+export const DOG_DEMAGNETIZER_DURATION_MS = DOG_ITEM_FEEDBACK_DURATION_MS;
 export const DOG_TORCH_MELT_DURATION_MS = DOG_ITEM_FEEDBACK_DURATION_MS;
 export const DOG_FREEZE_MELT_DURATION_MS = 1400;
 export const DOG_TWIN_SPLIT_DURATION_MS = DOG_ITEM_FEEDBACK_DURATION_MS;
@@ -248,6 +249,47 @@ export function animateDogDetectorReveal(
       delete boardBlock.dataset.detectorReveal;
     }
     revealGlyph?.remove();
+  });
+}
+
+export interface DogDemagnetizerEffectOptions {
+  readonly root: HTMLElement;
+  readonly blockId: string;
+  readonly target: DOMRect | null;
+}
+
+export function animateDogDemagnetizerEffect(
+  options: DogDemagnetizerEffectOptions,
+): CancellableAnimation {
+  const layer = options.root.querySelector<HTMLElement>(
+    '[data-testid="dog-animation-layer"]',
+  );
+  if (layer === null) {
+    return createAnimationLifecycle(DOG_DEMAGNETIZER_DURATION_MS, () => undefined);
+  }
+
+  const effect = document.createElement("div");
+  effect.className = "dog-demagnetizer-effect";
+  effect.dataset.testid = "dog-demagnetizer-effect";
+  effect.dataset.itemId = "demagnetizer";
+  effect.dataset.blockId = options.blockId;
+  effect.setAttribute("aria-hidden", "true");
+  effect.innerHTML = `
+    <span class="dog-demagnetizer-effect__ring"></span>
+    <span class="dog-demagnetizer-effect__mark">⊖</span>
+  `;
+  const layerRect = layer.getBoundingClientRect();
+  const target = options.target;
+  Object.assign(effect.style, {
+    left: `${(target?.left ?? layerRect.left) - layerRect.left}px`,
+    top: `${(target?.top ?? layerRect.top) - layerRect.top}px`,
+    width: `${target?.width || 48}px`,
+    height: `${target?.height || 48}px`,
+  });
+  layer.append(effect);
+
+  return createAnimationLifecycle(DOG_DEMAGNETIZER_DURATION_MS, () => {
+    effect.remove();
   });
 }
 

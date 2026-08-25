@@ -28,6 +28,7 @@ import { createRunSeed } from "@/games/dog-lege-dog/levels/level-random";
 import {
   animateBlockFlight,
   animateDogDetectorReveal,
+  animateDogDemagnetizerEffect,
   animateDogIllusionReveal,
   animateDogItemEffect,
   animateDogMagneticAttractionEffect,
@@ -933,6 +934,12 @@ export function createDogLegeDogGame(
                 DOG_PATTERN_TYPES[0],
             ),
           })
+        : effect?.type === "demagnetize"
+          ? animateDogDemagnetizerEffect({
+              root,
+              blockId: effect.blockId,
+              target: targetRect,
+            })
         : animateDogItemEffect({ root, itemId, visualFeedback });
     runtime.itemAnimation = animation;
     void finishItemAnimation(animation);

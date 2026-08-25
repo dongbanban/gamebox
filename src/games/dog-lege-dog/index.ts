@@ -3,6 +3,7 @@ export {
   GAME_SESSION_MAX_TRAY_CAPACITY,
   GAME_SESSION_TRAY_CAPACITY,
   GameSession,
+  type GameSessionDemagnetizeResult,
   type GameSessionMeltLocation,
   type GameSessionMeltResult,
   type GameSessionMagneticResolution,
