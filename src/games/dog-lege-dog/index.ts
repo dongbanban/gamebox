@@ -125,6 +125,10 @@ export {
   validateDogV13Config,
 } from "@/games/dog-lege-dog/game/game-config";
 export {
+  createDogGenerationTestCase,
+  formatDogGenerationTestReport,
+} from "@/games/dog-lege-dog/game/test-profile";
+export {
   DogV13ConfigError,
 } from "@/games/dog-lege-dog/game/game-config";
 export type {
@@ -143,6 +147,7 @@ export type {
   DogV13TestProfile,
   DogV13TestProfileName,
 } from "@/games/dog-lege-dog/game/game-config";
+export type { DogGenerationTestCase } from "@/games/dog-lege-dog/game/test-profile";
 
 export {
   DOG_FREEZE_MECHANISM_TYPE,

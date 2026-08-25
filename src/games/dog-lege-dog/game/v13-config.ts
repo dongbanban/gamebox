@@ -2,6 +2,7 @@ import {
   DOG_PATTERN_TYPES,
   type DogPatternType,
 } from "@/games/dog-lege-dog/levels/level-types";
+import DOG_V13_TEST_PROFILES_JSON from "@/games/dog-lege-dog/game/v13-test-profiles.json";
 
 export const DOG_V13_SCHEMA_VERSION = 13 as const;
 
@@ -74,13 +75,22 @@ export interface DogV13TestProfile {
   readonly name: DogV13TestProfileName;
   readonly levelNumbers: readonly number[];
   readonly fixedSeeds: readonly string[];
+  readonly randomLevelPrefix: number;
+  readonly stressLevelCount: number;
   readonly runUI: boolean;
   readonly runCore: boolean;
   readonly runRandomRegression: boolean;
   readonly runE2E: boolean;
   readonly runCrossBrowser: boolean;
+  readonly runWorkerFallback: boolean;
   readonly runBuild: boolean;
+  readonly runDiffCheck: boolean;
+  readonly runFileLineCheck: boolean;
+  readonly maxChangedFileLines: number;
 }
+
+const DOG_V13_TEST_PROFILES_SOURCE =
+  DOG_V13_TEST_PROFILES_JSON as unknown as DogV13Config["testProfiles"];
 
 export interface DogV13Config {
   readonly schemaVersion: typeof DOG_V13_SCHEMA_VERSION;
@@ -170,6 +180,10 @@ export interface DogV13Config {
   };
   readonly testProfiles: {
     readonly default: DogV13TestProfileName;
+    readonly selection: {
+      readonly fullAreas: readonly DogConfigChangeArea[];
+      readonly smokeAreas: readonly DogConfigChangeArea[];
+    };
     readonly profiles: Readonly<Record<DogV13TestProfileName, DogV13TestProfile>>;
   };
 }
@@ -373,44 +387,7 @@ const DOG_V13_CONFIG_SOURCE: DogV13Config = {
       },
     },
   },
-  testProfiles: {
-    default: "focused",
-    profiles: {
-      focused: {
-        name: "focused",
-        levelNumbers: [1],
-        fixedSeeds: ["v13-focused"],
-        runUI: true,
-        runCore: true,
-        runRandomRegression: false,
-        runE2E: false,
-        runCrossBrowser: false,
-        runBuild: false,
-      },
-      smoke: {
-        name: "smoke",
-        levelNumbers: [1, 6, 16, 31, 99],
-        fixedSeeds: ["v13-smoke"],
-        runUI: true,
-        runCore: true,
-        runRandomRegression: true,
-        runE2E: true,
-        runCrossBrowser: false,
-        runBuild: false,
-      },
-      full: {
-        name: "full",
-        levelNumbers: [1, 6, 16, 31, 99],
-        fixedSeeds: ["v13-full"],
-        runUI: true,
-        runCore: true,
-        runRandomRegression: true,
-        runE2E: true,
-        runCrossBrowser: true,
-        runBuild: true,
-      },
-    },
-  },
+  testProfiles: DOG_V13_TEST_PROFILES_SOURCE,
 };
 
 export function assertDogV13Config(input: unknown): asserts input is DogV13Config {
@@ -565,22 +542,11 @@ export function selectDogTestProfile(
   areas: DogConfigChangeArea | readonly DogConfigChangeArea[],
 ): DogV13TestProfileName {
   const changedAreas = typeof areas === "string" ? [areas] : areas;
-  if (
-    changedAreas.some((area) =>
-      [
-        "generator",
-        "solvability",
-        "difficulty",
-        "public-contract",
-        "game-startup",
-        "worker",
-        "cross-browser",
-      ].includes(area),
-    )
-  ) {
+  const selection = DOG_V13_CONFIG.testProfiles.selection;
+  if (changedAreas.some((area) => selection.fullAreas.includes(area))) {
     return "full";
   }
-  if (changedAreas.includes("random-regression")) {
+  if (changedAreas.some((area) => selection.smokeAreas.includes(area))) {
     return "smoke";
   }
   return "focused";
@@ -1015,6 +981,40 @@ function collectConfigIssues(input: unknown): DogV13ConfigIssue[] {
     if (!["focused", "smoke", "full"].includes(String(testProfiles.default))) {
       issues.push({ path: "testProfiles.default", code: "value", message: "profile 不受支持" });
     }
+    const selection = asRecord(testProfiles.selection);
+    if (selection === undefined) {
+      requiredObject(testProfiles, "selection", issues, "testProfiles");
+    } else {
+      const allowedAreas: readonly DogConfigChangeArea[] = [
+        "docs",
+        "ui",
+        "runtime",
+        "generator",
+        "solvability",
+        "difficulty",
+        "public-contract",
+        "game-startup",
+        "worker",
+        "random-regression",
+        "cross-browser",
+      ];
+      for (const key of ["fullAreas", "smokeAreas"] as const) {
+        const path = `testProfiles.selection.${key}`;
+        validateStringArray(selection[key], path, issues);
+        if (Array.isArray(selection[key])) {
+          validateUnique(selection[key], path, issues);
+          for (const [index, area] of selection[key].entries()) {
+            if (!allowedAreas.includes(area as DogConfigChangeArea)) {
+              issues.push({
+                path: `${path}[${index}]`,
+                code: "value",
+                message: "改动领域不受支持",
+              });
+            }
+          }
+        }
+      }
+    }
     const profiles = asRecord(testProfiles.profiles);
     if (profiles === undefined) {
       requiredObject(testProfiles, "profiles", issues, "testProfiles");
@@ -1039,13 +1039,30 @@ function collectConfigIssues(input: unknown): DogV13ConfigIssue[] {
           issues,
         );
         validateStringArray(profile.fixedSeeds, `testProfiles.profiles.${name}.fixedSeeds`, issues);
+        validateInteger(
+          profile.randomLevelPrefix,
+          `testProfiles.profiles.${name}.randomLevelPrefix`,
+          0,
+          issues,
+          asNumber(levels?.maxLevelNumber),
+        );
+        validateInteger(
+          profile.stressLevelCount,
+          `testProfiles.profiles.${name}.stressLevelCount`,
+          0,
+          issues,
+          asNumber(levels?.maxLevelNumber),
+        );
         for (const key of [
           "runUI",
           "runCore",
           "runRandomRegression",
           "runE2E",
           "runCrossBrowser",
+          "runWorkerFallback",
           "runBuild",
+          "runDiffCheck",
+          "runFileLineCheck",
         ]) {
           if (typeof profile[key] !== "boolean") {
             issues.push({
@@ -1055,6 +1072,12 @@ function collectConfigIssues(input: unknown): DogV13ConfigIssue[] {
             });
           }
         }
+        validateInteger(
+          profile.maxChangedFileLines,
+          `testProfiles.profiles.${name}.maxChangedFileLines`,
+          1,
+          issues,
+        );
       }
     }
   }

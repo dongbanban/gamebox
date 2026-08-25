@@ -73,7 +73,23 @@ describe("狗了个狗 v13 集中配置", () => {
     });
     expect(DOG_V13_CONFIG.animation.blockFlightMs).toBeGreaterThan(0);
     expect(DOG_V13_CONFIG.assets.patterns["打工狗"]).toContain("01-working-dog.svg");
-    expect(getDogTestProfile("smoke").levelNumbers).toEqual([1, 6, 16, 31, 99]);
+    expect(getDogTestProfile("smoke")).toMatchObject({
+      levelNumbers: [1, 6, 16, 31, 99],
+      fixedSeeds: ["v13-smoke-a", "v13-smoke-b"],
+      randomLevelPrefix: 5,
+      stressLevelCount: 5,
+      runWorkerFallback: true,
+    });
+    expect(getDogTestProfile("full")).toMatchObject({
+      randomLevelPrefix: 99,
+      stressLevelCount: 99,
+      runCrossBrowser: true,
+      runDiffCheck: true,
+      runFileLineCheck: true,
+      maxChangedFileLines: 500,
+    });
+    expect(DOG_V13_CONFIG.testProfiles.selection.fullAreas).toContain("generator");
+    expect(DOG_V13_CONFIG.testProfiles.selection.smokeAreas).toEqual(["random-regression"]);
     expect(getDogV13DifficultyTarget(1)).toMatchObject({
       safeChoiceRate: { min: 0.18, max: 0.28 },
       durationMinutes: { min: 9, max: 10 },
@@ -202,6 +218,7 @@ describe("狗了个狗 v13 集中配置", () => {
 
   it("profile 选择可供生成器、启动与 QA 共用", () => {
     expect(selectDogTestProfile("ui")).toBe("focused");
+    expect(selectDogTestProfile("runtime")).toBe("full");
     expect(selectDogTestProfile(["game-startup", "generator"])).toBe("full");
     expect(selectDogTestProfile("random-regression")).toBe("smoke");
     expect(selectDogTestProfile("docs")).toBe("focused");

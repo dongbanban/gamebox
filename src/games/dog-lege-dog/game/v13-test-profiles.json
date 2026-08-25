@@ -1,0 +1,69 @@
+{
+  "default": "focused",
+  "selection": {
+    "fullAreas": [
+      "runtime",
+      "generator",
+      "solvability",
+      "difficulty",
+      "public-contract",
+      "game-startup",
+      "worker",
+      "cross-browser"
+    ],
+    "smokeAreas": ["random-regression"]
+  },
+  "profiles": {
+    "focused": {
+      "name": "focused",
+      "levelNumbers": [1],
+      "fixedSeeds": ["v13-focused"],
+      "randomLevelPrefix": 0,
+      "stressLevelCount": 0,
+      "runUI": true,
+      "runCore": true,
+      "runRandomRegression": false,
+      "runE2E": false,
+      "runCrossBrowser": false,
+      "runWorkerFallback": false,
+      "runBuild": false,
+      "runDiffCheck": false,
+      "runFileLineCheck": false,
+      "maxChangedFileLines": 500
+    },
+    "smoke": {
+      "name": "smoke",
+      "levelNumbers": [1, 6, 16, 31, 99],
+      "fixedSeeds": ["v13-smoke-a", "v13-smoke-b"],
+      "randomLevelPrefix": 5,
+      "stressLevelCount": 5,
+      "runUI": true,
+      "runCore": true,
+      "runRandomRegression": true,
+      "runE2E": true,
+      "runCrossBrowser": false,
+      "runWorkerFallback": true,
+      "runBuild": false,
+      "runDiffCheck": false,
+      "runFileLineCheck": false,
+      "maxChangedFileLines": 500
+    },
+    "full": {
+      "name": "full",
+      "levelNumbers": [1, 6, 16, 31, 99],
+      "fixedSeeds": ["v13-full-a", "v13-full-b"],
+      "randomLevelPrefix": 99,
+      "stressLevelCount": 99,
+      "runUI": true,
+      "runCore": true,
+      "runRandomRegression": true,
+      "runE2E": true,
+      "runCrossBrowser": true,
+      "runWorkerFallback": true,
+      "runBuild": true,
+      "runDiffCheck": true,
+      "runFileLineCheck": true,
+      "maxChangedFileLines": 500
+    }
+  }
+}

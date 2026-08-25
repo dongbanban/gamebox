@@ -12,13 +12,17 @@
     "test": "pnpm test:core",
     "test:focused": "node scripts/test-affected.mjs --focused",
     "test:affected": "node scripts/test-affected.mjs",
+    "test:profile": "node scripts/test-profile.mjs",
+    "test:profile:unit": "node --test scripts/test-profile.test.mjs",
+    "test:smoke": "node scripts/test-profile.mjs smoke",
+    "test:full": "node scripts/test-profile.mjs full",
     "test:ui": "vitest run tests/app.test.ts tests/dog-lege-dog.test.ts tests/sound-effects.test.ts",
-    "test:core": "vitest run --exclude tests/random-regression.test.ts",
+    "test:core": "vitest run --exclude tests/random-regression.test.ts --exclude 'tests/e2e/**' --exclude scripts/test-profile.test.mjs",
     "test:random": "vitest run tests/random-regression.test.ts",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:cross-browser": "PLAYWRIGHT_CROSS_BROWSER=1 playwright test tests/e2e/cross-browser.spec.ts",
-    "test:qa": "pnpm test:core && pnpm test:random && pnpm test:e2e"
+    "test:qa": "pnpm test:full"
   },
   "devDependencies": {
     "@playwright/test": "^1.51.0",

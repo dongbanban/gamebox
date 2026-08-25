@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   DOG_GAME_ID,
+  DOG_V13_CONFIG,
   DOG_PATTERN_TYPES,
   GameSession,
   getBlockCount,
@@ -8,16 +9,20 @@ import {
   getMaxLayers,
   getPatternTypeCount,
   findSolvability,
+  getDogV13LogicalBlockCount,
+  getDogV13MechanismPlan,
+  getDogV13SpecialMechanismBudget,
   isDifficultyWithinTarget,
   LEVEL_GENERATOR_VERSION,
   LevelGenerator,
   MAX_LEVEL_NUMBER,
+  formatDogGenerationTestReport,
+  type DogGenerationTestCase,
   type DogLegeDogLevel,
 } from "@/games/dog-lege-dog";
 
 const RANDOM_TEST_SEED =
   process.env.DOG_RANDOM_TEST_SEED ?? "random-regression-default-v1";
-const GENERATOR_SEED = `${DOG_GAME_ID}:random-regression:${RANDOM_TEST_SEED}`;
 
 describe(`随机关卡回归 [testSeed=${RANDOM_TEST_SEED}]`, () => {
   it("每次运行生成 1–99 个关卡，并验证可重放与完整不变量", () => {
@@ -41,6 +46,7 @@ describe(`随机关卡回归 [testSeed=${RANDOM_TEST_SEED}]`, () => {
         regressionCase,
         () => {
           const level = createLevel(generator, levelNumber);
+          assertV13MechanismPlan(level.number, level);
           assertLevelInvariants(level, generator, true, regressionCase);
         },
       );
@@ -57,6 +63,7 @@ describe(`随机关卡回归 [testSeed=${RANDOM_TEST_SEED}]`, () => {
         regressionCase,
         () => {
           const level = createLevel(generator, levelNumber, checkpointSeed);
+          assertV13MechanismPlan(level.number, level);
           assertLevelInvariants(level, generator, true, regressionCase);
         },
       );
@@ -77,27 +84,28 @@ describe(`随机关卡回归 [testSeed=${RANDOM_TEST_SEED}]`, () => {
       const regressionCase = createPendingCase(stressSeed, levelNumber);
       withRegressionReport(
         regressionCase,
-        () => assertStressLevel(createLevel(generator, levelNumber, stressSeed)),
+        () => {
+          const level = createLevel(generator, levelNumber, stressSeed);
+          assertV13MechanismPlan(levelNumber, level);
+          assertStressLevel(level);
+        },
       );
     }
   });
 });
 
-interface RegressionCase {
-  readonly testSeed: string;
-  readonly levelNumber: number;
-  readonly levelSeed: string;
-  readonly generatorVersion: number;
-}
+type RegressionCase = DogGenerationTestCase & { readonly levelSeed: string };
 
 function createLevel(
   generator: LevelGenerator,
   levelNumber: number,
   testSeed = RANDOM_TEST_SEED,
 ): DogLegeDogLevel {
+  const runSeed = getRunSeed(testSeed);
   return generator.generate({
     levelNumber,
-    seed: GENERATOR_SEED,
+    seed: runSeed,
+    runSeed,
     testSeed,
     generatorVersion: LEVEL_GENERATOR_VERSION,
   });
@@ -107,13 +115,55 @@ function createPendingCase(
   testSeed: string,
   levelNumber: number,
 ): RegressionCase {
+  const runSeed = getRunSeed(testSeed);
   return {
     testSeed,
+    runSeed,
     levelNumber,
     levelSeed:
-      `${GENERATOR_SEED}:v${LEVEL_GENERATOR_VERSION}:level-${levelNumber}`,
+      `${runSeed}:v${LEVEL_GENERATOR_VERSION}:level-${levelNumber}`,
     generatorVersion: LEVEL_GENERATOR_VERSION,
   };
+}
+
+function getRunSeed(testSeed: string): string {
+  return process.env.DOG_RANDOM_RUN_SEED ?? `${DOG_GAME_ID}:random-regression:${testSeed}`;
+}
+
+function assertV13MechanismPlan(levelNumber: number, level?: DogLegeDogLevel): void {
+  const logicalBlockCount = getDogV13LogicalBlockCount(levelNumber);
+  const plan = getDogV13MechanismPlan(logicalBlockCount);
+  expect(plan.logicalUnitCount).toBe(getDogV13SpecialMechanismBudget(logicalBlockCount));
+  expect(plan.logicalUnitCount).toBeLessThanOrEqual(logicalBlockCount * 0.3);
+  expect(Object.values(plan.counts).every((count) => count > 0)).toBe(true);
+  expect(
+    plan.counts.freeze +
+      plan.counts.illusion +
+      plan.counts.magnetic +
+      plan.counts.twin * 2,
+  ).toBe(plan.logicalUnitCount);
+
+  if (level?.generatorVersion !== undefined &&
+      level.generatorVersion >= DOG_V13_CONFIG.game.generatorVersion) {
+    const actualCounts = new Map<string, number>();
+    for (const block of level.blocks) {
+      const type = block.specialMechanism?.type;
+      if (type !== undefined) {
+        actualCounts.set(type, (actualCounts.get(type) ?? 0) + 1);
+      }
+    }
+    expect(actualCounts.get("freeze")).toBeGreaterThan(0);
+    expect(actualCounts.get("illusion")).toBeGreaterThan(0);
+    expect(actualCounts.get("magnetic")).toBeGreaterThan(0);
+    expect(actualCounts.get("twin")).toBeGreaterThan(0);
+    const actualLogicalUnitCount =
+      (actualCounts.get("freeze") ?? 0) +
+      (actualCounts.get("illusion") ?? 0) +
+      (actualCounts.get("magnetic") ?? 0) +
+      (actualCounts.get("twin") ?? 0) * 2;
+    expect(actualLogicalUnitCount).toBe(plan.logicalUnitCount);
+    expect(level.difficulty.specialMechanismDensity).toBeLessThanOrEqual(0.3);
+  }
 }
 
 function assertLevelInvariants(
@@ -223,6 +273,7 @@ function assertLevelInvariants(
 
   assertReplayMetadata(level);
   expect(generation.replay.testSeed).toBe(regressionCase.testSeed);
+  expect(generation.replay.runSeed).toBe(regressionCase.runSeed);
   expect(generator.replay(generation.replay)).toEqual(level);
 
   for (const failure of generation.failures.slice(0, 1)) {
@@ -288,11 +339,7 @@ function withRegressionReport(
 function formatRegressionReport(regressionCase: RegressionCase): string {
   return [
     "随机回归失败报告",
-    `testSeed=${regressionCase.testSeed}`,
-    `levelNumber=${regressionCase.levelNumber}`,
-    `levelSeed=${regressionCase.levelSeed}`,
-    `generatorVersion=${regressionCase.generatorVersion}`,
-    `replay=DOG_RANDOM_TEST_SEED=${regressionCase.testSeed} DOG_RANDOM_LEVEL_NUMBER=${regressionCase.levelNumber} pnpm test:random`,
+    formatDogGenerationTestReport(regressionCase),
   ].join("\n");
 }
 

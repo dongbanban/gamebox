@@ -1,4 +1,5 @@
 import { execFileSync, spawnSync } from "node:child_process";
+import { selectProfileForChangedFiles } from "./test-profile.mjs";
 
 const root = process.cwd();
 const focusedOnly = process.argv.includes("--focused");
@@ -20,6 +21,12 @@ if (isUiOnlyChange(changedFiles)) {
   process.exit(0);
 }
 
+if (!focusedOnly && selectProfileForChangedFiles(changedFiles) === "full") {
+  console.log("检测到生成器/公共契约/启动或测试基础设施改动：自动升级 full profile。\n");
+  runOrExit("pnpm", ["test:full"]);
+  process.exit(0);
+}
+
 const vitestTargets = changedFiles.filter(
   (file) =>
     /^src\/.*\.ts$/.test(file) ||
@@ -36,6 +43,8 @@ if (vitestTargets.length > 0) {
     "--passWithNoTests",
     "--exclude",
     "tests/random-regression.test.ts",
+    "--exclude",
+    "tests/e2e/**",
   ];
 
   if (focusedOnly) {
@@ -95,7 +104,8 @@ function readGit(args) {
 function requiresRandomRegression(files) {
   return files.some(
     (file) =>
-      /^src\/games\/dog-lege-dog\/(?:level-|first-level\.ts|game-config\.ts)/.test(file) ||
+      /^src\/games\/dog-lege-dog\/levels\//.test(file) ||
+      /^src\/games\/dog-lege-dog\/game\/(?:special-mechanisms|v13-config|game-config)\.ts$/.test(file) ||
       /^tests\/(?:level-generator|generation-failure|random-regression)\.test\.ts$/.test(file),
   );
 }
@@ -106,7 +116,7 @@ function isUiOnlyChange(files) {
     files.every(
       (file) =>
         file === "src/style.css" ||
-        /^src\/games\/dog-lege-dog\/(?:assets\/(?:animation-effects|game-assets|particle-effects|sound-effects)\.ts|game\/game-(?:controller|renderer)\.ts)$/.test(file) ||
+        /^src\/games\/dog-lege-dog\/(?:assets\/(?:animation-effects|game-assets|particle-effects|sound-effects)\.ts|game\/game-renderer\.ts)$/.test(file) ||
         /^tests\/(?:app|dog-lege-dog|sound-effects)\.test\.ts$/.test(file) ||
         /^public\/audio\//.test(file),
     )
