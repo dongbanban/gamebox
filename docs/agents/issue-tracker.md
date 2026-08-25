@@ -70,7 +70,9 @@ pnpm test:affected
 pnpm test:qa
 ```
 
-当前 `test:core` 尚未排除 `tests/e2e/**`，`test:affected` 的生成器匹配仍使用目录整理前路径；两项由新方案 ticket 11 跟踪。ticket 11 完成前，全量验证分别运行排除 E2E 的核心 Vitest、`pnpm test:random` 与 `pnpm test:e2e`，生成器改动必须显式运行随机回归。旧 hardening ticket 19 已归档，不再作为实现入口。
+当前 v13 升级由 ticket 22–28、20、11 收口。ticket 23 完成前，`test:core` 排除 E2E/随机、生成器路径匹配、profile 选择与行数守卫仍视为待实现；ticket 11 完成前，全量验证分别运行排除 E2E 的核心 Vitest、`pnpm test:random` 与 `pnpm test:e2e`，生成器改动必须显式运行随机回归。旧 hardening ticket 19 已归档，不再作为实现入口。
+
+v13 测试 profile 目标：focused 只跑受影响核心或 UI；smoke 覆盖 1/6/16/31/99 关与少量 seed；full 覆盖核心、随机 1–100、Chromium、WebKit、移动 Chromium、Worker/fallback、页面构建、diff 检查与文件行数检查。具体入口与自动选择由 ticket 23 实现，完成前不把目标命令当作已存在能力。
 
 响应式或浏览器兼容改动追加：
 
