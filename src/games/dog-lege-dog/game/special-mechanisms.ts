@@ -45,6 +45,12 @@ export const DOG_SPECIAL_MECHANISM_HANDLERS: readonly DogSpecialMechanismHandler
       onSuccessfulTriples: keepIllusionBlock,
     }),
     Object.freeze({
+      type: DOG_MAGNETIC_MECHANISM_TYPE,
+      isMatchable: () => true,
+      onEnterTray: consumeMagneticOnEnterTray,
+      onSuccessfulTriples: keepMagneticBlock,
+    }),
+    Object.freeze({
       type: DOG_TWIN_MECHANISM_TYPE,
       isMatchable: () => true,
       onEnterTray: splitTwinBlock,
@@ -52,9 +58,13 @@ export const DOG_SPECIAL_MECHANISM_HANDLERS: readonly DogSpecialMechanismHandler
     }),
   ]);
 
-const DOG_SUPPORTED_SPECIAL_MECHANISM_TYPES = new Set(
-  DOG_SPECIAL_MECHANISM_HANDLERS.map(({ type }) => type),
-);
+// Magnetic placement waits for the cross-mechanism solver/replay seam owned by
+// ticket 20. The runtime handler is active for hand-built levels and replays.
+const DOG_SUPPORTED_SPECIAL_MECHANISM_TYPES = new Set<string>([
+  DOG_FREEZE_MECHANISM_TYPE,
+  DOG_ILLUSION_MECHANISM_TYPE,
+  DOG_TWIN_MECHANISM_TYPE,
+]);
 
 export function getDogSpecialMechanismConfigs(
   levelNumber: number,
@@ -169,6 +179,15 @@ export function createDogSpecialMechanism(type: string): DogSpecialMechanism {
       state: Object.freeze({
         status: DOG_ILLUSION_MASK_STATUS,
         disguisedPatternType: null,
+      }),
+    });
+  }
+
+  if (type === DOG_MAGNETIC_MECHANISM_TYPE) {
+    return Object.freeze({
+      type: DOG_MAGNETIC_MECHANISM_TYPE,
+      state: Object.freeze({
+        status: DOG_MAGNETIC_MECHANISM_TYPE,
       }),
     });
   }
@@ -744,6 +763,19 @@ function revealIllusionOnEnterTray(block: DogTrayBlock): DogTrayBlock {
 }
 
 function keepIllusionBlock(block: DogTrayBlock): DogTrayBlock {
+  return block;
+}
+
+function consumeMagneticOnEnterTray(block: DogTrayBlock): DogTrayBlock {
+  if (block.specialMechanism?.type !== DOG_MAGNETIC_MECHANISM_TYPE) {
+    return block;
+  }
+
+  const { specialMechanism: _specialMechanism, ...ordinaryBlock } = block;
+  return ordinaryBlock;
+}
+
+function keepMagneticBlock(block: DogTrayBlock): DogTrayBlock {
   return block;
 }
 

@@ -14,6 +14,7 @@ import type { GameSessionSnapshot } from "@/games/dog-lege-dog/game/game-session
 import {
   DOG_FREEZE_MECHANISM_TYPE,
   DOG_ILLUSION_MECHANISM_TYPE,
+  DOG_MAGNETIC_MECHANISM_TYPE,
   DOG_TWIN_MECHANISM_TYPE,
   getDogIllusionDisguisedPattern,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
@@ -470,6 +471,10 @@ const DOG_SPECIAL_MECHANISM_PRESENTATIONS: Readonly<Record<string, DogSpecialMec
     illusion: Object.freeze({
       name: "幻化方块",
       description: "幻化方块点击后飞入暂存槽，飞行过程中显现真实图案并按真实图案参与三消。",
+    }),
+    [DOG_MAGNETIC_MECHANISM_TYPE]: Object.freeze({
+      name: "磁吸方块",
+      description: "磁吸方块进入暂存槽后随机吸取一个不同真实图案的方块；优先可点击目标，不产生连锁磁吸。",
     }),
     [DOG_TWIN_MECHANISM_TYPE]: Object.freeze({
       name: "双生方块",

@@ -21,10 +21,12 @@ import {
   DOG_SPECIAL_MECHANISM_HANDLERS,
   DOG_FREEZE_MECHANISM_TYPE,
   DOG_ILLUSION_MECHANISM_TYPE,
+  DOG_MAGNETIC_MECHANISM_TYPE,
   DOG_TWIN_MECHANISM_TYPE,
   getDogLogicalBlockCount,
   getDogTrayLogicalUnitCount,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
+import { SeededRandom } from "@/games/dog-lege-dog/levels/level-random";
 
 export const GAME_SESSION_BASE_TRAY_CAPACITY = 7 as const;
 export const GAME_SESSION_TRAY_CAPACITY = GAME_SESSION_BASE_TRAY_CAPACITY;
@@ -54,10 +56,18 @@ export interface GameSessionSnapshot {
 
 export interface GameSessionPendingSelectionResult {
   readonly selected: boolean;
+  readonly magneticResolution: GameSessionMagneticResolution | null;
   readonly snapshot: GameSessionSnapshot;
 }
 
+export interface GameSessionMagneticResolution {
+  readonly sourceBlockId: string;
+  readonly targetBlockId: string | null;
+  readonly targetTrayBlockIds: readonly string[];
+}
+
 export interface GameSessionSelectionResult extends GameSessionSnapshot {
+  readonly magneticResolution: GameSessionMagneticResolution | null;
   readonly selected: boolean;
   readonly removedCount: number;
   readonly snapshot: GameSessionSnapshot;
@@ -134,8 +144,13 @@ export class GameSession {
   private readonly remainingBlocks = new Map<string, DogBlock>();
   private readonly higherBlockCounts: number[];
   private readonly specialMechanismHandlers: ReadonlyMap<string, DogSpecialMechanismHandler>;
+  private readonly magneticRandom: SeededRandom;
   private tray: DogTrayBlock[];
-  private pendingSelection: { readonly block: DogBlock } | null = null;
+  private pendingMagneticResolution: GameSessionMagneticResolution | null = null;
+  private pendingSelection: {
+    readonly block: DogBlock;
+    readonly magneticTargetBlockId: string | null;
+  } | null = null;
   private trayCapacity: number;
   private status: GameSessionStatus = "playing";
   private readonly tripleRemovalPlanCache = new Map<
@@ -153,6 +168,7 @@ export class GameSession {
   constructor(levelOrOptions: DogLegeDogLevel | GameSessionOptions = FIRST_LEVEL) {
     const options = isLevel(levelOrOptions) ? { level: levelOrOptions } : levelOrOptions;
     this.level = freezeDogLegeDogLevel(options.level ?? FIRST_LEVEL);
+    this.magneticRandom = new SeededRandom(`${this.level.runSeed}:magnetic-target`);
     this.graph = createBlockGraph(this.level.blocks);
     this.higherBlockCounts = [...this.graph.higherBlockCounts];
     this.specialMechanismHandlers = createDogSpecialMechanismHandlerMap(
@@ -230,7 +246,7 @@ export class GameSession {
   }
 
   canSelectBlock(blockId: string): boolean {
-    if (this.status !== "playing" || this.pendingSelection !== null) {
+    if (this.status !== "playing" || this.isSelectionPending()) {
       return false;
     }
 
@@ -246,7 +262,7 @@ export class GameSession {
   increaseTrayCapacity(): boolean {
     if (
       this.status !== "playing" ||
-      this.pendingSelection !== null ||
+      this.isSelectionPending() ||
       this.trayCapacity >= GAME_SESSION_MAX_TRAY_CAPACITY
     ) {
       return false;
@@ -463,7 +479,7 @@ export class GameSession {
   }
 
   canMeltFrozenBlock(blockId: string, location: GameSessionMeltLocation): boolean {
-    if (this.status !== "playing" || this.pendingSelection !== null) {
+    if (this.status !== "playing" || this.isSelectionPending()) {
       return false;
     }
 
@@ -478,7 +494,7 @@ export class GameSession {
   }
 
   canRevealIllusionBlock(blockId: string): boolean {
-    if (this.status !== "playing" || this.pendingSelection !== null) {
+    if (this.status !== "playing" || this.isSelectionPending()) {
       return false;
     }
 
@@ -557,12 +573,17 @@ export class GameSession {
     if (!this.startBlockSelection(blockId)) {
       return {
         selected: false,
+        magneticResolution: null,
         snapshot: this.getState(),
       };
     }
 
+    const pendingSelection = this.pendingSelection;
     return {
       selected: true,
+      magneticResolution: pendingSelection === null
+        ? null
+        : createPendingMagneticResolution(pendingSelection),
       snapshot: this.getState(),
     };
   }
@@ -571,6 +592,11 @@ export class GameSession {
     const pendingSelection = this.pendingSelection;
     if (pendingSelection === null) {
       return this.createSelectionResult(false, 0);
+    }
+
+    if (pendingSelection.block.specialMechanism?.type === DOG_MAGNETIC_MECHANISM_TYPE) {
+      this.completeMagneticEntry();
+      return this.resolveMagneticEntry();
     }
 
     this.pendingSelection = null;
@@ -592,7 +618,7 @@ export class GameSession {
   }
 
   private getSelectableBlockIds(): string[] {
-    if (this.status !== "playing" || this.pendingSelection !== null) {
+    if (this.status !== "playing" || this.isSelectionPending()) {
       return [];
     }
 
@@ -620,8 +646,103 @@ export class GameSession {
     for (const lowerBlockIndex of this.graph.lowerBlockIndicesByHigher[blockIndex]) {
       this.higherBlockCounts[lowerBlockIndex] -= 1;
     }
-    this.pendingSelection = { block };
+    const magneticTargetBlockId = block.specialMechanism?.type === DOG_MAGNETIC_MECHANISM_TYPE
+      ? this.chooseMagneticTarget(block)
+      : null;
+    this.pendingSelection = { block, magneticTargetBlockId };
     return true;
+  }
+
+  completeMagneticEntry(): GameSessionMagneticResolution | null {
+    const pendingSelection = this.pendingSelection;
+    if (
+      pendingSelection === null ||
+      pendingSelection.block.specialMechanism?.type !== DOG_MAGNETIC_MECHANISM_TYPE
+    ) {
+      return null;
+    }
+
+    this.pendingSelection = null;
+    const magneticResolution = this.enterMagneticBlocks(pendingSelection);
+    this.pendingMagneticResolution = magneticResolution;
+    this.clearItemPlanCaches();
+    return magneticResolution;
+  }
+
+  resolveMagneticEntry(): GameSessionSelectionResult {
+    const magneticResolution = this.pendingMagneticResolution;
+    if (magneticResolution === null) {
+      return this.createSelectionResult(false, 0);
+    }
+
+    this.pendingMagneticResolution = null;
+    const resolution = resolveDogTrayMatches(this.tray, this.specialMechanismHandlers, {
+      allowFrozenFinalTriple: this.remainingBlocks.size === 0,
+    });
+    this.clearItemPlanCaches();
+    this.updateResult();
+    return this.createSelectionResult(
+      true,
+      resolution.removedCount,
+      resolution.tripleCount,
+      resolution.meltedBlockIds,
+      magneticResolution,
+    );
+  }
+
+  private enterMagneticBlocks(pendingSelection: {
+    readonly block: DogBlock;
+    readonly magneticTargetBlockId: string | null;
+  }): GameSessionMagneticResolution {
+    const magneticSource = removeSpecialMechanism(toTrayBlock(pendingSelection.block));
+    insertDogTrayBlock(this.tray, magneticSource);
+    const targetTrayBlockIds: string[] = [];
+    const targetBlockId = pendingSelection.magneticTargetBlockId;
+    const targetBlock = targetBlockId === null
+      ? undefined
+      : this.remainingBlocks.get(targetBlockId);
+
+    if (targetBlock !== undefined) {
+      const targetBlockIndex = this.graph.indexById.get(targetBlock.id);
+      if (targetBlockIndex === undefined) {
+        throw new Error(`狗了个狗 magnetic target block is missing from graph: ${targetBlock.id}`);
+      }
+
+      this.remainingBlocks.delete(targetBlock.id);
+      for (const lowerBlockIndex of this.graph.lowerBlockIndicesByHigher[targetBlockIndex]) {
+        this.higherBlockCounts[lowerBlockIndex] -= 1;
+      }
+
+      const preparedTargetBlocks = prepareDogTrayBlocks(
+        toTrayBlock(targetBlock),
+        this.specialMechanismHandlers,
+      );
+      for (const preparedTargetBlock of preparedTargetBlocks) {
+        insertDogTrayBlock(this.tray, preparedTargetBlock);
+        targetTrayBlockIds.push(preparedTargetBlock.id);
+      }
+    }
+
+    return Object.freeze({
+      sourceBlockId: pendingSelection.block.id,
+      targetBlockId: targetBlock === undefined ? null : targetBlock.id,
+      targetTrayBlockIds: Object.freeze([...targetTrayBlockIds]),
+    });
+  }
+
+  private chooseMagneticTarget(sourceBlock: DogBlock): string | null {
+    const candidates = [...this.remainingBlocks.values()].filter(
+      (block) =>
+        block.specialMechanism?.type !== DOG_MAGNETIC_MECHANISM_TYPE &&
+        block.patternType !== sourceBlock.patternType,
+    );
+    if (candidates.length === 0) {
+      return null;
+    }
+
+    const selectableCandidates = candidates.filter((block) => this.canSelectBlock(block.id));
+    const candidatePool = selectableCandidates.length > 0 ? selectableCandidates : candidates;
+    return candidatePool[this.magneticRandom.nextInt(candidatePool.length)]?.id ?? null;
   }
 
   private createSelectionResult(
@@ -629,12 +750,19 @@ export class GameSession {
     removedCount: number,
     tripleCount = 0,
     meltedBlockIds: readonly string[] = [],
+    magneticResolution: GameSessionMagneticResolution | null = null,
   ): GameSessionSelectionResult {
     const snapshot = this.getState();
     const result = {
       ...snapshot,
     } as GameSessionSelectionResult;
     Object.defineProperties(result, {
+      magneticResolution: {
+        configurable: false,
+        enumerable: false,
+        value: magneticResolution,
+        writable: false,
+      },
       selected: {
         configurable: false,
         enumerable: false,
@@ -740,7 +868,7 @@ export class GameSession {
   ): InternalGameSessionWildcardPlan | null {
     if (
       this.status !== "playing" ||
-      this.pendingSelection !== null ||
+      this.isSelectionPending() ||
       !this.level.patternTypes.includes(patternType) ||
       !this.tray.some((block) => block.patternType === patternType)
     ) {
@@ -903,7 +1031,7 @@ export class GameSession {
   private findTripleRemovalPlan(
     trayBlockIds: readonly [string, string],
   ): GameSessionTripleRemovalPlan | null {
-    if (this.status !== "playing" || this.pendingSelection !== null) {
+    if (this.status !== "playing" || this.isSelectionPending()) {
       return null;
     }
 
@@ -1061,7 +1189,7 @@ export class GameSession {
   }
 
   private updateResult(): void {
-    if (this.pendingSelection !== null) {
+    if (this.isSelectionPending()) {
       this.status = "playing";
       return;
     }
@@ -1098,6 +1226,10 @@ export class GameSession {
       insertDogTrayBlock(trayBlocks, pendingBlock);
     }
     return trayBlocks;
+  }
+
+  private isSelectionPending(): boolean {
+    return this.pendingSelection !== null || this.pendingMagneticResolution !== null;
   }
 }
 
@@ -1196,6 +1328,21 @@ function isWildcardMatchParticipant(block: DogTrayBlock): boolean {
 
 function isFrozenTrayBlock(block: DogTrayBlock): boolean {
   return block.specialMechanism?.type === DOG_FREEZE_MECHANISM_TYPE;
+}
+
+function createPendingMagneticResolution(pendingSelection: {
+  readonly block: DogBlock;
+  readonly magneticTargetBlockId: string | null;
+}): GameSessionMagneticResolution | null {
+  if (pendingSelection.block.specialMechanism?.type !== DOG_MAGNETIC_MECHANISM_TYPE) {
+    return null;
+  }
+
+  return Object.freeze({
+    sourceBlockId: pendingSelection.block.id,
+    targetBlockId: pendingSelection.magneticTargetBlockId,
+    targetTrayBlockIds: Object.freeze([]),
+  });
 }
 
 function isLevel(value: DogLegeDogLevel | GameSessionOptions): value is DogLegeDogLevel {

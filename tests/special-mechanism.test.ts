@@ -3,6 +3,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   BLOCK_FLIGHT_DURATION_MS,
+  DOG_MAGNETIC_ATTRACTION_DURATION_MS,
   DOG_FREEZE_MELT_DURATION_MS,
   DOG_DETECTOR_REVEAL_DURATION_MS,
   DOG_TORCH_MELT_DURATION_MS,
@@ -17,6 +18,7 @@ import {
   DOG_PATTERN_TYPES,
   DOG_FREEZE_MECHANISM_TYPE,
   DOG_FREEZE_GENERATOR_VERSION,
+  DOG_MAGNETIC_MECHANISM_TYPE,
   DOG_TWIN_MECHANISM_TYPE,
   DOG_ILLUSION_GENERATOR_VERSION,
   FIRST_LEVEL,
@@ -760,6 +762,224 @@ describe("狗了个狗特殊机制", () => {
     expect(result.snapshot.status).toBe("lost");
   });
 
+  it("磁吸先入槽，再优先吸取可点击的不同真实图案方块并保留目标机制", () => {
+    const source = {
+      ...createBlock("magnetic", 0, 0, WORKING_DOG, {
+        type: DOG_MAGNETIC_MECHANISM_TYPE,
+        state: { status: DOG_MAGNETIC_MECHANISM_TYPE },
+      }),
+      z: 1,
+    };
+    const target = createBlock("clickable-freeze", 0, 0, SINGLE_DOG, {
+      type: DOG_FREEZE_MECHANISM_TYPE,
+      state: { status: "frozen", completedTriples: 0 },
+    });
+    const blocked = {
+      ...createBlock("blocked-target", 4, 0, LICKING_DOG),
+      z: 0,
+    };
+    const cover = {
+      ...createBlock("same-pattern-cover", 4, 0, WORKING_DOG),
+      z: 1,
+    };
+    const session = new GameSession(
+      createLevel([source, target, blocked, cover]),
+    );
+
+    const result = session.selectBlock(source.id);
+
+    expect(result.selected).toBe(true);
+    expect(result.magneticResolution).toEqual({
+      sourceBlockId: source.id,
+      targetBlockId: target.id,
+      targetTrayBlockIds: [target.id],
+    });
+    expect(result.snapshot.trayBlocks.map((block) => block.id)).toEqual([
+      source.id,
+      target.id,
+    ]);
+    expect(result.snapshot.trayBlocks[0]).not.toHaveProperty("specialMechanism");
+    expect(result.snapshot.trayBlocks[1]).toHaveProperty(
+      "specialMechanism.type",
+      DOG_FREEZE_MECHANISM_TYPE,
+    );
+    expect(result.snapshot.remainingBlocks.map((block) => block.id)).toEqual([
+      blocked.id,
+      cover.id,
+    ]);
+  });
+
+  it("磁吸目标入槽与统一三消分阶段，结算前不判失败", () => {
+    const source = createBlock("magnetic", 0, 0, WORKING_DOG, {
+      type: DOG_MAGNETIC_MECHANISM_TYPE,
+      state: { status: DOG_MAGNETIC_MECHANISM_TYPE },
+    });
+    const target = createBlock("freeze-target", 4, 0, SINGLE_DOG, {
+      type: DOG_FREEZE_MECHANISM_TYPE,
+      state: { status: "frozen", completedTriples: 0 },
+    });
+    const session = new GameSession({
+      level: createLevel([source, target, createBlock("remaining", 8, 0, LICKING_DOG)]),
+      initialTray: [WORKING_DOG, WORKING_DOG],
+    });
+
+    const pending = session.beginBlockSelection(source.id);
+    expect(pending.magneticResolution?.targetBlockId).toBe(target.id);
+
+    const entered = session.completeMagneticEntry();
+
+    expect(entered).toMatchObject({
+      sourceBlockId: source.id,
+      targetBlockId: target.id,
+      targetTrayBlockIds: [target.id],
+    });
+    expect(session.getState().status).toBe("playing");
+    expect(session.getState().trayBlocks.map((block) => block.id)).toEqual([
+      "initial-tray-1",
+      "initial-tray-2",
+      source.id,
+      target.id,
+    ]);
+    expect(session.canSelectBlock("remaining")).toBe(false);
+
+    const resolved = session.resolveMagneticEntry();
+
+    expect(resolved.removedCount).toBe(3);
+    expect(resolved.snapshot.trayBlocks.map((block) => block.id)).toEqual([target.id]);
+    expect(resolved.snapshot.status).toBe("playing");
+  });
+
+  it("磁吸没有可点击候选时回退到不可点击方块，双生目标沿用分裂规则", () => {
+    const source = createBlock("magnetic", 0, 0, WORKING_DOG, {
+      type: DOG_MAGNETIC_MECHANISM_TYPE,
+      state: { status: DOG_MAGNETIC_MECHANISM_TYPE },
+    });
+    const target = {
+      ...createBlock("blocked-twin", 4, 0, SINGLE_DOG, {
+        type: DOG_TWIN_MECHANISM_TYPE,
+        state: { status: DOG_TWIN_MECHANISM_TYPE },
+      }),
+      z: 0,
+    };
+    const cover = {
+      ...createBlock("cover", 4, 0, WORKING_DOG),
+      z: 1,
+    };
+    const session = new GameSession(createLevel([source, target, cover]));
+
+    const result = session.selectBlock(source.id);
+
+    expect(result.magneticResolution).toEqual({
+      sourceBlockId: source.id,
+      targetBlockId: target.id,
+      targetTrayBlockIds: [`${target.id}-1`, `${target.id}-2`],
+    });
+    expect(result.snapshot.trayBlocks.map((block) => block.id)).toEqual([
+      source.id,
+      `${target.id}-1`,
+      `${target.id}-2`,
+    ]);
+    expect(result.snapshot.trayBlocks.every((block) => block.specialMechanism === undefined)).toBe(
+      true,
+    );
+  });
+
+  it("磁吸排除同图案与其他磁吸方块，没有合法目标时独自普通入槽", () => {
+    const source = createBlock("magnetic", 0, 0, WORKING_DOG, {
+      type: DOG_MAGNETIC_MECHANISM_TYPE,
+      state: { status: DOG_MAGNETIC_MECHANISM_TYPE },
+    });
+    const samePattern = createBlock("same-pattern", 4, 0, WORKING_DOG);
+    const otherMagnetic = createBlock("other-magnetic", 8, 0, SINGLE_DOG, {
+      type: DOG_MAGNETIC_MECHANISM_TYPE,
+      state: { status: DOG_MAGNETIC_MECHANISM_TYPE },
+    });
+    const session = new GameSession(createLevel([source, samePattern, otherMagnetic]));
+
+    const result = session.selectBlock(source.id);
+
+    expect(result.magneticResolution).toEqual({
+      sourceBlockId: source.id,
+      targetBlockId: null,
+      targetTrayBlockIds: [],
+    });
+    expect(result.snapshot.trayBlocks.map((block) => block.id)).toEqual([source.id]);
+    expect(result.snapshot.trayBlocks[0]).not.toHaveProperty("specialMechanism");
+    expect(result.snapshot.remainingBlocks.map((block) => block.id)).toEqual([
+      samePattern.id,
+      otherMagnetic.id,
+    ]);
+  });
+
+  it("磁吸同 seed 与操作路径复现目标，不用有利目标替换失败结果", () => {
+    const createMagneticLevel = (runSeed: string): DogLegeDogLevel => ({
+      ...createLevel([
+        createBlock("magnetic", 0, 0, WORKING_DOG, {
+          type: DOG_MAGNETIC_MECHANISM_TYPE,
+          state: { status: DOG_MAGNETIC_MECHANISM_TYPE },
+        }),
+        createBlock("target-a", 4, 0, SINGLE_DOG),
+        createBlock("target-b", 8, 0, LICKING_DOG),
+      ]),
+      runSeed,
+    });
+
+    const first = new GameSession(createMagneticLevel("magnetic-replay-seed"));
+    const repeated = new GameSession(createMagneticLevel("magnetic-replay-seed"));
+    const firstResult = first.selectBlock("magnetic");
+    const repeatedResult = repeated.selectBlock("magnetic");
+
+    expect(repeatedResult.magneticResolution).toEqual(firstResult.magneticResolution);
+    expect(repeatedResult.snapshot.trayBlocks).toEqual(firstResult.snapshot.trayBlocks);
+
+    const createMultiMagneticLevel = (runSeed: string): DogLegeDogLevel => ({
+      ...createLevel([
+        createBlock("magnetic-1", 0, 0, WORKING_DOG, {
+          type: DOG_MAGNETIC_MECHANISM_TYPE,
+          state: { status: DOG_MAGNETIC_MECHANISM_TYPE },
+        }),
+        createBlock("magnetic-2", 4, 0, SINGLE_DOG, {
+          type: DOG_MAGNETIC_MECHANISM_TYPE,
+          state: { status: DOG_MAGNETIC_MECHANISM_TYPE },
+        }),
+        createBlock("target-a", 8, 0, LICKING_DOG),
+        createBlock("target-b", 12, 0, "看门狗"),
+      ]),
+      runSeed,
+    });
+    const firstPathSession = new GameSession(createMultiMagneticLevel("magnetic-path-seed"));
+    const repeatedPathSession = new GameSession(createMultiMagneticLevel("magnetic-path-seed"));
+    const firstPath = [
+      firstPathSession.selectBlock("magnetic-1"),
+      firstPathSession.selectBlock("magnetic-2"),
+    ];
+    const repeatedPath = [
+      repeatedPathSession.selectBlock("magnetic-1"),
+      repeatedPathSession.selectBlock("magnetic-2"),
+    ];
+
+    expect(repeatedPath.map(({ magneticResolution }) => magneticResolution)).toEqual(
+      firstPath.map(({ magneticResolution }) => magneticResolution),
+    );
+    expect(repeatedPathSession.getState().trayBlocks).toEqual(firstPathSession.getState().trayBlocks);
+
+    const failureSession = new GameSession({
+      level: createMagneticLevel("magnetic-failure-seed"),
+      initialTray: [
+        WORKING_DOG,
+        SINGLE_DOG,
+        LICKING_DOG,
+        "看门狗",
+        "疯狗",
+        "拆家狗",
+      ],
+    });
+    const failure = failureSession.selectBlock("magnetic");
+    expect(failure.selected).toBe(true);
+    expect(failure.snapshot.status).toBe("lost");
+    expect(failure.snapshot.trayLogicalUnitCount).toBeGreaterThan(7);
+  });
+
   it("幻化飞行期间只占用暂存槽，飞行完成后才执行三消", () => {
     const session = new GameSession({
       level: createLevel([
@@ -826,6 +1046,198 @@ describe("狗了个狗特殊机制", () => {
     expect(frozenBlock?.dataset.specialMechanismState).toBe("frozen");
     expect(frozenBlock?.dataset.specialMechanismProgress).toBe("0");
 
+    game.destroy();
+  });
+
+  it("磁吸方块持续显示识别状态，并按指向、目标飞入、状态消耗顺序锁定输入", async () => {
+    vi.useFakeTimers();
+    const root = document.createElement("div");
+    const level = createLevel([
+      createBlock("magnetic", 0, 0, WORKING_DOG, {
+        type: DOG_MAGNETIC_MECHANISM_TYPE,
+        state: { status: DOG_MAGNETIC_MECHANISM_TYPE },
+      }),
+      createBlock("target", 4, 0, SINGLE_DOG, {
+        type: DOG_FREEZE_MECHANISM_TYPE,
+        state: { status: "frozen", completedTriples: 0 },
+      }),
+      createBlock("remaining", 8, 0, LICKING_DOG),
+    ]);
+    const game = startDogLegeDogGame(root, {
+      level,
+      loadout: ["triple-removal", "tray-capacity", "wildcard"],
+    });
+
+    const boardMagnetic = root.querySelector<HTMLElement>(
+      '[data-testid="dog-block"][data-block-id="magnetic"]',
+    );
+    expect(boardMagnetic?.classList.contains("dog-block--special-magnetic")).toBe(true);
+    expect(boardMagnetic?.dataset.specialMechanismState).toBe(DOG_MAGNETIC_MECHANISM_TYPE);
+
+    game.selectBlock("magnetic");
+
+    expect(game.getState().inputLocked).toBe(true);
+    expect(root.querySelector<HTMLElement>('[data-testid="dog-flight"]')?.dataset.magneticFlight).toBe(
+      "true",
+    );
+    expect(game.getState().session.remainingBlocks.map((block) => block.id)).toContain("target");
+    expect(root.querySelector('[data-testid="dog-magnetic-effect"]')).toBeNull();
+
+    await vi.advanceTimersByTimeAsync(BLOCK_FLIGHT_DURATION_MS);
+    await Promise.resolve();
+    expect(root.querySelector<HTMLElement>('[data-testid="dog-magnetic-effect"]')?.dataset.sourceId).toBe(
+      "magnetic",
+    );
+    expect(root.querySelector<HTMLElement>('[data-testid="dog-magnetic-effect"]')?.dataset.targetId).toBe(
+      "target",
+    );
+    expect(game.getState().session.remainingBlocks.map((block) => block.id)).toContain("target");
+
+    await vi.advanceTimersByTimeAsync(DOG_MAGNETIC_ATTRACTION_DURATION_MS);
+    await Promise.resolve();
+    expect(game.getState().inputLocked).toBe(true);
+    expect(game.getState().session.remainingBlocks.map((block) => block.id)).toContain("target");
+    expect(root.querySelector<HTMLElement>('[data-testid="dog-flight"]')?.dataset.patternType).toBe(
+      SINGLE_DOG,
+    );
+
+    await vi.advanceTimersByTimeAsync(BLOCK_FLIGHT_DURATION_MS);
+    await vi.runAllTimersAsync();
+    expect(game.getState().inputLocked).toBe(false);
+    expect(game.getState().session.remainingBlocks.map((block) => block.id)).not.toContain("target");
+    expect(root.querySelector('[data-testid="dog-magnetic-effect"]')).toBeNull();
+    expect(game.getState().session.trayBlocks.map((block) => block.id)).toEqual([
+      "magnetic",
+      "target",
+    ]);
+    expect(game.getState().session.trayBlocks[0]).not.toHaveProperty("specialMechanism");
+    expect(game.getState().session.trayBlocks[1]).toHaveProperty(
+      "specialMechanism.type",
+      DOG_FREEZE_MECHANISM_TYPE,
+    );
+    game.destroy();
+  });
+
+  it("磁吸吸入幻化目标后先揭示，再统一结算", async () => {
+    vi.useFakeTimers();
+    const root = document.createElement("div");
+    const game = startDogLegeDogGame(root, {
+      level: createLevel([
+        createBlock("magnetic", 0, 0, WORKING_DOG, {
+          type: DOG_MAGNETIC_MECHANISM_TYPE,
+          state: { status: DOG_MAGNETIC_MECHANISM_TYPE },
+        }),
+        createBlock("illusion-target", 4, 0, SINGLE_DOG, {
+          type: DOG_ILLUSION_MECHANISM_TYPE,
+          state: { status: "masked", disguisedPatternType: LICKING_DOG },
+        }),
+        createBlock("remaining", 8, 0, WORKING_DOG),
+      ]),
+      loadout: ["triple-removal", "tray-capacity", "wildcard"],
+    });
+
+    game.selectBlock("magnetic");
+    await vi.advanceTimersByTimeAsync(BLOCK_FLIGHT_DURATION_MS);
+    await vi.advanceTimersByTimeAsync(DOG_MAGNETIC_ATTRACTION_DURATION_MS);
+    await vi.advanceTimersByTimeAsync(BLOCK_FLIGHT_DURATION_MS);
+    await Promise.resolve();
+
+    expect(game.getState().session.remainingBlocks.map((block) => block.id)).not.toContain(
+      "illusion-target",
+    );
+    expect(
+      root.querySelector<HTMLElement>(
+        '[data-testid="dog-tray-slot"][data-block-id="illusion-target"][data-illusion-reveal="true"]',
+      ),
+    ).not.toBeNull();
+
+    await vi.advanceTimersByTimeAsync(DOG_ILLUSION_REVEAL_DURATION_MS);
+    await vi.runAllTimersAsync();
+
+    expect(game.getState().inputLocked).toBe(false);
+    expect(game.getState().session.trayBlocks.map((block) => block.id)).toEqual([
+      "magnetic",
+      "illusion-target",
+    ]);
+    expect(game.getState().session.trayBlocks[1]).not.toHaveProperty("specialMechanism");
+    game.destroy();
+  });
+
+  it("磁吸触发非终局三消后恢复输入", async () => {
+    vi.useFakeTimers();
+    const root = document.createElement("div");
+    const game = startDogLegeDogGame(root, {
+      level: createLevel([
+        createBlock("working-1", 0, 0, WORKING_DOG),
+        createBlock("working-2", 4, 0, WORKING_DOG),
+        createBlock("magnetic", 8, 0, WORKING_DOG, {
+          type: DOG_MAGNETIC_MECHANISM_TYPE,
+          state: { status: DOG_MAGNETIC_MECHANISM_TYPE },
+        }),
+        createBlock("target", 12, 0, SINGLE_DOG, {
+          type: DOG_FREEZE_MECHANISM_TYPE,
+          state: { status: "frozen", completedTriples: 0 },
+        }),
+        createBlock("remaining", 16, 0, WORKING_DOG),
+      ]),
+      loadout: ["triple-removal", "tray-capacity", "wildcard"],
+    });
+
+    for (const blockId of ["working-1", "working-2"]) {
+      game.selectBlock(blockId);
+      await vi.runAllTimersAsync();
+    }
+    game.selectBlock("magnetic");
+    await vi.advanceTimersByTimeAsync(BLOCK_FLIGHT_DURATION_MS);
+    await vi.advanceTimersByTimeAsync(DOG_MAGNETIC_ATTRACTION_DURATION_MS);
+    await vi.advanceTimersByTimeAsync(BLOCK_FLIGHT_DURATION_MS);
+    await vi.runAllTimersAsync();
+
+    expect(game.getState().inputLocked).toBe(false);
+    expect(game.getState().session.status).toBe("playing");
+    expect(game.getState().session.remainingBlocks.map((block) => block.id)).toEqual(["remaining"]);
+    expect(game.getState().session.trayBlocks.map((block) => block.id)).toEqual(["target"]);
+    game.destroy();
+  });
+
+  it("磁吸吸入双生目标后先分裂，再统一结算", async () => {
+    vi.useFakeTimers();
+    const root = document.createElement("div");
+    const game = startDogLegeDogGame(root, {
+      level: createLevel([
+        createBlock("magnetic", 0, 0, WORKING_DOG, {
+          type: DOG_MAGNETIC_MECHANISM_TYPE,
+          state: { status: DOG_MAGNETIC_MECHANISM_TYPE },
+        }),
+        createBlock("twin-target", 4, 0, SINGLE_DOG, {
+          type: DOG_TWIN_MECHANISM_TYPE,
+          state: { status: DOG_TWIN_MECHANISM_TYPE },
+        }),
+        createBlock("remaining", 8, 0, WORKING_DOG),
+      ]),
+      loadout: ["triple-removal", "tray-capacity", "wildcard"],
+    });
+
+    game.selectBlock("magnetic");
+    await vi.advanceTimersByTimeAsync(BLOCK_FLIGHT_DURATION_MS);
+    await vi.advanceTimersByTimeAsync(DOG_MAGNETIC_ATTRACTION_DURATION_MS);
+    await vi.advanceTimersByTimeAsync(BLOCK_FLIGHT_DURATION_MS);
+    await Promise.resolve();
+
+    expect(root.querySelector<HTMLElement>('[data-testid="dog-twin-split-effect"]')?.dataset.twinSourceId)
+      .toBe("twin-target");
+    expect(root.querySelector<HTMLElement>('[data-testid="dog-twin-split-effect"]')?.dataset.twinBlockIds)
+      .toBe("twin-target-1,twin-target-2");
+
+    await vi.advanceTimersByTimeAsync(DOG_TWIN_SPLIT_DURATION_MS);
+    await vi.runAllTimersAsync();
+
+    expect(game.getState().inputLocked).toBe(false);
+    expect(game.getState().session.trayBlocks.map((block) => block.id)).toEqual([
+      "magnetic",
+      "twin-target-1",
+      "twin-target-2",
+    ]);
     game.destroy();
   });
 

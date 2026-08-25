@@ -5,6 +5,7 @@ export {
   GameSession,
   type GameSessionMeltLocation,
   type GameSessionMeltResult,
+  type GameSessionMagneticResolution,
   type GameSessionPendingSelectionResult,
   type GameSessionOptions,
   type GameSessionSelectionResult,

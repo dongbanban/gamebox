@@ -7,12 +7,14 @@ export const DOG_DETECTOR_REVEAL_DURATION_MS = DOG_ITEM_FEEDBACK_DURATION_MS;
 export const DOG_TORCH_MELT_DURATION_MS = DOG_ITEM_FEEDBACK_DURATION_MS;
 export const DOG_FREEZE_MELT_DURATION_MS = 1400;
 export const DOG_TWIN_SPLIT_DURATION_MS = DOG_ITEM_FEEDBACK_DURATION_MS;
+export const DOG_MAGNETIC_ATTRACTION_DURATION_MS = DOG_ITEM_FEEDBACK_DURATION_MS;
 
 export interface BlockFlightOptions {
   readonly root: HTMLElement;
   readonly patternMarkup: string;
   readonly patternType?: string;
   readonly isIllusion?: boolean;
+  readonly isMagnetic?: boolean;
   readonly source: DOMRect | null;
   readonly target: DOMRect | null;
 }
@@ -40,6 +42,9 @@ export function animateBlockFlight(options: BlockFlightOptions): CancellableAnim
   }
   if (options.isIllusion) {
     flight.dataset.illusionFlight = "true";
+  }
+  if (options.isMagnetic) {
+    flight.dataset.magneticFlight = "true";
   }
   flight.innerHTML = options.patternMarkup;
   layer.append(flight);
@@ -89,6 +94,53 @@ export function animateBlockFlight(options: BlockFlightOptions): CancellableAnim
   animation?.addEventListener("cancel", lifecycle.cancel, { once: true });
 
   return lifecycle;
+}
+
+export interface DogMagneticAttractionEffectOptions {
+  readonly root: HTMLElement;
+  readonly sourceId: string;
+  readonly targetId: string;
+  readonly source: DOMRect | null;
+  readonly target: DOMRect | null;
+}
+
+export function animateDogMagneticAttractionEffect(
+  options: DogMagneticAttractionEffectOptions,
+): CancellableAnimation {
+  const layer = options.root.querySelector<HTMLElement>(
+    '[data-testid="dog-animation-layer"]',
+  );
+  if (layer === null) {
+    return createAnimationLifecycle(DOG_MAGNETIC_ATTRACTION_DURATION_MS, () => undefined);
+  }
+
+  const effect = document.createElement("div");
+  effect.className = "dog-magnetic-attraction-effect";
+  effect.dataset.testid = "dog-magnetic-effect";
+  effect.dataset.sourceId = options.sourceId;
+  effect.dataset.targetId = options.targetId;
+  effect.setAttribute("aria-hidden", "true");
+  effect.innerHTML = '<span class="dog-magnetic-attraction-effect__arrow">↗</span>';
+  const layerRect = layer.getBoundingClientRect();
+  const source = options.source;
+  const target = options.target;
+  const sourceLeft = (source?.left ?? layerRect.left) - layerRect.left;
+  const sourceTop = (source?.top ?? layerRect.top) - layerRect.top;
+  const targetLeft = (target?.left ?? layerRect.left) - layerRect.left;
+  const targetTop = (target?.top ?? layerRect.top) - layerRect.top;
+  Object.assign(effect.style, {
+    left: `${Math.min(sourceLeft, targetLeft)}px`,
+    top: `${Math.min(sourceTop, targetTop)}px`,
+    width: `${Math.max(Math.abs(targetLeft - sourceLeft), 48)}px`,
+    height: `${Math.max(Math.abs(targetTop - sourceTop), 48)}px`,
+    "--dog-magnetic-delta-x": `${targetLeft - sourceLeft}px`,
+    "--dog-magnetic-delta-y": `${targetTop - sourceTop}px`,
+  });
+  layer.append(effect);
+
+  return createAnimationLifecycle(DOG_MAGNETIC_ATTRACTION_DURATION_MS, () => {
+    effect.remove();
+  });
 }
 
 export interface DogTwinSplitEffectOptions {

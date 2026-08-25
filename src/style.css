@@ -1472,6 +1472,90 @@ h2 {
   text-shadow: 0 1px 0 rgba(22, 68, 93, 0.35);
 }
 
+.dog-block--special-magnetic {
+  border: 3px solid rgba(255, 226, 171, 0.98);
+  box-shadow:
+    0 0 0 1.5px rgba(255, 159, 67, 0.84),
+    0 0 10px 3px rgba(255, 135, 47, 0.56),
+    4px 5px 0 rgba(22, 68, 93, 0.2),
+    inset 0 0 0 2px rgba(255, 252, 235, 0.92);
+  animation: dog-magnetic-pulse 1400ms ease-in-out infinite;
+}
+
+.dog-block--special-magnetic::before {
+  z-index: 2;
+  inset: -2px;
+  border: 1px dashed rgba(255, 244, 208, 0.96);
+  border-radius: 13px;
+  background:
+    radial-gradient(circle at 28% 32%, rgba(255, 255, 255, 0.78) 0 2px, transparent 3px),
+    radial-gradient(circle at 72% 68%, rgba(255, 232, 172, 0.8) 0 2px, transparent 3px),
+    repeating-linear-gradient(135deg, rgba(255, 247, 218, 0.24) 0 2px, transparent 2px 8px);
+  box-shadow:
+    0 0 0 1px rgba(255, 204, 115, 0.48),
+    0 0 8px 2px rgba(255, 153, 58, 0.42),
+    inset 0 0 12px rgba(255, 255, 255, 0.48);
+  content: "";
+  animation: dog-magnetic-field 1100ms linear infinite;
+}
+
+.dog-block--special-magnetic::after {
+  position: absolute;
+  z-index: 3;
+  right: -5px;
+  bottom: -5px;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 2px solid rgba(255, 244, 208, 0.96);
+  border-radius: 50%;
+  background: rgba(220, 105, 38, 0.94);
+  color: #fff8df;
+  content: "↗";
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1;
+  pointer-events: none;
+  text-shadow: 0 1px 0 rgba(22, 68, 93, 0.35);
+}
+
+@keyframes dog-magnetic-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1.5px rgba(255, 159, 67, 0.7),
+      0 0 7px 2px rgba(255, 135, 47, 0.42),
+      4px 5px 0 rgba(22, 68, 93, 0.2),
+      inset 0 0 0 2px rgba(255, 252, 235, 0.82);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 2px rgba(255, 184, 88, 0.98),
+      0 0 18px 5px rgba(255, 135, 47, 0.72),
+      4px 5px 0 rgba(22, 68, 93, 0.2),
+      inset 0 0 0 2px rgba(255, 255, 242, 0.98);
+  }
+}
+
+@keyframes dog-magnetic-field {
+  0% {
+    transform: rotate(0deg) scale(0.96);
+    opacity: 0.58;
+  }
+
+  50% {
+    transform: rotate(180deg) scale(1.04);
+    opacity: 1;
+  }
+
+  100% {
+    transform: rotate(360deg) scale(0.96);
+    opacity: 0.58;
+  }
+}
+
 @keyframes dog-twin-pulse {
   0%,
   100% {
@@ -1689,6 +1773,9 @@ h2 {
   .dog-tray__slot--illusion-reveal::before,
   .dog-tray__slot--illusion-reveal .dog-block__glyph,
   .dog-flying-block--illusion::before,
+  .dog-block--special-magnetic,
+  .dog-block--special-magnetic::before,
+  .dog-magnetic-attraction-effect,
   .dog-block--special-twin,
   .dog-block--special-twin::before,
   .dog-twin-split-effect,
@@ -2472,6 +2559,55 @@ h2 {
   background: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.34) 0 2px, transparent 2px 8px);
   content: "";
   pointer-events: none;
+}
+
+.dog-flying-block[data-magnetic-flight="true"] {
+  border: 3px solid rgba(255, 226, 171, 0.98);
+  box-shadow:
+    0 0 0 2px rgba(255, 159, 67, 0.7),
+    0 0 15px 4px rgba(255, 135, 47, 0.58),
+    4px 5px 0 rgba(22, 68, 93, 0.2);
+}
+
+.dog-magnetic-attraction-effect {
+  position: absolute;
+  z-index: 52;
+  display: grid;
+  place-items: center;
+  border: 2px dashed rgba(255, 187, 88, 0.94);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 209, 102, 0.3), transparent 68%);
+  box-shadow: 0 0 18px rgba(255, 135, 47, 0.64);
+  transform-origin: 0 0;
+  animation: dog-magnetic-attraction 360ms cubic-bezier(0.16, 0.8, 0.3, 1) both;
+}
+
+.dog-magnetic-attraction-effect__arrow {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  color: #fff4c8;
+  font-size: 28px;
+  font-weight: 900;
+  text-shadow: 0 0 8px rgba(255, 112, 38, 0.95);
+  transform: translate(-50%, -50%);
+}
+
+@keyframes dog-magnetic-attraction {
+  0% {
+    opacity: 0;
+    transform: scale(0.42) rotate(-18deg);
+  }
+
+  35% {
+    opacity: 1;
+    transform: scale(1.04) rotate(8deg);
+  }
+
+  100% {
+    opacity: 0.12;
+    transform: translate3d(var(--dog-magnetic-delta-x), var(--dog-magnetic-delta-y), 0) scale(0.6) rotate(24deg);
+  }
 }
 
 .dog-flying-block .dog-block__glyph {

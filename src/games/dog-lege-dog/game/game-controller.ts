@@ -19,6 +19,7 @@ import {
 } from "@/games/dog-lege-dog/game/game-config";
 import {
   DOG_ILLUSION_MECHANISM_TYPE,
+  DOG_MAGNETIC_MECHANISM_TYPE,
   DOG_TWIN_MECHANISM_TYPE,
   getDogIllusionDisguisedPattern,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
@@ -29,6 +30,7 @@ import {
   animateDogDetectorReveal,
   animateDogIllusionReveal,
   animateDogItemEffect,
+  animateDogMagneticAttractionEffect,
   animateDogTripleRemovalEffect,
   animateDogTorchMeltEffect,
   animateDogTwinSplitEffect,
@@ -164,12 +166,21 @@ export function createDogLegeDogGame(
     );
     const sourceRect = sourceElement?.getBoundingClientRect() ?? null;
     const isIllusion = sourceBlock?.specialMechanism?.type === DOG_ILLUSION_MECHANISM_TYPE;
+    const isMagnetic = sourceBlock?.specialMechanism?.type === DOG_MAGNETIC_MECHANISM_TYPE;
     const isTwin = sourceBlock?.specialMechanism?.type === DOG_TWIN_MECHANISM_TYPE;
     const patternMarkup = isIllusion
       ? renderDogPatternAsset(getDogIllusionDisguisedPattern(sourceBlock))
       : sourceElement?.querySelector<HTMLElement>(".dog-block__glyph")?.outerHTML ?? "";
     if (isIllusion && shouldAnimate && runtime.started && sourceBlock !== undefined) {
       return commitAnimatedIllusionSelection(
+        blockId,
+        sourceBlock,
+        sourceRect,
+        patternMarkup,
+      );
+    }
+    if (isMagnetic && shouldAnimate && runtime.started && sourceBlock !== undefined) {
+      return commitAnimatedMagneticSelection(
         blockId,
         sourceBlock,
         sourceRect,
@@ -290,6 +301,53 @@ export function createDogLegeDogGame(
     return pending.snapshot;
   }
 
+  function commitAnimatedMagneticSelection(
+    blockId: string,
+    block: DogBlock,
+    sourceRect: DOMRect | null,
+    patternMarkup: string,
+  ): GameSessionSnapshot {
+    const pending = runtime.session.beginBlockSelection(blockId);
+    if (!pending.selected) {
+      return pending.snapshot;
+    }
+
+    const targetBlockId = pending.magneticResolution?.targetBlockId ?? null;
+    const targetBlock = targetBlockId === null
+      ? undefined
+      : pending.snapshot.remainingBlocks.find((candidate) => candidate.id === targetBlockId);
+    const targetElement = targetBlockId === null ? null : findBlockElement(root, targetBlockId);
+    const targetRect = targetElement?.getBoundingClientRect() ?? null;
+    const targetPatternMarkup =
+      targetElement?.querySelector<HTMLElement>(".dog-block__glyph")?.outerHTML ?? patternMarkup;
+
+    runtime.hasInteracted = true;
+    runtime.inputLocked = true;
+    runtime.feedback = "idle";
+    runtime.matchFeedbackActive = false;
+    soundEffects.play("select");
+    renderStartedGame(pending.snapshot);
+    const trayTarget = findTrayBlockElement(root, blockId) ??
+      findTrayTarget(root, block.patternType);
+    const sourceFlight = animateBlockFlight({
+      root,
+      patternMarkup,
+      patternType: block.patternType,
+      isMagnetic: true,
+      source: sourceRect,
+      target: trayTarget?.getBoundingClientRect() ?? null,
+    });
+    runtime.activeFlights.add(sourceFlight);
+    void finishAnimatedMagneticSelection(
+      sourceFlight,
+      block,
+      targetBlock,
+      targetRect,
+      targetPatternMarkup,
+    );
+    return pending.snapshot;
+  }
+
   async function finishAnimatedSelection(
     flight: CancellableAnimation,
     result: GameResult | null,
@@ -325,6 +383,119 @@ export function createDogLegeDogGame(
     }
 
     await finishResolvedSelection(result, didMatch);
+  }
+
+  async function finishAnimatedMagneticSelection(
+    sourceFlight: CancellableAnimation,
+    sourceBlock: DogBlock,
+    targetBlock: DogBlock | undefined,
+    targetRect: DOMRect | null,
+    targetPatternMarkup: string,
+  ): Promise<void> {
+    await sourceFlight.promise;
+    runtime.activeFlights.delete(sourceFlight);
+    if (runtime.destroyed) {
+      return;
+    }
+
+    if (targetBlock !== undefined && targetRect !== null) {
+      const sourceElement = findTrayBlockElement(root, sourceBlock.id);
+      const attraction = animateDogMagneticAttractionEffect({
+        root,
+        sourceId: sourceBlock.id,
+        targetId: targetBlock.id,
+        source: sourceElement?.getBoundingClientRect() ?? null,
+        target: targetRect,
+      });
+      runtime.activeFlights.add(attraction);
+      await attraction.promise;
+      runtime.activeFlights.delete(attraction);
+      if (runtime.destroyed) {
+        return;
+      }
+
+      const targetTray = findTrayInsertionTarget(
+        root,
+        runtime.session.getState().trayBlocks.length,
+        targetBlock.patternType,
+      );
+      const targetFlight = animateBlockFlight({
+        root,
+        patternMarkup: targetPatternMarkup,
+        patternType: targetBlock.patternType,
+        isIllusion: targetBlock.specialMechanism?.type === DOG_ILLUSION_MECHANISM_TYPE,
+        source: targetRect,
+        target: targetTray?.getBoundingClientRect() ?? null,
+      });
+      runtime.activeFlights.add(targetFlight);
+      await targetFlight.promise;
+      runtime.activeFlights.delete(targetFlight);
+      if (runtime.destroyed) {
+        return;
+      }
+    }
+
+    const magneticResolution = runtime.session.completeMagneticEntry();
+    if (magneticResolution === null) {
+      runtime.inputLocked = false;
+      renderStartedGame();
+      return;
+    }
+
+    renderStartedGame(runtime.session.getState());
+    const trayRectsBeforeSelection = captureTrayBlockRects(root);
+    const targetTray = targetBlock === undefined
+      ? null
+      : findTrayBlockElement(
+          root,
+          magneticResolution.targetTrayBlockIds[0] ?? targetBlock.id,
+        );
+
+    if (targetBlock !== undefined) {
+      if (targetBlock.specialMechanism?.type === DOG_ILLUSION_MECHANISM_TYPE) {
+        const reveal = animateDogIllusionReveal({
+          root,
+          blockId: targetBlock.id,
+        });
+        runtime.activeFlights.add(reveal);
+        await reveal.promise;
+        runtime.activeFlights.delete(reveal);
+        if (runtime.destroyed) {
+          return;
+        }
+      }
+
+      if (targetBlock.specialMechanism?.type === DOG_TWIN_MECHANISM_TYPE) {
+        const split = animateDogTwinSplitEffect({
+          root,
+          sourceId: targetBlock.id,
+          blockIds: magneticResolution.targetTrayBlockIds,
+          patternMarkup: targetPatternMarkup,
+          source: targetRect,
+          target: targetTray?.getBoundingClientRect() ?? null,
+        });
+        runtime.activeFlights.add(split);
+        await split.promise;
+        runtime.activeFlights.delete(split);
+        if (runtime.destroyed) {
+          return;
+        }
+      }
+    }
+
+    const selection = runtime.session.resolveMagneticEntry();
+    const result = createResult(level, selection.snapshot.status);
+    if (result !== null) {
+      runtime.endedAt = Date.now();
+      confirmResult(result, false);
+    }
+    if (selection.removedCount > 0) {
+      runtime.matchFeedbackActive = true;
+      runtime.feedback = "match";
+      soundEffects.play("match");
+    }
+    startMeltAnimations(selection.meltedBlockIds, trayRectsBeforeSelection);
+    await finishResolvedSelection(result, selection.removedCount > 0);
   }
 
   async function finishIllusionReveal(
@@ -1126,6 +1297,21 @@ function findBlockElement(root: HTMLElement, blockId: string): HTMLElement | nul
   return [...root.querySelectorAll<HTMLElement>('[data-testid="dog-block"]')].find(
     (block) => block.dataset.blockId === blockId,
   ) ?? null;
+}
+
+function findTrayBlockElement(root: HTMLElement, blockId: string): HTMLElement | null {
+  return [...root.querySelectorAll<HTMLElement>('[data-testid="dog-tray-slot"][data-block-id]')].find(
+    (slot) => slot.dataset.blockId === blockId,
+  ) ?? null;
+}
+
+function findTrayInsertionTarget(
+  root: HTMLElement,
+  insertionIndex: number,
+  patternType: string | undefined,
+): HTMLElement | null {
+  const slots = [...root.querySelectorAll<HTMLElement>('[data-testid="dog-tray-slot"]')];
+  return slots[insertionIndex] ?? findTrayTarget(root, patternType);
 }
 
 function findTrayTarget(root: HTMLElement, patternType: string | undefined): HTMLElement | null {
