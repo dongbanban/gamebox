@@ -657,6 +657,9 @@ export function createDogLegeDogGame(
     targetRect: DOMRect | null = null,
     tripleSourceRects: ReadonlyMap<string, DOMRect> = new Map(),
   ): void {
+    if (action.accepted && action.success) {
+      runtime.hasInteracted = true;
+    }
     renderStartedGame();
     if (action.accepted && action.success && action.itemId !== null) {
       startItemAnimation(
@@ -838,6 +841,8 @@ export function createDogLegeDogGame(
       runtime.inputLocked ||
       runtime.activeFlights.size > 0 ||
       runtime.matchAnimation !== null ||
+      runtime.itemRuntime?.isInputLocked() === true ||
+      runtime.hasInteracted ||
       runtime.session.getState().status !== "playing"
     ) {
       return;
@@ -1037,6 +1042,7 @@ function createGameState(
     inputLocked,
     loadoutLocked:
       sessionState.status !== "playing" ||
+      runtime.hasInteracted ||
       inputLocked ||
       runtime.activeFlights.size > 0 ||
       runtime.matchAnimation !== null,

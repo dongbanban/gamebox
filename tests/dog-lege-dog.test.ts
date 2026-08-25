@@ -680,6 +680,9 @@ describe("狗了个狗首关", () => {
 
     expect(game.getState().inputLocked).toBe(false);
     expect(root.querySelector('[data-testid="dog-item-effect"]')).toBeNull();
+    expect(root.querySelector<HTMLButtonElement>('[data-testid="dog-edit-loadout"]')?.disabled).toBe(
+      true,
+    );
     expect(game.getState().items?.items.find((item) => item.id === "tray-capacity")).toMatchObject({
       remainingUses: 0,
       available: false,
@@ -850,7 +853,7 @@ describe("狗了个狗首关", () => {
     game.destroy();
   });
 
-  it("更换道具组重置当前尝试容量加成与次数", async () => {
+  it("挑战开始后禁止更换道具组，容量加成与次数保持", async () => {
     vi.useFakeTimers();
     const root = document.createElement("div");
     const game = startTestGame(root, {
@@ -861,24 +864,24 @@ describe("狗了个狗首关", () => {
     root.querySelector<HTMLButtonElement>('[data-item-id="tray-capacity"]')?.click();
     await vi.advanceTimersByTimeAsync(DOG_ITEM_FEEDBACK_DURATION_MS);
     expect(game.getState().session.trayCapacity).toBe(8);
+    expect(root.querySelector<HTMLButtonElement>('[data-testid="dog-edit-loadout"]')?.disabled).toBe(
+      true,
+    );
 
     root.querySelector<HTMLButtonElement>('[data-action="edit-loadout"]')?.click();
-    root.querySelector<HTMLButtonElement>('[data-loadout-id="wildcard"]')?.click();
-    root.querySelector<HTMLButtonElement>('[data-loadout-id="triple-removal"]')?.click();
-    root.querySelector<HTMLButtonElement>('[data-action="confirm-loadout"]')?.click();
-    root.querySelector<HTMLButtonElement>('[data-action="apply-loadout-change"]')?.click();
+    expect(root.querySelector('[data-testid="dog-loadout-panel"]')).toBeNull();
 
-    expect(game.getState().session.trayCapacity).toBe(7);
+    expect(game.getState().session.trayCapacity).toBe(8);
     expect(game.getState().items?.items.find((item) => item.id === "tray-capacity")).toMatchObject({
-      remainingUses: 1,
-      available: true,
+      remainingUses: 0,
+      available: false,
     });
     game.destroy();
   });
 });
 
 describe("狗了个狗活动道具组变更", () => {
-  it("稳定状态更换组合需要二次确认，并沿用同一 runSeed 与棋盘后重置局内状态", async () => {
+  it("准备态更换组合需要二次确认，挑战开始后禁止再次更换", async () => {
     vi.useFakeTimers();
     const root = document.createElement("div");
     const confirmedLoadouts: string[][] = [];
@@ -888,16 +891,6 @@ describe("狗了个狗活动道具组变更", () => {
       onLoadoutConfirmed: (loadout) => confirmedLoadouts.push([...loadout]),
     });
     const before = game.getState();
-
-    game.selectBlock(before.session.selectableBlockIds[0] ?? "");
-    expect(game.getState().session.tray).toHaveLength(1);
-    expect(root.querySelector<HTMLButtonElement>('[data-testid="dog-edit-loadout"]')?.disabled).toBe(
-      true,
-    );
-    await vi.runAllTimersAsync();
-    expect(root.querySelector<HTMLButtonElement>('[data-testid="dog-edit-loadout"]')?.disabled).toBe(
-      false,
-    );
 
     root.querySelector<HTMLButtonElement>('[data-action="edit-loadout"]')?.click();
     expect(
@@ -910,7 +903,7 @@ describe("狗了个狗活动道具组变更", () => {
     expect(root.querySelector<HTMLButtonElement>('[data-action="confirm-loadout"]')?.disabled).toBe(true);
     root.querySelector<HTMLButtonElement>('[data-action="cancel-loadout"]')?.click();
     expect(root.querySelector('[data-testid="dog-loadout-panel"]')).toBeNull();
-    expect(game.getState().session.tray).toHaveLength(1);
+    expect(game.getState().session.tray).toHaveLength(0);
 
     root.querySelector<HTMLButtonElement>('[data-action="edit-loadout"]')?.click();
 
@@ -936,6 +929,18 @@ describe("狗了个狗活动道具组变更", () => {
     expect(after.session.status).toBe("playing");
     expect(after.loadout).toEqual(["tray-capacity", "wildcard", "torch"]);
     expect(after.loadoutEditor).toBeNull();
+
+    game.selectBlock(after.session.selectableBlockIds[0] ?? "");
+    expect(game.getState().session.tray).toHaveLength(1);
+    expect(root.querySelector<HTMLButtonElement>('[data-testid="dog-edit-loadout"]')?.disabled).toBe(
+      true,
+    );
+    await vi.runAllTimersAsync();
+    expect(root.querySelector<HTMLButtonElement>('[data-testid="dog-edit-loadout"]')?.disabled).toBe(
+      true,
+    );
+    root.querySelector<HTMLButtonElement>('[data-action="edit-loadout"]')?.click();
+    expect(root.querySelector('[data-testid="dog-loadout-panel"]')).toBeNull();
 
     game.destroy();
   });

@@ -245,7 +245,7 @@ describe("通用游戏定义与结果契约", () => {
 });
 
 describe("狗了个狗道具组选择", () => {
-  it("首次进入同时展示本关棋盘与五种道具，确认三个后才建立道具组", () => {
+  it("首次进入同时展示本关棋盘与七种道具，确认三个后才建立道具组", () => {
     const storage = new MemoryStorage();
     const store = new ProgressStore({
       storage,
@@ -269,7 +269,7 @@ describe("狗了个狗道具组选择", () => {
     expect(root.querySelector('[data-action="cancel-loadout"]')?.textContent).toBe("清空");
     expect(root.querySelector('[data-action="confirm-loadout"]')?.textContent).toContain("确认");
     expect(root.querySelector('[data-testid="dog-loadout-panel"]')).not.toBeNull();
-    expect(root.querySelectorAll('[data-testid="dog-loadout-option"]')).toHaveLength(5);
+    expect(root.querySelectorAll('[data-testid="dog-loadout-option"]')).toHaveLength(7);
     expect(root.querySelector('[data-testid="dog-block"]:not([disabled])')).toBeNull();
     expect(store.snapshot().state?.games[GAME_ID].loadout).toBeNull();
 
@@ -368,6 +368,7 @@ describe("狗了个狗道具组选择", () => {
     root.querySelector<HTMLButtonElement>('[data-action="edit-loadout"]')?.click();
     expect(root.querySelector('[data-testid="dog-loadout-panel"]')).not.toBeNull();
     expect(root.textContent).toContain("当前道具组将应用于第 1 关");
+    expect(root.querySelector('[data-loadout-id="key"] small')?.textContent).toBe("本关 0 次");
     root.querySelector<HTMLButtonElement>('[data-loadout-id="triple-removal"]')?.click();
     root.querySelector<HTMLButtonElement>('[data-loadout-id="torch"]')?.click();
     root.querySelector<HTMLButtonElement>('[data-action="confirm-loadout"]')?.click();
@@ -406,6 +407,7 @@ describe("狗了个狗道具组选择", () => {
     firstRoot.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
     expect(firstRoot.querySelector('[data-testid="dog-loadout-panel"]')).toBeNull();
     firstRoot.querySelector<HTMLButtonElement>('[data-testid="dog-block"]:not([disabled])')?.click();
+    expect(firstRoot.querySelector<HTMLButtonElement>('[data-action="edit-loadout"]')?.disabled).toBe(true);
     firstApp.destroy();
 
     const secondRoot = document.createElement("div");
@@ -462,6 +464,13 @@ describe("狗了个狗道具组选择", () => {
       userIdFactory: () => "123e4567-e89b-12d3-a456-426614174000",
     });
     store.register();
+    for (const levelNumber of [1, 2, 3, 4]) {
+      store.recordLevelCompletion({
+        gameId: GAME_ID,
+        levelNumber,
+        reward: 0,
+      });
+    }
     store.setGameLoadout(GAME_ID, ["triple-removal", "tray-capacity", "wildcard"]);
     const resultDisplay = {
       won: { eyebrow: "测试 · 通关", title: "通关", description: "完成。" },
@@ -491,7 +500,7 @@ describe("狗了个狗道具组选择", () => {
     root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
     const result: GameResult = {
       gameId: GAME_ID,
-      levelNumber: 1,
+      levelNumber: 5,
       status: "won",
       reward: 25,
       display: resultDisplay.won,
@@ -500,19 +509,20 @@ describe("狗了个狗道具组选择", () => {
     launchContexts[0]?.onResultConfirmed?.(result);
     launchContexts[0]?.onResult?.(result);
     root.querySelector<HTMLButtonElement>('[data-action="edit-loadout"]')?.click();
-    expect(root.textContent).toContain("新道具组将在第 2 关生效");
+    expect(root.textContent).toContain("新道具组将在第 6 关生效");
+    expect(root.querySelector('[data-loadout-id="demagnetizer"] small')?.textContent).toBe("本关 3 次");
     root.querySelector<HTMLButtonElement>('[data-loadout-id="triple-removal"]')?.click();
     root.querySelector<HTMLButtonElement>('[data-loadout-id="torch"]')?.click();
     root.querySelector<HTMLButtonElement>('[data-action="confirm-loadout"]')?.click();
     expect(root.textContent).toContain("已完成关卡、奖励与解锁保持不变");
     root.querySelector<HTMLButtonElement>('[data-action="apply-loadout-change"]')?.click();
 
-    expect(launchContexts[1]?.levelNumber).toBe(2);
+    expect(launchContexts[1]?.levelNumber).toBe(6);
     expect(launchContexts[1]?.runSeed).toBe("win-run-2");
     expect(store.snapshot().state?.games[GAME_ID]).toMatchObject({
-      highestUnlockedLevel: 2,
+      highestUnlockedLevel: 6,
       totalScore: 25,
-      completedLevels: [1],
+      completedLevels: [1, 2, 3, 4, 5],
       loadout: ["tray-capacity", "wildcard", "torch"],
     });
     expect(root.querySelector('[data-testid="dog-loadout-panel"]')).toBeNull();
@@ -680,7 +690,7 @@ describe("注册与游戏目录 UI", () => {
     expect(root.textContent).not.toContain(FIRST_LEVEL_SEED);
     expect(root.textContent).not.toContain("选择没有遮挡的方块，凑齐三个相同图案。");
     expect(root.textContent).not.toContain("剩余方块");
-    expect(root.querySelectorAll('[data-testid="dog-loadout-option"]')).toHaveLength(5);
+    expect(root.querySelectorAll('[data-testid="dog-loadout-option"]')).toHaveLength(7);
     expect(root.textContent).not.toContain("层数");
     expect(root.querySelector('[data-testid="dog-tray"]')).not.toBeNull();
 

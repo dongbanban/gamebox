@@ -8,6 +8,8 @@ export const DOG_ITEM_IDS = Object.freeze([
   "wildcard",
   "torch",
   "detector",
+  "demagnetizer",
+  "key",
 ] as const);
 
 export type DogItemId = (typeof DOG_ITEM_IDS)[number];
@@ -68,6 +70,22 @@ export const DOG_ITEM_DEFINITIONS: readonly DogItemDefinition[] = Object.freeze(
     description: "揭示一个幻化方块",
     targetType: "block",
     visualFeedback: "detector",
+  }),
+  Object.freeze({
+    id: "demagnetizer",
+    name: "消磁仪",
+    icon: "⊖",
+    description: "移除一个磁吸方块的磁性",
+    targetType: "block",
+    visualFeedback: "demagnetizer",
+  }),
+  Object.freeze({
+    id: "key",
+    name: "钥匙",
+    icon: "⚿",
+    description: "解锁一个暂存槽",
+    targetType: "none",
+    visualFeedback: "key",
   }),
 ]);
 
@@ -222,6 +240,7 @@ export function renderDogLoadoutSummary(
   inputLocked = false,
   itemStates: readonly DogLoadoutSummaryItemState[] = [],
   targetState?: DogLoadoutSummaryTargetState,
+  loadoutLocked = inputLocked,
 ): string {
   const targetType = targetState?.targetType ?? null;
   const isTargeting = targetType !== null;
@@ -272,7 +291,7 @@ export function renderDogLoadoutSummary(
         ${targetType === null
           ? ""
           : '<button class="text-button dog-loadout-summary__cancel" type="button" data-action="cancel-item-target">取消</button>'}
-        <button class="text-button dog-loadout-summary__edit" type="button" data-action="edit-loadout" data-testid="dog-edit-loadout" ${inputLocked ? "disabled" : ""}>变更</button>
+        <button class="text-button dog-loadout-summary__edit" type="button" data-action="edit-loadout" data-testid="dog-edit-loadout" ${loadoutLocked ? "disabled" : ""}>变更</button>
       </div>
       ${targetPrompt}
     </section>

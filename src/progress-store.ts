@@ -3,6 +3,7 @@ import { DOG_GAME_ID } from "@/games/dog-lege-dog/game/game-config";
 export const STORAGE_KEY = "gamebox.state";
 export const APP_STATE_VERSION = 1 as const;
 export const GAME_ID = DOG_GAME_ID;
+const DOG_PERSISTED_LOADOUT_SIZE = 3 as const;
 
 const PERSISTENCE_WARNING = "本地数据无法持久化，当前为临时运行模式。";
 const MAX_LEGACY_COMPLETED_LEVELS = 100_000;
@@ -336,7 +337,7 @@ function normalizeAppState(value: unknown): AppState | null {
 
   const games: Record<string, GameProgress> = {};
   for (const [gameId, rawProgress] of Object.entries(value.games)) {
-    const progress = normalizeGameProgress(rawProgress);
+    const progress = normalizeGameProgress(rawProgress, gameId);
     if (progress === null) {
       return null;
     }
@@ -358,7 +359,7 @@ function normalizeAppState(value: unknown): AppState | null {
   };
 }
 
-function normalizeGameProgress(value: unknown): GameProgress | null {
+function normalizeGameProgress(value: unknown, gameId: string): GameProgress | null {
   if (
     !isRecord(value) ||
     !Number.isSafeInteger(value.highestUnlockedLevel) ||
@@ -397,11 +398,11 @@ function normalizeGameProgress(value: unknown): GameProgress | null {
     highestUnlockedLevel: value.highestUnlockedLevel,
     totalScore: value.totalScore,
     completedLevels: [...completedLevels],
-    loadout: normalizeLoadout(value.loadout),
+    loadout: normalizeLoadout(value.loadout, gameId),
   };
 }
 
-function normalizeLoadout(value: unknown): readonly string[] | null {
+function normalizeLoadout(value: unknown, gameId: string): readonly string[] | null {
   if (value === undefined || value === null) {
     return null;
   }
@@ -409,6 +410,7 @@ function normalizeLoadout(value: unknown): readonly string[] | null {
   if (
     !Array.isArray(value) ||
     value.length === 0 ||
+    (gameId === DOG_GAME_ID && value.length !== DOG_PERSISTED_LOADOUT_SIZE) ||
     !value.every((itemId) => typeof itemId === "string" && itemId.trim() !== "") ||
     new Set(value).size !== value.length
   ) {
@@ -470,6 +472,7 @@ function assertLoadoutInput(gameId: string, loadout: readonly string[]): void {
 
   if (
     loadout.length === 0 ||
+    (gameId === DOG_GAME_ID && loadout.length !== DOG_PERSISTED_LOADOUT_SIZE) ||
     !loadout.every((itemId) => typeof itemId === "string" && itemId.trim() !== "") ||
     new Set(loadout).size !== loadout.length
   ) {

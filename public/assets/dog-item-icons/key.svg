@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 329 402" width="329" height="402" role="img" aria-labelledby="title desc">
+  <title id="title">钥匙</title>
+  <desc id="desc">解锁暂存槽的钥匙道具图标</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f4c35c" />
+      <stop offset="1" stop-color="#dc8a3e" />
+    </linearGradient>
+    <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff4b5" />
+      <stop offset="1" stop-color="#e39b32" />
+    </linearGradient>
+  </defs>
+
+  <rect width="329" height="402" fill="url(#bg)" />
+  <g fill="none" stroke="#fff8d8" stroke-width="8" stroke-linecap="round">
+    <path d="M48 99 24 79" />
+    <path d="M272 83 297 63" />
+    <path d="M42 300 20 319" />
+    <path d="M280 299 305 317" />
+  </g>
+  <circle cx="116" cy="157" r="69" fill="url(#metal)" stroke="#07191e" stroke-width="12" />
+  <circle cx="116" cy="157" r="25" fill="none" stroke="#b96b30" stroke-width="10" />
+  <path d="M164 202 282 320l-35 35-118-118z" fill="url(#metal)" stroke="#07191e" stroke-width="12" stroke-linejoin="round" />
+  <path d="m216 254 35-35 30 30-35 35z" fill="#ffd247" stroke="#07191e" stroke-width="10" stroke-linejoin="round" />
+  <path d="m249 287 31-31 22 22-31 31z" fill="#ffd247" stroke="#07191e" stroke-width="10" stroke-linejoin="round" />
+  <path d="m78 280 32 32M61 297l32 32" fill="none" stroke="#fff8d8" stroke-width="8" stroke-linecap="round" />
+</svg>

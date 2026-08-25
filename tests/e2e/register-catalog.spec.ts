@@ -39,7 +39,7 @@ test.describe("注册与游戏目录", () => {
     await page.getByRole("button", { name: "开始游戏" }).click();
     await expect(page.getByTestId("dog-loadout-modal")).toBeVisible();
     await expect(page.getByTestId("dog-loadout-panel")).toBeVisible();
-    await expect(page.getByTestId("dog-loadout-option")).toHaveCount(5);
+    await expect(page.getByTestId("dog-loadout-option")).toHaveCount(7);
     await confirmDogLoadout(page);
     await expect(page.getByTestId("dog-loadout-thumbnail")).toHaveCount(3);
     await expect(page.getByRole("button", { name: "变更" })).toBeVisible();

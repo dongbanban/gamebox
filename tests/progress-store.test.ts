@@ -133,6 +133,41 @@ describe("ProgressStore", () => {
     ]);
   });
 
+  it("持久化道具组只接受三个不同 ID", () => {
+    const store = new ProgressStore({
+      storage: new MemoryStorage(),
+      userIdFactory: () => userId,
+    });
+    store.register();
+
+    expect(() => store.setGameLoadout(GAME_ID, ["one", "two"])).toThrow(
+      "Game loadout requires unique non-empty item ids",
+    );
+    expect(() => store.setGameLoadout(GAME_ID, ["one", "two", "three", "four"])).toThrow(
+      "Game loadout requires unique non-empty item ids",
+    );
+  });
+
+  it("其他游戏保留不透明道具组，不受狗了个狗三项约束", () => {
+    const storage = new MemoryStorage();
+    const store = new ProgressStore({
+      storage,
+      userIdFactory: () => userId,
+    });
+    store.register();
+
+    store.setGameLoadout("other-game", ["alpha", "beta"]);
+
+    expect(store.snapshot().state?.games["other-game"]?.loadout).toEqual([
+      "alpha",
+      "beta",
+    ]);
+    expect(new ProgressStore({ storage }).snapshot().state?.games["other-game"]?.loadout).toEqual([
+      "alpha",
+      "beta",
+    ]);
+  });
+
   it("loads a valid user so a returning user can skip registration", () => {
     const storage = new MemoryStorage();
     storage.setItem(

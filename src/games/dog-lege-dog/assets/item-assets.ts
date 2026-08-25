@@ -7,6 +7,8 @@ const DOG_ITEM_ASSET_PATHS: Readonly<Record<DogItemId, string>> = Object.freeze(
   wildcard: "assets/dog-item-icons/wildcard.svg",
   torch: "assets/dog-item-icons/torch.svg",
   detector: "assets/dog-item-icons/detector.svg",
+  demagnetizer: "assets/dog-item-icons/demagnetizer.svg",
+  key: "assets/dog-item-icons/key.svg",
 });
 
 export function getDogItemAssetUrl(itemId: DogItemId): string {

@@ -410,6 +410,10 @@ export function getDogItemUses(
     Partial<Pick<DogLegeDogLevel, "specialMechanisms">>,
   itemId: DogItemId,
 ): number {
+  if (itemId === "key") {
+    return 0;
+  }
+
   if (itemId === "tray-capacity") {
     return 1;
   }
@@ -419,7 +423,9 @@ export function getDogItemUses(
     ? "freeze"
     : itemId === "detector"
       ? "illusion"
-      : undefined;
+      : itemId === "demagnetizer"
+        ? "magnetic"
+        : undefined;
   if (mechanismType === undefined) {
     return baseUses;
   }
@@ -629,6 +635,20 @@ const DOG_ITEM_BEHAVIORS: Readonly<Record<DogItemId, DogItemBehavior>> = {
         },
       };
     },
+  },
+  demagnetizer: {
+    canUse: () => false,
+    execute: () => ({
+      success: false,
+      visualFeedback: "demagnetizer",
+    }),
+  },
+  key: {
+    canUse: () => false,
+    execute: () => ({
+      success: false,
+      visualFeedback: "key",
+    }),
   },
 };
 

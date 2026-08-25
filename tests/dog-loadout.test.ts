@@ -12,15 +12,17 @@ import {
 } from "@/games/dog-lege-dog/game/dog-loadout";
 
 describe("狗了个狗道具组", () => {
-  it("固定提供五种可展示道具，并要求选择三个不同 ID", () => {
+  it("固定提供七种可展示道具，并要求选择三个不同 ID", () => {
     expect(DOG_ITEM_IDS).toEqual([
       "triple-removal",
       "tray-capacity",
       "wildcard",
       "torch",
       "detector",
+      "demagnetizer",
+      "key",
     ]);
-    expect(DOG_ITEM_DEFINITIONS).toHaveLength(5);
+    expect(DOG_ITEM_DEFINITIONS).toHaveLength(7);
     expect(DOG_ITEM_DEFINITIONS.every((item) => item.name && item.description && item.icon)).toBe(true);
     expect(DOG_ITEM_DEFINITIONS.map((item) => item.targetType)).toEqual([
       "tray-block",
@@ -28,6 +30,8 @@ describe("狗了个狗道具组", () => {
       "tray-block",
       "block",
       "block",
+      "block",
+      "none",
     ]);
     expect(DOG_LOADOUT_SIZE).toBe(3);
     expect(isValidDogLoadout(["triple-removal", "tray-capacity", "wildcard"])).toBe(true);
@@ -54,6 +58,8 @@ describe("狗了个狗道具组", () => {
         "triple-removal": 1,
         "tray-capacity": 1,
         wildcard: 1,
+        demagnetizer: 1,
+        key: 0,
       },
     });
     const changeEditor = renderDogLoadoutEditor({
@@ -82,7 +88,10 @@ describe("狗了个狗道具组", () => {
     expect(editor).toContain('data-testid="dog-loadout-modal"');
     expect(editor).toContain('role="dialog"');
     expect(editor).toContain('src="assets/dog-item-icons/triple-removal.svg"');
+    expect(editor).toContain('src="assets/dog-item-icons/demagnetizer.svg"');
+    expect(editor).toContain('src="assets/dog-item-icons/key.svg"');
     expect(editor).toContain("本关 1 次");
+    expect(editor).toContain("本关 0 次");
     expect(editor).not.toContain("DOG · LOADOUT");
     expect(editor).toContain(">清空</button>");
     expect(editor).toMatch(/data-action="confirm-loadout"[^>]*>\s*确认\s*<\/button>/);

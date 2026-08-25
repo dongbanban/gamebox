@@ -16,11 +16,14 @@ import { DOG_GAME_ID } from "@/games/dog-lege-dog/game/game-config";
 import { createRunSeed } from "@/games/dog-lege-dog/levels/level-random";
 import {
   areDogLoadoutsEqual,
+  DOG_ITEM_DEFINITIONS,
   isDogItemId,
   isValidDogLoadout,
   renderDogLoadoutEditor,
   type DogItemId,
 } from "@/games/dog-lege-dog/game/dog-loadout";
+import { getDogItemUses } from "@/games/dog-lege-dog/game/dog-item-runtime";
+import { getDogSpecialMechanismConfigs } from "@/games/dog-lege-dog/game/special-mechanisms";
 
 export interface MountAppOptions {
   store?: ProgressStore;
@@ -625,16 +628,28 @@ export class GameboxApp {
       return;
     }
 
+    const levelNumber = resultState.result.status === "won"
+      ? resultState.result.levelNumber + 1
+      : resultState.result.levelNumber;
     editorRoot.innerHTML = renderDogLoadoutEditor({
       mode: "change",
       draft: this.resultLoadoutDraft,
       current,
-      levelNumber:
-        resultState.result.status === "won"
-          ? resultState.result.levelNumber + 1
-          : resultState.result.levelNumber,
+      levelNumber,
       confirming: this.resultLoadoutConfirming,
       changeTarget: resultState.result.status === "won" ? "next" : "current",
+      itemUses: Object.fromEntries(
+        DOG_ITEM_DEFINITIONS.map((item) => [
+          item.id,
+          getDogItemUses(
+            {
+              number: levelNumber,
+              specialMechanisms: getDogSpecialMechanismConfigs(levelNumber),
+            },
+            item.id,
+          ),
+        ]),
+      ),
     });
   }
 

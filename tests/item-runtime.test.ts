@@ -53,6 +53,23 @@ describe("DogItemRuntime", () => {
       getDogItemUses(baseLevel, "detector"),
     );
 
+    const magneticLevel = {
+      ...baseLevel,
+      specialMechanisms: [
+        { type: "magnetic", min: 1, max: 2 },
+      ],
+    };
+    const highMagneticLevel = {
+      ...baseLevel,
+      specialMechanisms: [
+        { type: "magnetic", min: 3, max: 4 },
+      ],
+    };
+    expect(getDogItemUses(highMagneticLevel, "demagnetizer")).toBeGreaterThan(
+      getDogItemUses(magneticLevel, "demagnetizer"),
+    );
+    expect(getDogItemUses(highMechanismLevel, "key")).toBe(0);
+
     const weightedMechanismLevel = {
       ...baseLevel,
       specialMechanisms: [
@@ -76,6 +93,41 @@ describe("DogItemRuntime", () => {
     expect(getDogItemUses(sameConfigDifferentBlocks, "torch")).toBe(
       getDogItemUses(highMechanismLevel, "torch"),
     );
+  });
+
+  it("钥匙可加入道具组但初始次数为零且没有锁槽时不可用", () => {
+    const level = createLevel([createBlock("remaining", WORKING_DOG)]);
+    const session = new GameSession(level);
+    const runtime = new DogItemRuntime({
+      level,
+      session,
+      loadout: ["key", "demagnetizer"],
+    });
+
+    expect(runtime.getState().items).toEqual([
+      expect.objectContaining({
+        id: "key",
+        targetType: "none",
+        maxUses: 0,
+        remainingUses: 0,
+        available: false,
+      }),
+      expect.objectContaining({
+        id: "demagnetizer",
+        targetType: "block",
+        remainingUses: 1,
+        available: false,
+      }),
+    ]);
+    expect(runtime.begin("key")).toMatchObject({
+      accepted: false,
+      success: false,
+    });
+    expect(runtime.begin("demagnetizer")).toMatchObject({
+      accepted: false,
+      success: false,
+    });
+    expect(session.getState().tray).toEqual([]);
   });
 
   it("容量提升无目标直执行，成功扣次并在动画完成后重新计算可用性", () => {

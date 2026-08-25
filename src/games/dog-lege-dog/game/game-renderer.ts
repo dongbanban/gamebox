@@ -237,9 +237,10 @@ function renderLoadoutArea(state: DogLegeDogGameState): string {
   const targetType = state.items.phase === "targeting" ? state.items.selectedItemTargetType : null;
   return renderDogLoadoutSummary(
     state.loadout,
-    state.loadoutLocked,
+    state.inputLocked,
     state.items.items,
     { targetType },
+    state.loadoutLocked,
   );
 }
 
@@ -282,9 +283,15 @@ function getActiveItemTargetBlockIds(state: DogLegeDogGameState): readonly strin
     return [];
   }
 
-  return state.items.selectedItemId === "wildcard"
-    ? state.items.wildcardTargetBlockIds
-    : state.items.tripleRemovalTargetBlockIds;
+  if (state.items.selectedItemId === "wildcard") {
+    return state.items.wildcardTargetBlockIds;
+  }
+
+  if (state.items.selectedItemId === "triple-removal") {
+    return state.items.tripleRemovalTargetBlockIds;
+  }
+
+  return [];
 }
 
 function syncDogLoadoutSummary(
@@ -301,7 +308,7 @@ function syncDogLoadoutSummary(
       continue;
     }
 
-    const available = state.loadoutLocked === false && itemState.available;
+    const available = state.inputLocked === false && itemState.available;
     thumbnail.classList.toggle("dog-loadout-thumbnail--unavailable", !available);
     thumbnail.disabled = !available;
     thumbnail.dataset.itemAvailable = String(available);
@@ -616,7 +623,7 @@ function isItemTargetable(
     return mechanism?.type === DOG_ILLUSION_MECHANISM_TYPE;
   }
 
-  return true;
+  return false;
 }
 
 function getSpecialMechanismClass(type: string | undefined): string {
