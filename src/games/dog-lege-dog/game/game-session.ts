@@ -12,6 +12,7 @@ import {
   applyDogTraySuccessfulTripleEffects,
   insertDogTrayBlock,
   insertDogBlockIntoTray,
+  prepareDogTrayBlocks,
   resolveDogTrayMatches,
 } from "@/games/dog-lege-dog/levels/level-rules";
 import { findSolvabilityFromState } from "@/games/dog-lege-dog/levels/level-solvability";
@@ -20,6 +21,9 @@ import {
   DOG_SPECIAL_MECHANISM_HANDLERS,
   DOG_FREEZE_MECHANISM_TYPE,
   DOG_ILLUSION_MECHANISM_TYPE,
+  DOG_TWIN_MECHANISM_TYPE,
+  getDogLogicalBlockCount,
+  getDogTrayLogicalUnitCount,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
 
 export const GAME_SESSION_BASE_TRAY_CAPACITY = 7 as const;
@@ -43,6 +47,8 @@ export interface GameSessionSnapshot {
   readonly tray: readonly DogPatternType[];
   readonly trayBlocks: readonly DogTrayBlock[];
   readonly trayCapacity: number;
+  readonly remainingLogicalUnitCount: number;
+  readonly trayLogicalUnitCount: number;
   readonly selectableBlockIds: readonly string[];
 }
 
@@ -173,12 +179,21 @@ export class GameSession {
     if (options.initialTray !== undefined && options.initialTrayBlocks !== undefined) {
       throw new Error("GameSession cannot receive both initialTray and initialTrayBlocks");
     }
+    if (
+      options.initialTrayBlocks?.some(
+        (block) => block.specialMechanism?.type === DOG_ILLUSION_MECHANISM_TYPE,
+      )
+    ) {
+      throw new Error("GameSession illusion blocks cannot start in the tray");
+    }
     this.tray = options.initialTrayBlocks === undefined
       ? (options.initialTray ?? []).map((patternType, index) => ({
           id: `initial-tray-${index + 1}`,
           patternType,
         }))
-      : options.initialTrayBlocks.map((block) => ({ ...block }));
+      : options.initialTrayBlocks.flatMap((block) =>
+          prepareDogTrayBlocks({ ...block }, this.specialMechanismHandlers),
+        );
 
     for (const block of this.level.blocks) {
       if (this.remainingBlocks.has(block.id)) {
@@ -188,19 +203,10 @@ export class GameSession {
       this.remainingBlocks.set(block.id, block);
     }
 
-    if (this.tray.length > this.trayCapacity) {
+    resolveDogTrayMatches(this.tray, this.specialMechanismHandlers);
+    if (getDogTrayLogicalUnitCount(this.tray) > this.trayCapacity) {
       throw new Error(`GameSession tray cannot contain more than ${this.trayCapacity} blocks`);
     }
-
-    if (
-      this.tray.some(
-        (block) => block.specialMechanism?.type === DOG_ILLUSION_MECHANISM_TYPE,
-      )
-    ) {
-      throw new Error("GameSession illusion blocks cannot start in the tray");
-    }
-
-    resolveDogTrayMatches(this.tray, this.specialMechanismHandlers);
     this.updateResult();
   }
 
@@ -217,6 +223,8 @@ export class GameSession {
       tray: Object.freeze(trayBlocks.map((block) => block.patternType)),
       trayBlocks,
       trayCapacity: this.trayCapacity,
+      remainingLogicalUnitCount: getDogLogicalBlockCount([...this.remainingBlocks.values()]),
+      trayLogicalUnitCount: getDogTrayLogicalUnitCount(trayBlocks),
       selectableBlockIds: Object.freeze(this.getSelectableBlockIds()),
     });
   }
@@ -1058,6 +1066,12 @@ export class GameSession {
       return;
     }
 
+    const trayLogicalUnitCount = getDogTrayLogicalUnitCount(this.tray);
+    if (trayLogicalUnitCount > this.trayCapacity) {
+      this.status = "lost";
+      return;
+    }
+
     if (
       this.remainingBlocks.size === 0 &&
       this.tray.every((block) => block.specialMechanism === undefined)
@@ -1066,7 +1080,7 @@ export class GameSession {
       return;
     }
 
-    if (this.tray.length >= this.trayCapacity) {
+    if (trayLogicalUnitCount >= this.trayCapacity) {
       this.status = "lost";
     }
   }
@@ -1077,10 +1091,12 @@ export class GameSession {
       return trayBlocks;
     }
 
-    insertDogTrayBlock(
-      trayBlocks,
-      toTrayBlock(this.pendingSelection.block),
-    );
+    const pendingBlock = toTrayBlock(this.pendingSelection.block);
+    if (pendingBlock.specialMechanism?.type === DOG_TWIN_MECHANISM_TYPE) {
+      trayBlocks.push(...prepareDogTrayBlocks(pendingBlock, this.specialMechanismHandlers));
+    } else {
+      insertDogTrayBlock(trayBlocks, pendingBlock);
+    }
     return trayBlocks;
   }
 }

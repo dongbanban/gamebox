@@ -51,11 +51,16 @@ import {
 } from "@/games/dog-lege-dog/levels/level-random";
 import {
   assignDogSpecialMechanisms,
+  createDogSpecialMechanism,
+  DOG_TWIN_MECHANISM_TYPE,
   validateDogSpecialMechanismComposition,
   getDogSpecialMechanismConfigs,
   getDogSpecialMechanismConfigsForGeneration,
+  limitDogSpecialMechanismConfigsForLogicalDensity,
+  selectDogSpecialMechanismCounts,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
 import type {
+  DogBlock,
   DogLevelDifficulty,
   DogLevelGenerationFailure,
   DogLevelGeometry,
@@ -394,10 +399,33 @@ export class GeneratedLevelGenerator {
     spatialValidation: SpatialValidationPolicy = "enforce",
   ): GeneratedLevelCandidate {
     const random = new SeededRandom(randomSeed);
+    const specialMechanisms = getDogSpecialMechanismConfigs(
+      request.levelNumber,
+      request.generatorVersion,
+    );
+    const logicalBlockCount = getBlockCount(request.levelNumber);
+    const generationSpecialMechanisms = limitDogSpecialMechanismConfigsForLogicalDensity(
+      getDogSpecialMechanismConfigsForGeneration(
+        request.levelNumber,
+        request.generatorVersion,
+      ),
+      logicalBlockCount,
+    );
+    const mechanismCounts = selectDogSpecialMechanismCounts(
+      generationSpecialMechanisms,
+      random,
+      logicalBlockCount,
+    );
+    const twinCount = mechanismCounts.get(DOG_TWIN_MECHANISM_TYPE) ?? 0;
+    const physicalBlockCount = logicalBlockCount - twinCount;
+    if (physicalBlockCount <= 0) {
+      throw new Error("LevelGenerator twin count exceeds logical block count");
+    }
     const plan = createGenerationPlan(
       request,
       templateFactory,
       placementFactory,
+      physicalBlockCount,
     );
     const { blockCount, maxLayers } = plan;
     const plannedRemovalPlan = createRemovalPathPlan(blockCount, maxLayers, random);
@@ -415,42 +443,63 @@ export class GeneratedLevelGenerator {
       random,
       plannedRemovalPlan.order,
     );
-    const { blocks: ordinaryBlocks, solutionPath } = createSolvableBlocks(
+    const {
+      blocks: ordinaryBlocks,
+      solutionPath,
+      twinBlockIndices,
+    } = createSolvableBlocks(
       placements,
       patternTypes,
       request.levelNumber,
       random,
       removalPlan,
-    );
-    const specialMechanisms = getDogSpecialMechanismConfigs(
-      request.levelNumber,
-      request.generatorVersion,
-    );
-    const generationSpecialMechanisms = getDogSpecialMechanismConfigsForGeneration(
-      request.levelNumber,
-      request.generatorVersion,
+      {
+        logicalBlockCount,
+        twinCount,
+      },
     );
     const board = createBoard(shape);
-    const placementGraph = createBlockGraph(ordinaryBlocks);
-    const blocks = assignDogSpecialMechanisms(
-      ordinaryBlocks,
-      generationSpecialMechanisms,
-      random,
-      (candidateBlocks) =>
-        verifyRemovalPath(
-          {
-            number: request.levelNumber,
-            maxLayers,
-            board,
-            patternTypes,
-            blocks: candidateBlocks,
-            specialMechanisms,
-          },
-          solutionPath,
-          placementGraph,
-        ).solvable,
-      { maxLayers },
+    const blocksWithTwins = ordinaryBlocks.map((block, index) =>
+      twinBlockIndices.has(index)
+        ? {
+            ...block,
+            specialMechanism: createDogSpecialMechanism(DOG_TWIN_MECHANISM_TYPE),
+          }
+        : block,
     );
+    const placementGraph = createBlockGraph(blocksWithTwins);
+    let usedDiagnosticSpecialMechanismFallback = false;
+    let blocks: readonly DogBlock[];
+    try {
+      blocks = assignDogSpecialMechanisms(
+        blocksWithTwins,
+        generationSpecialMechanisms,
+        random,
+        (candidateBlocks) =>
+          verifyRemovalPath(
+            {
+              number: request.levelNumber,
+              maxLayers,
+              board,
+              patternTypes,
+              blocks: candidateBlocks,
+              specialMechanisms,
+            },
+            solutionPath,
+            placementGraph,
+          ).solvable,
+        { maxLayers, countOverrides: mechanismCounts },
+      );
+    } catch (error) {
+      if (spatialValidation !== "diagnostic") {
+        throw error;
+      }
+      // A failed candidate may be replayed for diagnostics even when its
+      // sampled mechanism layout has no valid assignment. Keep deterministic
+      // geometry and twin placement available for inspection.
+      usedDiagnosticSpecialMechanismFallback = true;
+      blocks = blocksWithTwins;
+    }
     return createCandidateLevel(
       request,
       levelSeed,
@@ -466,6 +515,7 @@ export class GeneratedLevelGenerator {
       replayMode,
       randomSeed,
       spatialValidation,
+      usedDiagnosticSpecialMechanismFallback,
     );
   }
 
@@ -552,6 +602,7 @@ function createCandidateLevel(
   replayMode: DogLevelReplayMode,
   randomSeed: string,
   spatialValidation: SpatialValidationPolicy,
+  skipSpecialMechanismComposition = false,
 ): GeneratedLevelCandidate {
   const geometry: DogLevelGeometry = {
     number: request.levelNumber,
@@ -572,13 +623,15 @@ function createCandidateLevel(
       throw new Error(spatialError);
     }
   }
-  const mechanismCompositionError = validateDogSpecialMechanismComposition(
-    blocks,
-    maxLayers,
-    generationSpecialMechanisms,
-  );
-  if (mechanismCompositionError !== undefined) {
-    throw new Error(mechanismCompositionError);
+  if (!skipSpecialMechanismComposition) {
+    const mechanismCompositionError = validateDogSpecialMechanismComposition(
+      blocks,
+      maxLayers,
+      generationSpecialMechanisms,
+    );
+    if (mechanismCompositionError !== undefined) {
+      throw new Error(mechanismCompositionError);
+    }
   }
   const verification = verifyRemovalPath(geometry, solutionPath);
   if (!verification.solvable) {
@@ -612,10 +665,11 @@ function createGenerationPlan(
   request: NormalizedLevelGeneratorRequest,
   templateFactory: TemplateFactory,
   placementFactory: PlacementFactory,
+  blockCount: number,
 ): CandidateGenerationPlan {
   if (request.levelNumber === FIRST_LEVEL_NUMBER) {
     return {
-      blockCount: getBlockCount(request.levelNumber),
+      blockCount,
       maxLayers: getMaxLayers(request.levelNumber),
       templateFactory,
       placementFactory: createFirstLevelBlockPlacements,
@@ -624,7 +678,7 @@ function createGenerationPlan(
   }
 
   return {
-    blockCount: getBlockCount(request.levelNumber),
+    blockCount,
     maxLayers: getMaxLayers(request.levelNumber),
     templateFactory,
     placementFactory,

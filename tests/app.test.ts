@@ -836,7 +836,7 @@ describe("注册与游戏目录 UI", () => {
 
     expect(root.querySelector('[data-view="game-entry"]')).not.toBeNull();
     expect(root.querySelector('[data-testid="dog-board"]')).not.toBeNull();
-    expect(root.querySelectorAll('[data-testid="dog-block"]')).toHaveLength(90);
+    expect(root.querySelectorAll('[data-testid="dog-block"]')).toHaveLength(FIRST_LEVEL.blocks.length);
 
     vi.spyOn(window, "confirm").mockReturnValue(true);
     root.querySelector<HTMLButtonElement>('[data-action="catalog"]')?.click();

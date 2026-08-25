@@ -6,6 +6,7 @@ export const DOG_ITEM_FEEDBACK_DURATION_MS = 360;
 export const DOG_DETECTOR_REVEAL_DURATION_MS = DOG_ITEM_FEEDBACK_DURATION_MS;
 export const DOG_TORCH_MELT_DURATION_MS = DOG_ITEM_FEEDBACK_DURATION_MS;
 export const DOG_FREEZE_MELT_DURATION_MS = 1400;
+export const DOG_TWIN_SPLIT_DURATION_MS = DOG_ITEM_FEEDBACK_DURATION_MS;
 
 export interface BlockFlightOptions {
   readonly root: HTMLElement;
@@ -88,6 +89,53 @@ export function animateBlockFlight(options: BlockFlightOptions): CancellableAnim
   animation?.addEventListener("cancel", lifecycle.cancel, { once: true });
 
   return lifecycle;
+}
+
+export interface DogTwinSplitEffectOptions {
+  readonly root: HTMLElement;
+  readonly sourceId: string;
+  readonly blockIds: readonly string[];
+  readonly patternMarkup: string;
+  readonly source: DOMRect | null;
+  readonly target: DOMRect | null;
+}
+
+export function animateDogTwinSplitEffect(
+  options: DogTwinSplitEffectOptions,
+): CancellableAnimation {
+  const layer = options.root.querySelector<HTMLElement>(
+    '[data-testid="dog-animation-layer"]',
+  );
+  if (layer === null) {
+    return createAnimationLifecycle(DOG_TWIN_SPLIT_DURATION_MS, () => undefined);
+  }
+
+  const effect = document.createElement("div");
+  effect.className = "dog-twin-split-effect";
+  effect.dataset.testid = "dog-twin-split-effect";
+  effect.dataset.twinSourceId = options.sourceId;
+  effect.dataset.twinBlockIds = options.blockIds.join(",");
+  const layerRect = layer.getBoundingClientRect();
+  const anchor = options.target ?? options.source;
+  Object.assign(effect.style, {
+    left: `${(anchor?.left ?? layerRect.left) - layerRect.left}px`,
+    top: `${(anchor?.top ?? layerRect.top) - layerRect.top}px`,
+    width: `${anchor?.width || 48}px`,
+    height: `${anchor?.height || 48}px`,
+  });
+
+  options.blockIds.slice(0, 2).forEach((blockId, index) => {
+    const piece = document.createElement("span");
+    piece.className = `dog-twin-split-effect__piece dog-twin-split-effect__piece--${index + 1}`;
+    piece.dataset.twinBlockId = blockId;
+    piece.innerHTML = options.patternMarkup;
+    effect.append(piece);
+  });
+  layer.append(effect);
+
+  return createAnimationLifecycle(DOG_TWIN_SPLIT_DURATION_MS, () => {
+    effect.remove();
+  });
 }
 
 export interface DogIllusionRevealOptions {

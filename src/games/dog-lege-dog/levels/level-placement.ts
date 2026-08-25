@@ -45,6 +45,11 @@ export interface RemovalPathPlan {
   readonly layerByBlock: readonly number[];
 }
 
+export interface SolvableBlocksOptions {
+  readonly logicalBlockCount?: number;
+  readonly twinCount?: number;
+}
+
 export function validateSpatialDistribution(
   board: DogBoard,
   blocks: readonly DogBlock[],
@@ -194,7 +199,8 @@ export function createFirstLevelBlockPlacements(
   removalPlan: RemovalPathPlan,
 ): readonly BlockPlacement[] {
   if (
-    blockCount !== FIRST_LEVEL_BLOCK_COUNT ||
+    blockCount < FIRST_LEVEL_BLOCK_COUNT - 2 ||
+    blockCount > FIRST_LEVEL_BLOCK_COUNT ||
     maxLayers !== FIRST_LEVEL_MAX_LAYERS
   ) {
     throw new Error("LevelGenerator first-level placement config is invalid");
@@ -763,14 +769,38 @@ export function createSolvableBlocks(
   levelNumber: number,
   random: SeededRandom,
   removalPlan: RemovalPathPlan,
-): { readonly blocks: readonly DogBlock[]; readonly solutionPath: readonly string[] } {
+  options: SolvableBlocksOptions = {},
+): {
+  readonly blocks: readonly DogBlock[];
+  readonly solutionPath: readonly string[];
+  readonly twinBlockIndices: ReadonlySet<number>;
+} {
   const patternByBlock = new Array<DogPatternType>(placements.length);
   const blockOrder = removalPlan.order;
-  const groupCount = placements.length / 3;
+  const twinCount = options.twinCount ?? 0;
+  const logicalBlockCount = options.logicalBlockCount ?? placements.length;
+  const twinBlockIndices = createTwinBlockIndices(
+    blockOrder,
+    placements,
+    logicalBlockCount,
+    twinCount,
+    random,
+  );
+  const groupCount = logicalBlockCount / 3;
   const patternSequence = createSolvablePatternSequence(patternTypes, groupCount, random);
 
+  let logicalPatternIndex = 0;
   for (let pathIndex = 0; pathIndex < blockOrder.length; pathIndex += 1) {
-    patternByBlock[blockOrder[pathIndex]] = patternSequence[pathIndex];
+    const blockIndex = blockOrder[pathIndex];
+    const patternType = patternSequence[logicalPatternIndex];
+    if (patternType === undefined) {
+      throw new Error("LevelGenerator pattern sequence is incomplete");
+    }
+    patternByBlock[blockIndex] = patternType;
+    logicalPatternIndex += twinBlockIndices.has(blockIndex) ? 2 : 1;
+  }
+  if (logicalPatternIndex !== logicalBlockCount) {
+    throw new Error("LevelGenerator logical pattern quota is invalid");
   }
 
   const blocks: DogBlock[] = placements.map((placement, index) => ({
@@ -787,7 +817,56 @@ export function createSolvableBlocks(
   return {
     blocks,
     solutionPath: blockOrder.map((index) => blocks[index].id),
+    twinBlockIndices,
   };
+}
+
+function createTwinBlockIndices(
+  blockOrder: readonly number[],
+  placements: readonly BlockPlacement[],
+  logicalBlockCount: number,
+  twinCount: number,
+  random: SeededRandom,
+): ReadonlySet<number> {
+  if (
+    !Number.isSafeInteger(logicalBlockCount) ||
+    logicalBlockCount <= 0 ||
+    logicalBlockCount % 3 !== 0 ||
+    !Number.isSafeInteger(twinCount) ||
+    twinCount < 0 ||
+    twinCount > Math.floor(logicalBlockCount / 3) ||
+    blockOrder.length + twinCount !== logicalBlockCount
+  ) {
+    throw new Error("LevelGenerator twin logical-unit quota is invalid");
+  }
+
+  const groupCount = logicalBlockCount / 3;
+  const groups = Array.from({ length: groupCount }, (_, index) => index);
+  for (let attempt = 0; attempt < 32; attempt += 1) {
+    const twinGroups = new Set(random.shuffle(groups).slice(0, twinCount));
+    const twinBlockIndices = new Set<number>();
+    let physicalCursor = 0;
+    let valid = true;
+    for (let groupIndex = 0; groupIndex < groupCount; groupIndex += 1) {
+      const groupHasTwin = twinGroups.has(groupIndex);
+      const firstBlockIndex = blockOrder[physicalCursor];
+      if (
+        groupHasTwin &&
+        (firstBlockIndex === undefined || (placements[firstBlockIndex]?.z ?? 0) <= 0)
+      ) {
+        valid = false;
+        break;
+      }
+      if (groupHasTwin && firstBlockIndex !== undefined) {
+        twinBlockIndices.add(firstBlockIndex);
+      }
+      physicalCursor += groupHasTwin ? 2 : 3;
+    }
+    if (valid && physicalCursor === blockOrder.length) {
+      return twinBlockIndices;
+    }
+  }
+  throw new Error("LevelGenerator twin placement has no high-layer capacity");
 }
 
 function createRemovalOrder(

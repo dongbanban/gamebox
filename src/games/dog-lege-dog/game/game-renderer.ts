@@ -14,6 +14,7 @@ import type { GameSessionSnapshot } from "@/games/dog-lege-dog/game/game-session
 import {
   DOG_FREEZE_MECHANISM_TYPE,
   DOG_ILLUSION_MECHANISM_TYPE,
+  DOG_TWIN_MECHANISM_TYPE,
   getDogIllusionDisguisedPattern,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
 import type {
@@ -470,6 +471,10 @@ const DOG_SPECIAL_MECHANISM_PRESENTATIONS: Readonly<Record<string, DogSpecialMec
       name: "幻化方块",
       description: "幻化方块点击后飞入暂存槽，飞行过程中显现真实图案并按真实图案参与三消。",
     }),
+    [DOG_TWIN_MECHANISM_TYPE]: Object.freeze({
+      name: "双生方块",
+      description: "双生方块点击后分裂为两个相邻的普通方块，各占一个暂存槽单位并按普通顺序参与三消。",
+    }),
   });
 
 export function renderDogSpecialMechanismModal(level: DogLegeDogLevel): string {
@@ -547,7 +552,8 @@ function renderTraySlots(
   itemTargetId: DogItemId | null = null,
   targetBlockIds: readonly string[] = [],
 ): string {
-  return Array.from({ length: session.trayCapacity }, (_, index) => {
+  const slotCount = Math.max(session.trayCapacity, session.trayBlocks.length);
+  return Array.from({ length: slotCount }, (_, index) => {
     const block = session.trayBlocks[index];
     if (block === undefined) {
       return '<li class="dog-tray__slot" data-testid="dog-tray-slot" aria-label="空暂存槽"></li>';

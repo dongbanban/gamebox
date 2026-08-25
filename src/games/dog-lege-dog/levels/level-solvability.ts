@@ -6,6 +6,8 @@ import { createBlockGraph, type BlockGraph } from "@/games/dog-lege-dog/levels/l
 import {
   createDogSpecialMechanismHandlerMap,
   DOG_SPECIAL_MECHANISM_HANDLERS,
+  getDogBlockLogicalUnitCount,
+  getDogTrayLogicalUnitCount,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
 import type {
   DogLevelGeometry,
@@ -123,7 +125,7 @@ export function findSolvabilityFromState(
     return createSolvabilityResult(
       "unsolvable",
       [],
-      options.initialTray.length,
+      getDogTrayLogicalUnitCount(options.initialTray),
       "solvability state contains duplicate remaining block ids",
     );
   }
@@ -138,7 +140,7 @@ export function findSolvabilityFromState(
     return createSolvabilityResult(
       "unsolvable",
       [],
-      options.initialTray.length,
+      getDogTrayLogicalUnitCount(options.initialTray),
       "solvability state contains an unknown remaining block id",
     );
   }
@@ -157,17 +159,18 @@ export function findSolvabilityFromState(
     return createSolvabilityResult(
       "unsolvable",
       [],
-      options.initialTray.length,
+      getDogTrayLogicalUnitCount(options.initialTray),
       "solvability state contains inconsistent layer counts",
     );
   }
 
   const tray = cloneTray(options.initialTray);
-  if (tray.length >= trayCapacity && remainingMask !== 0n) {
+  const trayLogicalUnitCount = getDogTrayLogicalUnitCount(tray);
+  if (trayLogicalUnitCount >= trayCapacity && remainingMask !== 0n) {
     return createSolvabilityResult(
       "unsolvable",
       [],
-      tray.length,
+      trayLogicalUnitCount,
       "solvability state already fills the tray before clearing the board",
     );
   }
@@ -287,8 +290,9 @@ export function verifyRemovalPath(
       toTrayBlock(level.blocks[blockIndex]),
       specialMechanismHandlers,
     );
-    trayPeakPressure = Math.max(trayPeakPressure, tray.length);
-    if (tray.length >= 7 && remaining.size > 0) {
+    const trayLogicalUnitCount = getDogTrayLogicalUnitCount(tray);
+    trayPeakPressure = Math.max(trayPeakPressure, trayLogicalUnitCount);
+    if (trayLogicalUnitCount >= 7 && remaining.size > 0) {
       return createPathVerification(
         "unsolvable",
         path,
@@ -363,7 +367,7 @@ export function countSafeChoiceMetrics(
       handlers,
     );
     if (candidateVerification.solvable) {
-      safeChoiceCount += 1;
+      safeChoiceCount += getDogBlockLogicalUnitCount(level.blocks[index]);
       continue;
     }
 
@@ -377,7 +381,7 @@ export function countSafeChoiceMetrics(
       handlers,
     );
     if (continuation.status === "solvable") {
-      safeChoiceCount += 1;
+      safeChoiceCount += getDogBlockLogicalUnitCount(level.blocks[index]);
     } else if (continuation.status === "budget-exhausted") {
       searchStatus = "budget-exhausted";
     }
@@ -407,11 +411,12 @@ function hasSolvableContinuation(
     handlers,
   );
   const firstBlockId = level.blocks[firstBlockIndex].id;
-  if (tray.length >= 7 && remainingMask !== 0n) {
+  const trayLogicalUnitCount = getDogTrayLogicalUnitCount(tray);
+  if (trayLogicalUnitCount >= 7 && remainingMask !== 0n) {
     return createSolvabilityResult(
       "unsolvable",
       [firstBlockId],
-      tray.length,
+      trayLogicalUnitCount,
       "solvable path fills the seven-slot tray before clearing the board",
     );
   }
@@ -486,23 +491,23 @@ function searchSolvableContinuation(
       return createSolvabilityResult(
         "unsolvable",
         path,
-        tray.length,
+        getDogTrayLogicalUnitCount(tray),
         "solvable continuation leaves frozen blocks before natural melting",
       );
     }
     context.completedStates.set(stateKeyFor(remainingMask, tray), {
       status: "solvable",
       path: [],
-      trayPeakPressure: tray.length,
+      trayPeakPressure: getDogTrayLogicalUnitCount(tray),
     });
-    return createSolvabilityResult("solvable", path, tray.length);
+    return createSolvabilityResult("solvable", path, getDogTrayLogicalUnitCount(tray));
   }
 
   if (pathDepth >= level.blocks.length) {
     return createSolvabilityResult(
       "unsolvable",
       path,
-      tray.length,
+      getDogTrayLogicalUnitCount(tray),
       "solvable path exceeded available block depth",
     );
   }
@@ -514,14 +519,14 @@ function searchSolvableContinuation(
       return createSolvabilityResult(
         "solvable",
         [...path, ...completedState.path],
-        Math.max(tray.length, completedState.trayPeakPressure),
+        Math.max(getDogTrayLogicalUnitCount(tray), completedState.trayPeakPressure),
       );
     }
 
     return createSolvabilityResult(
       "unsolvable",
       path,
-      tray.length,
+      getDogTrayLogicalUnitCount(tray),
       "solvable continuation repeats a proven failed state",
     );
   }
@@ -532,19 +537,19 @@ function searchSolvableContinuation(
     context.completedStates.set(stateKey, {
       status: "unsolvable",
       path: [],
-      trayPeakPressure: tray.length,
+      trayPeakPressure: getDogTrayLogicalUnitCount(tray),
     });
     return createSolvabilityResult(
       "unsolvable",
       path,
-      tray.length,
+      getDogTrayLogicalUnitCount(tray),
       "solvable continuation has no selectable block",
     );
   }
 
   sortSelectableBlocks(selectable, level, tray, handlers, preferredRank);
 
-  let trayPeakPressure = tray.length;
+  let trayPeakPressure = getDogTrayLogicalUnitCount(tray);
   for (let choiceIndex = 0; choiceIndex < selectable.length; choiceIndex += 1) {
     if (choiceIndex > 0) {
       if (context.branchAttempts >= context.branchBudget) {
@@ -566,8 +571,9 @@ function searchSolvableContinuation(
       toTrayBlock(level.blocks[selectedIndex]),
       handlers,
     );
-    trayPeakPressure = Math.max(trayPeakPressure, nextTray.length);
-    if (nextTray.length >= trayCapacity && nextRemainingMask !== 0n) {
+    const nextTrayLogicalUnitCount = getDogTrayLogicalUnitCount(nextTray);
+    trayPeakPressure = Math.max(trayPeakPressure, nextTrayLogicalUnitCount);
+    if (nextTrayLogicalUnitCount >= trayCapacity && nextRemainingMask !== 0n) {
       continue;
     }
 
@@ -657,7 +663,7 @@ function findGreedyContinuation(
   const tray = [...initialTray];
   const path = [...initialPath];
   let pathDepth = initialPathDepth;
-  let trayPeakPressure = tray.length;
+  let trayPeakPressure = getDogTrayLogicalUnitCount(tray);
 
   while (remainingMask !== 0n) {
     if (pathDepth >= level.blocks.length) {
@@ -677,10 +683,11 @@ function findGreedyContinuation(
       toTrayBlock(level.blocks[selectedIndex]),
       handlers,
     );
-    trayPeakPressure = Math.max(trayPeakPressure, tray.length);
+    const trayLogicalUnitCount = getDogTrayLogicalUnitCount(tray);
+    trayPeakPressure = Math.max(trayPeakPressure, trayLogicalUnitCount);
     path.push(level.blocks[selectedIndex].id);
     pathDepth += 1;
-    if (tray.length >= trayCapacity && remainingMask !== 0n) {
+    if (trayLogicalUnitCount >= trayCapacity && remainingMask !== 0n) {
       return undefined;
     }
 
@@ -709,7 +716,7 @@ function verifyStateContinuation(
   let remainingMask = initialRemainingMask;
   const higherBlockCounts = [...initialHigherBlockCounts];
   const tray = cloneTray(initialTray);
-  let trayPeakPressure = tray.length;
+  let trayPeakPressure = getDogTrayLogicalUnitCount(tray);
 
   for (const blockId of path) {
     const blockIndex = graph.indexById.get(blockId);
@@ -723,8 +730,9 @@ function verifyStateContinuation(
 
     remainingMask &= ~blockMask(blockIndex);
     insertDogBlockIntoTray(tray, toTrayBlock(level.blocks[blockIndex]), handlers);
-    trayPeakPressure = Math.max(trayPeakPressure, tray.length);
-    if (tray.length >= trayCapacity && remainingMask !== 0n) {
+    const trayLogicalUnitCount = getDogTrayLogicalUnitCount(tray);
+    trayPeakPressure = Math.max(trayPeakPressure, trayLogicalUnitCount);
+    if (trayLogicalUnitCount >= trayCapacity && remainingMask !== 0n) {
       return undefined;
     }
     for (const lowerIndex of graph.lowerBlockIndicesByHigher[blockIndex]) {
@@ -824,7 +832,7 @@ function trayPeakPressureForPath(
   handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
 ): number {
   const tray = [...initialTray];
-  let trayPeakPressure = tray.length;
+  let trayPeakPressure = getDogTrayLogicalUnitCount(tray);
   for (const blockId of path) {
     const blockIndex = graph.indexById.get(blockId);
     if (blockIndex === undefined) {
@@ -836,7 +844,7 @@ function trayPeakPressureForPath(
       toTrayBlock(level.blocks[blockIndex]),
       handlers,
     );
-    trayPeakPressure = Math.max(trayPeakPressure, tray.length);
+    trayPeakPressure = Math.max(trayPeakPressure, getDogTrayLogicalUnitCount(tray));
   }
 
   return trayPeakPressure;

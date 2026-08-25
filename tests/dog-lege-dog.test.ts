@@ -11,7 +11,9 @@ import {
   DEFAULT_LEVEL_SEED,
   DOG_PATTERN_TYPES,
   DOG_ILLUSION_MECHANISM_TYPE,
+  DOG_TWIN_MECHANISM_TYPE,
   FIRST_LEVEL,
+  getDogLogicalBlockCount,
   startDogLegeDogGame,
   type DogBlock,
   type DogLegeDogLevel,
@@ -84,17 +86,24 @@ describe("狗了个狗首关", () => {
     expect(state.level.board.logicalCellSize).toBe(4);
     expect(state.level.board.width / state.level.board.logicalCellSize).toBe(9);
     expect(state.level.board.height / state.level.board.logicalCellSize).toBe(12);
-    expect(state.level.blocks).toHaveLength(90);
+    expect(getDogLogicalBlockCount(state.level.blocks, state.level.specialMechanisms)).toBe(90);
     expect(new Set(state.level.blocks.map((block) => block.patternType))).toHaveLength(6);
     expect(new Set(state.level.blocks.map((block) => block.z))).toEqual(new Set([0, 1, 2]));
     expect(state.level.blocks.every((block) => block.width === 4 && block.height === 4)).toBe(true);
     expect(
       [...new Set(state.level.blocks.map((block) => block.patternType))].every(
         (patternType) =>
-          state.level.blocks.filter((block) => block.patternType === patternType).length % 3 === 0,
+          state.level.blocks
+            .filter((block) => block.patternType === patternType)
+            .reduce(
+              (total, block) => total + (block.specialMechanism?.type === DOG_TWIN_MECHANISM_TYPE ? 2 : 1),
+              0,
+            ) % 3 === 0,
       ),
     ).toBe(true);
-    expect(new Set(state.level.blocks.map((block) => block.id))).toHaveLength(90);
+    expect(new Set(state.level.blocks.map((block) => block.id))).toHaveLength(
+      state.level.blocks.length,
+    );
     expect(state).toEqual(secondGame.getState());
     firstGame.destroy();
     secondGame.destroy();
@@ -159,8 +168,8 @@ describe("狗了个狗首关", () => {
     expect(DOG_LOGICAL_UNIT_VISUAL_SIZE_PX).toBe(12);
     expect(firstBlock?.style.getPropertyValue("--block-width")).toBe("48px");
     expect(firstBlock?.style.getPropertyValue("--block-height")).toBe("48px");
-    expect(root.querySelectorAll('[data-testid="dog-block"]')).toHaveLength(90);
-    expect(root.querySelectorAll('[data-testid="dog-block"] img')).toHaveLength(90);
+    expect(root.querySelectorAll('[data-testid="dog-block"]')).toHaveLength(FIRST_LEVEL.blocks.length);
+    expect(root.querySelectorAll('[data-testid="dog-block"] img')).toHaveLength(FIRST_LEVEL.blocks.length);
     expect(parseFloat(firstBlock?.style.getPropertyValue("--block-width") ?? "0")).toBeGreaterThan(0);
     expect(parseFloat(firstBlock?.style.getPropertyValue("--block-height") ?? "0")).toBeGreaterThan(0);
     expect(root.querySelector(".dog-game__stats")).toBeNull();
@@ -634,7 +643,7 @@ describe("狗了个狗首关", () => {
     expect(
       root.querySelector('[data-testid="dog-special-mechanism"][data-special-mechanism="freeze"]'),
     ).not.toBeNull();
-    expect(root.querySelectorAll('[data-testid="dog-special-mechanism-thumbnail"]')).toHaveLength(2);
+    expect(root.querySelectorAll('[data-testid="dog-special-mechanism-thumbnail"]')).toHaveLength(3);
     const freezeThumbnail = root.querySelector<HTMLElement>(
       '[data-testid="dog-special-mechanism-thumbnail"][data-special-mechanism="freeze"]',
     );
@@ -647,6 +656,11 @@ describe("狗了个狗首关", () => {
     expect(illusionThumbnail?.classList.contains("dog-block--mechanism-preview")).toBe(true);
     expect(illusionThumbnail?.classList.contains("dog-block--special-illusion")).toBe(true);
     expect(illusionThumbnail?.querySelector(".dog-block__glyph--fuzzy")).not.toBeNull();
+    expect(
+      root.querySelector<HTMLElement>(
+        `[data-testid="dog-special-mechanism-thumbnail"][data-special-mechanism="${DOG_TWIN_MECHANISM_TYPE}"]`,
+      )?.classList.contains("dog-block--special-twin"),
+    ).toBe(true);
     expect(root.querySelectorAll(".dog-special-mechanism-card__icon")).toHaveLength(0);
     expect(root.querySelector('[data-testid="dog-special-mechanism-modal"]')?.textContent).toContain(
       "冻结方块",

@@ -15,6 +15,7 @@ import { renderDogPatternAsset } from "@/games/dog-lege-dog/assets/game-assets";
 import { DOG_GAME_ID, DOG_GAME_RESULT_DISPLAY } from "@/games/dog-lege-dog/game/game-config";
 import {
   DOG_ILLUSION_MECHANISM_TYPE,
+  DOG_TWIN_MECHANISM_TYPE,
   getDogIllusionDisguisedPattern,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
 import { getDogLegeDogLevel } from "@/games/dog-lege-dog/levels/level-provider";
@@ -26,6 +27,7 @@ import {
   animateDogItemEffect,
   animateDogTripleRemovalEffect,
   animateDogTorchMeltEffect,
+  animateDogTwinSplitEffect,
   DOG_FREEZE_MELT_DURATION_MS,
   renderDogMeltEffect,
   type CancellableAnimation,
@@ -158,6 +160,7 @@ export function createDogLegeDogGame(
     );
     const sourceRect = sourceElement?.getBoundingClientRect() ?? null;
     const isIllusion = sourceBlock?.specialMechanism?.type === DOG_ILLUSION_MECHANISM_TYPE;
+    const isTwin = sourceBlock?.specialMechanism?.type === DOG_TWIN_MECHANISM_TYPE;
     const patternMarkup = isIllusion
       ? renderDogPatternAsset(getDogIllusionDisguisedPattern(sourceBlock))
       : sourceElement?.querySelector<HTMLElement>(".dog-block__glyph")?.outerHTML ?? "";
@@ -226,12 +229,27 @@ export function createDogLegeDogGame(
     });
     runtime.activeFlights.add(flight);
     startMeltAnimations(selection.meltedBlockIds, trayRectsBeforeSelection);
+    const twinSplit = isTwin
+      ? animateDogTwinSplitEffect({
+          root,
+          sourceId: blockId,
+          blockIds: [`${blockId}-1`, `${blockId}-2`],
+          patternMarkup,
+          source: sourceRect,
+          target: target?.getBoundingClientRect() ?? null,
+        })
+      : null;
+    if (twinSplit !== null) {
+      runtime.activeFlights.add(twinSplit);
+    }
     renderStartedGame(nextState);
     void finishAnimatedSelection(
       flight,
       result,
       didMatch,
       false,
+      null,
+      twinSplit,
     );
 
     return nextState;
@@ -274,6 +292,7 @@ export function createDogLegeDogGame(
     didMatch: boolean,
     isIllusion: boolean,
     illusionBlockId: string | null = null,
+    twinSplit: CancellableAnimation | null = null,
   ): Promise<void> {
     await flight.promise;
     runtime.activeFlights.delete(flight);
@@ -291,6 +310,14 @@ export function createDogLegeDogGame(
       runtime.activeFlights.add(reveal);
       void finishIllusionReveal(reveal, selection);
       return;
+    }
+
+    if (twinSplit !== null) {
+      await twinSplit.promise;
+      runtime.activeFlights.delete(twinSplit);
+      if (runtime.destroyed) {
+        return;
+      }
     }
 
     await finishResolvedSelection(result, didMatch);

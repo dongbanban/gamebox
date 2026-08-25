@@ -15,6 +15,7 @@ import {
   getMaxLayers,
   getPatternTypeCount,
   getDogLegeDogLevel,
+  getDogLogicalBlockCount,
   DEFAULT_LEVEL_SEED,
   DOG_REWARD_CONFIG_VERSION,
 } from "@/games/dog-lege-dog";
@@ -83,10 +84,10 @@ describe("LevelGenerator", () => {
     console.info(
       `[性能回归] level=31 blocks=${level.blocks.length} generationMs=${generationMs.toFixed(1)} selectionMs=${selectionMs.toFixed(1)} stateReads=${getState.mock.calls.length}`,
     );
-    expect(level.blocks).toHaveLength(180);
+    expect(getDogLogicalBlockCount(level.blocks, level.specialMechanisms)).toBe(180);
     expect(selection.selected).toBe(true);
     expect(selection.snapshot.level).toBe(level);
-    expect(selection.snapshot.remainingBlocks).toHaveLength(179);
+    expect(selection.snapshot.remainingBlocks).toHaveLength(level.blocks.length - 1);
     expect(getState).toHaveBeenCalledTimes(1);
     expect(generationMs).toBeLessThan(10_000);
     expect(selectionMs).toBeLessThan(1_000);
@@ -142,7 +143,7 @@ describe("LevelGenerator", () => {
 
     expect(level.board.shape).toBe("irregular");
     expect(level.board.logicalCellSize).toBe(4);
-    expect(level.blocks).toHaveLength(90);
+    expect(getDogLogicalBlockCount(level.blocks, level.specialMechanisms)).toBe(90);
     expect(new Set(level.blocks.map((block) => block.z))).toHaveLength(3);
     expect(level.blocks.every((block) =>
       block.width === 4 &&
@@ -155,7 +156,7 @@ describe("LevelGenerator", () => {
     expect(level.patternTypes).toHaveLength(6);
     expect(new Set(level.blocks.map((block) => block.patternType))).toHaveLength(6);
     expect(level.patternTypes.every((patternType) =>
-      level.blocks.filter((block) => block.patternType === patternType).length % 3 === 0,
+      getLogicalPatternCount(level.blocks, patternType) % 3 === 0,
     )).toBe(true);
     expect(isConnected(level.board.playableCells)).toBe(true);
     expect(countInteriorConcavities(level.board.playableCells)).toBeGreaterThanOrEqual(2);
@@ -402,7 +403,9 @@ describe("LevelGenerator", () => {
       });
       const playableCells = new Set(level.board.playableCells.map((cell) => `${cell.x}:${cell.y}`));
 
-      expect(level.blocks).toHaveLength(getBlockCount(levelNumber));
+      expect(getDogLogicalBlockCount(level.blocks, level.specialMechanisms)).toBe(
+        getBlockCount(levelNumber),
+      );
       expect(new Set(level.blocks.map((block) => block.z))).toHaveLength(getMaxLayers(levelNumber));
       expect(level.patternTypes).toHaveLength(getPatternTypeCount(levelNumber));
       expect(level.patternTypes.every((patternType) => DOG_PATTERN_TYPES.includes(patternType))).toBe(
@@ -410,9 +413,7 @@ describe("LevelGenerator", () => {
       );
 
       for (const patternType of level.patternTypes) {
-        expect(
-          level.blocks.filter((block) => block.patternType === patternType).length % 3,
-        ).toBe(0);
+        expect(getLogicalPatternCount(level.blocks, patternType) % 3).toBe(0);
       }
 
       for (const block of level.blocks) {
@@ -999,6 +1000,18 @@ function hasPositiveAreaOverlap(
 
 function cellKey(cell: { readonly x: number; readonly y: number }): string {
   return `${cell.x}:${cell.y}`;
+}
+
+function getLogicalPatternCount(
+  blocks: readonly { readonly patternType: string; readonly specialMechanism?: { readonly type: string } }[],
+  patternType: string,
+): number {
+  return blocks
+    .filter((block) => block.patternType === patternType)
+    .reduce(
+      (total, block) => total + (block.specialMechanism?.type === "twin" ? 2 : 1),
+      0,
+    );
 }
 
 function overlapArea(

@@ -111,9 +111,16 @@ export {
   createDogSpecialMechanism,
   createDogIllusionMechanism,
   createDogSpecialMechanismHandlerMap,
+  getDogBlockLogicalUnitCount,
+  getDogLogicalBlockCount,
+  getDogTrayLogicalUnitCount,
+  getDogSpecialMechanismLogicalUnitWeight,
   getDogSpecialMechanismComposition,
   getDogIllusionDisguisedPattern,
   getDogSpecialMechanismConfigs,
+  getDogSpecialMechanismConfigsForGeneration,
+  limitDogSpecialMechanismConfigsForLogicalDensity,
+  selectDogSpecialMechanismCounts,
   validateDogSpecialMechanismComposition,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
 export type {

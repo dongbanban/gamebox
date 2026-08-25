@@ -4,6 +4,7 @@ import {
   DOG_PATTERN_TYPES,
   GameSession,
   getBlockCount,
+  getDogLogicalBlockCount,
   getMaxLayers,
   getPatternTypeCount,
   findSolvability,
@@ -124,7 +125,9 @@ function assertLevelInvariants(
   const playableCells = new Set(board.playableCells.map((cell) => `${cell.x}:${cell.y}`));
 
   expect(level.number).toBeGreaterThanOrEqual(1);
-  expect(blocks).toHaveLength(getBlockCount(level.number));
+  expect(getDogLogicalBlockCount(blocks, level.specialMechanisms)).toBe(
+    getBlockCount(level.number),
+  );
   expect(level.maxLayers).toBe(getMaxLayers(level.number));
   expect(level.patternTypes).toHaveLength(
     level.number === 1 ? 6 : getPatternTypeCount(level.number),
@@ -137,7 +140,13 @@ function assertLevelInvariants(
   expect(new Set(blocks.map((block) => block.z))).toHaveLength(level.maxLayers);
 
   for (const patternType of level.patternTypes) {
-    expect(blocks.filter((block) => block.patternType === patternType).length % 3).toBe(0);
+    const logicalPatternCount = blocks
+      .filter((block) => block.patternType === patternType)
+      .reduce(
+        (total, block) => total + (block.specialMechanism?.type === "twin" ? 2 : 1),
+        0,
+      );
+    expect(logicalPatternCount % 3).toBe(0);
   }
 
   for (const block of blocks) {
@@ -174,6 +183,7 @@ function assertLevelInvariants(
   expect(solvability.status).toBe("solvable");
   expect(solvability.path).toEqual(level.solutionPath);
   expect(difficulty.blockCount).toBe(blocks.length);
+  expect(difficulty.logicalBlockCount).toBe(getBlockCount(level.number));
   expect(difficulty.maxLayers).toBe(level.maxLayers);
   expect(difficulty.patternTypeCount).toBe(level.patternTypes.length);
   expect(difficulty.safeChoiceCount).toBeGreaterThanOrEqual(
@@ -239,7 +249,9 @@ function assertLevelInvariants(
 function assertStressLevel(level: DogLegeDogLevel): void {
   const loadedSession = new GameSession(level);
   expect(loadedSession.getState().remainingBlocks).toHaveLength(level.blocks.length);
-  expect(level.blocks).toHaveLength(getBlockCount(level.number));
+  expect(getDogLogicalBlockCount(level.blocks, level.specialMechanisms)).toBe(
+    getBlockCount(level.number),
+  );
   expect(level.maxLayers).toBe(getMaxLayers(level.number));
   expect(level.patternTypes).toHaveLength(
     level.number === 1 ? 6 : getPatternTypeCount(level.number),

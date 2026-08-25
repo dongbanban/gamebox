@@ -109,7 +109,13 @@ test.describe("狗了个狗完整浏览器闭环", () => {
     await expect(page.getByTestId("dog-game")).toBeVisible();
     await expect(page.getByTestId("dog-active-level")).toContainText("2");
     await expect(page.getByTestId("dog-board")).toBeVisible();
-    await expect(page.locator('[data-testid="dog-block"]')).toHaveCount(90);
+    const nextLevelPhysicalBlockCount = await page
+      .locator('[data-testid="dog-block"]')
+      .count();
+    const nextLevelTwinCount = await page
+      .locator('[data-testid="dog-block"][data-special-mechanism="twin"]')
+      .count();
+    expect(nextLevelPhysicalBlockCount + nextLevelTwinCount).toBe(90);
     await expect(page.locator('[data-testid="dog-tray-slot"][data-pattern-type]')).toHaveCount(0);
     const nextLevelBlockIds = await getBlockIds(page);
     expect(nextLevelBlockIds).not.toEqual(firstLevelBlockIds);
@@ -236,7 +242,9 @@ async function findBrowserSolvablePath(page: Page): Promise<string[]> {
         id: element.dataset.blockId ?? "",
         patternType: element.dataset.patternType ?? "",
         specialMechanism:
-          specialMechanism === "freeze" || specialMechanism === "illusion"
+          specialMechanism === "freeze" ||
+          specialMechanism === "illusion" ||
+          specialMechanism === "twin"
             ? specialMechanism
             : undefined,
         x: Number(element.dataset.x),
@@ -249,7 +257,7 @@ async function findBrowserSolvablePath(page: Page): Promise<string[]> {
   return findIndependentSolvablePath(blocks);
 }
 
-type BrowserSpecialMechanism = "freeze" | "illusion";
+type BrowserSpecialMechanism = "freeze" | "illusion" | "twin";
 
 interface BrowserBlock {
   readonly id: string;
@@ -329,12 +337,30 @@ function searchIndependentSolvability(
     const nextRemaining = new Set(remaining);
     nextRemaining.delete(block.id);
     const nextTray = tray.map((trayBlock) => ({ ...trayBlock }));
-    nextTray.push({
-      id: block.id,
-      patternType: block.patternType,
-      frozen: block.specialMechanism === "freeze",
-      freezeProgress: 0,
-    });
+    const trayBlocks = block.specialMechanism === "twin"
+      ? [
+          {
+            id: `${block.id}-1`,
+            patternType: block.patternType,
+            frozen: false,
+            freezeProgress: 0,
+          },
+          {
+            id: `${block.id}-2`,
+            patternType: block.patternType,
+            frozen: false,
+            freezeProgress: 0,
+          },
+        ]
+      : [
+          {
+            id: block.id,
+            patternType: block.patternType,
+            frozen: block.specialMechanism === "freeze",
+            freezeProgress: 0,
+          },
+        ];
+    nextTray.push(...trayBlocks);
     resolveIndependentTrayMatches(
       nextTray,
       nextRemaining.size === 0 && canResolveAllIndependentTrayBlocks(nextTray),

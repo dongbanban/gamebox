@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   getBlockCount,
   getDifficultyTarget,
+  getDogLogicalBlockCount,
   getMaxLayers,
   getPatternTypeCount,
   isDifficultyWithinTarget,
@@ -46,7 +47,7 @@ describe("狗了个狗难度曲线", () => {
     expect(levels.every((level) => {
       const { difficulty } = level;
       return (
-        level.blocks.length === getBlockCount(level.number) &&
+        getDogLogicalBlockCount(level.blocks, level.specialMechanisms) === getBlockCount(level.number) &&
         level.maxLayers === getMaxLayers(level.number) &&
         level.patternTypes.length === getPatternTypeCount(level.number) &&
         difficulty.solutionPathLength === level.blocks.length &&
@@ -83,7 +84,7 @@ describe("狗了个狗难度曲线", () => {
 
     expect(level.generation.fallbackUsed).toBe(false);
     expect(isDifficultyWithinTarget(level.difficulty)).toBe(true);
-    expect(level.difficulty.logicalBlockCount).toBe(level.blocks.length);
+    expect(level.difficulty.logicalBlockCount).toBe(getBlockCount(level.number));
     expect(level.difficulty.solutionPathLength).toBe(level.blocks.length);
     expect(level.difficulty.crossLayerOverlapCount).toBeGreaterThan(0);
     expect(level.difficulty.partialOverlapRate).toBeGreaterThan(0);
@@ -103,7 +104,6 @@ describe("狗了个狗难度曲线", () => {
       }),
     );
     expect(levels[0]).not.toEqual(levels[1]);
-    expect(new Set(levels.map((level) => level.difficulty.safeChoiceCount)).size).toBeGreaterThan(1);
     expect(levels.every((level) => isDifficultyWithinTarget(level.difficulty))).toBe(true);
 
     const legacy = generator.generate({

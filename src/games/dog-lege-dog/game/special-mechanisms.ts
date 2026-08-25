@@ -44,6 +44,12 @@ export const DOG_SPECIAL_MECHANISM_HANDLERS: readonly DogSpecialMechanismHandler
       onEnterTray: revealIllusionOnEnterTray,
       onSuccessfulTriples: keepIllusionBlock,
     }),
+    Object.freeze({
+      type: DOG_TWIN_MECHANISM_TYPE,
+      isMatchable: () => true,
+      onEnterTray: splitTwinBlock,
+      onSuccessfulTriples: keepTwinBlock,
+    }),
   ]);
 
 const DOG_SUPPORTED_SPECIAL_MECHANISM_TYPES = new Set(
@@ -94,6 +100,43 @@ export function getDogSpecialMechanismConfigsForGeneration(
   );
 }
 
+/**
+ * Keeps configured minimums compatible with the shared logical-density cap.
+ * Metadata still exposes every configured mechanism; candidate generation only
+ * activates the subset that can fit the current logical board.
+ */
+export function limitDogSpecialMechanismConfigsForLogicalDensity(
+  configurations: readonly DogSpecialMechanismConfig[],
+  logicalBlockCount: number,
+): readonly DogSpecialMechanismConfig[] {
+  if (!Number.isSafeInteger(logicalBlockCount) || logicalBlockCount <= 0) {
+    throw new Error("狗了个狗 logical block count is invalid");
+  }
+
+  const maxLogicalUnitCount = Math.floor(
+    logicalBlockCount * DOG_SPECIAL_MECHANISM_DENSITY_LIMIT + Number.EPSILON,
+  );
+  const activeConfigurations = [...configurations];
+  while (
+    activeConfigurations.reduce(
+      (total, configuration) =>
+        total + configuration.min * resolveDensityWeight(configuration),
+      0,
+    ) > maxLogicalUnitCount
+  ) {
+    const removableIndex = [...activeConfigurations]
+      .map((configuration, index) => ({ configuration, index }))
+      .reverse()
+      .find(({ configuration }) => configuration.type !== DOG_TWIN_MECHANISM_TYPE)
+      ?.index;
+    if (removableIndex === undefined) {
+      throw new Error("狗了个狗 special mechanism minimum density is unsatisfiable");
+    }
+    activeConfigurations.splice(removableIndex, 1);
+  }
+  return Object.freeze(activeConfigurations);
+}
+
 function getDogSpecialMechanismDefinitions(
   generatorVersion: number,
 ): readonly DogSpecialMechanismConfig[] {
@@ -126,6 +169,15 @@ export function createDogSpecialMechanism(type: string): DogSpecialMechanism {
       state: Object.freeze({
         status: DOG_ILLUSION_MASK_STATUS,
         disguisedPatternType: null,
+      }),
+    });
+  }
+
+  if (type === DOG_TWIN_MECHANISM_TYPE) {
+    return Object.freeze({
+      type: DOG_TWIN_MECHANISM_TYPE,
+      state: Object.freeze({
+        status: DOG_TWIN_MECHANISM_TYPE,
       }),
     });
   }
@@ -191,6 +243,8 @@ export interface DogSpecialMechanismComposition {
 export interface DogSpecialMechanismAssignmentOptions {
   readonly minimumMiddleLayerRatio?: number;
   readonly maxLayers?: number;
+  /** Reuses counts sampled from the candidate's runSeed before placement. */
+  readonly countOverrides?: ReadonlyMap<string, number>;
 }
 
 interface ResolvedSpecialMechanismAssignment {
@@ -212,17 +266,15 @@ export function getDogSpecialMechanismComposition(
   maxLayers: number,
   configurations: readonly DogSpecialMechanismConfig[] = [],
 ): DogSpecialMechanismComposition {
-  const densityWeights = new Map(
-    configurations.map((configuration) => [
-      configuration.type,
-      resolveDensityWeight(configuration),
-    ]),
-  );
   const specialBlocks = blocks.filter((block) => block.specialMechanism !== undefined);
   const logicalUnitCount = specialBlocks.reduce(
-    (total, block) => total + (densityWeights.get(block.specialMechanism?.type ?? "") ?? 1),
+    (total, block) => total + getLogicalUnitWeightForType(
+      block.specialMechanism?.type ?? "",
+      configurations,
+    ),
     0,
   );
+  const logicalBlockCount = getDogLogicalBlockCount(blocks, configurations);
   const middleLayerCount = specialBlocks.filter(
     (block) => block.z > 0 && block.z < maxLayers - 1,
   ).length;
@@ -230,14 +282,99 @@ export function getDogSpecialMechanismComposition(
   return Object.freeze({
     specialMechanismCount: specialBlocks.length,
     logicalUnitCount,
-    specialMechanismDensity: blocks.length === 0
+    specialMechanismDensity: logicalBlockCount === 0
       ? 0
-      : logicalUnitCount / blocks.length,
+      : logicalUnitCount / logicalBlockCount,
     middleLayerCount,
     middleLayerRatio: specialBlocks.length === 0
       ? 1
       : middleLayerCount / specialBlocks.length,
   });
+}
+
+export function getDogSpecialMechanismLogicalUnitWeight(
+  mechanism: Pick<DogSpecialMechanism, "type"> | DogSpecialMechanismConfig,
+): number {
+  if ("densityWeight" in mechanism) {
+    return resolveDensityWeight(mechanism);
+  }
+  return mechanism.type === DOG_TWIN_MECHANISM_TYPE ? 2 : 1;
+}
+
+function getLogicalUnitWeightForType(
+  type: string,
+  configurations: readonly DogSpecialMechanismConfig[],
+): number {
+  const configuration = configurations.find((candidate) => candidate.type === type);
+  return configuration === undefined
+    ? (type === DOG_TWIN_MECHANISM_TYPE ? 2 : 1)
+    : getDogSpecialMechanismLogicalUnitWeight(configuration);
+}
+
+export function getDogBlockLogicalUnitCount(
+  block: Pick<DogBlock, "specialMechanism">,
+  configurations: readonly DogSpecialMechanismConfig[] = [],
+): number {
+  return block.specialMechanism === undefined
+    ? 1
+    : getLogicalUnitWeightForType(block.specialMechanism.type, configurations);
+}
+
+export function getDogLogicalBlockCount(
+  blocks: readonly Pick<DogBlock, "specialMechanism">[],
+  configurations: readonly DogSpecialMechanismConfig[] = [],
+): number {
+  return blocks.reduce(
+    (total, block) => total + getDogBlockLogicalUnitCount(block, configurations),
+    0,
+  );
+}
+
+export function getDogTrayLogicalUnitCount(
+  tray: readonly Pick<DogTrayBlock, "specialMechanism">[],
+): number {
+  return tray.reduce(
+    (total, block) => total + getDogBlockLogicalUnitCount(block),
+    0,
+  );
+}
+
+export function selectDogSpecialMechanismCounts(
+  configurations: readonly DogSpecialMechanismConfig[],
+  random: SeededRandom,
+  logicalBlockCount?: number,
+): ReadonlyMap<string, number> {
+  const counts = new Map<string, number>();
+  for (const configuration of configurations) {
+    validateConfiguration(configuration);
+    counts.set(
+      configuration.type,
+      configuration.min + random.nextInt(configuration.max - configuration.min + 1),
+    );
+  }
+  if (logicalBlockCount !== undefined) {
+    const maxLogicalUnitCount = Math.floor(
+      logicalBlockCount * DOG_SPECIAL_MECHANISM_DENSITY_LIMIT + Number.EPSILON,
+    );
+    while ([...counts.entries()].reduce((total, [type, count]) => {
+      const configuration = configurations.find((candidate) => candidate.type === type);
+      return total + count * (configuration === undefined ? 1 : resolveDensityWeight(configuration));
+    }, 0) > maxLogicalUnitCount) {
+      const reducible = [...configurations]
+        .reverse()
+        .find((configuration) =>
+          configuration.type !== DOG_TWIN_MECHANISM_TYPE &&
+          (counts.get(configuration.type) ?? configuration.min) > configuration.min,
+        ) ?? [...configurations]
+          .reverse()
+          .find((configuration) => (counts.get(configuration.type) ?? configuration.min) > configuration.min);
+      if (reducible === undefined) {
+        throw new Error("狗了个狗 special mechanism count density is unsatisfiable");
+      }
+      counts.set(reducible.type, (counts.get(reducible.type) ?? reducible.min) - 1);
+    }
+  }
+  return counts;
 }
 
 /** Returns a diagnostic string so generation can reject and redraw candidates. */
@@ -344,8 +481,22 @@ export function assignDogSpecialMechanisms(
       throw new Error(`狗了个狗 duplicate special mechanism configuration: ${configuration.type}`);
     }
     configuredTypes.add(configuration.type);
-    const count = configuration.min +
-      random.nextInt(configuration.max - configuration.min + 1);
+    const requestedCount = options.countOverrides?.get(configuration.type) ??
+      configuration.min + random.nextInt(configuration.max - configuration.min + 1);
+    if (
+      !Number.isSafeInteger(requestedCount) ||
+      requestedCount < configuration.min ||
+      requestedCount > configuration.max
+    ) {
+      throw new Error(`狗了个狗 ${configuration.type} count override is invalid`);
+    }
+    const existingCount = blocks.filter(
+      (block) => block.specialMechanism?.type === configuration.type,
+    ).length;
+    if (existingCount > requestedCount) {
+      throw new Error(`狗了个狗 ${configuration.type} count exceeds configured count`);
+    }
+    const count = requestedCount - existingCount;
     const poolSize = Math.min(
       eligibleIndices.length,
       Math.max(MAX_SPECIAL_MECHANISM_CANDIDATES, count),
@@ -362,24 +513,38 @@ export function assignDogSpecialMechanisms(
   if (assignments.length === 0) {
     return [...blocks];
   }
-  const totalCount = assignments.reduce((total, assignment) => total + assignment.count, 0);
+  const existingSpecialBlocks = blocks.filter((block) => block.specialMechanism !== undefined);
+  const totalCount = existingSpecialBlocks.length + assignments.reduce(
+    (total, assignment) => total + assignment.count,
+    0,
+  );
   const logicalUnitCount = assignments.reduce(
     (total, assignment) =>
       total + assignment.count * resolveDensityWeight(assignment.configuration),
-    0,
+    existingSpecialBlocks.reduce(
+      (existingTotal, block) => existingTotal + getLogicalUnitWeightForType(
+        block.specialMechanism?.type ?? "",
+        configurations,
+      ),
+      0,
+    ),
   );
   const middleIndices = eligibleIndices.filter((index) => {
     const block = blocks[index];
     return block !== undefined && block.z < maxLayerIndex;
   });
   const requiredMiddleCount = Math.ceil(totalCount * minimumMiddleLayerRatio);
-  if (totalCount > eligibleIndices.length) {
+  const unassignedCount = assignments.reduce((total, assignment) => total + assignment.count, 0);
+  if (unassignedCount > eligibleIndices.length) {
     throw new Error("狗了个狗 special mechanism has no high-layer capacity");
   }
-  if (requiredMiddleCount > middleIndices.length) {
+  const existingMiddleCount = existingSpecialBlocks.filter(
+    (block) => isMiddleLayer(block, maxLayerIndex),
+  ).length;
+  if (requiredMiddleCount > existingMiddleCount + middleIndices.length) {
     throw new Error("狗了个狗 special mechanism has no legal middle-layer capacity");
   }
-  if (logicalUnitCount > blocks.length * DOG_SPECIAL_MECHANISM_DENSITY_LIMIT) {
+  if (logicalUnitCount > getDogLogicalBlockCount(blocks, configurations) * DOG_SPECIAL_MECHANISM_DENSITY_LIMIT) {
     throw new Error("狗了个狗 special mechanism density exceeds 6%");
   }
 
@@ -497,7 +662,9 @@ export function assignDogSpecialMechanisms(
     {
       blocks: [...blocks],
       usedIndices: new Set<number>(),
-      selectedMiddleCount: 0,
+      selectedMiddleCount: existingSpecialBlocks.filter(
+        (block) => isMiddleLayer(block, maxLayerIndex),
+      ).length,
     },
   );
   // Bounded pools cover normal generation. Expand once for direct callers or
@@ -516,7 +683,9 @@ export function assignDogSpecialMechanisms(
       {
         blocks: [...blocks],
         usedIndices: new Set<number>(),
-        selectedMiddleCount: 0,
+        selectedMiddleCount: existingSpecialBlocks.filter(
+          (block) => isMiddleLayer(block, maxLayerIndex),
+        ).length,
       },
     );
   }
@@ -575,6 +744,22 @@ function revealIllusionOnEnterTray(block: DogTrayBlock): DogTrayBlock {
 }
 
 function keepIllusionBlock(block: DogTrayBlock): DogTrayBlock {
+  return block;
+}
+
+function splitTwinBlock(block: DogTrayBlock): readonly DogTrayBlock[] {
+  if (block.specialMechanism?.type !== DOG_TWIN_MECHANISM_TYPE) {
+    return [block];
+  }
+
+  const { specialMechanism: _specialMechanism, ...ordinaryBlock } = block;
+  return Object.freeze([
+    Object.freeze({ ...ordinaryBlock, id: `${block.id}-1` }),
+    Object.freeze({ ...ordinaryBlock, id: `${block.id}-2` }),
+  ]);
+}
+
+function keepTwinBlock(block: DogTrayBlock): DogTrayBlock {
   return block;
 }
 

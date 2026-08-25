@@ -50,8 +50,9 @@ export function insertDogBlockIntoTray(
   handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
   options: DogTrayMatchResolutionOptions = {},
 ): DogTrayMatchResolution {
-  const trayBlock = prepareDogTrayBlock(block, handlers);
-  insertDogTrayBlock(tray, trayBlock);
+  for (const trayBlock of prepareDogTrayBlocks(block, handlers)) {
+    insertDogTrayBlock(tray, trayBlock);
+  }
 
   return resolveDogTrayMatches(tray, handlers, options);
 }
@@ -67,11 +68,22 @@ export function prepareDogTrayBlock(
   block: DogTrayBlock,
   handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
 ): DogTrayBlock {
+  return prepareDogTrayBlocks(block, handlers)[0] ?? block;
+}
+
+export function prepareDogTrayBlocks(
+  block: DogTrayBlock,
+  handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
+): readonly DogTrayBlock[] {
   if (block.specialMechanism === undefined) {
-    return block;
+    return [block];
   }
 
-  return getHandler(block, handlers).onEnterTray?.(block) ?? block;
+  const prepared = getHandler(block, handlers).onEnterTray?.(block) ?? block;
+  if (Array.isArray(prepared)) {
+    return prepared as readonly DogTrayBlock[];
+  }
+  return [prepared as DogTrayBlock];
 }
 
 export function applyDogTraySuccessfulTripleEffects(

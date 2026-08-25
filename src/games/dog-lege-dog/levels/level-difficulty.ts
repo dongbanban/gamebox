@@ -19,6 +19,7 @@ import {
 import { createBlockGraph } from "@/games/dog-lege-dog/levels/level-graph";
 import { getPositiveOverlapArea } from "@/games/dog-lege-dog/levels/level-rules";
 import {
+  getDogLogicalBlockCount,
   getDogSpecialMechanismComposition,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
 
@@ -85,9 +86,10 @@ export function calculateDifficultyMetrics(
     level.maxLayers,
     level.specialMechanisms ?? [],
   );
-  const logicalBlockCount = level.blocks.length -
-    specialMechanismComposition.specialMechanismCount +
-    specialMechanismComposition.logicalUnitCount;
+  const logicalBlockCount = getDogLogicalBlockCount(
+    level.blocks,
+    level.specialMechanisms ?? [],
+  );
   const safeChoiceRate = logicalBlockCount === 0
     ? 0
     : safeChoiceCount / logicalBlockCount;

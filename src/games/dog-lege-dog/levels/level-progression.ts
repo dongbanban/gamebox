@@ -61,7 +61,8 @@ const CURRENT_DIFFICULTY_TARGETS: readonly DogDifficultyTarget[] = [
   {
     safeChoiceCount: { min: 29, max: 45 },
     safeChoiceRate: { min: 0.27, max: 0.4 },
-    durationMinutes: { min: 8.4, max: 9.1 },
+    // Twin logical units add a small tray-pressure cost from level 6 onward.
+    durationMinutes: { min: 8.4, max: 9.2 },
   },
   {
     safeChoiceCount: { min: 38, max: 55 },
@@ -71,12 +72,12 @@ const CURRENT_DIFFICULTY_TARGETS: readonly DogDifficultyTarget[] = [
   {
     safeChoiceCount: { min: 40, max: 59 },
     safeChoiceRate: { min: 0.25, max: 0.4 },
-    durationMinutes: { min: 9.1, max: 9.9 },
+    durationMinutes: { min: 9.1, max: 10 },
   },
   {
     safeChoiceCount: { min: 43, max: 66 },
     safeChoiceRate: { min: 0.24, max: 0.39 },
-    durationMinutes: { min: 9.4, max: 10.2 },
+    durationMinutes: { min: 9.4, max: 10.4 },
   },
   {
     safeChoiceCount: { min: 49, max: 70 },

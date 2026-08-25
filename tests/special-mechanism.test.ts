@@ -7,6 +7,7 @@ import {
   DOG_DETECTOR_REVEAL_DURATION_MS,
   DOG_TORCH_MELT_DURATION_MS,
   DOG_ILLUSION_REVEAL_DURATION_MS,
+  DOG_TWIN_SPLIT_DURATION_MS,
 } from "@/games/dog-lege-dog/assets/animation-effects";
 import { getDogPatternAssetUrl } from "@/games/dog-lege-dog/assets/game-assets";
 import {
@@ -16,12 +17,15 @@ import {
   DOG_PATTERN_TYPES,
   DOG_FREEZE_MECHANISM_TYPE,
   DOG_FREEZE_GENERATOR_VERSION,
+  DOG_TWIN_MECHANISM_TYPE,
   DOG_ILLUSION_GENERATOR_VERSION,
   FIRST_LEVEL,
   GameSession,
   LEVEL_GENERATOR_VERSION,
   LevelGenerator,
   createDogSpecialMechanism,
+  getBlockCount,
+  getDogLogicalBlockCount,
   getDogSpecialMechanismComposition,
   getDogSpecialMechanismConfigs,
   validateDogSpecialMechanismComposition,
@@ -526,6 +530,40 @@ describe("狗了个狗特殊机制", () => {
     expect(generator.findSolvability(first).status).toBe("solvable");
   });
 
+  it("生成器按双生逻辑单位闭合图案配额并可重放求解", () => {
+    const generator = new LevelGenerator();
+    for (const levelNumber of [1, 6, 31]) {
+      const request = {
+        levelNumber,
+        runSeed: `twin-logical-quota-${levelNumber}`,
+        generatorVersion: LEVEL_GENERATOR_VERSION,
+      } as const;
+      const level = generator.generate(request);
+      const repeated = generator.generate(request);
+      const twinBlocks = level.blocks.filter(
+        (block) => block.specialMechanism?.type === DOG_TWIN_MECHANISM_TYPE,
+      );
+
+      expect(twinBlocks.length).toBeGreaterThan(0);
+      expect(level.blocks.length + twinBlocks.length).toBe(getBlockCount(levelNumber));
+      expect(getDogLogicalBlockCount(level.blocks, level.specialMechanisms)).toBe(
+        getBlockCount(levelNumber),
+      );
+      for (const patternType of level.patternTypes) {
+        const logicalPatternCount = level.blocks
+          .filter((block) => block.patternType === patternType)
+          .reduce(
+            (total, block) => total + (block.specialMechanism?.type === DOG_TWIN_MECHANISM_TYPE ? 2 : 1),
+            0,
+          );
+        expect(logicalPatternCount % 3).toBe(0);
+      }
+      expect(level.difficulty.logicalBlockCount).toBe(getBlockCount(levelNumber));
+      expect(generator.findSolvability(level).status).toBe("solvable");
+      expect(repeated).toEqual(level);
+    }
+  });
+
   it("组合特殊机制只分配到高层，且中间层占比至少七成", () => {
     const generator = new LevelGenerator();
 
@@ -645,6 +683,81 @@ describe("狗了个狗特殊机制", () => {
       "ordinary",
     ]);
     expect(state.trayBlocks[1]).not.toHaveProperty("specialMechanism");
+  });
+
+  it("双生方块占一个棋盘对象，入槽后分裂为相邻的两个普通方块", () => {
+    const session = new GameSession(
+      createLevel([
+        createBlock("twin", 0, 0, WORKING_DOG, {
+          type: DOG_TWIN_MECHANISM_TYPE,
+          state: { status: "twin" },
+        }),
+        createBlock("working-3", 4, 0, WORKING_DOG),
+      ]),
+    );
+
+    expect(session.getState().remainingBlocks).toHaveLength(2);
+    expect(session.getState().remainingLogicalUnitCount).toBe(3);
+    expect(session.getState().selectableBlockIds).toContain("twin");
+
+    const split = session.selectBlock("twin");
+
+    expect(split.selected).toBe(true);
+    expect(split.snapshot.trayBlocks.map((block) => block.id)).toEqual([
+      "twin-1",
+      "twin-2",
+    ]);
+    expect(split.snapshot.trayBlocks.map((block) => block.patternType)).toEqual([
+      WORKING_DOG,
+      WORKING_DOG,
+    ]);
+    expect(split.snapshot.trayLogicalUnitCount).toBe(2);
+    expect(split.snapshot.remainingLogicalUnitCount).toBe(1);
+    expect(split.snapshot.trayBlocks.every((block) => block.specialMechanism === undefined)).toBe(
+      true,
+    );
+
+    const triple = session.selectBlock("working-3");
+    expect(triple.removedCount).toBe(3);
+    expect(triple.snapshot.trayBlocks).toEqual([]);
+    expect(triple.snapshot.status).toBe("won");
+  });
+
+  it("双生分裂不因空闲槽少于两个而提前禁用，最终超容量按操作失败", () => {
+    const session = new GameSession({
+      level: createLevel([
+        createBlock("twin", 0, 0, WORKING_DOG, {
+          type: DOG_TWIN_MECHANISM_TYPE,
+          state: { status: "twin" },
+        }),
+      ]),
+      initialTray: [
+        WORKING_DOG,
+        SINGLE_DOG,
+        LICKING_DOG,
+        "看门狗",
+        WORKING_DOG,
+        SINGLE_DOG,
+      ],
+    });
+
+    expect(session.getState().tray).toHaveLength(6);
+    expect(session.canSelectBlock("twin")).toBe(true);
+
+    const result = session.selectBlock("twin");
+
+    expect(result.selected).toBe(true);
+    expect(result.snapshot.trayBlocks.map((block) => block.id)).toEqual([
+      "initial-tray-1",
+      "initial-tray-2",
+      "initial-tray-3",
+      "initial-tray-4",
+      "initial-tray-5",
+      "initial-tray-6",
+      "twin-1",
+      "twin-2",
+    ]);
+    expect(result.snapshot.status).toBe("lost");
   });
 
   it("幻化飞行期间只占用暂存槽，飞行完成后才执行三消", () => {
@@ -1072,6 +1185,72 @@ describe("狗了个狗特殊机制", () => {
       root.querySelector<HTMLElement>(
         `[data-testid="dog-tray-slot"][data-block-id="${illusion.id}"]`,
       )?.classList.contains("dog-tray__slot--illusion-reveal"),
+    ).toBe(false);
+    game.destroy();
+  });
+
+  it("双生方块静态识别，分裂期间锁定输入，完成后恢复普通视觉", async () => {
+    vi.useFakeTimers();
+    const root = document.createElement("div");
+    const game = startDogLegeDogGame(root, {
+      runSeed: "twin-split-ui-seed",
+      loadout: ["tray-capacity", "wildcard", "torch"],
+    });
+    const level = game.getState().level;
+    const twin = level.blocks.find(
+      (block) => block.specialMechanism?.type === DOG_TWIN_MECHANISM_TYPE,
+    );
+    if (twin === undefined) {
+      throw new Error("Expected generated twin block");
+    }
+
+    for (const blockId of level.solutionPath) {
+      if (blockId === twin.id) {
+        break;
+      }
+      game.selectBlock(blockId);
+      await vi.runAllTimersAsync();
+    }
+
+    const boardBlock = root.querySelector<HTMLElement>(
+      `[data-testid="dog-block"][data-block-id="${twin.id}"]`,
+    );
+    expect(boardBlock?.classList.contains("dog-block--special-twin")).toBe(true);
+    expect(boardBlock?.dataset.specialMechanismState).toBe(DOG_TWIN_MECHANISM_TYPE);
+
+    const selectableBefore = game.getState().session.selectableBlockIds;
+    game.selectBlock(twin.id);
+
+    expect(game.getState().inputLocked).toBe(true);
+    expect(game.getState().session.remainingBlocks.map((block) => block.id)).not.toContain(twin.id);
+    expect(game.getState().session.trayBlocks.slice(-2).map((block) => block.id)).toEqual([
+      `${twin.id}-1`,
+      `${twin.id}-2`,
+    ]);
+    const splitEffect = root.querySelector<HTMLElement>('[data-testid="dog-twin-split-effect"]');
+    expect(splitEffect?.dataset.twinSourceId).toBe(twin.id);
+    expect(splitEffect?.dataset.twinBlockIds).toBe(`${twin.id}-1,${twin.id}-2`);
+
+    const otherBlockId = selectableBefore.find((blockId) => blockId !== twin.id);
+    if (otherBlockId !== undefined) {
+      game.selectBlock(otherBlockId);
+      expect(game.getState().session.remainingBlocks.map((block) => block.id)).toContain(
+        otherBlockId,
+      );
+    }
+
+    await vi.advanceTimersByTimeAsync(DOG_TWIN_SPLIT_DURATION_MS - 1);
+    expect(game.getState().inputLocked).toBe(true);
+    expect(root.querySelector('[data-testid="dog-twin-split-effect"]')).not.toBeNull();
+
+    await vi.advanceTimersByTimeAsync(1);
+    await vi.runAllTimersAsync();
+    expect(game.getState().inputLocked).toBe(false);
+    expect(root.querySelector('[data-testid="dog-twin-split-effect"]')).toBeNull();
+    expect(
+      root.querySelector<HTMLElement>(
+        `[data-testid="dog-tray-slot"][data-block-id="${twin.id}-1"]`,
+      )?.classList.contains("dog-block--special-twin"),
     ).toBe(false);
     game.destroy();
   });
