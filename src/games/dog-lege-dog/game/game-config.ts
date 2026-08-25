@@ -4,8 +4,11 @@ import type {
 } from "@/games/dog-lege-dog/levels/level-types";
 
 const GAME_ID = "dog-lege-dog" as const;
-const GENERATOR_VERSION = 11 as const;
+const GENERATOR_VERSION = 12 as const;
 export const MAX_LEVEL_NUMBER = 99 as const;
+export const DOG_BASE_TRAY_CAPACITY = 7 as const;
+export const DOG_MAX_LOCKED_TRAY_SLOTS = 2 as const;
+export const DOG_KEY_DROP_RATE = 0.3 as const;
 
 export const DOG_GAME_RESULT_DISPLAY = Object.freeze({
   won: Object.freeze({
@@ -82,6 +85,9 @@ export const DOG_LEGE_DOG_CONFIG = Object.freeze({
 
 export const DOG_FREEZE_GENERATOR_VERSION = 7 as const;
 export const DOG_ILLUSION_GENERATOR_VERSION = 8 as const;
+export const DOG_SPECIAL_MECHANISM_GENERATOR_VERSION = 11 as const;
+export const DOG_DIFFICULTY_CURVE_GENERATOR_VERSION = 11 as const;
+export const DOG_TRAY_LOCKS_GENERATOR_VERSION = GENERATOR_VERSION;
 
 /** v7 replay metadata must keep its freeze-only quantity policy. */
 export const DOG_FREEZE_ONLY_SPECIAL_MECHANISM_DEFINITIONS = Object.freeze([

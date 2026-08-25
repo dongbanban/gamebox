@@ -4,7 +4,10 @@ import type {
   DogLevelGeometry,
   DogSafeChoiceSearchStatus,
 } from "@/games/dog-lege-dog/levels/level-types";
-import { LEVEL_GENERATOR_VERSION } from "@/games/dog-lege-dog/game/game-config";
+import {
+  DOG_BASE_TRAY_CAPACITY,
+  DOG_DIFFICULTY_CURVE_GENERATOR_VERSION,
+} from "@/games/dog-lege-dog/game/game-config";
 import {
   getDifficultyTargetForGeneratorVersion,
 } from "@/games/dog-lege-dog/levels/level-progression";
@@ -150,7 +153,10 @@ export function getRelaxedDifficultyTarget(
   generatorVersion?: number,
 ): DogDifficultyTarget {
   const target = getDifficultyTargetForGeneratorVersion(levelNumber, generatorVersion);
-  if (generatorVersion === undefined || generatorVersion >= LEVEL_GENERATOR_VERSION) {
+  if (
+    generatorVersion === undefined ||
+    generatorVersion >= DOG_DIFFICULTY_CURVE_GENERATOR_VERSION
+  ) {
     return target;
   }
   const relaxationSteps = Math.floor(Math.max(0, attempt - 1) / 25);
@@ -240,7 +246,8 @@ function estimateDurationMinutes(
   const shapeScore = shapeComplexity / 4;
   const blockScore = logicalBlockCount / 180;
   const layerScore = level.maxLayers / 6;
-  const pressureScore = trayPeakPressure / 7;
+  const effectiveTrayCapacity = DOG_BASE_TRAY_CAPACITY - (level.lockedTraySlotCount ?? 0);
+  const pressureScore = trayPeakPressure / Math.max(1, effectiveTrayCapacity);
   const safeChoiceScore = 1 / Math.max(1, safeChoiceCount);
   const choicePressureScore = Math.max(0, 1 - safeChoiceRate);
   const patternScore = Math.max(0, (patternTypeCount - 6) / 4);

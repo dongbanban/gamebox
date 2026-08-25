@@ -21,6 +21,7 @@ export interface GeneratedLevelCandidate {
   readonly runSeed: string;
   readonly generatorVersion: number;
   readonly rewardConfigVersion: number;
+  readonly lockedTraySlotCount?: number;
   readonly maxLayers: number;
   readonly reward: number;
   readonly board: DogLegeDogLevel["board"];

@@ -133,6 +133,129 @@ describe("DogItemRuntime", () => {
     expect(session.getState().tray).toEqual([]);
   });
 
+  it("钥匙在合格三消后按独立随机流掉落并逐格解锁", () => {
+    const level = {
+      ...createLevel([
+        createBlock("working-1", WORKING_DOG),
+        createBlock("working-2", WORKING_DOG, undefined, { x: 4 }),
+        createBlock("working-3", WORKING_DOG, undefined, { x: 8 }),
+        ...Array.from({ length: 6 }, (_, index) =>
+          createBlock(`remaining-${index + 1}`, SINGLE_DOG, undefined, { x: 12 + index * 4 }),
+        ),
+      ]),
+      runSeed: "key-drop-seed-0",
+      lockedTraySlotCount: 2,
+    } satisfies DogLegeDogLevel;
+    const session = new GameSession(level);
+    const runtime = new DogItemRuntime({
+      level,
+      session,
+      loadout: ["key", "torch", "detector"],
+    });
+
+    expect(runtime.getState().items.find((item) => item.id === "key")).toMatchObject({
+      maxUses: 2,
+      remainingUses: 0,
+      available: false,
+    });
+    session.selectBlock("working-1");
+    session.selectBlock("working-2");
+    const triple = session.selectBlock("working-3");
+
+    expect(triple.tripleCount).toBe(1);
+    expect(runtime.settleSuccessfulTriples(triple.tripleCount)).toMatchObject({
+      dropped: true,
+      remainingUses: 1,
+    });
+    expect(runtime.getState().items.find((item) => item.id === "key")).toMatchObject({
+      remainingUses: 1,
+      available: true,
+    });
+
+    const unlock = runtime.begin("key");
+    expect(unlock).toMatchObject({
+      accepted: true,
+      success: true,
+      effect: { type: "unlock", unlockedSlotIndex: 5 },
+    });
+    expect(session.getState()).toMatchObject({
+      effectiveTrayCapacity: 6,
+      lockedTraySlotCount: 1,
+    });
+    runtime.completeAnimation();
+    expect(runtime.getState().items.find((item) => item.id === "key")).toMatchObject({
+      remainingUses: 0,
+      available: false,
+    });
+  });
+
+  it("终局三消与低空槽局面跳过钥匙掉落", () => {
+    const createKeyRuntime = (remainingCount: number, runSeed: string) => {
+      const blocks: DogBlock[] = [
+        createBlock("working-1", WORKING_DOG),
+        createBlock("working-2", WORKING_DOG, undefined, { x: 4 }),
+        createBlock("working-3", WORKING_DOG, undefined, { x: 8 }),
+        ...Array.from({ length: remainingCount }, (_, index) =>
+          createBlock(`remaining-${index + 1}`, SINGLE_DOG, undefined, { x: 12 + index * 4 }),
+        ),
+      ];
+      const level = {
+        ...createLevel(blocks),
+        runSeed,
+        lockedTraySlotCount: 2,
+      } satisfies DogLegeDogLevel;
+      const session = new GameSession(level);
+      const runtime = new DogItemRuntime({
+        level,
+        session,
+        loadout: ["key", "torch", "detector"],
+      });
+      session.selectBlock("working-1");
+      session.selectBlock("working-2");
+      const triple = session.selectBlock("working-3");
+      return { runtime, triple };
+    };
+
+    const terminal = createKeyRuntime(0, "key-drop-seed-0");
+    expect(terminal.triple.snapshot.status).toBe("won");
+    expect(terminal.runtime.settleSuccessfulTriples(terminal.triple.tripleCount).dropped).toBe(false);
+
+    const lowPressure = createKeyRuntime(2, "key-drop-seed-0");
+    expect(lowPressure.triple.snapshot.remainingLogicalUnitCount).toBe(2);
+    expect(lowPressure.runtime.settleSuccessfulTriples(lowPressure.triple.tripleCount).dropped).toBe(
+      false,
+    );
+    expect(lowPressure.runtime.settleSuccessfulTriples(0.5).dropped).toBe(false);
+  });
+
+  it("钥匙掉落判定不会推进磁吸目标随机流", () => {
+    const level = {
+      ...createLevel([
+        createBlock("magnetic", WORKING_DOG, {
+          type: DOG_MAGNETIC_MECHANISM_TYPE,
+          state: { status: DOG_MAGNETIC_MECHANISM_TYPE },
+        }),
+        ...Array.from({ length: 6 }, (_, index) =>
+          createBlock(`candidate-${index + 1}`, SINGLE_DOG, undefined, { x: 4 + index * 4 }),
+        ),
+      ]),
+      runSeed: "independent-rng-seed",
+      lockedTraySlotCount: 2,
+    } satisfies DogLegeDogLevel;
+    const withKeyDrop = new GameSession(level);
+    const withoutKeyDrop = new GameSession(level);
+    const runtime = new DogItemRuntime({
+      level,
+      session: withKeyDrop,
+      loadout: ["key", "torch", "detector"],
+    });
+
+    expect(runtime.settleSuccessfulTriples(1).snapshot.remainingLogicalUnitCount).toBe(7);
+    expect(withKeyDrop.beginBlockSelection("magnetic").magneticResolution?.targetBlockId).toBe(
+      withoutKeyDrop.beginBlockSelection("magnetic").magneticResolution?.targetBlockId,
+    );
+  });
+
   it("消磁仪只暴露可点击磁吸方块，取消和无效目标不改局面，成功后原位去磁", () => {
     const magneticMechanism = {
       type: DOG_MAGNETIC_MECHANISM_TYPE,

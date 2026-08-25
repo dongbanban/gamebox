@@ -27,8 +27,12 @@ import {
   getDogTrayLogicalUnitCount,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
 import { SeededRandom } from "@/games/dog-lege-dog/levels/level-random";
+import {
+  DOG_BASE_TRAY_CAPACITY,
+  DOG_MAX_LOCKED_TRAY_SLOTS,
+} from "@/games/dog-lege-dog/game/game-config";
 
-export const GAME_SESSION_BASE_TRAY_CAPACITY = 7 as const;
+export const GAME_SESSION_BASE_TRAY_CAPACITY = DOG_BASE_TRAY_CAPACITY;
 export const GAME_SESSION_TRAY_CAPACITY = GAME_SESSION_BASE_TRAY_CAPACITY;
 export const GAME_SESSION_MAX_TRAY_CAPACITY = 8 as const;
 
@@ -49,9 +53,18 @@ export interface GameSessionSnapshot {
   readonly tray: readonly DogPatternType[];
   readonly trayBlocks: readonly DogTrayBlock[];
   readonly trayCapacity: number;
+  readonly effectiveTrayCapacity: number;
+  readonly trayFreeCapacity: number;
+  readonly lockedTraySlotCount: number;
   readonly remainingLogicalUnitCount: number;
   readonly trayLogicalUnitCount: number;
   readonly selectableBlockIds: readonly string[];
+}
+
+export interface GameSessionUnlockResult extends GameSessionSnapshot {
+  readonly unlocked: boolean;
+  readonly unlockedSlotIndex: number | null;
+  readonly snapshot: GameSessionSnapshot;
 }
 
 export interface GameSessionPendingSelectionResult {
@@ -158,6 +171,7 @@ export class GameSession {
     readonly magneticTargetBlockId: string | null;
   } | null = null;
   private trayCapacity: number;
+  private lockedTraySlotCount: number;
   private status: GameSessionStatus = "playing";
   private readonly tripleRemovalPlanCache = new Map<
     string,
@@ -187,6 +201,12 @@ export class GameSession {
       this.trayCapacity > GAME_SESSION_MAX_TRAY_CAPACITY
     ) {
       throw new Error("GameSession tray capacity must be an integer between 7 and 8");
+    }
+    this.lockedTraySlotCount = normalizeLockedTraySlotCount(
+      this.level.lockedTraySlotCount,
+    );
+    if (this.lockedTraySlotCount > this.trayCapacity) {
+      throw new Error("GameSession locked tray slots cannot exceed tray capacity");
     }
     for (const block of this.level.blocks) {
       if (
@@ -226,8 +246,11 @@ export class GameSession {
     }
 
     resolveDogTrayMatches(this.tray, this.specialMechanismHandlers);
-    if (getDogTrayLogicalUnitCount(this.tray) > this.trayCapacity) {
-      throw new Error(`GameSession tray cannot contain more than ${this.trayCapacity} blocks`);
+    const effectiveTrayCapacity = this.getEffectiveTrayCapacity();
+    if (getDogTrayLogicalUnitCount(this.tray) > effectiveTrayCapacity) {
+      throw new Error(
+        `GameSession tray cannot contain more than ${effectiveTrayCapacity} unlocked slots`,
+      );
     }
     this.updateResult();
   }
@@ -237,6 +260,7 @@ export class GameSession {
     const trayBlocks = Object.freeze(
       this.getVisibleTrayBlocks().map(cloneTrayBlock),
     );
+    const effectiveTrayCapacity = this.getEffectiveTrayCapacity();
 
     return Object.freeze({
       status: this.status,
@@ -245,6 +269,12 @@ export class GameSession {
       tray: Object.freeze(trayBlocks.map((block) => block.patternType)),
       trayBlocks,
       trayCapacity: this.trayCapacity,
+      effectiveTrayCapacity,
+      trayFreeCapacity: Math.max(
+        0,
+        effectiveTrayCapacity - getDogTrayLogicalUnitCount(trayBlocks),
+      ),
+      lockedTraySlotCount: this.lockedTraySlotCount,
       remainingLogicalUnitCount: getDogLogicalBlockCount([...this.remainingBlocks.values()]),
       trayLogicalUnitCount: getDogTrayLogicalUnitCount(trayBlocks),
       selectableBlockIds: Object.freeze(this.getSelectableBlockIds()),
@@ -277,6 +307,26 @@ export class GameSession {
     this.trayCapacity += 1;
     this.clearItemPlanCaches();
     return true;
+  }
+
+  canUnlockTraySlot(): boolean {
+    return (
+      this.status === "playing" &&
+      !this.isSelectionPending() &&
+      this.lockedTraySlotCount > 0
+    );
+  }
+
+  unlockTraySlot(): GameSessionUnlockResult {
+    if (!this.canUnlockTraySlot()) {
+      return this.createUnlockResult(false, null);
+    }
+
+    const unlockedSlotIndex = this.getEffectiveTrayCapacity();
+    this.lockedTraySlotCount -= 1;
+    this.clearItemPlanCaches();
+    this.updateResult();
+    return this.createUnlockResult(true, unlockedSlotIndex);
   }
 
   getWildcardPlan(patternType: DogPatternType): GameSessionWildcardPlan | null {
@@ -941,7 +991,7 @@ export class GameSession {
           (blockId) => blockId !== compensatedBlock.id,
         ),
         initialTray: nextTray,
-        trayCapacity: this.trayCapacity,
+        trayCapacity: this.getEffectiveTrayCapacity(),
         branchBudget: Math.max(64, this.remainingBlocks.size * 2),
         specialMechanismHandlers: [...this.specialMechanismHandlers.values()],
       });
@@ -1120,7 +1170,7 @@ export class GameSession {
           (blockId) => !candidateIdSet.has(blockId),
         ),
         initialTray: simulatedTray,
-        trayCapacity: this.trayCapacity,
+        trayCapacity: this.getEffectiveTrayCapacity(),
         branchBudget: Math.max(64, this.remainingBlocks.size * 2),
         specialMechanismHandlers: [...this.specialMechanismHandlers.values()],
       });
@@ -1268,7 +1318,8 @@ export class GameSession {
     }
 
     const trayLogicalUnitCount = getDogTrayLogicalUnitCount(this.tray);
-    if (trayLogicalUnitCount > this.trayCapacity) {
+    const effectiveTrayCapacity = this.getEffectiveTrayCapacity();
+    if (trayLogicalUnitCount > effectiveTrayCapacity) {
       this.status = "lost";
       return;
     }
@@ -1281,9 +1332,69 @@ export class GameSession {
       return;
     }
 
-    if (trayLogicalUnitCount >= this.trayCapacity) {
+    if (
+      trayLogicalUnitCount > effectiveTrayCapacity ||
+      (trayLogicalUnitCount === effectiveTrayCapacity &&
+        !this.hasCapacityRelievingSelection(effectiveTrayCapacity))
+    ) {
       this.status = "lost";
     }
+  }
+
+  private getEffectiveTrayCapacity(): number {
+    return this.trayCapacity - this.lockedTraySlotCount;
+  }
+
+  private hasCapacityRelievingSelection(effectiveTrayCapacity: number): boolean {
+    if (this.remainingBlocks.size === 0) {
+      return false;
+    }
+
+    return this.getSelectableBlockIds().some((blockId) => {
+      const block = this.remainingBlocks.get(blockId);
+      if (block === undefined) {
+        return false;
+      }
+
+      const simulatedTray = [...this.tray];
+      insertDogBlockIntoTray(
+        simulatedTray,
+        toTrayBlock(block),
+        this.specialMechanismHandlers,
+      );
+      return getDogTrayLogicalUnitCount(simulatedTray) <= effectiveTrayCapacity;
+    });
+  }
+
+  private createUnlockResult(
+    unlocked: boolean,
+    unlockedSlotIndex: number | null,
+  ): GameSessionUnlockResult {
+    const snapshot = this.getState();
+    const result = {
+      ...snapshot,
+    } as GameSessionUnlockResult;
+    Object.defineProperties(result, {
+      unlocked: {
+        configurable: false,
+        enumerable: false,
+        value: unlocked,
+        writable: false,
+      },
+      unlockedSlotIndex: {
+        configurable: false,
+        enumerable: false,
+        value: unlockedSlotIndex,
+        writable: false,
+      },
+      snapshot: {
+        configurable: false,
+        enumerable: false,
+        value: snapshot,
+        writable: false,
+      },
+    });
+    return Object.freeze(result);
   }
 
   private getVisibleTrayBlocks(): DogTrayBlock[] {
@@ -1304,6 +1415,18 @@ export class GameSession {
   private isSelectionPending(): boolean {
     return this.pendingSelection !== null || this.pendingMagneticResolution !== null;
   }
+}
+
+function normalizeLockedTraySlotCount(value: number | undefined): number {
+  if (value === undefined) {
+    return 0;
+  }
+
+  if (!Number.isInteger(value) || value < 0 || value > DOG_MAX_LOCKED_TRAY_SLOTS) {
+    throw new Error("GameSession locked tray slot count must be an integer between 0 and 2");
+  }
+
+  return value;
 }
 
 function cloneTrayBlock(block: DogTrayBlock): DogTrayBlock {

@@ -164,6 +164,8 @@ export interface DogLevelGeometry {
   readonly number: number;
   /** Optional for hand-built test geometry; generated levels always provide it. */
   readonly generatorVersion?: number;
+  /** Number of rightmost tray slots that start locked for this run. */
+  readonly lockedTraySlotCount?: number;
   readonly maxLayers: number;
   readonly board: DogBoard;
   readonly patternTypes: readonly DogPatternType[];
@@ -177,6 +179,8 @@ export interface DogLegeDogLevel {
   readonly runSeed: string;
   readonly generatorVersion: number;
   readonly rewardConfigVersion: number;
+  /** Number of rightmost tray slots that start locked for this run. */
+  readonly lockedTraySlotCount?: number;
   readonly maxLayers: number;
   readonly reward: number;
   readonly board: DogBoard;

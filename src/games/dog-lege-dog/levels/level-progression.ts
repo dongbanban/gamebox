@@ -1,5 +1,6 @@
 import type { DogDifficultyTarget } from "@/games/dog-lege-dog/levels/level-types";
 import {
+  DOG_DIFFICULTY_CURVE_GENERATOR_VERSION,
   LEVEL_GENERATOR_VERSION,
   MAX_LEVEL_NUMBER,
 } from "@/games/dog-lege-dog/game/game-config";
@@ -64,33 +65,35 @@ const CURRENT_DIFFICULTY_TARGETS: readonly DogDifficultyTarget[] = [
   {
     safeChoiceCount: { min: 29, max: 45 },
     safeChoiceRate: { min: 0.27, max: 0.4 },
-    // Twin logical units add a small tray-pressure cost from level 6 onward.
-    durationMinutes: { min: 8.4, max: 9.2 },
+    // Twin logical units and locked slots add tray-pressure cost from level 6 onward.
+    durationMinutes: { min: 8.4, max: 9.4 },
   },
   {
     safeChoiceCount: { min: 38, max: 55 },
     safeChoiceRate: { min: 0.26, max: 0.4 },
-    durationMinutes: { min: 8.6, max: 9.4 },
+    durationMinutes: { min: 8.6, max: 9.6 },
   },
   {
     safeChoiceCount: { min: 40, max: 59 },
     safeChoiceRate: { min: 0.25, max: 0.4 },
-    durationMinutes: { min: 9.1, max: 10 },
+    // v12 lock-aware generation widened the 16–20 upper tolerance by 0.2 min.
+    durationMinutes: { min: 9.1, max: 10.2 },
   },
   {
     safeChoiceCount: { min: 43, max: 66 },
     safeChoiceRate: { min: 0.24, max: 0.39 },
-    durationMinutes: { min: 9.4, max: 10.4 },
+    durationMinutes: { min: 9.4, max: 10.6 },
   },
   {
     safeChoiceCount: { min: 49, max: 70 },
     safeChoiceRate: { min: 0.23, max: 0.37 },
-    durationMinutes: { min: 9.8, max: 10.7 },
+    durationMinutes: { min: 9.8, max: 10.9 },
   },
   {
     safeChoiceCount: { min: 40, max: 65 },
     safeChoiceRate: { min: 0.22, max: 0.36 },
-    durationMinutes: { min: 10, max: 11 },
+    // v12 lock-aware generation also widens the 31+ upper tolerance.
+    durationMinutes: { min: 10, max: 11.2 },
   },
 ].map((target) =>
   Object.freeze({
@@ -99,6 +102,32 @@ const CURRENT_DIFFICULTY_TARGETS: readonly DogDifficultyTarget[] = [
     durationMinutes: Object.freeze({ ...target.durationMinutes }),
   }),
 );
+
+/** v11 replay targets exclude v12 lock-pressure tolerance widening. */
+const PREVIOUS_CURRENT_DURATION_MAXIMA = [
+  8.3,
+  8.4,
+  8.5,
+  8.6,
+  8.7,
+  9.2,
+  9.4,
+  10,
+  10.4,
+  10.7,
+  11,
+] as const;
+const PREVIOUS_CURRENT_DIFFICULTY_TARGETS: readonly DogDifficultyTarget[] =
+  CURRENT_DIFFICULTY_TARGETS.map((target, index) =>
+    Object.freeze({
+      safeChoiceCount: target.safeChoiceCount,
+      safeChoiceRate: target.safeChoiceRate,
+      durationMinutes: Object.freeze({
+        min: target.durationMinutes.min,
+        max: PREVIOUS_CURRENT_DURATION_MAXIMA[index] ?? target.durationMinutes.max,
+      }),
+    }),
+  );
 
 export function getBlockCount(levelNumber: number): number {
   validateLevelNumber(levelNumber);
@@ -123,9 +152,15 @@ export function getDifficultyTargetForGeneratorVersion(
   generatorVersion: number | undefined,
 ): DogDifficultyTarget {
   validateLevelNumber(levelNumber);
-  const target = generatorVersion !== undefined && generatorVersion < LEVEL_GENERATOR_VERSION
+  const target = generatorVersion !== undefined &&
+      generatorVersion < DOG_DIFFICULTY_CURVE_GENERATOR_VERSION
     ? LEGACY_DIFFICULTY_TARGETS[getProgressStage(levelNumber)]
-    : getCurrentDifficultyTarget(levelNumber);
+    : getCurrentDifficultyTarget(
+        levelNumber,
+        generatorVersion !== undefined && generatorVersion < LEVEL_GENERATOR_VERSION
+          ? PREVIOUS_CURRENT_DIFFICULTY_TARGETS
+          : CURRENT_DIFFICULTY_TARGETS,
+      );
   if (target === undefined) {
     throw new Error("狗了个狗 difficulty target is unavailable");
   }
@@ -142,11 +177,14 @@ function cloneDifficultyTarget(target: DogDifficultyTarget): DogDifficultyTarget
   };
 }
 
-function getCurrentDifficultyTarget(levelNumber: number): DogDifficultyTarget {
+function getCurrentDifficultyTarget(
+  levelNumber: number,
+  targets: readonly DogDifficultyTarget[],
+): DogDifficultyTarget {
   const target = levelNumber <= 5
-    ? CURRENT_DIFFICULTY_TARGETS[levelNumber - 1]
-    : CURRENT_DIFFICULTY_TARGETS[Math.min(
-        CURRENT_DIFFICULTY_TARGETS.length - 1,
+    ? targets[levelNumber - 1]
+    : targets[Math.min(
+        targets.length - 1,
         Math.floor((levelNumber - 1) / 5) + 4,
       )];
   if (target === undefined) {

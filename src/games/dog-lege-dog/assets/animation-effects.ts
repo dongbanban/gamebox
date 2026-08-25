@@ -1,4 +1,5 @@
 import type { DogPatternType } from "@/games/dog-lege-dog/levels/level-types";
+import { renderDogItemAsset } from "@/games/dog-lege-dog/assets/item-assets";
 
 export const BLOCK_FLIGHT_DURATION_MS = 180;
 export const DOG_ILLUSION_REVEAL_DURATION_MS = 420;
@@ -9,6 +10,8 @@ export const DOG_TORCH_MELT_DURATION_MS = DOG_ITEM_FEEDBACK_DURATION_MS;
 export const DOG_FREEZE_MELT_DURATION_MS = 1400;
 export const DOG_TWIN_SPLIT_DURATION_MS = DOG_ITEM_FEEDBACK_DURATION_MS;
 export const DOG_MAGNETIC_ATTRACTION_DURATION_MS = DOG_ITEM_FEEDBACK_DURATION_MS;
+export const DOG_KEY_DROP_DURATION_MS = DOG_ITEM_FEEDBACK_DURATION_MS;
+export const DOG_TRAY_UNLOCK_DURATION_MS = DOG_ITEM_FEEDBACK_DURATION_MS;
 
 export interface BlockFlightOptions {
   readonly root: HTMLElement;
@@ -382,6 +385,102 @@ export function animateDogItemEffect(options: DogItemEffectOptions): Cancellable
     effect.remove();
   });
   return lifecycle;
+}
+
+export interface DogTrayUnlockEffectOptions {
+  readonly root: HTMLElement;
+  readonly slotIndex: number;
+}
+
+export function animateDogUnlockTrayEffect(
+  options: DogTrayUnlockEffectOptions,
+): CancellableAnimation {
+  const slot = [...options.root.querySelectorAll<HTMLElement>(
+    '[data-testid="dog-tray-slot"][data-tray-slot-index]',
+  )].find((candidate) => candidate.dataset.traySlotIndex === String(options.slotIndex)) ?? null;
+  slot?.classList.add("dog-tray__slot--unlocking");
+  if (slot !== null) {
+    slot.dataset.unlocking = "true";
+  }
+
+  const layer = options.root.querySelector<HTMLElement>(
+    '[data-testid="dog-animation-layer"]',
+  );
+  if (layer === null) {
+    return createAnimationLifecycle(DOG_TRAY_UNLOCK_DURATION_MS, () => {
+      slot?.classList.remove("dog-tray__slot--unlocking");
+      if (slot?.dataset.unlocking === "true") {
+        delete slot.dataset.unlocking;
+      }
+    });
+  }
+
+  const effect = document.createElement("div");
+  effect.className = "dog-tray-unlock-effect";
+  effect.dataset.testid = "dog-tray-unlock-effect";
+  effect.dataset.slotIndex = String(options.slotIndex);
+  effect.setAttribute("aria-hidden", "true");
+  effect.innerHTML = `<span class="dog-tray-unlock-effect__icon">${renderDogItemAsset("key")}</span>`;
+  const layerRect = layer.getBoundingClientRect();
+  const slotRect = slot?.getBoundingClientRect() ?? null;
+  Object.assign(effect.style, {
+    left: `${(slotRect?.left ?? layerRect.left) - layerRect.left}px`,
+    top: `${(slotRect?.top ?? layerRect.top) - layerRect.top}px`,
+    width: `${slotRect?.width || 48}px`,
+    height: `${slotRect?.height || 48}px`,
+  });
+  layer.append(effect);
+
+  return createAnimationLifecycle(DOG_TRAY_UNLOCK_DURATION_MS, () => {
+    effect.remove();
+    slot?.classList.remove("dog-tray__slot--unlocking");
+    if (slot?.dataset.unlocking === "true") {
+      delete slot.dataset.unlocking;
+    }
+  });
+}
+
+export interface DogKeyDropEffectOptions {
+  readonly root: HTMLElement;
+  readonly source: DOMRect | null;
+  readonly target: DOMRect | null;
+}
+
+export function animateDogKeyDropEffect(
+  options: DogKeyDropEffectOptions,
+): CancellableAnimation {
+  const layer = options.root.querySelector<HTMLElement>(
+    '[data-testid="dog-animation-layer"]',
+  );
+  if (layer === null) {
+    return createAnimationLifecycle(DOG_KEY_DROP_DURATION_MS, () => undefined);
+  }
+
+  const effect = document.createElement("div");
+  effect.className = "dog-key-drop-effect";
+  effect.dataset.testid = "dog-key-drop-effect";
+  effect.setAttribute("aria-hidden", "true");
+  effect.innerHTML = renderDogItemAsset("key");
+  const layerRect = layer.getBoundingClientRect();
+  const source = options.source;
+  const target = options.target;
+  const sourceLeft = (source?.left ?? layerRect.left) - layerRect.left;
+  const sourceTop = (source?.top ?? layerRect.top) - layerRect.top;
+  const targetLeft = (target?.left ?? layerRect.left) - layerRect.left;
+  const targetTop = (target?.top ?? layerRect.top) - layerRect.top;
+  Object.assign(effect.style, {
+    left: `${sourceLeft}px`,
+    top: `${sourceTop}px`,
+    width: `${source?.width || 42}px`,
+    height: `${source?.height || 42}px`,
+    "--dog-key-drop-target-x": `${targetLeft - sourceLeft}px`,
+    "--dog-key-drop-target-y": `${targetTop - sourceTop}px`,
+  });
+  layer.append(effect);
+
+  return createAnimationLifecycle(DOG_KEY_DROP_DURATION_MS, () => {
+    effect.remove();
+  });
 }
 
 export interface DogTorchMeltEffectOptions {

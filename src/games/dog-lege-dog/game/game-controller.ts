@@ -31,10 +31,12 @@ import {
   animateDogDemagnetizerEffect,
   animateDogIllusionReveal,
   animateDogItemEffect,
+  animateDogKeyDropEffect,
   animateDogMagneticAttractionEffect,
   animateDogTripleRemovalEffect,
   animateDogTorchMeltEffect,
   animateDogTwinSplitEffect,
+  animateDogUnlockTrayEffect,
   DOG_FREEZE_MELT_DURATION_MS,
   renderDogMeltEffect,
   type CancellableAnimation,
@@ -208,6 +210,7 @@ export function createDogLegeDogGame(
     if (!shouldAnimate || !runtime.started) {
       soundEffects.play("select");
       playFeedbackSounds(didMatch, result);
+      void settleKeyDrop(selection.tripleCount, false);
       runtime.feedback = "idle";
       runtime.matchFeedbackActive = false;
       runtime.inputLocked = false;
@@ -233,6 +236,9 @@ export function createDogLegeDogGame(
     soundEffects.play("select");
     if (!isIllusion) {
       playFeedbackSounds(didMatch, result);
+    }
+    if (didMatch && result === null) {
+      void ensureMatchFeedback();
     }
     const target = findTrayTarget(root, patternType);
     const flight = animateBlockFlight({
@@ -266,6 +272,7 @@ export function createDogLegeDogGame(
       false,
       null,
       twinSplit,
+      selection.tripleCount,
     );
 
     return nextState;
@@ -356,6 +363,7 @@ export function createDogLegeDogGame(
     isIllusion: boolean,
     illusionBlockId: string | null = null,
     twinSplit: CancellableAnimation | null = null,
+    tripleCount = 0,
   ): Promise<void> {
     await flight.promise;
     runtime.activeFlights.delete(flight);
@@ -383,7 +391,7 @@ export function createDogLegeDogGame(
       }
     }
 
-    await finishResolvedSelection(result, didMatch);
+    await finishResolvedSelection(result, didMatch, tripleCount);
   }
 
   async function finishAnimatedMagneticSelection(
@@ -496,7 +504,11 @@ export function createDogLegeDogGame(
       soundEffects.play("match");
     }
     startMeltAnimations(selection.meltedBlockIds, trayRectsBeforeSelection);
-    await finishResolvedSelection(result, selection.removedCount > 0);
+    await finishResolvedSelection(
+      result,
+      selection.removedCount > 0,
+      selection.tripleCount,
+    );
   }
 
   async function finishIllusionReveal(
@@ -519,12 +531,13 @@ export function createDogLegeDogGame(
       runtime.feedback = "match";
       soundEffects.play("match");
     }
-    await finishResolvedSelection(result, selection.removedCount > 0);
+    await finishResolvedSelection(result, selection.removedCount > 0, selection.tripleCount);
   }
 
   async function finishResolvedSelection(
     resolvedResult: GameResult | null,
     resolvedDidMatch: boolean,
+    tripleCount = 0,
   ): Promise<void> {
     if (resolvedResult !== null) {
       if (resolvedDidMatch) {
@@ -537,6 +550,12 @@ export function createDogLegeDogGame(
         if (runtime.destroyed) {
           return;
         }
+      }
+
+      await waitForMeltAnimation();
+      await settleKeyDrop(tripleCount);
+      if (runtime.destroyed) {
+        return;
       }
 
       runtime.feedback = resolvedResult.status;
@@ -554,7 +573,9 @@ export function createDogLegeDogGame(
     }
 
     if (resolvedDidMatch) {
-      void ensureMatchFeedback();
+      void ensureMatchFeedback()
+        .then(waitForMeltAnimation)
+        .then(() => settleKeyDrop(tripleCount));
       return;
     }
 
@@ -598,6 +619,48 @@ export function createDogLegeDogGame(
     });
     runtime.matchAnimation = animation;
     return animation;
+  }
+
+  async function waitForMeltAnimation(): Promise<void> {
+    const meltAnimation = runtime.meltAnimation;
+    if (meltAnimation !== null) {
+      await meltAnimation;
+    }
+  }
+
+  async function settleKeyDrop(tripleCount: number, animate = true): Promise<void> {
+    const itemRuntime = runtime.itemRuntime;
+    if (itemRuntime === null) {
+      return;
+    }
+
+    const drop = itemRuntime.settleSuccessfulTriples(tripleCount);
+    if (!drop.dropped) {
+      return;
+    }
+
+    if (!animate || !runtime.started || runtime.destroyed) {
+      renderStartedGame();
+      return;
+    }
+
+    runtime.inputLocked = true;
+    const source = root.querySelector<HTMLElement>('[data-testid="dog-tray-region"]');
+    const target = root.querySelector<HTMLElement>('[data-loadout-id="key"]');
+    const animation = animateDogKeyDropEffect({
+      root,
+      source: source?.getBoundingClientRect() ?? null,
+      target: target?.getBoundingClientRect() ?? null,
+    });
+    runtime.activeFlights.add(animation);
+    await animation.promise;
+    runtime.activeFlights.delete(animation);
+    if (runtime.destroyed) {
+      return;
+    }
+
+    runtime.inputLocked = false;
+    renderStartedGame();
   }
 
   function confirmResult(result: GameResult, presentImmediately: boolean): void {
@@ -934,11 +997,16 @@ export function createDogLegeDogGame(
                 DOG_PATTERN_TYPES[0],
             ),
           })
-        : effect?.type === "demagnetize"
+      : effect?.type === "demagnetize"
           ? animateDogDemagnetizerEffect({
               root,
               blockId: effect.blockId,
               target: targetRect,
+            })
+        : effect?.type === "unlock"
+          ? animateDogUnlockTrayEffect({
+              root,
+              slotIndex: effect.unlockedSlotIndex,
             })
         : animateDogItemEffect({ root, itemId, visualFeedback });
     runtime.itemAnimation = animation;
@@ -974,6 +1042,11 @@ export function createDogLegeDogGame(
       if (runtime.destroyed) {
         return;
       }
+    }
+    const tripleCount = getItemEffectTripleCount(completedEffect);
+    await settleKeyDrop(tripleCount);
+    if (runtime.destroyed) {
+      return;
     }
     if (result !== null) {
       runtime.feedback = result.status;
@@ -1317,12 +1390,14 @@ function findTrayInsertionTarget(
   insertionIndex: number,
   patternType: string | undefined,
 ): HTMLElement | null {
-  const slots = [...root.querySelectorAll<HTMLElement>('[data-testid="dog-tray-slot"]')];
+  const slots = [...root.querySelectorAll<HTMLElement>('[data-testid="dog-tray-slot"]')]
+    .filter((slot) => slot.dataset.slotState !== "locked");
   return slots[insertionIndex] ?? findTrayTarget(root, patternType);
 }
 
 function findTrayTarget(root: HTMLElement, patternType: string | undefined): HTMLElement | null {
-  const slots = [...root.querySelectorAll<HTMLElement>('[data-testid="dog-tray-slot"]')];
+  const slots = [...root.querySelectorAll<HTMLElement>('[data-testid="dog-tray-slot"]')]
+    .filter((slot) => slot.dataset.slotState !== "locked");
   return (
     slots.find((slot) => patternType !== undefined && slot.dataset.patternType === patternType) ??
     slots.find((slot) => slot.dataset.patternType === undefined) ??
@@ -1372,4 +1447,20 @@ function getElapsedMs(startedAt: number | null, endedAt: number | null): number 
   }
 
   return Math.max(0, endedAt - startedAt);
+}
+
+function getItemEffectTripleCount(
+  effect: DogItemActionResult["effect"] | null | undefined,
+): number {
+  if (
+    effect === null ||
+    effect === undefined ||
+    (effect.type !== "melt" &&
+      effect.type !== "triple-removal" &&
+      effect.type !== "wildcard")
+  ) {
+    return 0;
+  }
+
+  return effect.tripleCount;
 }

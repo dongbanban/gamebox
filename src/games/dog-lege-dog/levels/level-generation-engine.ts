@@ -1,5 +1,7 @@
 import {
   DEFAULT_LEVEL_SEED,
+  DOG_BASE_TRAY_CAPACITY,
+  DOG_DIFFICULTY_CURVE_GENERATOR_VERSION,
   DOG_GAME_ID,
   FIRST_LEVEL_NUMBER,
   FIRST_LEVEL_SEED,
@@ -47,6 +49,7 @@ import {
 import {
   getCandidateRandomSeed,
   getGuaranteedRandomSeed,
+  getDogTrayLockCount,
   SeededRandom,
 } from "@/games/dog-lege-dog/levels/level-random";
 import {
@@ -87,6 +90,8 @@ import {
 export const MAX_LEVEL_GENERATION_ATTEMPTS = 100 as const;
 // Legacy generator versions keep their historical relaxed retry window for replay.
 const MAX_DIFFICULTY_TARGET_ATTEMPTS = 32 as const;
+// Lock pressure makes alternate solvability paths branch more often than the base tray.
+const LOCK_AWARE_SOLVABILITY_BRANCH_BUDGET = 128 as const;
 
 type TemplateFactory = (random: SeededRandom) => DogShapeTemplate;
 type PatternTypesFactory = (random: SeededRandom) => readonly DogPatternType[];
@@ -185,7 +190,7 @@ export class GeneratedLevelGenerator {
 
         if (
           this.usesDefaultCandidateFilter &&
-          request.generatorVersion < LEVEL_GENERATOR_VERSION &&
+          request.generatorVersion < DOG_DIFFICULTY_CURVE_GENERATOR_VERSION &&
           attempt >= MAX_DIFFICULTY_TARGET_ATTEMPTS
         ) {
           break;
@@ -399,6 +404,10 @@ export class GeneratedLevelGenerator {
     spatialValidation: SpatialValidationPolicy = "enforce",
   ): GeneratedLevelCandidate {
     const random = new SeededRandom(randomSeed);
+    const lockedTraySlotCount = getDogTrayLockCount(
+      request.runSeed,
+      request.generatorVersion,
+    );
     const specialMechanisms = getDogSpecialMechanismConfigs(
       request.levelNumber,
       request.generatorVersion,
@@ -475,19 +484,35 @@ export class GeneratedLevelGenerator {
         blocksWithTwins,
         generationSpecialMechanisms,
         random,
-        (candidateBlocks) =>
-          verifyRemovalPath(
-            {
-              number: request.levelNumber,
-              maxLayers,
-              board,
-              patternTypes,
-              blocks: candidateBlocks,
-              specialMechanisms,
-            },
+        (candidateBlocks) => {
+          const candidateGeometry: DogLevelGeometry = {
+            number: request.levelNumber,
+            lockedTraySlotCount,
+            maxLayers,
+            board,
+            patternTypes,
+            blocks: candidateBlocks,
+            specialMechanisms,
+          };
+          const fixedPathVerification = verifyRemovalPath(
+            candidateGeometry,
             solutionPath,
             placementGraph,
-          ).solvable,
+          );
+          if (fixedPathVerification.solvable) {
+            return true;
+          }
+
+          // A sampled path may only fail because the lock is tighter; keep
+          // that mechanism layout and let finalization search another path.
+          return verifyRemovalPath(
+            candidateGeometry,
+            solutionPath,
+            placementGraph,
+            undefined,
+            DOG_BASE_TRAY_CAPACITY,
+          ).solvable;
+        },
         { maxLayers, countOverrides: mechanismCounts },
       );
     } catch (error) {
@@ -511,6 +536,7 @@ export class GeneratedLevelGenerator {
       blocks,
       specialMechanisms,
       generationSpecialMechanisms,
+      lockedTraySlotCount,
       solutionPath,
       replayMode,
       randomSeed,
@@ -598,6 +624,7 @@ function createCandidateLevel(
   blocks: DogLegeDogLevel["blocks"],
   specialMechanisms: DogLegeDogLevel["specialMechanisms"],
   generationSpecialMechanisms: DogLegeDogLevel["specialMechanisms"],
+  lockedTraySlotCount: number,
   solutionPath: readonly string[],
   replayMode: DogLevelReplayMode,
   randomSeed: string,
@@ -607,6 +634,7 @@ function createCandidateLevel(
   const geometry: DogLevelGeometry = {
     number: request.levelNumber,
     generatorVersion: request.generatorVersion,
+    lockedTraySlotCount,
     maxLayers,
     board,
     patternTypes,
@@ -633,11 +661,33 @@ function createCandidateLevel(
       throw new Error(mechanismCompositionError);
     }
   }
-  const verification = verifyRemovalPath(geometry, solutionPath);
+  let acceptedSolutionPath = solutionPath;
+  let verification = verifyRemovalPath(geometry, acceptedSolutionPath);
   if (!verification.solvable) {
-    throw new Error(verification.reason ?? "LevelGenerator created an unsolvable level");
+    const alternative = findSolvability(
+      geometry,
+      lockedTraySlotCount > 0
+        ? { branchBudget: LOCK_AWARE_SOLVABILITY_BRANCH_BUDGET }
+        : undefined,
+    );
+    if (alternative.status !== "solvable") {
+      throw new Error(verification.reason ?? "LevelGenerator created an unsolvable level");
+    }
+    acceptedSolutionPath = alternative.path;
+    verification = verifyRemovalPath(geometry, acceptedSolutionPath);
+    if (!verification.solvable) {
+      throw new Error(verification.reason ?? "LevelGenerator created an unsolvable level");
+    }
   }
-  const difficulty = calculateDifficultyMetrics(geometry, solutionPath, verification);
+  const difficulty = calculateDifficultyMetrics(
+    geometry,
+    acceptedSolutionPath,
+    verification,
+    undefined,
+    lockedTraySlotCount > 0
+      ? { branchBudget: LOCK_AWARE_SOLVABILITY_BRANCH_BUDGET }
+      : undefined,
+  );
 
   return {
     attempt,
@@ -648,11 +698,12 @@ function createCandidateLevel(
     rewardConfigVersion: DOG_REWARD_CONFIG_VERSION,
     maxLayers,
     reward: calculateDogLevelReward(difficulty),
+    lockedTraySlotCount,
     board,
     patternTypes: Object.freeze([...patternTypes]),
     blocks: Object.freeze([...blocks]),
     specialMechanisms: Object.freeze([...specialMechanisms]),
-    solutionPath: Object.freeze([...solutionPath]),
+    solutionPath: Object.freeze([...acceptedSolutionPath]),
     difficulty,
     baseSeed: request.seed,
     testSeed,
@@ -717,9 +768,7 @@ function getLevelSeed(request: NormalizedLevelGeneratorRequest): string {
     request.seed === DEFAULT_LEVEL_SEED &&
     request.generatorVersion >= 1
   ) {
-    return request.generatorVersion === LEVEL_GENERATOR_VERSION
-      ? FIRST_LEVEL_SEED
-      : `${DOG_GAME_ID}:first-level:v${request.generatorVersion}`;
+    return FIRST_LEVEL_SEED;
   }
 
   return `${request.seed}:v${request.generatorVersion}:level-${request.levelNumber}`;

@@ -198,7 +198,10 @@ async function clickBlock(page: Page, blockId: string): Promise<void> {
 
 async function loseCurrentLevel(page: Page): Promise<void> {
   const selectedPatterns: string[] = [];
-  for (let selectionNumber = 0; selectionNumber < 7; selectionNumber += 1) {
+  for (let selectionNumber = 0; selectionNumber < 10; selectionNumber += 1) {
+    if (await page.locator('[data-result="lost"]').isVisible().catch(() => false)) {
+      break;
+    }
     const blockId = await page
       .locator('[data-testid="dog-block"]:not([disabled])')
       .evaluateAll((blocks, patterns) => {
@@ -211,14 +214,19 @@ async function loseCurrentLevel(page: Page): Promise<void> {
           return pattern !== undefined && (counts.get(pattern) ?? 0) < 2;
         })?.dataset.blockId ?? null;
       }, selectedPatterns);
-    expect(blockId).not.toBeNull();
+    if (blockId === null) {
+      break;
+    }
     const pattern = await page
       .locator(`[data-testid="dog-block"][data-block-id="${blockId}"]`)
       .getAttribute("data-pattern-type");
-    expect(pattern).not.toBeNull();
-    selectedPatterns.push(pattern ?? "");
-    await clickBlock(page, blockId ?? "");
+    if (pattern === null) {
+      break;
+    }
+    selectedPatterns.push(pattern);
+    await clickBlock(page, blockId);
   }
+  await expect(page.locator('[data-result="lost"]')).toBeVisible();
 }
 
 async function winCurrentLevel(page: Page): Promise<void> {

@@ -1,3 +1,16 @@
+import {
+  DOG_MAX_LOCKED_TRAY_SLOTS,
+  DOG_TRAY_LOCKS_GENERATOR_VERSION,
+} from "@/games/dog-lege-dog/game/game-config";
+
+export function getDogTrayLockCount(runSeed: string, generatorVersion: number): number {
+  if (generatorVersion < DOG_TRAY_LOCKS_GENERATOR_VERSION) {
+    return 0;
+  }
+
+  return new SeededRandom(`${runSeed}:tray-lock-slot-count`).nextInt(DOG_MAX_LOCKED_TRAY_SLOTS + 1);
+}
+
 export function getCandidateRandomSeed(
   gameId: string,
   levelSeed: string,

@@ -3,12 +3,14 @@ import {
   GameSession,
   type GameSessionMeltLocation,
   type GameSessionMeltResult,
+  type GameSessionSnapshot,
   type GameSessionWildcardResolution,
 } from "@/games/dog-lege-dog/game/game-session";
 import type {
   DogLegeDogLevel,
   DogPatternType,
 } from "@/games/dog-lege-dog/levels/first-level";
+import { DOG_KEY_DROP_RATE } from "@/games/dog-lege-dog/game/game-config";
 import {
   DOG_ITEM_DEFINITIONS,
   type DogItemDefinition,
@@ -16,6 +18,7 @@ import {
   type DogItemTargetType,
   type DogItemVisualFeedback,
 } from "@/games/dog-lege-dog/game/dog-loadout";
+import { SeededRandom } from "@/games/dog-lege-dog/levels/level-random";
 
 export type DogItemTarget =
   | { readonly type: "block"; readonly blockId: string }
@@ -44,6 +47,10 @@ export type DogItemEffect =
   | {
       readonly type: "reveal";
       readonly blockId: string;
+    }
+  | {
+      readonly type: "unlock";
+      readonly unlockedSlotIndex: number;
     }
   | DogWildcardItemEffect;
 
@@ -117,6 +124,12 @@ export interface DogItemActionResult {
   readonly snapshot: DogItemRuntimeSnapshot;
 }
 
+export interface DogKeyDropResult {
+  readonly dropped: boolean;
+  readonly remainingUses: number;
+  readonly snapshot: GameSessionSnapshot;
+}
+
 export interface DogItemRuntimeOptions {
   readonly level: DogLegeDogLevel;
   readonly session: GameSession;
@@ -129,6 +142,7 @@ export class DogItemRuntime {
   private readonly session: GameSession;
   private readonly loadout: readonly DogItemId[];
   private readonly definitions: ReadonlyMap<DogItemId, DogItemRuntimeDefinition>;
+  private readonly keyDropRandom: SeededRandom;
   private readonly maxUses = new Map<DogItemId, number>();
   private readonly remainingUses = new Map<DogItemId, number>();
   private phase: DogItemRuntimePhase = "idle";
@@ -142,6 +156,7 @@ export class DogItemRuntime {
     this.level = options.level;
     this.session = options.session;
     this.loadout = Object.freeze([...options.loadout]);
+    this.keyDropRandom = new SeededRandom(`${options.level.runSeed}:key-drop`);
     this.definitions = new Map(
       (options.definitions ?? DOG_ITEM_RUNTIME_DEFINITIONS).map((definition) => [
         definition.definition.id,
@@ -159,9 +174,11 @@ export class DogItemRuntime {
         throw new Error(`狗了个狗 item runtime definition is missing: ${itemId}`);
       }
 
-      const uses = normalizeUses(definition.getUses(this.level));
-      this.maxUses.set(itemId, uses);
-      this.remainingUses.set(itemId, uses);
+      const maxUses = itemId === "key"
+        ? this.session.getState().lockedTraySlotCount
+        : normalizeUses(definition.getUses(this.level));
+      this.maxUses.set(itemId, maxUses);
+      this.remainingUses.set(itemId, itemId === "key" ? 0 : maxUses);
     }
   }
 
@@ -318,6 +335,30 @@ export class DogItemRuntime {
 
   getLastCompletedEffect(): DogItemEffect | null {
     return this.completedEffect;
+  }
+
+  settleSuccessfulTriples(tripleCount: number): DogKeyDropResult {
+    const maxUses = this.maxUses.get("key") ?? 0;
+    const currentUses = this.remainingUses.get("key") ?? 0;
+    const state = this.session.getState();
+    const eligible =
+      this.loadout.includes("key") &&
+      Number.isSafeInteger(tripleCount) &&
+      tripleCount > 0 &&
+      state.status === "playing" &&
+      state.lockedTraySlotCount > 0 &&
+      state.remainingLogicalUnitCount > state.trayFreeCapacity &&
+      currentUses < maxUses;
+    const dropped = eligible && this.keyDropRandom.next() < DOG_KEY_DROP_RATE;
+    if (dropped) {
+      this.remainingUses.set("key", Math.min(maxUses, currentUses + 1));
+    }
+
+    return Object.freeze({
+      dropped,
+      remainingUses: this.remainingUses.get("key") ?? 0,
+      snapshot: state,
+    });
   }
 
   private execute(
@@ -691,11 +732,22 @@ const DOG_ITEM_BEHAVIORS: Readonly<Record<DogItemId, DogItemBehavior>> = {
     },
   },
   key: {
-    canUse: () => false,
-    execute: () => ({
-      success: false,
-      visualFeedback: "key",
-    }),
+    canUse: ({ session }) => session.canUnlockTraySlot(),
+    execute: ({ session }) => {
+      const unlocked = session.unlockTraySlot();
+      if (!unlocked.unlocked || unlocked.unlockedSlotIndex === null) {
+        return { success: false, visualFeedback: "key" };
+      }
+
+      return {
+        success: true,
+        visualFeedback: "key",
+        effect: {
+          type: "unlock" as const,
+          unlockedSlotIndex: unlocked.unlockedSlotIndex,
+        },
+      };
+    },
   },
 };
 

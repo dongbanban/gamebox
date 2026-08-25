@@ -194,6 +194,9 @@ function updateDogLegeDogGame(
   if (traySlots !== null && traySlots !== undefined) {
     traySlots.style.setProperty("--dog-tray-columns", String(state.session.trayCapacity));
     traySlots.dataset.trayCapacity = String(state.session.trayCapacity);
+    traySlots.dataset.effectiveTrayCapacity = String(state.session.effectiveTrayCapacity);
+    traySlots.dataset.trayFreeCapacity = String(state.session.trayFreeCapacity);
+    traySlots.dataset.lockedTraySlotCount = String(state.session.lockedTraySlotCount);
     traySlots.innerHTML = renderTraySlots(
       state.session,
       state.items?.selectedItemTargetType ?? null,
@@ -452,7 +455,7 @@ function renderTray(
   return `
     <section class="dog-tray" data-testid="dog-tray-region" aria-label="暂存槽">
       ${renderMatchFeedback(feedback)}
-      <ol class="dog-tray__slots" data-testid="dog-tray" data-tray-capacity="${session.trayCapacity}" style="--dog-tray-columns: ${session.trayCapacity};">${renderTraySlots(session, itemTargetType, itemTargetId, targetBlockIds)}</ol>
+      <ol class="dog-tray__slots" data-testid="dog-tray" data-tray-capacity="${session.trayCapacity}" data-effective-tray-capacity="${session.effectiveTrayCapacity}" data-tray-free-capacity="${session.trayFreeCapacity}" data-locked-tray-slot-count="${session.lockedTraySlotCount}" style="--dog-tray-columns: ${session.trayCapacity};">${renderTraySlots(session, itemTargetType, itemTargetId, targetBlockIds)}</ol>
       <p class="dog-game__status dog-game__status--${session.status}" data-testid="dog-status" role="status">${renderStatusMessage(session.status)}</p>
       <div class="dog-effects-layer" data-testid="dog-effects-layer">
         <canvas class="dog-effects-canvas" data-testid="dog-effects-canvas"></canvas>
@@ -565,7 +568,10 @@ function renderTraySlots(
   return Array.from({ length: slotCount }, (_, index) => {
     const block = session.trayBlocks[index];
     if (block === undefined) {
-      return '<li class="dog-tray__slot" data-testid="dog-tray-slot" aria-label="空暂存槽"></li>';
+      const locked = index >= session.trayCapacity - session.lockedTraySlotCount;
+      return locked
+        ? `<li class="dog-tray__slot dog-tray__slot--locked" data-testid="dog-tray-slot" data-tray-slot-index="${index}" data-slot-state="locked" aria-label="已锁定暂存槽"><span class="dog-tray__lock" aria-hidden="true">🔒</span></li>`
+        : `<li class="dog-tray__slot" data-testid="dog-tray-slot" data-tray-slot-index="${index}" data-slot-state="empty" aria-label="空暂存槽"></li>`;
     }
 
     const displayPatternType = getDogIllusionDisguisedPattern(block);
@@ -602,7 +608,7 @@ function renderTraySlots(
       ? ""
       : `data-visual-marker="${block.visualMarker}"`;
     return `
-      <li class="dog-tray__slot dog-tray__slot--filled${targetClass}${targetDisabledClass}${visualMarkerClass} dog-block--${getDogPatternClassName(displayPatternType)}${mechanismClass}" data-testid="dog-tray-slot" data-block-id="${block.id}" data-pattern-type="${block.patternType}" ${visualMarkerAttributes} ${mechanismAttributes} ${targetAttributes} ${targetDisabledAttributes} ${illusionStyle} aria-label="${selectingBlockTarget ? "选择道具目标" : block.visualMarker === "wildcard" ? `万能方块，${block.patternType}` : block.patternType}">
+      <li class="dog-tray__slot dog-tray__slot--filled${targetClass}${targetDisabledClass}${visualMarkerClass} dog-block--${getDogPatternClassName(displayPatternType)}${mechanismClass}" data-testid="dog-tray-slot" data-tray-slot-index="${index}" data-slot-state="filled" data-block-id="${block.id}" data-pattern-type="${block.patternType}" ${visualMarkerAttributes} ${mechanismAttributes} ${targetAttributes} ${targetDisabledAttributes} ${illusionStyle} aria-label="${selectingBlockTarget ? "选择道具目标" : block.visualMarker === "wildcard" ? `万能方块，${block.patternType}` : block.patternType}">
         <span class="${glyphClass}">${renderDogPatternAsset(displayPatternType)}</span>
       </li>
     `;

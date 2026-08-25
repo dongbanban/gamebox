@@ -22,6 +22,7 @@ import {
   DOG_MAGNETIC_MECHANISM_TYPE,
   DOG_TWIN_MECHANISM_TYPE,
   DOG_ILLUSION_GENERATOR_VERSION,
+  DOG_SPECIAL_MECHANISM_GENERATOR_VERSION,
   FIRST_LEVEL,
   GameSession,
   LEVEL_GENERATOR_VERSION,
@@ -101,7 +102,7 @@ describe("狗了个狗特殊机制", () => {
       ]);
     }
 
-    expect(getDogSpecialMechanismConfigs(16, LEVEL_GENERATOR_VERSION - 1)).toEqual([
+    expect(getDogSpecialMechanismConfigs(16, DOG_SPECIAL_MECHANISM_GENERATOR_VERSION - 1)).toEqual([
       { type: "freeze", min: 1, max: 2 },
       { type: "illusion", min: 1, max: 2 },
     ]);

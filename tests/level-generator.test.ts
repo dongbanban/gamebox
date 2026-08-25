@@ -18,7 +18,10 @@ import {
   getDogLegeDogLevel,
   getDogLogicalBlockCount,
   DEFAULT_LEVEL_SEED,
+  DOG_DIFFICULTY_CURVE_GENERATOR_VERSION,
   DOG_REWARD_CONFIG_VERSION,
+  DOG_MAX_LOCKED_TRAY_SLOTS,
+  getDogTrayLockCount,
 } from "@/games/dog-lege-dog";
 
 describe("LevelGenerator", () => {
@@ -140,6 +143,47 @@ describe("LevelGenerator", () => {
     expect(generator.replay(FIRST_LEVEL.generation.replay)).toEqual(FIRST_LEVEL);
     expect(generator.replayAttempt(FIRST_LEVEL.generation.replay)).toEqual(FIRST_LEVEL);
   });
+
+  it("按 runSeed 独立生成 0–2 个锁槽，并在旧生成器版本关闭该机制", () => {
+    const counts = ["run-a", "run-b", "seed-a"].map((runSeed) =>
+      getDogTrayLockCount(runSeed, LEVEL_GENERATOR_VERSION),
+    );
+
+    expect(counts.every((count) => count >= 0 && count <= DOG_MAX_LOCKED_TRAY_SLOTS)).toBe(true);
+    expect(getDogTrayLockCount("run-a", LEVEL_GENERATOR_VERSION)).toBe(counts[0]);
+    expect(getDogTrayLockCount("run-a", LEVEL_GENERATOR_VERSION - 1)).toBe(0);
+    expect(FIRST_LEVEL.lockedTraySlotCount).toBe(
+      getDogTrayLockCount(FIRST_LEVEL.runSeed, FIRST_LEVEL.generatorVersion),
+    );
+  });
+
+  it("生成关卡携带锁槽配置，并让锁槽参与可解性校验", () => {
+    const runSeed = "run-a";
+    const generator = new LevelGenerator();
+    const level = generator.generate({
+      levelNumber: 1,
+      runSeed,
+      generatorVersion: LEVEL_GENERATOR_VERSION,
+    });
+
+    expect(level.lockedTraySlotCount).toBe(getDogTrayLockCount(runSeed, LEVEL_GENERATOR_VERSION));
+    expect(level.lockedTraySlotCount).toBe(2);
+    expect(generator.findSolvability(level).status).toBe("solvable");
+  });
+
+  it("保留 v11 首关回放种子并关闭 v12 新增锁槽", () => {
+    const generator = new LevelGenerator();
+    const level = generator.generate({
+      levelNumber: FIRST_LEVEL.number,
+      seed: DEFAULT_LEVEL_SEED,
+      generatorVersion: DOG_DIFFICULTY_CURVE_GENERATOR_VERSION,
+    });
+
+    expect(level.seed).toBe(FIRST_LEVEL.seed);
+    expect(level.lockedTraySlotCount).toBe(0);
+    expect(generator.replay(level.generation.replay)).toEqual(level);
+  });
+
 
   it("首关满足不规则轮廓、四分之一精度与部分重叠硬约束", () => {
     const level = FIRST_LEVEL;

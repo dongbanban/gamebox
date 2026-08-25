@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   getBlockCount,
+  DOG_DIFFICULTY_CURVE_GENERATOR_VERSION,
   getDifficultyTarget,
   getDogLogicalBlockCount,
   getMaxLayers,
@@ -109,7 +110,7 @@ describe("狗了个狗难度曲线", () => {
     const legacy = generator.generate({
       levelNumber: 5,
       runSeed: "difficulty-curve-legacy-seed",
-      generatorVersion: LEVEL_GENERATOR_VERSION - 1,
+      generatorVersion: DOG_DIFFICULTY_CURVE_GENERATOR_VERSION - 1,
     });
     expect(legacy.difficulty.target.safeChoiceCount.max).toBe(Number.MAX_SAFE_INTEGER);
     expect(legacy.difficulty.target.safeChoiceRate).toBeUndefined();

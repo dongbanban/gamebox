@@ -222,6 +222,87 @@ describe("GameSession", () => {
     expect(session.getState().trayCapacity).toBe(8);
   });
 
+  it("锁槽占用右侧位置，公开有效容量与空闲有效槽并按顺序解锁", () => {
+    const session = new GameSession({
+      level: {
+        ...createLevel([
+          createBlock("remaining", 0, 0, 0, WORKING_DOG),
+          createBlock("remaining-2", 4, 0, 0, SINGLE_DOG),
+        ]),
+        lockedTraySlotCount: 2,
+      },
+    });
+
+    expect(session.getState()).toMatchObject({
+      trayCapacity: 7,
+      effectiveTrayCapacity: 5,
+      trayFreeCapacity: 5,
+      lockedTraySlotCount: 2,
+    });
+    expect(session.canUnlockTraySlot()).toBe(true);
+
+    const first = session.unlockTraySlot();
+    expect(first).toMatchObject({
+      unlocked: true,
+      unlockedSlotIndex: 5,
+      effectiveTrayCapacity: 6,
+      lockedTraySlotCount: 1,
+    });
+    expect(session.getState().trayFreeCapacity).toBe(6);
+
+    const second = session.unlockTraySlot();
+    expect(second).toMatchObject({
+      unlocked: true,
+      unlockedSlotIndex: 6,
+      effectiveTrayCapacity: 7,
+      lockedTraySlotCount: 0,
+    });
+    expect(session.canUnlockTraySlot()).toBe(false);
+    expect(session.unlockTraySlot().unlocked).toBe(false);
+  });
+
+  it("扩容在右侧锁槽前增加有效槽，锁槽数量不变", () => {
+    const session = new GameSession({
+      level: {
+        ...createLevel([createBlock("remaining", 0, 0, 0, WORKING_DOG)]),
+        lockedTraySlotCount: 2,
+      },
+    });
+
+    expect(session.increaseTrayCapacity()).toBe(true);
+    expect(session.getState()).toMatchObject({
+      trayCapacity: 8,
+      effectiveTrayCapacity: 6,
+      trayFreeCapacity: 6,
+      lockedTraySlotCount: 2,
+    });
+  });
+
+  it("锁槽降低有效容量，满有效槽后仍按玩家操作失败", () => {
+    const session = new GameSession({
+      level: {
+        ...createLevel([
+          createBlock("remaining", 0, 0, 0, WORKING_DOG),
+          createBlock("remaining-2", 4, 0, 0, SINGLE_DOG),
+        ]),
+        lockedTraySlotCount: 2,
+      },
+      initialTray: [
+        WORKING_DOG,
+        SINGLE_DOG,
+        LICKING_DOG,
+        GUARD_DOG,
+      ],
+    });
+
+    const result = session.selectBlock("remaining");
+
+    expect(result.selected).toBe(true);
+    expect(result.snapshot.trayLogicalUnitCount).toBe(5);
+    expect(result.snapshot.effectiveTrayCapacity).toBe(5);
+    expect(result.snapshot.status).toBe("lost");
+  });
+
   it("万能方块原子补偿一个被遮挡同图案方块并以万能标记入槽", () => {
     const session = new GameSession({
       level: createLevel([

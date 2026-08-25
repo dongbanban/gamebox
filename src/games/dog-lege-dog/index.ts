@@ -14,6 +14,7 @@ export {
   type GameSessionStatus,
   type GameSessionTripleRemovalPlan,
   type GameSessionTripleRemovalResult,
+  type GameSessionUnlockResult,
   type GameSessionWildcardPlan,
   type GameSessionWildcardResolution,
   type GameSessionWildcardResult,
@@ -93,11 +94,20 @@ export {
   type SolvabilitySearchOptions,
   type SolvabilityStateOptions,
 } from "@/games/dog-lege-dog/levels/level-generator";
-export { createRunSeed } from "@/games/dog-lege-dog/levels/level-random";
 export {
+  createRunSeed,
+  getDogTrayLockCount,
+} from "@/games/dog-lege-dog/levels/level-random";
+export {
+  DOG_BASE_TRAY_CAPACITY,
+  DOG_DIFFICULTY_CURVE_GENERATOR_VERSION,
   DOG_FREEZE_GENERATOR_VERSION,
   DOG_ILLUSION_GENERATOR_VERSION,
+  DOG_KEY_DROP_RATE,
   DOG_LEVEL_SPECIAL_MECHANISM_DEFINITIONS,
+  DOG_MAX_LOCKED_TRAY_SLOTS,
+  DOG_SPECIAL_MECHANISM_GENERATOR_VERSION,
+  DOG_TRAY_LOCKS_GENERATOR_VERSION,
 } from "@/games/dog-lege-dog/game/game-config";
 
 export {
@@ -152,6 +162,7 @@ export {
   DogItemRuntime,
   type DogItemAnimationCompletion,
   type DogItemEffect,
+  type DogKeyDropResult,
   getDogItemUses,
   type DogItemActionResult,
   type DogItemAvailabilityContext,

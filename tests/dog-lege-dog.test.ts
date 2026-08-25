@@ -629,6 +629,7 @@ describe("狗了个狗首关", () => {
       root.querySelector('[data-testid="dog-loadout-thumbnail"][data-loadout-id="tray-capacity"] [data-testid="dog-loadout-thumbnail-uses"]')?.textContent,
     ).toBe("1");
     expect(root.querySelectorAll('[data-testid="dog-tray-slot"]')).toHaveLength(7);
+    expect(root.querySelectorAll('[data-slot-state="locked"]')).toHaveLength(0);
     expect(root.querySelector('[data-testid="dog-tray-region"] h3')).toBeNull();
     expect(root.querySelector('[data-testid="dog-tray-count"]')).toBeNull();
     expect(root.querySelector('[data-testid="dog-tray-region"] .dog-tray__heading')).toBeNull();
@@ -698,6 +699,50 @@ describe("狗了个狗首关", () => {
       true,
     );
     expect(game.getState().items?.items.find((item) => item.id === "tray-capacity")).toMatchObject({
+      remainingUses: 0,
+      available: false,
+    });
+    game.destroy();
+  });
+
+  it("渲染右侧锁槽，合格三消掉钥匙并按顺序解锁", async () => {
+    vi.useFakeTimers();
+    const root = document.createElement("div");
+    const level = createKeyUiLevel();
+    const game = startDogLegeDogGame(root, {
+      level,
+      loadout: ["key", "torch", "detector"],
+    });
+
+    expect(root.querySelectorAll('[data-slot-state="locked"]')).toHaveLength(2);
+    expect(root.querySelector<HTMLElement>('[data-testid="dog-tray"]')?.dataset.effectiveTrayCapacity).toBe("5");
+    for (const [index, blockId] of ["working-1", "working-2", "working-3"].entries()) {
+      game.selectBlock(blockId);
+      if (index === 2) {
+        await vi.advanceTimersByTimeAsync(700);
+        expect(root.querySelector('[data-testid="dog-key-drop-effect"]')).not.toBeNull();
+      } else {
+        await vi.runAllTimersAsync();
+      }
+    }
+
+    expect(game.getState().items?.items.find((item) => item.id === "key")).toMatchObject({
+      maxUses: 2,
+      remainingUses: 1,
+      available: true,
+    });
+    await vi.runAllTimersAsync();
+    expect(root.querySelector('[data-testid="dog-key-drop-effect"]')).toBeNull();
+
+    root.querySelector<HTMLButtonElement>('[data-action="use-item"][data-item-id="key"]')?.click();
+    expect(game.getState().session).toMatchObject({
+      effectiveTrayCapacity: 6,
+      lockedTraySlotCount: 1,
+    });
+    expect(root.querySelector('[data-testid="dog-tray-unlock-effect"]')).not.toBeNull();
+    await vi.runAllTimersAsync();
+    expect(root.querySelectorAll('[data-slot-state="locked"]')).toHaveLength(1);
+    expect(game.getState().items?.items.find((item) => item.id === "key")).toMatchObject({
       remainingUses: 0,
       available: false,
     });
@@ -979,6 +1024,29 @@ function createWildcardUiLevel(): DogLegeDogLevel {
     patternTypes,
     blocks,
     solutionPath: ["working-target", "single-cover", "working-hidden"],
+  };
+}
+
+function createKeyUiLevel(): DogLegeDogLevel {
+  const patternTypes = ["打工狗", "单身狗", "舔狗", "看门狗"] as const satisfies readonly DogPatternType[];
+  const blocks: readonly DogBlock[] = [
+    createTestBlock("working-1", "打工狗", 0, 0),
+    createTestBlock("working-2", "打工狗", 0, 4),
+    createTestBlock("working-3", "打工狗", 0, 8),
+    createTestBlock("single-1", "单身狗", 0, 12),
+    createTestBlock("single-2", "单身狗", 0, 16),
+    createTestBlock("licking-1", "舔狗", 0, 20),
+    createTestBlock("licking-2", "舔狗", 0, 24),
+    createTestBlock("guard-1", "看门狗", 0, 28),
+    createTestBlock("guard-2", "看门狗", 0, 32),
+  ];
+  return {
+    ...FIRST_LEVEL,
+    runSeed: "key-drop-seed-0",
+    patternTypes,
+    blocks,
+    lockedTraySlotCount: 2,
+    solutionPath: blocks.map((block) => block.id),
   };
 }
 
