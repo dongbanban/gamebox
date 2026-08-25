@@ -1,4 +1,7 @@
-import { DOG_GAME_ID } from "@/games/dog-lege-dog/game/game-config";
+import {
+  DOG_GAME_ID,
+  MAX_LEVEL_NUMBER,
+} from "@/games/dog-lege-dog/game/game-config";
 
 export const STORAGE_KEY = "gamebox.state";
 export const APP_STATE_VERSION = 1 as const;
@@ -111,7 +114,7 @@ export class ProgressStore {
     }
 
     const nextHighestUnlockedLevel = firstCompletion
-      ? currentProgress.highestUnlockedLevel + 1
+      ? Math.min(currentProgress.highestUnlockedLevel + 1, MAX_LEVEL_NUMBER)
       : currentProgress.highestUnlockedLevel;
     const nextTotalScore =
       currentProgress.totalScore + (firstCompletion ? completion.reward : 0);
@@ -364,6 +367,7 @@ function normalizeGameProgress(value: unknown, gameId: string): GameProgress | n
     !isRecord(value) ||
     !Number.isSafeInteger(value.highestUnlockedLevel) ||
     value.highestUnlockedLevel < 1 ||
+    value.highestUnlockedLevel > MAX_LEVEL_NUMBER ||
     !Number.isSafeInteger(value.totalScore) ||
     value.totalScore < 0
   ) {
@@ -385,8 +389,13 @@ function normalizeGameProgress(value: unknown, gameId: string): GameProgress | n
     return null;
   }
 
+  const validCompletedLevelCount =
+    value.highestUnlockedLevel === MAX_LEVEL_NUMBER
+      ? completedLevels.length === MAX_LEVEL_NUMBER - 1 ||
+        completedLevels.length === MAX_LEVEL_NUMBER
+      : completedLevels.length === value.highestUnlockedLevel - 1;
   if (
-    completedLevels.length !== value.highestUnlockedLevel - 1 ||
+    !validCompletedLevelCount ||
     !completedLevels.every(
       (levelNumber, index) => levelNumber === index + 1,
     )
@@ -456,8 +465,14 @@ function assertCompletionInput(completion: LevelCompletion): void {
     throw new Error("Cannot record level completion without a game id");
   }
 
-  if (!Number.isSafeInteger(completion.levelNumber) || completion.levelNumber < 1) {
-    throw new Error("Level completion requires a positive integer level number");
+  if (
+    !Number.isSafeInteger(completion.levelNumber) ||
+    completion.levelNumber < 1 ||
+    completion.levelNumber > MAX_LEVEL_NUMBER
+  ) {
+    throw new Error(
+      `Level completion requires an integer from 1 to ${MAX_LEVEL_NUMBER}`,
+    );
   }
 
   if (!Number.isSafeInteger(completion.reward) || completion.reward < 0) {

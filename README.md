@@ -7,7 +7,7 @@ pnpm test:ui           # UI 单测：app + 狗了个狗渲染/交互/音效，�
 pnpm test:focused      # 普通 ticket：受影响核心单测，不含随机回归/E2E/build
 pnpm test:affected     # 按 Git 改动执行受影响测试、E2E 与 build
 pnpm test              # 核心 Vitest 测试
-pnpm test:random       # 固定 seed 驱动的 1–100 连续前缀、检查点、100–1000 压力档
+pnpm test:random       # 固定 seed 驱动的 1–99 连续前缀、检查点、99 关压力档
 pnpm test:e2e          # Chromium 浏览器流程
 pnpm test:qa           # 目标：核心 + 随机回归 + Chromium E2E；当前见下方已知限制
 pnpm build:pages       # 生成 GitHub Pages /gamebox/ 路径产物
@@ -84,7 +84,7 @@ DOG_RANDOM_LEVEL_NUMBER=<levelNumber> \
 pnpm test:random
 ```
 
-压力档默认运行 100 关；需要完整上限时设置 `DOG_STRESS_LEVEL_COUNT=1000`。
+压力档默认运行 99 关；完整上限为 99 关，设置 `DOG_STRESS_LEVEL_COUNT=99` 可显式运行。
 
 跨浏览器 smoke 需要先安装 Playwright WebKit（Safari 引擎）：
 

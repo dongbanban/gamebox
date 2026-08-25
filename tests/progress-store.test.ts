@@ -8,6 +8,7 @@ import {
 import {
   LEVEL_GENERATOR_VERSION,
   LevelGenerator,
+  MAX_LEVEL_NUMBER,
 } from "@/games/dog-lege-dog";
 
 class MemoryStorage implements StorageLike {
@@ -318,6 +319,68 @@ describe("ProgressStore", () => {
     });
   });
 
+  it("第 99 关通关后保持关卡上限，并可恢复最终完成状态", () => {
+    const storage = new MemoryStorage();
+    const store = new ProgressStore({
+      storage,
+      userIdFactory: () => userId,
+    });
+    store.register();
+
+    for (let levelNumber = 1; levelNumber < MAX_LEVEL_NUMBER; levelNumber += 1) {
+      store.recordLevelCompletion({
+        gameId: GAME_ID,
+        levelNumber,
+        reward: 0,
+      });
+    }
+
+    const finalCompletion = store.recordLevelCompletion({
+      gameId: GAME_ID,
+      levelNumber: MAX_LEVEL_NUMBER,
+      reward: 999,
+    });
+
+    expect(finalCompletion.progress).toMatchObject({
+      highestUnlockedLevel: MAX_LEVEL_NUMBER,
+      totalScore: 999,
+      completedLevels: Array.from(
+        { length: MAX_LEVEL_NUMBER },
+        (_, index) => index + 1,
+      ),
+    });
+    expect(
+      store.recordLevelCompletion({
+        gameId: GAME_ID,
+        levelNumber: MAX_LEVEL_NUMBER,
+        reward: 999,
+      }).firstCompletion,
+    ).toBe(false);
+    expect(new ProgressStore({ storage }).snapshot().state?.games[GAME_ID]).toMatchObject(
+      finalCompletion.progress,
+    );
+  });
+
+  it("拒绝超过 99 关的通关记录", () => {
+    const store = new ProgressStore({
+      storage: new MemoryStorage(),
+      userIdFactory: () => userId,
+    });
+    store.register();
+
+    expect(() =>
+      store.recordLevelCompletion({
+        gameId: GAME_ID,
+        levelNumber: MAX_LEVEL_NUMBER + 1,
+        reward: 1,
+      }),
+    ).toThrow("Level completion requires an integer from 1 to 99");
+    expect(store.snapshot().state?.games[GAME_ID]).toMatchObject({
+      highestUnlockedLevel: 1,
+      completedLevels: [],
+    });
+  });
+
   it("rejects recording a locked level without inferring skipped history", () => {
     const store = new ProgressStore({
       storage: new MemoryStorage(),
@@ -384,6 +447,7 @@ describe("ProgressStore", () => {
   it.each([
     ["最高解锁关卡为零", { highestUnlockedLevel: 0, totalScore: 0, completedLevels: [] }],
     ["最高解锁关卡为小数", { highestUnlockedLevel: 1.5, totalScore: 0, completedLevels: [] }],
+    ["最高解锁关卡超过上限", { highestUnlockedLevel: MAX_LEVEL_NUMBER + 1, totalScore: 0, completedLevels: [] }],
     ["累计积分为负数", { highestUnlockedLevel: 1, totalScore: -1, completedLevels: [] }],
     ["累计积分为小数", { highestUnlockedLevel: 1, totalScore: 0.5, completedLevels: [] }],
     ["完成关卡包含非正整数", { highestUnlockedLevel: 2, totalScore: 0, completedLevels: [0] }],

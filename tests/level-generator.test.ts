@@ -8,6 +8,7 @@ import {
   FIRST_LEVEL,
   GameSession,
   LEVEL_GENERATOR_VERSION,
+  MAX_LEVEL_NUMBER,
   MAX_LEVEL_GENERATION_ATTEMPTS,
   LevelGenerator,
   getDifficultyTarget,
@@ -21,6 +22,25 @@ import {
 } from "@/games/dog-lege-dog";
 
 describe("LevelGenerator", () => {
+  it("允许生成第 99 关并拒绝第 100 关", () => {
+    const generator = new LevelGenerator();
+
+    expect(
+      generator.generate({
+        levelNumber: MAX_LEVEL_NUMBER,
+        seed: "max-level-seed",
+        generatorVersion: LEVEL_GENERATOR_VERSION,
+      }).number,
+    ).toBe(MAX_LEVEL_NUMBER);
+    expect(() =>
+      generator.generate({
+        levelNumber: MAX_LEVEL_NUMBER + 1,
+        seed: "over-max-level-seed",
+        generatorVersion: LEVEL_GENERATOR_VERSION,
+      }),
+    ).toThrow("狗了个狗 level number must be an integer from 1 to 99");
+  });
+
   it("按公开难度计算稳定、非负且随阶段变化的通关奖励", () => {
     const generator = new LevelGenerator();
     const levels = [1, 6, 31].map((levelNumber) =>
@@ -300,7 +320,7 @@ describe("LevelGenerator", () => {
   it("全部固定检查点统一生成不规则棋盘与阶段图案数量", () => {
     const generator = new LevelGenerator();
 
-    for (const levelNumber of [1, 2, 5, 6, 10, 15, 16, 30, 31, 100]) {
+    for (const levelNumber of [1, 2, 5, 6, 10, 15, 16, 30, 31, MAX_LEVEL_NUMBER]) {
       const level = generator.generate({
         levelNumber,
         seed: `irregular-checkpoint-${levelNumber}`,
@@ -318,7 +338,7 @@ describe("LevelGenerator", () => {
   it("全部检查点跨层重叠以四分之一或二分之一为主", () => {
     const generator = new LevelGenerator();
 
-    for (const levelNumber of [1, 2, 5, 6, 10, 15, 16, 30, 31, 60, 100]) {
+    for (const levelNumber of [1, 2, 5, 6, 10, 15, 16, 30, 31, 60, MAX_LEVEL_NUMBER]) {
       const level = generator.generate({
         levelNumber,
         seed: `overlap-checkpoint-${levelNumber}`,
@@ -348,7 +368,7 @@ describe("LevelGenerator", () => {
       162,
       180,
     ]);
-    expect([1, 5, 6, 15, 16, 30, 31, 100].map(getMaxLayers)).toEqual([
+    expect([1, 5, 6, 15, 16, 30, 31, MAX_LEVEL_NUMBER].map(getMaxLayers)).toEqual([
       3,
       3,
       4,
@@ -358,7 +378,7 @@ describe("LevelGenerator", () => {
       6,
       6,
     ]);
-    expect([1, 5, 6, 15, 16, 30, 31, 100].map(getPatternTypeCount)).toEqual([
+    expect([1, 5, 6, 15, 16, 30, 31, MAX_LEVEL_NUMBER].map(getPatternTypeCount)).toEqual([
       6,
       6,
       8,
@@ -395,7 +415,7 @@ describe("LevelGenerator", () => {
   it("生成关卡结构满足形状、图案与层叠不变量", () => {
     const generator = new LevelGenerator();
 
-    for (const levelNumber of [2, 5, 6, 15, 16, 30, 31, 60, 100]) {
+    for (const levelNumber of [2, 5, 6, 15, 16, 30, 31, 60, MAX_LEVEL_NUMBER]) {
       const level = generator.generate({
         levelNumber,
         seed: `invariant-${levelNumber}`,
@@ -447,7 +467,7 @@ describe("LevelGenerator", () => {
   it("按关卡与 seed 稳定生成中心多数、四角非空且互相连通的空间分布", () => {
     const generator = new LevelGenerator();
 
-    for (const levelNumber of [1, 5, 10, 15, 30, 100]) {
+    for (const levelNumber of [1, 5, 10, 15, 30, MAX_LEVEL_NUMBER]) {
       const request = {
         levelNumber,
         seed: `spatial-${levelNumber}`,
@@ -475,10 +495,10 @@ describe("LevelGenerator", () => {
     }
   });
 
-  it("可稳定加载第 2–100 关，不因模板选择抛错", () => {
+  it("可稳定加载第 2–99 关，不因模板选择抛错", () => {
     const generator = new LevelGenerator();
 
-    for (let levelNumber = 2; levelNumber <= 100; levelNumber += 1) {
+    for (let levelNumber = 2; levelNumber <= MAX_LEVEL_NUMBER; levelNumber += 1) {
       const level = generator.generate({
         levelNumber,
         seed: `range-${levelNumber}`,
@@ -547,7 +567,7 @@ describe("LevelGenerator", () => {
   it("按阶段筛选安全选择与目标时长，失败时保留有限重试与重放 seam", () => {
     const generator = new LevelGenerator();
 
-    for (const levelNumber of [2, 6, 16, 31, 60, 100]) {
+    for (const levelNumber of [2, 6, 16, 31, 60, MAX_LEVEL_NUMBER]) {
       const level = generator.generate({
         levelNumber,
         seed: "difficulty-seed",

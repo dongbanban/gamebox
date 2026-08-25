@@ -3,7 +3,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { mountApp as mountGameboxApp, type MountAppOptions } from "@/app";
 import type { GameDefinition, GameLaunchContext, GameResult } from "@/catalog";
-import { DEFAULT_LEVEL_SEED, FIRST_LEVEL, FIRST_LEVEL_SEED } from "@/games/dog-lege-dog";
+import {
+  DEFAULT_LEVEL_SEED,
+  FIRST_LEVEL,
+  FIRST_LEVEL_SEED,
+  MAX_LEVEL_NUMBER,
+} from "@/games/dog-lege-dog";
 import { GAME_ID, ProgressStore, type StorageLike } from "@/progress-store";
 
 class DamagedStorage implements StorageLike {
@@ -239,6 +244,82 @@ describe("通用游戏定义与结果契约", () => {
     expect(root.querySelector('[data-view="catalog"]')).not.toBeNull();
     expect(root.querySelector('[data-view="game-entry"]')).toBeNull();
     expect(root.textContent).toContain("测试游戏");
+
+    app.destroy();
+  });
+
+  it("第 99 关通关后展示最终称号页且不提供下一关", () => {
+    const root = document.createElement("div");
+    const resultDisplay = {
+      won: {
+        eyebrow: "测试游戏 · 结果",
+        title: "测试通关",
+        description: "完成。",
+      },
+      final: {
+        eyebrow: "狗了个狗 · 最终通关",
+        title: "你就是最狗的玩家",
+        description: "全部 99 关完成。",
+      },
+      lost: {
+        eyebrow: "测试游戏 · 结果",
+        title: "测试失败",
+        description: "失败。",
+      },
+    } as const;
+    const store = new ProgressStore({
+      storage: new MemoryStorage(),
+      userIdFactory: () => "123e4567-e89b-12d3-a456-426614174000",
+    });
+    store.register();
+    for (let levelNumber = 1; levelNumber < MAX_LEVEL_NUMBER; levelNumber += 1) {
+      store.recordLevelCompletion({
+        gameId: GAME_ID,
+        levelNumber,
+        reward: 0,
+      });
+    }
+
+    let launchContext: GameLaunchContext | undefined;
+    const testGame: GameDefinition = {
+      id: GAME_ID,
+      name: "狗了个狗",
+      category: "测试",
+      description: "测试最终通关页。",
+      cover: "test-cover.svg",
+      playable: true,
+      resultDisplay,
+      launch: (_mount, context) => {
+        launchContext = context;
+        return { destroy: vi.fn() };
+      },
+    };
+    const app = mountApp(root, { store, catalog: [testGame] });
+    root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
+
+    const finalResult: GameResult = {
+      gameId: GAME_ID,
+      levelNumber: MAX_LEVEL_NUMBER,
+      status: "won",
+      reward: 25,
+      display: resultDisplay.final,
+      actions: ["catalog"],
+      isFinal: true,
+    };
+    launchContext?.onResultConfirmed?.(finalResult);
+    launchContext?.onResult?.(finalResult);
+
+    expect(root.querySelector('[data-final="true"]')).not.toBeNull();
+    expect(root.querySelector("#game-result-title")?.textContent).toBe("你就是最狗的玩家");
+    expect(root.querySelector('[data-action="next-level"]')).toBeNull();
+    expect(root.textContent).toContain("99 / 99");
+    expect(store.snapshot().state?.games[GAME_ID]).toMatchObject({
+      highestUnlockedLevel: MAX_LEVEL_NUMBER,
+      completedLevels: Array.from(
+        { length: MAX_LEVEL_NUMBER },
+        (_, index) => index + 1,
+      ),
+    });
 
     app.destroy();
   });

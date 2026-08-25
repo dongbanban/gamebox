@@ -71,6 +71,7 @@ export {
   getDifficultyTarget,
   getLevelDifficultyMetrics,
   LEVEL_GENERATOR_VERSION,
+  MAX_LEVEL_NUMBER,
   MAX_LEVEL_GENERATION_ATTEMPTS,
   LevelGenerator,
   generateDogLegeDogLevel,

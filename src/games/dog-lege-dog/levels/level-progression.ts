@@ -1,5 +1,8 @@
 import type { DogDifficultyTarget } from "@/games/dog-lege-dog/levels/level-types";
-import { LEVEL_GENERATOR_VERSION } from "@/games/dog-lege-dog/game/game-config";
+import {
+  LEVEL_GENERATOR_VERSION,
+  MAX_LEVEL_NUMBER,
+} from "@/games/dog-lege-dog/game/game-config";
 
 export type ProgressStage = 0 | 1 | 2 | 3;
 
@@ -170,7 +173,13 @@ export function getProgressStage(levelNumber: number): ProgressStage {
 }
 
 function validateLevelNumber(levelNumber: number): void {
-  if (!Number.isSafeInteger(levelNumber) || levelNumber < 1) {
-    throw new Error("狗了个狗 level number must be a positive integer");
+  if (
+    !Number.isSafeInteger(levelNumber) ||
+    levelNumber < 1 ||
+    levelNumber > MAX_LEVEL_NUMBER
+  ) {
+    throw new Error(
+      `狗了个狗 level number must be an integer from 1 to ${MAX_LEVEL_NUMBER}`,
+    );
   }
 }

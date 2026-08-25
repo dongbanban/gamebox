@@ -86,7 +86,7 @@ describe("狗了个狗特殊机制", () => {
       [16, 2],
       [30, 2],
       [31, 3],
-      [100, 3],
+      [99, 3],
     ] as const) {
       const expected = expectedByStage[stageIndex];
       const configs = getDogSpecialMechanismConfigs(levelNumber);

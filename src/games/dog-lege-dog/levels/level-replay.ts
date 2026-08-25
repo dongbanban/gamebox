@@ -10,6 +10,7 @@ import type {
   LevelGeneratorRequest,
   NormalizedLevelGeneratorRequest,
 } from "@/games/dog-lege-dog/levels/level-generator-contracts";
+import { MAX_LEVEL_NUMBER } from "@/games/dog-lege-dog/game/game-config";
 import { freezeDogLegeDogLevel } from "@/games/dog-lege-dog/levels/level-immutability";
 import { DOG_REWARD_CONFIG_VERSION } from "@/games/dog-lege-dog/levels/level-reward";
 
@@ -166,7 +167,13 @@ export function validateReplay(replay: DogLevelReplay): void {
 }
 
 function validateLevelNumber(levelNumber: number): void {
-  if (!Number.isSafeInteger(levelNumber) || levelNumber < 1) {
-    throw new Error("狗了个狗 level number must be a positive integer");
+  if (
+    !Number.isSafeInteger(levelNumber) ||
+    levelNumber < 1 ||
+    levelNumber > MAX_LEVEL_NUMBER
+  ) {
+    throw new Error(
+      `狗了个狗 level number must be an integer from 1 to ${MAX_LEVEL_NUMBER}`,
+    );
   }
 }

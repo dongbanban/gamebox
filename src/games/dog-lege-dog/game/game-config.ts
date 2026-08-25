@@ -5,12 +5,18 @@ import type {
 
 const GAME_ID = "dog-lege-dog" as const;
 const GENERATOR_VERSION = 11 as const;
+export const MAX_LEVEL_NUMBER = 99 as const;
 
 export const DOG_GAME_RESULT_DISPLAY = Object.freeze({
   won: Object.freeze({
     eyebrow: "狗了个狗 · 关卡结果",
     title: "通关！",
     description: "完成。",
+  }),
+  final: Object.freeze({
+    eyebrow: "狗了个狗 · 最终通关",
+    title: "你就是最狗的玩家",
+    description: `全部 ${MAX_LEVEL_NUMBER} 关完成。`,
   }),
   lost: Object.freeze({
     eyebrow: "狗了个狗 · 关卡结果",
@@ -26,6 +32,7 @@ export const DOG_LEGE_DOG_CONFIG = Object.freeze({
   defaultSeed: GAME_ID,
   defaultReward: 100 as const,
   firstLevelNumber: 1 as const,
+  maxLevelNumber: MAX_LEVEL_NUMBER,
   // Keep fixed first-level geometry stable across generator versions.
   firstLevelSeed: `${GAME_ID}:first-level:v9`,
   firstLevelBlockCount: 90 as const,

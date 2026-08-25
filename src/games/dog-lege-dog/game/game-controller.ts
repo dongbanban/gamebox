@@ -12,7 +12,11 @@ import {
   type DogPatternType,
 } from "@/games/dog-lege-dog/levels/first-level";
 import { renderDogPatternAsset } from "@/games/dog-lege-dog/assets/game-assets";
-import { DOG_GAME_ID, DOG_GAME_RESULT_DISPLAY } from "@/games/dog-lege-dog/game/game-config";
+import {
+  DOG_GAME_ID,
+  DOG_GAME_RESULT_DISPLAY,
+  MAX_LEVEL_NUMBER,
+} from "@/games/dog-lege-dog/game/game-config";
 import {
   DOG_ILLUSION_MECHANISM_TYPE,
   DOG_TWIN_MECHANISM_TYPE,
@@ -1096,11 +1100,16 @@ function createResult(
     return null;
   }
 
+  const isFinal = status === "won" && level.number === MAX_LEVEL_NUMBER;
   const resultDisplay: GameResultDisplay = {
-    ...DOG_GAME_RESULT_DISPLAY[status],
+    ...(isFinal ? DOG_GAME_RESULT_DISPLAY.final : DOG_GAME_RESULT_DISPLAY[status]),
   };
   const actions: readonly GameResultAction[] =
-    status === "won" ? ["next-level", "catalog"] : ["retry", "catalog"];
+    isFinal
+      ? ["catalog"]
+      : status === "won"
+        ? ["next-level", "catalog"]
+        : ["retry", "catalog"];
 
   return {
     gameId: DOG_GAME_ID,
@@ -1109,6 +1118,7 @@ function createResult(
     reward: status === "won" ? level.reward : 0,
     display: resultDisplay,
     actions,
+    ...(isFinal ? { isFinal: true } : {}),
   };
 }
 

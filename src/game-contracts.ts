@@ -15,6 +15,7 @@ export interface GameResultDisplay {
 
 export interface GameResultDisplayMetadata {
   readonly won: GameResultDisplay;
+  readonly final?: GameResultDisplay;
   readonly lost: GameResultDisplay;
 }
 
@@ -25,6 +26,7 @@ export interface GameResult {
   readonly reward: number;
   readonly display: GameResultDisplay;
   readonly actions: readonly GameResultAction[];
+  readonly isFinal?: boolean;
 }
 
 export interface GameLaunchContext {

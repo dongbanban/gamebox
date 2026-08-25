@@ -11,6 +11,7 @@ import {
   isDifficultyWithinTarget,
   LEVEL_GENERATOR_VERSION,
   LevelGenerator,
+  MAX_LEVEL_NUMBER,
   type DogLegeDogLevel,
 } from "@/games/dog-lege-dog";
 
@@ -19,13 +20,13 @@ const RANDOM_TEST_SEED =
 const GENERATOR_SEED = `${DOG_GAME_ID}:random-regression:${RANDOM_TEST_SEED}`;
 
 describe(`随机关卡回归 [testSeed=${RANDOM_TEST_SEED}]`, () => {
-  it("每次运行生成 1–100 个关卡，并验证可重放与完整不变量", () => {
+  it("每次运行生成 1–99 个关卡，并验证可重放与完整不变量", () => {
     const generator = new LevelGenerator();
     const levelCount = readCount(
       process.env.DOG_RANDOM_LEVEL_COUNT,
-      seededInteger(`${RANDOM_TEST_SEED}:count`, 1, 100),
+      seededInteger(`${RANDOM_TEST_SEED}:count`, 1, MAX_LEVEL_NUMBER),
       1,
-      100,
+      MAX_LEVEL_NUMBER,
     );
 
     const replayLevelNumber = readLevelNumber(process.env.DOG_RANDOM_LEVEL_NUMBER);
@@ -46,11 +47,11 @@ describe(`随机关卡回归 [testSeed=${RANDOM_TEST_SEED}]`, () => {
     }
   });
 
-  it("固定覆盖第 1、5、10、15、30、100 关", () => {
+  it("固定覆盖第 1、5、10、15、30、99 关", () => {
     const generator = new LevelGenerator();
     const checkpointSeed = RANDOM_TEST_SEED;
 
-    for (const levelNumber of [1, 5, 10, 15, 30, 100]) {
+    for (const levelNumber of [1, 5, 10, 15, 30, MAX_LEVEL_NUMBER]) {
       const regressionCase = createPendingCase(checkpointSeed, levelNumber);
       withRegressionReport(
         regressionCase,
@@ -62,13 +63,13 @@ describe(`随机关卡回归 [testSeed=${RANDOM_TEST_SEED}]`, () => {
     }
   });
 
-  it("运行 100–1000 个关卡压力测试，保持生成器不抛错且每关可解", () => {
+  it("运行最多 99 个关卡压力测试，保持生成器不抛错且每关可解", () => {
     const generator = new LevelGenerator();
     const levelCount = readCount(
       process.env.DOG_STRESS_LEVEL_COUNT,
-      100,
-      100,
-      1000,
+      MAX_LEVEL_NUMBER,
+      1,
+      MAX_LEVEL_NUMBER,
     );
     const stressSeed = RANDOM_TEST_SEED;
 
@@ -319,8 +320,10 @@ function readLevelNumber(rawValue: string | undefined): number | undefined {
   }
 
   const parsed = Number(rawValue);
-  if (!Number.isSafeInteger(parsed) || parsed < 1) {
-    throw new Error(`重放关卡号必须是正整数，收到：${rawValue}`);
+  if (!Number.isSafeInteger(parsed) || parsed < 1 || parsed > MAX_LEVEL_NUMBER) {
+    throw new Error(
+      `重放关卡号必须是 1–${MAX_LEVEL_NUMBER} 的整数，收到：${rawValue}`,
+    );
   }
 
   return parsed;

@@ -3,6 +3,7 @@ import {
   DEFAULT_LEVEL_SEED,
   DOG_GAME_ID,
   LEVEL_GENERATOR_VERSION,
+  MAX_LEVEL_NUMBER,
 } from "@/games/dog-lege-dog/game/game-config";
 import { MAX_LEVEL_GENERATION_ATTEMPTS } from "@/games/dog-lege-dog/levels/level-generation-engine";
 import {
@@ -54,6 +55,7 @@ export {
   DEFAULT_LEVEL_SEED,
   DOG_GAME_ID,
   LEVEL_GENERATOR_VERSION,
+  MAX_LEVEL_NUMBER,
   MAX_LEVEL_GENERATION_ATTEMPTS,
   DOG_SHAPE_TEMPLATES,
   calculateDifficultyMetrics,

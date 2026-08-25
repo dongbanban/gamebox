@@ -12,7 +12,10 @@ import {
   type StoreSnapshot,
 } from "@/progress-store";
 import { renderDogPatternAsset } from "@/games/dog-lege-dog/assets/game-assets";
-import { DOG_GAME_ID } from "@/games/dog-lege-dog/game/game-config";
+import {
+  DOG_GAME_ID,
+  MAX_LEVEL_NUMBER,
+} from "@/games/dog-lege-dog/game/game-config";
 import { createRunSeed } from "@/games/dog-lege-dog/levels/level-random";
 import {
   areDogLoadoutsEqual,
@@ -303,7 +306,11 @@ export class GameboxApp {
 
     const progress = state.games[game.id] ?? createInitialGameProgress();
     const levelNumber = requestedLevelNumber ?? progress.highestUnlockedLevel;
-    if (levelNumber < 1 || levelNumber > progress.highestUnlockedLevel) {
+    if (
+      levelNumber < 1 ||
+      levelNumber > progress.highestUnlockedLevel ||
+      levelNumber > MAX_LEVEL_NUMBER
+    ) {
       return;
     }
 
@@ -422,12 +429,27 @@ export class GameboxApp {
 
   private renderWinResult(result: GameResult, completion: LevelCompletionResult): void {
     this.resultState = { result, completion };
+    const isFinal = result.isFinal === true;
     const snapshot = this.store.snapshot();
     const persistenceMessage =
       snapshot.persistence === "persistent"
         ? "进度已保存。"
         : "当前为临时运行模式，刷新后进度可能丢失。";
-    this.renderGameResult(result, "won", `
+    const content = isFinal
+      ? `
+          <p class="eyebrow">${result.display.eyebrow}</p>
+          <h1 id="game-result-title">${result.display.title}</h1>
+          <p class="game-result-card__intro">${result.display.description}${persistenceMessage}</p>
+          ${renderPersistenceNotice(snapshot.warning)}
+          <dl class="game-result-card__stats">
+            <div><dt>完成关卡</dt><dd>${MAX_LEVEL_NUMBER} / ${MAX_LEVEL_NUMBER}</dd></div>
+            <div><dt>最终奖励</dt><dd>${completion.reward}</dd></div>
+            <div><dt>累计积分</dt><dd>${completion.progress.totalScore}</dd></div>
+            <div><dt>最终称号</dt><dd>最狗玩家</dd></div>
+          </dl>
+          ${renderResultActions(result)}
+      `
+      : `
           <p class="eyebrow">${result.display.eyebrow}</p>
           <h1 id="game-result-title">${result.display.title}</h1>
           <p class="game-result-card__intro">第 ${result.levelNumber} 关${result.display.description}${persistenceMessage}</p>
@@ -440,11 +462,14 @@ export class GameboxApp {
           </dl>
           ${renderLoadoutChangeAction(result)}
           ${renderResultActions(result)}
-    `);
-    this.nextLevelTarget = {
-      gameId: result.gameId,
-      levelNumber: result.levelNumber + 1,
-    };
+    `;
+    this.renderGameResult(result, "won", content);
+    this.nextLevelTarget = isFinal
+      ? null
+      : {
+          gameId: result.gameId,
+          levelNumber: result.levelNumber + 1,
+        };
   }
 
   private renderLossResult(result: GameResult): void {
@@ -478,7 +503,7 @@ export class GameboxApp {
       return;
     }
 
-    if (levelNumber > progress.highestUnlockedLevel) {
+    if (levelNumber > progress.highestUnlockedLevel || levelNumber > MAX_LEVEL_NUMBER) {
       this.render();
       return;
     }
@@ -492,9 +517,10 @@ export class GameboxApp {
     content: string,
   ): void {
     this.disposeActiveGame();
+    const finalClassName = result.isFinal === true ? " game-result-card--final" : "";
     this.root.innerHTML = `
       <main class="game-result-view" data-view="game-result" data-result="${status}" data-game-id="${result.gameId}">
-        <section class="game-result-card game-result-card--${status}" aria-labelledby="game-result-title">
+        <section class="game-result-card game-result-card--${status}${finalClassName}" data-final="${result.isFinal === true}" aria-labelledby="game-result-title">
           ${content}
         </section>
       </main>
@@ -760,7 +786,7 @@ function renderResultActions(result: GameResult): string {
 }
 
 function renderLoadoutChangeAction(result: GameResult): string {
-  if (result.gameId !== DOG_GAME_ID) {
+  if (result.gameId !== DOG_GAME_ID || result.isFinal === true) {
     return "";
   }
 
@@ -773,6 +799,10 @@ function renderLoadoutChangeAction(result: GameResult): string {
 
 function renderResultAction(action: GameResultAction, result: GameResult): string {
   if (action === "next-level") {
+    if (result.isFinal === true || result.levelNumber >= MAX_LEVEL_NUMBER) {
+      return "";
+    }
+
     return `
       <button class="primary-button primary-button--wide primary-button--next" type="button" data-action="next-level" data-game-id="${result.gameId}" data-level-number="${result.levelNumber + 1}">
         进入下一关
