@@ -17,6 +17,11 @@ import {
 } from "@/games/dog-lege-dog/levels/level-rules";
 import { findSolvabilityFromState } from "@/games/dog-lege-dog/levels/level-solvability";
 import {
+  chooseDogMagneticTargetIndex,
+  insertDogMagneticBlocks,
+  resolveDogSelection,
+} from "@/games/dog-lege-dog/levels/level-mechanism-resolution";
+import {
   createDogSpecialMechanismHandlerMap,
   DOG_SPECIAL_MECHANISM_HANDLERS,
   DOG_FREEZE_MECHANISM_TYPE,
@@ -787,8 +792,6 @@ export class GameSession {
     readonly magneticTargetBlockId: string | null;
   }): GameSessionMagneticResolution {
     const magneticSource = removeSpecialMechanism(toTrayBlock(pendingSelection.block));
-    insertDogTrayBlock(this.tray, magneticSource);
-    const targetTrayBlockIds: string[] = [];
     const targetBlockId = pendingSelection.magneticTargetBlockId;
     const targetBlock = targetBlockId === null
       ? undefined
@@ -804,37 +807,42 @@ export class GameSession {
       for (const lowerBlockIndex of this.graph.lowerBlockIndicesByHigher[targetBlockIndex]) {
         this.higherBlockCounts[lowerBlockIndex] -= 1;
       }
-
-      const preparedTargetBlocks = prepareDogTrayBlocks(
-        toTrayBlock(targetBlock),
-        this.specialMechanismHandlers,
-      );
-      for (const preparedTargetBlock of preparedTargetBlocks) {
-        insertDogTrayBlock(this.tray, preparedTargetBlock);
-        targetTrayBlockIds.push(preparedTargetBlock.id);
-      }
     }
+
+    const targetTrayBlockIds = insertDogMagneticBlocks(
+      this.tray,
+      magneticSource,
+      targetBlock === undefined ? undefined : toTrayBlock(targetBlock),
+      this.specialMechanismHandlers,
+    );
 
     return Object.freeze({
       sourceBlockId: pendingSelection.block.id,
       targetBlockId: targetBlock === undefined ? null : targetBlock.id,
-      targetTrayBlockIds: Object.freeze([...targetTrayBlockIds]),
+      targetTrayBlockIds,
     });
   }
 
   private chooseMagneticTarget(sourceBlock: DogBlock): string | null {
-    const candidates = [...this.remainingBlocks.values()].filter(
-      (block) =>
-        block.specialMechanism?.type !== DOG_MAGNETIC_MECHANISM_TYPE &&
-        block.patternType !== sourceBlock.patternType,
-    );
-    if (candidates.length === 0) {
+    const sourceBlockIndex = this.graph.indexById.get(sourceBlock.id);
+    if (sourceBlockIndex === undefined) {
       return null;
     }
-
-    const selectableCandidates = candidates.filter((block) => this.canSelectBlock(block.id));
-    const candidatePool = selectableCandidates.length > 0 ? selectableCandidates : candidates;
-    return candidatePool[this.magneticRandom.nextInt(candidatePool.length)]?.id ?? null;
+    let remainingMask = 0n;
+    for (const block of this.remainingBlocks.values()) {
+      const blockIndex = this.graph.indexById.get(block.id);
+      if (blockIndex !== undefined) {
+        remainingMask |= 1n << BigInt(blockIndex);
+      }
+    }
+    const targetBlockIndex = chooseDogMagneticTargetIndex(
+      this.level,
+      sourceBlockIndex,
+      remainingMask,
+      this.higherBlockCounts,
+      this.magneticRandom,
+    );
+    return targetBlockIndex === null ? null : this.level.blocks[targetBlockIndex]?.id ?? null;
   }
 
   private createSelectionResult(
@@ -1350,20 +1358,36 @@ export class GameSession {
       return false;
     }
 
+    const remainingMask = this.getRemainingBlockMask();
     return this.getSelectableBlockIds().some((blockId) => {
-      const block = this.remainingBlocks.get(blockId);
-      if (block === undefined) {
+      const blockIndex = this.graph.indexById.get(blockId);
+      if (blockIndex === undefined) {
         return false;
       }
 
-      const simulatedTray = [...this.tray];
-      insertDogBlockIntoTray(
-        simulatedTray,
-        toTrayBlock(block),
+      const resolution = resolveDogSelection(
+        this.level,
+        blockIndex,
+        remainingMask,
+        this.higherBlockCounts,
+        this.tray,
         this.specialMechanismHandlers,
+        this.magneticRandom.clone(),
+        this.graph,
       );
-      return getDogTrayLogicalUnitCount(simulatedTray) <= effectiveTrayCapacity;
+      return getDogTrayLogicalUnitCount(resolution.tray) <= effectiveTrayCapacity;
     });
+  }
+
+  private getRemainingBlockMask(): bigint {
+    let remainingMask = 0n;
+    for (const blockId of this.remainingBlocks.keys()) {
+      const blockIndex = this.graph.indexById.get(blockId);
+      if (blockIndex !== undefined) {
+        remainingMask |= 1n << BigInt(blockIndex);
+      }
+    }
+    return remainingMask;
   }
 
   private createUnlockResult(

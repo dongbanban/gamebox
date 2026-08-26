@@ -5,8 +5,12 @@ import {
   DOG_LEGACY_SPECIAL_MECHANISM_DEFINITIONS,
   DOG_LEVEL_SPECIAL_MECHANISM_DEFINITIONS,
   DOG_SPECIAL_MECHANISM_GENERATOR_VERSION,
+  DOG_V13_CONFIG,
+  getDogV13LogicalBlockCount,
+  getDogV13MechanismPlan,
   LEVEL_GENERATOR_VERSION,
 } from "@/games/dog-lege-dog/game/game-config";
+import type { DogV13Config } from "@/games/dog-lege-dog/game/v13-config";
 import {
   DOG_PATTERN_TYPES,
   type DogBlock,
@@ -26,8 +30,8 @@ export const DOG_ILLUSION_MECHANISM_TYPE = "illusion" as const;
 export const DOG_ILLUSION_MASK_STATUS = "masked" as const;
 export const DOG_MAGNETIC_MECHANISM_TYPE = "magnetic" as const;
 export const DOG_TWIN_MECHANISM_TYPE = "twin" as const;
-/** Legacy adapter. v13 budget/density is declared in DOG_V13_CONFIG. */
-export const DOG_SPECIAL_MECHANISM_DENSITY_LIMIT = 0.06 as const;
+export const DOG_SPECIAL_MECHANISM_DENSITY_LIMIT =
+  DOG_V13_CONFIG.specialMechanisms.logicalBudgetRatio;
 export const DOG_SPECIAL_MECHANISM_MIDDLE_LAYER_RATIO = 0.7 as const;
 // Keep retry search bounded. Pool still covers enough high-layer positions for
 // current min/max ranges while preventing quadratic scans across full boards.
@@ -60,22 +64,26 @@ export const DOG_SPECIAL_MECHANISM_HANDLERS: readonly DogSpecialMechanismHandler
     }),
   ]);
 
-// Magnetic placement waits for the cross-mechanism solver/replay seam owned by
-// ticket 20. The runtime handler is active for hand-built levels and replays.
 const DOG_SUPPORTED_SPECIAL_MECHANISM_TYPES = new Set<string>([
   DOG_FREEZE_MECHANISM_TYPE,
   DOG_ILLUSION_MECHANISM_TYPE,
+  DOG_MAGNETIC_MECHANISM_TYPE,
   DOG_TWIN_MECHANISM_TYPE,
 ]);
 
 export function getDogSpecialMechanismConfigs(
   levelNumber: number,
   generatorVersion: number = LEVEL_GENERATOR_VERSION,
+  config: DogV13Config = DOG_V13_CONFIG,
 ): readonly DogSpecialMechanismConfig[] {
+  if (generatorVersion >= config.game.generatorVersion) {
+    return getDogV13SpecialMechanismConfigs(levelNumber, config);
+  }
+
   // Resolve progression once at the game configuration seam. Downstream
   // placement, solvability and runtime consume only resolved min/max values.
   const definitions = getDogSpecialMechanismDefinitions(generatorVersion);
-  const progressStage = getProgressStage(levelNumber);
+  const progressStage = getProgressStage(levelNumber, config);
   return Object.freeze(
     definitions.map((definition) => {
       const min = definition.minByStage?.[progressStage] ?? definition.min;
@@ -98,6 +106,30 @@ export function getDogSpecialMechanismConfigs(
   );
 }
 
+function getDogV13SpecialMechanismConfigs(
+  levelNumber: number,
+  config: DogV13Config,
+): readonly DogSpecialMechanismConfig[] {
+  const plan = getDogV13MechanismPlan(
+    getDogV13LogicalBlockCount(levelNumber, config),
+    config,
+  );
+  return Object.freeze(
+    config.specialMechanisms.mechanisms.map((definition) => {
+      const count = plan.counts[definition.type];
+      if (!Number.isSafeInteger(count) || count < 1) {
+        throw new Error(`狗了个狗 v13 special mechanism count is invalid: ${definition.type}`);
+      }
+      return Object.freeze({
+        type: definition.type,
+        min: count,
+        max: count,
+        densityWeight: definition.logicalUnitWeight,
+      });
+    }),
+  );
+}
+
 /**
  * Candidate-generation view. Current metadata can include mechanisms whose
  * handlers land in later tickets; handler registration activates them here
@@ -106,8 +138,9 @@ export function getDogSpecialMechanismConfigs(
 export function getDogSpecialMechanismConfigsForGeneration(
   levelNumber: number,
   generatorVersion: number = LEVEL_GENERATOR_VERSION,
+  config: DogV13Config = DOG_V13_CONFIG,
 ): readonly DogSpecialMechanismConfig[] {
-  return getDogSpecialMechanismConfigs(levelNumber, generatorVersion).filter(
+  return getDogSpecialMechanismConfigs(levelNumber, generatorVersion, config).filter(
     (configuration) => DOG_SUPPORTED_SPECIAL_MECHANISM_TYPES.has(configuration.type),
   );
 }
@@ -120,13 +153,14 @@ export function getDogSpecialMechanismConfigsForGeneration(
 export function limitDogSpecialMechanismConfigsForLogicalDensity(
   configurations: readonly DogSpecialMechanismConfig[],
   logicalBlockCount: number,
+  logicalBudgetRatio = DOG_SPECIAL_MECHANISM_DENSITY_LIMIT,
 ): readonly DogSpecialMechanismConfig[] {
   if (!Number.isSafeInteger(logicalBlockCount) || logicalBlockCount <= 0) {
     throw new Error("狗了个狗 logical block count is invalid");
   }
 
   const maxLogicalUnitCount = Math.floor(
-    logicalBlockCount * DOG_SPECIAL_MECHANISM_DENSITY_LIMIT + Number.EPSILON,
+    logicalBlockCount * logicalBudgetRatio + Number.EPSILON,
   );
   const activeConfigurations = [...configurations];
   while (
@@ -364,6 +398,7 @@ export function selectDogSpecialMechanismCounts(
   configurations: readonly DogSpecialMechanismConfig[],
   random: SeededRandom,
   logicalBlockCount?: number,
+  logicalBudgetRatio = DOG_SPECIAL_MECHANISM_DENSITY_LIMIT,
 ): ReadonlyMap<string, number> {
   const counts = new Map<string, number>();
   for (const configuration of configurations) {
@@ -375,7 +410,7 @@ export function selectDogSpecialMechanismCounts(
   }
   if (logicalBlockCount !== undefined) {
     const maxLogicalUnitCount = Math.floor(
-      logicalBlockCount * DOG_SPECIAL_MECHANISM_DENSITY_LIMIT + Number.EPSILON,
+      logicalBlockCount * logicalBudgetRatio + Number.EPSILON,
     );
     while ([...counts.entries()].reduce((total, [type, count]) => {
       const configuration = configurations.find((candidate) => candidate.type === type);
@@ -404,6 +439,7 @@ export function validateDogSpecialMechanismComposition(
   maxLayers: number,
   configurations: readonly DogSpecialMechanismConfig[],
   minimumMiddleLayerRatio = DOG_SPECIAL_MECHANISM_MIDDLE_LAYER_RATIO,
+  densityLimit = DOG_SPECIAL_MECHANISM_DENSITY_LIMIT,
 ): string | undefined {
   if (!Number.isSafeInteger(maxLayers) || maxLayers < 1) {
     return "狗了个狗 special mechanism composition layer count is invalid";
@@ -459,8 +495,8 @@ export function validateDogSpecialMechanismComposition(
   if (composition.specialMechanismCount > 0 && composition.middleLayerRatio < minimumMiddleLayerRatio) {
     return "狗了个狗 special mechanism middle-layer ratio is below 70%";
   }
-  if (composition.specialMechanismDensity > DOG_SPECIAL_MECHANISM_DENSITY_LIMIT) {
-    return "狗了个狗 special mechanism density exceeds 6%";
+  if (composition.specialMechanismDensity > densityLimit) {
+    return `狗了个狗 special mechanism density exceeds ${densityLimit * 100}%`;
   }
   return undefined;
 }
@@ -566,7 +602,9 @@ export function assignDogSpecialMechanisms(
     throw new Error("狗了个狗 special mechanism has no legal middle-layer capacity");
   }
   if (logicalUnitCount > getDogLogicalBlockCount(blocks, configurations) * DOG_SPECIAL_MECHANISM_DENSITY_LIMIT) {
-    throw new Error("狗了个狗 special mechanism density exceeds 6%");
+    throw new Error(
+      `狗了个狗 special mechanism density exceeds ${getDensityLimitPercent()}%`,
+    );
   }
 
   const solvabilityCache = new Map<string, boolean>();
@@ -838,6 +876,10 @@ function resolveDensityWeight(configuration: DogSpecialMechanismConfig): number 
     throw new Error("狗了个狗 special mechanism density weight is invalid");
   }
   return weight;
+}
+
+function getDensityLimitPercent(): number {
+  return DOG_SPECIAL_MECHANISM_DENSITY_LIMIT * 100;
 }
 
 function isMiddleLayer(

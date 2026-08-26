@@ -591,7 +591,7 @@ describe("狗了个狗道具组选择", () => {
     launchContexts[0]?.onResult?.(result);
     root.querySelector<HTMLButtonElement>('[data-action="edit-loadout"]')?.click();
     expect(root.textContent).toContain("新道具组将在第 6 关生效");
-    expect(root.querySelector('[data-loadout-id="demagnetizer"] small')?.textContent).toBe("本关 3 次");
+    expect(root.querySelector('[data-loadout-id="demagnetizer"] small')?.textContent).toBe("本关 1 次");
     root.querySelector<HTMLButtonElement>('[data-loadout-id="triple-removal"]')?.click();
     root.querySelector<HTMLButtonElement>('[data-loadout-id="torch"]')?.click();
     root.querySelector<HTMLButtonElement>('[data-action="confirm-loadout"]')?.click();
@@ -1142,12 +1142,13 @@ describe("注册与游戏目录 UI", () => {
     confirmDogLoadout(root);
 
     const selectedPatterns: string[] = [];
-    for (let selectionNumber = 0; selectionNumber < 7; selectionNumber += 1) {
+    for (let selectionNumber = 0; selectionNumber < 20 && root.querySelector('[data-view="game-result"]') === null; selectionNumber += 1) {
       const candidate = [...root.querySelectorAll<HTMLButtonElement>(
         '[data-testid="dog-block"]:not([disabled])',
       )].find((block) => {
         const patternType = block.dataset.patternType;
         return patternType !== undefined &&
+          block.dataset.specialMechanism === undefined &&
           selectedPatterns.filter((selected) => selected === patternType).length < 2;
       });
       expect(candidate).toBeDefined();

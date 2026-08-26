@@ -30,6 +30,8 @@ import {
   createDogSpecialMechanism,
   getBlockCount,
   getDogLogicalBlockCount,
+  getDogV13LogicalBlockCount,
+  getDogV13MechanismPlan,
   getDogSpecialMechanismComposition,
   getDogSpecialMechanismConfigs,
   validateDogSpecialMechanismComposition,
@@ -54,51 +56,15 @@ describe("狗了个狗特殊机制", () => {
     vi.useRealTimers();
   });
 
-  it("按四个关卡档位解析四种机制的独立数量范围", () => {
-    const expectedByStage = [
-      {
-        freeze: [1, 2],
-        illusion: [1, 2],
-        magnetic: [1, 2],
-        twin: [1, 2],
-      },
-      {
-        freeze: [2, 3],
-        illusion: [2, 3],
-        magnetic: [2, 3],
-        twin: [2, 3],
-      },
-      {
-        freeze: [2, 4],
-        illusion: [3, 4],
-        magnetic: [2, 4],
-        twin: [2, 4],
-      },
-      {
-        freeze: [3, 4],
-        illusion: [3, 5],
-        magnetic: [3, 4],
-        twin: [3, 4],
-      },
-    ] as const;
-
-    for (const [levelNumber, stageIndex] of [
-      [1, 0],
-      [5, 0],
-      [6, 1],
-      [15, 1],
-      [16, 2],
-      [30, 2],
-      [31, 3],
-      [99, 3],
-    ] as const) {
-      const expected = expectedByStage[stageIndex];
+  it("按 v13 逻辑预算解析四种机制的固定数量", () => {
+    for (const levelNumber of [1, 5, 6, 15, 16, 30, 31, 99]) {
+      const plan = getDogV13MechanismPlan(getDogV13LogicalBlockCount(levelNumber));
       const configs = getDogSpecialMechanismConfigs(levelNumber);
       expect(configs.map(({ type, min, max }) => [type, min, max])).toEqual([
-        ["freeze", ...expected.freeze],
-        ["illusion", ...expected.illusion],
-        ["magnetic", ...expected.magnetic],
-        ["twin", ...expected.twin],
+        ["freeze", plan.counts.freeze, plan.counts.freeze],
+        ["illusion", plan.counts.illusion, plan.counts.illusion],
+        ["magnetic", plan.counts.magnetic, plan.counts.magnetic],
+        ["twin", plan.counts.twin, plan.counts.twin],
       ]);
     }
 
@@ -594,9 +560,9 @@ describe("狗了个狗特殊机制", () => {
     }
   });
 
-  it("组合校验拒绝底层位置与超过六%的机制密度", () => {
+  it("组合校验拒绝底层位置与超过 30% 的机制密度", () => {
     const configurations = [
-      { type: DOG_FREEZE_MECHANISM_TYPE, min: 1, max: 1 },
+      { type: DOG_FREEZE_MECHANISM_TYPE, min: 1, max: 2 },
       { type: DOG_ILLUSION_MECHANISM_TYPE, min: 1, max: 1 },
     ] as const;
     const bottomBlock = {
@@ -611,10 +577,10 @@ describe("狗了个狗特殊机制", () => {
       ),
     ).toContain("base layer");
 
-    const denseBlocks = Array.from({ length: 10 }, (_, index) => ({
+    const denseBlocks = Array.from({ length: 5 }, (_, index) => ({
       ...createBlock(`dense-${index}`, index * BLOCK_WIDTH, 0, WORKING_DOG),
-      z: index === 0 ? 1 : 0,
-      ...(index === 0
+      z: index < 2 ? 1 : 0,
+      ...(index < 2
         ? { specialMechanism: createDogSpecialMechanism("freeze") }
         : {}),
     }));
@@ -623,14 +589,14 @@ describe("狗了个狗特殊机制", () => {
       3,
       [configurations[0]],
     );
-    expect(composition.specialMechanismDensity).toBe(0.1);
+    expect(composition.specialMechanismDensity).toBe(0.4);
     expect(
       validateDogSpecialMechanismComposition(
         denseBlocks,
         3,
         [configurations[0]],
       ),
-    ).toContain("6%");
+    ).toContain("30%");
   });
 
   it("幻化方块直接进入暂存槽时揭示真实图案并按真实图案三消", () => {
@@ -1611,19 +1577,14 @@ describe("狗了个狗特殊机制", () => {
       loadout: ["tray-capacity", "wildcard", "torch"],
     });
     const level = game.getState().level;
+    const selectableBefore = game.getState().session.selectableBlockIds;
     const twin = level.blocks.find(
-      (block) => block.specialMechanism?.type === DOG_TWIN_MECHANISM_TYPE,
+      (block) =>
+        block.specialMechanism?.type === DOG_TWIN_MECHANISM_TYPE &&
+        selectableBefore.includes(block.id),
     );
     if (twin === undefined) {
       throw new Error("Expected generated twin block");
-    }
-
-    for (const blockId of level.solutionPath) {
-      if (blockId === twin.id) {
-        break;
-      }
-      game.selectBlock(blockId);
-      await vi.runAllTimersAsync();
     }
 
     const boardBlock = root.querySelector<HTMLElement>(
@@ -1632,7 +1593,6 @@ describe("狗了个狗特殊机制", () => {
     expect(boardBlock?.classList.contains("dog-block--special-twin")).toBe(true);
     expect(boardBlock?.dataset.specialMechanismState).toBe(DOG_TWIN_MECHANISM_TYPE);
 
-    const selectableBefore = game.getState().session.selectableBlockIds;
     game.selectBlock(twin.id);
 
     expect(game.getState().inputLocked).toBe(true);

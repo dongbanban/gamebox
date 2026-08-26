@@ -10,7 +10,11 @@ import type {
   DogLegeDogLevel,
   DogPatternType,
 } from "@/games/dog-lege-dog/levels/first-level";
-import { DOG_KEY_DROP_RATE } from "@/games/dog-lege-dog/game/game-config";
+import {
+  DOG_KEY_DROP_RATE,
+  DOG_V13_CONFIG,
+  getDogV13ItemUses,
+} from "@/games/dog-lege-dog/game/game-config";
 import {
   DOG_ITEM_DEFINITIONS,
   type DogItemDefinition,
@@ -458,10 +462,14 @@ export class DogItemRuntime {
 
 export function getDogItemUses(
   level: Pick<DogLegeDogLevel, "number"> &
-    Partial<Pick<DogLegeDogLevel, "specialMechanisms">>,
+    Partial<Pick<DogLegeDogLevel, "generatorVersion" | "specialMechanisms">>,
   itemId: DogItemId,
 ): number {
-  // Legacy adapter. v13 quota source is getDogV13ItemUses; runtime migration is ticket 27.
+  if ((level.generatorVersion ?? DOG_V13_CONFIG.game.generatorVersion) >= DOG_V13_CONFIG.game.generatorVersion) {
+    return getDogV13ItemUses(itemId);
+  }
+
+  // Legacy adapter. v13 quota comes from DOG_V13_CONFIG.
   if (itemId === "key") {
     return 0;
   }

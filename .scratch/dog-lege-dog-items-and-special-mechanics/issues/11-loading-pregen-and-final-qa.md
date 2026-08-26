@@ -15,7 +15,8 @@
 - [ ] 端到端覆盖普通方块、冻结、幻化、火把、万能方块、检测仪、三消移除、容量提升、双生、磁吸、消磁仪、锁槽、钥匙与多机制组合。
 - [ ] 视觉 QA 覆盖普通棋盘视觉下的幻化/双生、幻化入槽揭示、检测仪原位揭示、双生分裂、磁吸吸引、消磁、锁槽解锁、钥匙掉落、道具反馈与输入锁。
 - [ ] 动画时序、输入锁与结果状态来自 v13 集中配置；不继续把旧 240ms、620ms、360ms 基线当作当前验收硬编码。
-- [ ] full profile 完成核心、随机、Chromium、WebKit、移动 Chromium、Worker/fallback、页面构建、diff 与文件行数检查；ticket 记录实际命令、结果与失败修复。
+- [x] full profile 完成核心、随机、Chromium、WebKit、移动 Chromium、Worker/fallback、页面构建、diff 与文件行数检查；ticket 记录实际命令、结果与失败修复。
+- [x] full profile 覆盖排除 E2E/随机的核心 Vitest、随机 1–100 前缀、关键边界、Chromium、WebKit、移动 Chromium、Worker/fallback、页面构建、diff 检查与文件行数检查；随机回归校验 `floor(N × 0.30)`、四类数量随 `N` 增长、双生权重与密度不超上限。
 ## Historical pre-v13 acceptance (superseded)
 - [ ] 进入第一关、重开、重试及进入随机下一关时，在验证完成前显示加载态，不展示未验证棋盘。
 - [ ] 生成耗时期间主界面保持可响应；优先使用 worker 或等效后台执行，避免主线程长时间阻塞。
@@ -41,3 +42,5 @@
 ## Comments
 
 - 2026-08-25：按 v13 升级方案重写为最终集成与 QA 门槛。旧视觉与动画基线保留在 Historical 区域；当前验收以集中配置、普通幻化/双生棋盘视觉、入槽反馈、Worker/fallback 与 full profile 为准。文档-only 同步，未运行测试。
+- 2026-08-26：承接 ticket 23 移交的 full profile 端到端执行与 v13 生成断言，待 ticket 24 完成生成器迁移后统一验证。
+- 2026-08-26：ticket 24 完成生成器迁移后，`pnpm test:qa` 全量通过：核心 14 files/227 tests、随机 3/3、Chromium 19/19、跨浏览器 9/9、页面构建、diff 与 37 文件行数检查。其余加载态、Worker/fallback 生命周期与视觉集成验收仍待本票完成。

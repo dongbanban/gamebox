@@ -124,8 +124,8 @@ export class LevelGenerator {
   ): DogLegeDogLevel;
   generate(
     requestOrLevelNumber: LevelGeneratorRequest | number,
-    seed = DEFAULT_LEVEL_SEED,
-    generatorVersion = LEVEL_GENERATOR_VERSION,
+    seed?: string,
+    generatorVersion?: number,
   ): DogLegeDogLevel {
     if (typeof requestOrLevelNumber === "number") {
       return this.provider.generate(requestOrLevelNumber, seed, generatorVersion);

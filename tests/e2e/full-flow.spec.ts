@@ -252,6 +252,7 @@ async function findBrowserSolvablePath(page: Page): Promise<string[]> {
         specialMechanism:
           specialMechanism === "freeze" ||
           specialMechanism === "illusion" ||
+          specialMechanism === "magnetic" ||
           specialMechanism === "twin"
             ? specialMechanism
             : undefined,
@@ -261,11 +262,22 @@ async function findBrowserSolvablePath(page: Page): Promise<string[]> {
       };
     }),
   );
+  const runSeed = await page.getByTestId("dog-game").getAttribute("data-run-seed");
+  const trayCapacity = Number(
+    await page.getByTestId("dog-tray").getAttribute("data-effective-tray-capacity"),
+  );
+  if (runSeed === null || !Number.isSafeInteger(trayCapacity) || trayCapacity < 1) {
+    throw new Error("E2E could not read level seed or effective tray capacity");
+  }
 
-  return findIndependentSolvablePath(blocks);
+  return findIndependentSolvablePath(
+    blocks,
+    runSeed,
+    trayCapacity,
+  );
 }
 
-type BrowserSpecialMechanism = "freeze" | "illusion" | "twin";
+type BrowserSpecialMechanism = "freeze" | "illusion" | "magnetic" | "twin";
 
 interface BrowserBlock {
   readonly id: string;
@@ -285,6 +297,8 @@ interface BrowserTrayBlock {
 
 function findIndependentSolvablePath(
   blocks: readonly BrowserBlock[],
+  runSeed: string,
+  trayCapacity: number,
 ): string[] {
   const remaining = new Set(blocks.map((block) => block.id));
   const result = searchIndependentSolvability(
@@ -293,7 +307,9 @@ function findIndependentSolvablePath(
     [],
     [],
     new Set(),
-    { attempts: 0, maxAttempts: 4096 },
+    new BrowserSeededRandom(`${runSeed}:magnetic-target`),
+    trayCapacity,
+    { attempts: 0, maxAttempts: 100_000 },
   );
   if (result === undefined) {
     throw new Error("E2E could not find an independent solvable path");
@@ -308,6 +324,8 @@ function searchIndependentSolvability(
   tray: readonly BrowserTrayBlock[],
   path: readonly string[],
   failedStates: Set<string>,
+  magneticRandom: BrowserSeededRandom,
+  trayCapacity: number,
   context: { attempts: number; readonly maxAttempts: number },
 ): readonly string[] | undefined {
   if (remaining.size === 0) {
@@ -316,7 +334,7 @@ function searchIndependentSolvability(
 
   const stateKey = `${[...remaining].sort().join(",")}:${tray
     .map((block) => `${block.id}:${block.patternType}:${block.frozen}:${block.freezeProgress}`)
-    .join(",")}`;
+    .join(",")}:${magneticRandom.stateKey()}`;
   if (failedStates.has(stateKey)) {
     return undefined;
   }
@@ -342,47 +360,40 @@ function searchIndependentSolvability(
       return undefined;
     }
 
-    const nextRemaining = new Set(remaining);
-    nextRemaining.delete(block.id);
-    const nextTray = tray.map((trayBlock) => ({ ...trayBlock }));
-    const trayBlocks = block.specialMechanism === "twin"
-      ? [
-          {
-            id: `${block.id}-1`,
-            patternType: block.patternType,
-            frozen: false,
-            freezeProgress: 0,
-          },
-          {
-            id: `${block.id}-2`,
-            patternType: block.patternType,
-            frozen: false,
-            freezeProgress: 0,
-          },
-        ]
-      : [
-          {
-            id: block.id,
-            patternType: block.patternType,
-            frozen: block.specialMechanism === "freeze",
-            freezeProgress: 0,
-          },
-        ];
-    nextTray.push(...trayBlocks);
-    resolveIndependentTrayMatches(
-      nextTray,
-      nextRemaining.size === 0 && canResolveAllIndependentTrayBlocks(nextTray),
+    const resolution = resolveIndependentSelection(
+      blocks,
+      block,
+      remaining,
+      tray,
+      magneticRandom,
     );
-    if (nextTray.length >= 7 && nextRemaining.size > 0) {
+    resolveIndependentTrayMatches(
+      resolution.tray,
+      resolution.remaining.size === 0 && canResolveAllIndependentTrayBlocks(resolution.tray),
+    );
+    if (
+      resolution.tray.length > trayCapacity ||
+      (resolution.tray.length === trayCapacity &&
+        resolution.remaining.size > 0 &&
+        !hasCapacityRelievingSelection(
+          blocks,
+          resolution.remaining,
+          resolution.tray,
+          resolution.magneticRandom,
+          trayCapacity,
+        ))
+    ) {
       continue;
     }
 
     const result = searchIndependentSolvability(
       blocks,
-      nextRemaining,
-      nextTray,
+      resolution.remaining,
+      resolution.tray,
       [...path, block.id],
       failedStates,
+      resolution.magneticRandom,
+      trayCapacity,
       context,
     );
     if (result !== undefined) {
@@ -392,6 +403,140 @@ function searchIndependentSolvability(
 
   failedStates.add(stateKey);
   return undefined;
+}
+
+interface IndependentSelectionResolution {
+  readonly remaining: Set<string>;
+  readonly tray: BrowserTrayBlock[];
+  readonly magneticRandom: BrowserSeededRandom;
+}
+
+function resolveIndependentSelection(
+  blocks: readonly BrowserBlock[],
+  selectedBlock: BrowserBlock,
+  remaining: ReadonlySet<string>,
+  tray: readonly BrowserTrayBlock[],
+  magneticRandom: BrowserSeededRandom,
+): IndependentSelectionResolution {
+  const nextRemaining = new Set(remaining);
+  nextRemaining.delete(selectedBlock.id);
+  const nextTray = tray.map((trayBlock) => ({ ...trayBlock }));
+  const nextMagneticRandom = magneticRandom.clone();
+  const target = selectedBlock.specialMechanism === "magnetic"
+    ? chooseIndependentMagneticTarget(
+        blocks,
+        selectedBlock,
+        nextRemaining,
+        nextMagneticRandom,
+      )
+    : undefined;
+  if (target !== undefined) {
+    nextRemaining.delete(target.id);
+  }
+
+  nextTray.push(...toIndependentTrayBlocks(selectedBlock));
+  if (target !== undefined) {
+    nextTray.push(...toIndependentTrayBlocks(target));
+  }
+  return {
+    remaining: nextRemaining,
+    tray: nextTray,
+    magneticRandom: nextMagneticRandom,
+  };
+}
+
+function toIndependentTrayBlocks(
+  block: BrowserBlock,
+): BrowserTrayBlock[] {
+  if (block.specialMechanism === "twin") {
+    return [
+      {
+        id: `${block.id}-1`,
+        patternType: block.patternType,
+        frozen: false,
+        freezeProgress: 0,
+      },
+      {
+        id: `${block.id}-2`,
+        patternType: block.patternType,
+        frozen: false,
+        freezeProgress: 0,
+      },
+    ];
+  }
+  return [
+    {
+      id: block.id,
+      patternType: block.patternType,
+      frozen: block.specialMechanism === "freeze",
+      freezeProgress: 0,
+    },
+  ];
+}
+
+function chooseIndependentMagneticTarget(
+  blocks: readonly BrowserBlock[],
+  source: BrowserBlock,
+  remaining: ReadonlySet<string>,
+  magneticRandom: BrowserSeededRandom,
+): BrowserBlock | undefined {
+  const candidates = blocks.filter((block) =>
+    remaining.has(block.id) &&
+    block.specialMechanism !== "magnetic" &&
+    block.patternType !== source.patternType,
+  );
+  if (candidates.length === 0) {
+    return undefined;
+  }
+
+  const selectableCandidates = candidates.filter((block) =>
+    isIndependentSelectable(blocks, block, remaining),
+  );
+  const candidatePool = selectableCandidates.length > 0
+    ? selectableCandidates
+    : candidates;
+  return candidatePool[magneticRandom.nextInt(candidatePool.length)];
+}
+
+function isIndependentSelectable(
+  blocks: readonly BrowserBlock[],
+  block: BrowserBlock,
+  remaining: ReadonlySet<string>,
+): boolean {
+  return !blocks.some((higher) =>
+    remaining.has(higher.id) &&
+    higher.z > block.z &&
+    overlaps(higher, block),
+  );
+}
+
+function hasCapacityRelievingSelection(
+  blocks: readonly BrowserBlock[],
+  remaining: ReadonlySet<string>,
+  tray: readonly BrowserTrayBlock[],
+  magneticRandom: BrowserSeededRandom,
+  trayCapacity: number,
+): boolean {
+  for (const block of blocks) {
+    if (!remaining.has(block.id) || !isIndependentSelectable(blocks, block, remaining)) {
+      continue;
+    }
+    const resolution = resolveIndependentSelection(
+      blocks,
+      block,
+      remaining,
+      tray,
+      magneticRandom,
+    );
+    resolveIndependentTrayMatches(
+      resolution.tray,
+      resolution.remaining.size === 0 && canResolveAllIndependentTrayBlocks(resolution.tray),
+    );
+    if (resolution.tray.length <= trayCapacity) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function overlaps(first: BrowserBlock, second: BrowserBlock): boolean {
@@ -498,6 +643,43 @@ function canResolveAllIndependentTrayBlocks(
   }
 
   return true;
+}
+
+class BrowserSeededRandom {
+  private state: number;
+
+  constructor(seed: string) {
+    this.state = hashBrowserSeed(seed);
+  }
+
+  next(): number {
+    this.state = Math.imul(this.state ^ (this.state >>> 15), 1 | this.state);
+    this.state ^= this.state + Math.imul(this.state ^ (this.state >>> 7), 61 | this.state);
+    return ((this.state ^ (this.state >>> 14)) >>> 0) / 4_294_967_296;
+  }
+
+  nextInt(maxExclusive: number): number {
+    return Math.floor(this.next() * maxExclusive);
+  }
+
+  clone(): BrowserSeededRandom {
+    const clone = new BrowserSeededRandom("clone");
+    clone.state = this.state;
+    return clone;
+  }
+
+  stateKey(): string {
+    return this.state.toString(36);
+  }
+}
+
+function hashBrowserSeed(seed: string): number {
+  let hash = 2_166_136_261;
+  for (let index = 0; index < seed.length; index += 1) {
+    hash ^= seed.charCodeAt(index);
+    hash = Math.imul(hash, 16_777_619);
+  }
+  return hash || 1;
 }
 
 async function leaveActiveGame(page: Page, accept: boolean): Promise<void> {

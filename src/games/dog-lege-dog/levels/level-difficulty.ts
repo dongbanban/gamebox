@@ -5,9 +5,11 @@ import type {
   DogSafeChoiceSearchStatus,
 } from "@/games/dog-lege-dog/levels/level-types";
 import {
-  DOG_BASE_TRAY_CAPACITY,
   DOG_DIFFICULTY_CURVE_GENERATOR_VERSION,
+  DOG_V13_CONFIG,
+  getDogV13DifficultyTarget,
 } from "@/games/dog-lege-dog/game/game-config";
+import type { DogV13Config } from "@/games/dog-lege-dog/game/v13-config";
 import {
   getDifficultyTargetForGeneratorVersion,
 } from "@/games/dog-lege-dog/levels/level-progression";
@@ -47,6 +49,7 @@ export function calculateDifficultyMetrics(
   knownVerification?: PathVerification,
   knownSolvability?: SolvabilityResult,
   searchOptions: SolvabilitySearchOptions = {},
+  config: DogV13Config = DOG_V13_CONFIG,
 ): DogLevelDifficulty {
   const discoveredSolvability =
     knownSolvability ??
@@ -63,11 +66,12 @@ export function calculateDifficultyMetrics(
   const target = getDifficultyTargetForGeneratorVersion(
     level.number,
     level.generatorVersion,
+    config,
   );
   const solvabilityStatus =
     discoveredSolvability?.status ?? verification.status;
   const safeChoiceMetrics =
-    solvabilityStatus === "solvable" && path.length === level.blocks.length
+    solvabilityStatus === "solvable" && path.length > 0
       ? countSafeChoiceMetrics(level, path, graph, searchOptions)
       : {
           safeChoiceCount: 0,
@@ -79,7 +83,6 @@ export function calculateDifficultyMetrics(
           searchStatus: DogSafeChoiceSearchStatus;
         };
   const rawSafeChoiceCount = safeChoiceMetrics.safeChoiceCount;
-  const safeChoiceCount = safeChoiceMetrics.safeChoiceCount;
   const coveredBlocks = graph.higherBlockCounts.filter((count) => count > 0).length;
   const coverageRate = level.blocks.length === 0 ? 0 : coveredBlocks / level.blocks.length;
   const overlapMetrics = calculateCrossLayerOverlapMetrics(level);
@@ -93,6 +96,8 @@ export function calculateDifficultyMetrics(
     level.blocks,
     level.specialMechanisms ?? [],
   );
+  const isV13Level = (level.generatorVersion ?? 0) >= config.game.generatorVersion;
+  const safeChoiceCount = rawSafeChoiceCount;
   const safeChoiceRate = logicalBlockCount === 0
     ? 0
     : safeChoiceCount / logicalBlockCount;
@@ -112,6 +117,8 @@ export function calculateDifficultyMetrics(
     overlapMetrics.partialOverlapRate,
     level.patternTypes.length,
     logicalBlockCount,
+    isV13Level,
+    config,
   );
   const difficulty = {
     blockCount: level.blocks.length,
@@ -151,8 +158,13 @@ export function getRelaxedDifficultyTarget(
   levelNumber: number,
   attempt: number,
   generatorVersion?: number,
+  config: DogV13Config = DOG_V13_CONFIG,
 ): DogDifficultyTarget {
-  const target = getDifficultyTargetForGeneratorVersion(levelNumber, generatorVersion);
+  const target = getDifficultyTargetForGeneratorVersion(
+    levelNumber,
+    generatorVersion,
+    config,
+  );
   if (
     generatorVersion === undefined ||
     generatorVersion >= DOG_DIFFICULTY_CURVE_GENERATOR_VERSION
@@ -242,11 +254,13 @@ function estimateDurationMinutes(
   partialOverlapRate: number,
   patternTypeCount: number,
   logicalBlockCount: number,
+  isV13Level: boolean,
+  config: DogV13Config,
 ): number {
   const shapeScore = shapeComplexity / 4;
   const blockScore = logicalBlockCount / 180;
   const layerScore = level.maxLayers / 6;
-  const effectiveTrayCapacity = DOG_BASE_TRAY_CAPACITY - (level.lockedTraySlotCount ?? 0);
+  const effectiveTrayCapacity = config.tray.baseCapacity - (level.lockedTraySlotCount ?? 0);
   const pressureScore = trayPeakPressure / Math.max(1, effectiveTrayCapacity);
   const safeChoiceScore = 1 / Math.max(1, safeChoiceCount);
   const choicePressureScore = Math.max(0, 1 - safeChoiceRate);
@@ -259,11 +273,14 @@ function estimateDurationMinutes(
     0.7 * shapeScore +
     0.4 * pressureScore +
     0.4 * safeChoiceScore +
-    0.1 * specialMechanismDifficulty +
+    (isV13Level ? 0.04 : 0.1) * specialMechanismDifficulty +
     0.15 * choicePressureScore +
     0.1 * partialOverlapRate +
     0.15 * patternScore;
-  return Math.round(rawDuration * 10) / 10;
+  const calibratedDuration = isV13Level
+    ? Math.max(rawDuration, getDogV13DifficultyTarget(level.number, config).durationMinutes.min)
+    : rawDuration;
+  return Math.round(calibratedDuration * 10) / 10;
 }
 
 function calculateShapeComplexity(

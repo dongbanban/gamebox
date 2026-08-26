@@ -3,6 +3,7 @@ import {
   DOG_FREEZE_MECHANISM_TYPE,
   DOG_ILLUSION_MECHANISM_TYPE,
   DOG_MAGNETIC_MECHANISM_TYPE,
+  DOG_SPECIAL_MECHANISM_GENERATOR_VERSION,
   FIRST_LEVEL,
   GameSession,
   type DogBlock,
@@ -31,6 +32,7 @@ describe("DogItemRuntime", () => {
     const baseLevel = {
       ...FIRST_LEVEL,
       number: 1,
+      generatorVersion: DOG_SPECIAL_MECHANISM_GENERATOR_VERSION,
       specialMechanisms: [
         { type: DOG_FREEZE_MECHANISM_TYPE, min: 1, max: 2 },
         { type: DOG_ILLUSION_MECHANISM_TYPE, min: 1, max: 2 },
@@ -554,6 +556,10 @@ describe("DogItemRuntime", () => {
         createBlock("single-cover-2", SINGLE_DOG, undefined, { x: 8, z: 1 }),
       ]),
       number: 2,
+      generatorVersion: DOG_SPECIAL_MECHANISM_GENERATOR_VERSION,
+      specialMechanisms: [
+        { type: DOG_FREEZE_MECHANISM_TYPE, min: 1, max: 2 },
+      ],
     };
     const session = new GameSession({
       level,

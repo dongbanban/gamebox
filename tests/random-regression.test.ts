@@ -309,11 +309,19 @@ function assertStressLevel(level: DogLegeDogLevel): void {
     level.number === 1 ? 6 : getPatternTypeCount(level.number),
   );
   expect(level.board.shape).toBe("irregular");
-  expect(level.solutionPath).toHaveLength(level.blocks.length);
-  expect(new Set(level.solutionPath)).toHaveLength(level.blocks.length);
+  expect(level.solutionPath.length).toBeGreaterThan(0);
+  expect(level.solutionPath.length).toBeLessThanOrEqual(level.blocks.length);
+  expect(new Set(level.solutionPath)).toHaveLength(level.solutionPath.length);
   expect(findSolvability(level).status).toBe("solvable");
   expect(level.generation.attempts).toBeGreaterThanOrEqual(1);
   expect(level.generation.attempts).toBeLessThanOrEqual(100);
+
+  let state = loadedSession.getState();
+  for (const blockId of level.solutionPath) {
+    state = loadedSession.selectBlock(blockId);
+  }
+  expect(state.status).toBe("won");
+  expect(state.remainingBlocks).toEqual([]);
 }
 
 function assertReplayMetadata(level: DogLegeDogLevel): void {

@@ -1,8 +1,8 @@
 import {
-  DEFAULT_LEVEL_SEED,
   loadDogV13Config,
   LEVEL_GENERATOR_VERSION,
 } from "@/games/dog-lege-dog/game/game-config";
+import type { DogV13Config } from "@/games/dog-lege-dog/game/game-config";
 import { createRunSeed } from "@/games/dog-lege-dog/levels/level-random";
 import {
   GeneratedLevelGenerator,
@@ -30,10 +30,11 @@ import type {
 
 /** One deterministic level source for every level. */
 export class DogLevelProvider {
+  private readonly config: DogV13Config;
   private readonly generatedLevels: GeneratedLevelGenerator;
 
   constructor(options: LevelGeneratorOptions = {}) {
-    loadDogV13Config(options.config);
+    this.config = loadDogV13Config(options.config);
     this.generatedLevels = new GeneratedLevelGenerator(options);
   }
 
@@ -45,10 +46,14 @@ export class DogLevelProvider {
   ): DogLegeDogLevel;
   getLevel(
     requestOrLevelNumber: LevelGeneratorRequest | number,
-    seed = DEFAULT_LEVEL_SEED,
-    generatorVersion = LEVEL_GENERATOR_VERSION,
+    seed?: string,
+    generatorVersion?: number,
   ): DogLegeDogLevel {
-    const request = normalizeRequest(requestOrLevelNumber, seed, generatorVersion);
+    const request = normalizeRequest(
+      requestOrLevelNumber,
+      seed ?? this.config.game.defaultSeed,
+      generatorVersion ?? this.config.game.generatorVersion,
+    );
     validateRequest(request);
     return this.generatedLevels.generate(request);
   }
@@ -61,8 +66,8 @@ export class DogLevelProvider {
   ): DogLegeDogLevel;
   generate(
     requestOrLevelNumber: LevelGeneratorRequest | number,
-    seed = DEFAULT_LEVEL_SEED,
-    generatorVersion = LEVEL_GENERATOR_VERSION,
+    seed?: string,
+    generatorVersion?: number,
   ): DogLegeDogLevel {
     if (typeof requestOrLevelNumber === "number") {
       return this.generatedLevels.generate(requestOrLevelNumber, seed, generatorVersion);

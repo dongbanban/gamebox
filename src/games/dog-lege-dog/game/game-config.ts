@@ -39,8 +39,7 @@ export type {
 } from "@/games/dog-lege-dog/game/v13-config";
 
 const GAME_ID = DOG_V13_CONFIG.game.id;
-// Legacy adapter. Ticket 24 will move the generator to DOG_V13_CONFIG.game.generatorVersion.
-const GENERATOR_VERSION = 12 as const;
+const GENERATOR_VERSION = DOG_V13_CONFIG.game.generatorVersion;
 export const MAX_LEVEL_NUMBER = DOG_V13_CONFIG.game.maxLevelNumber;
 export const DOG_BASE_TRAY_CAPACITY = DOG_V13_CONFIG.tray.baseCapacity;
 export const DOG_MAX_LOCKED_TRAY_SLOTS = DOG_V13_CONFIG.tray.maxLockedSlotCount;

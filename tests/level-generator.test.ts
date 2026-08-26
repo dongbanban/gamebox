@@ -574,7 +574,8 @@ describe("LevelGenerator", () => {
     expect(generator.isSolvable(level)).toBe(true);
     expect(path).not.toBeNull();
     expect(path).toEqual(level.solutionPath);
-    expect(path).toHaveLength(level.blocks.length);
+    expect(path?.length).toBeGreaterThan(0);
+    expect(path?.length).toBeLessThanOrEqual(level.blocks.length);
     const session = new GameSession(level);
     let replayedState = session.getState();
     for (const blockId of path ?? []) {

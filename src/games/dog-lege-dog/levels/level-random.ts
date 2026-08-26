@@ -1,14 +1,18 @@
-import {
-  DOG_MAX_LOCKED_TRAY_SLOTS,
-  DOG_TRAY_LOCKS_GENERATOR_VERSION,
-} from "@/games/dog-lege-dog/game/game-config";
+import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
+import type { DogV13Config } from "@/games/dog-lege-dog/game/v13-config";
 
-export function getDogTrayLockCount(runSeed: string, generatorVersion: number): number {
-  if (generatorVersion < DOG_TRAY_LOCKS_GENERATOR_VERSION) {
+export function getDogTrayLockCount(
+  runSeed: string,
+  generatorVersion: number,
+  config: DogV13Config = DOG_V13_CONFIG,
+): number {
+  if (generatorVersion < config.game.generatorVersion) {
     return 0;
   }
 
-  return new SeededRandom(`${runSeed}:tray-lock-slot-count`).nextInt(DOG_MAX_LOCKED_TRAY_SLOTS + 1);
+  return new SeededRandom(`${runSeed}:tray-lock-slot-count`).nextInt(
+    config.tray.maxLockedSlotCount + 1,
+  );
 }
 
 export function getCandidateRandomSeed(
@@ -73,6 +77,16 @@ export class SeededRandom {
 
   nextInt(maxExclusive: number): number {
     return Math.floor(this.next() * maxExclusive);
+  }
+
+  clone(): SeededRandom {
+    const clone = new SeededRandom("clone");
+    clone.state = this.state;
+    return clone;
+  }
+
+  stateKey(): string {
+    return this.state.toString(36);
   }
 
   shuffle<T>(values: T[]): T[] {

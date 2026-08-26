@@ -413,9 +413,12 @@ export function loadDogV13Config(input: unknown = DOG_V13_CONFIG_SOURCE): DogV13
 
 export const DOG_V13_CONFIG = loadDogV13Config();
 
-export function getDogV13LevelStage(levelNumber: number): DogV13StructureStage {
-  validateLevelNumber(levelNumber, DOG_V13_CONFIG);
-  const stage = DOG_V13_CONFIG.levels.structureStages.find(
+export function getDogV13LevelStage(
+  levelNumber: number,
+  config: DogV13Config = DOG_V13_CONFIG,
+): DogV13StructureStage {
+  validateLevelNumber(levelNumber, config);
+  const stage = config.levels.structureStages.find(
     (candidate) => levelNumber >= candidate.minLevel && levelNumber <= candidate.maxLevel,
   );
   if (stage === undefined) {
@@ -424,9 +427,12 @@ export function getDogV13LevelStage(levelNumber: number): DogV13StructureStage {
   return { ...stage };
 }
 
-export function getDogV13LevelStageIndex(levelNumber: number): number {
-  validateLevelNumber(levelNumber, DOG_V13_CONFIG);
-  const stageIndex = DOG_V13_CONFIG.levels.structureStages.findIndex(
+export function getDogV13LevelStageIndex(
+  levelNumber: number,
+  config: DogV13Config = DOG_V13_CONFIG,
+): number {
+  validateLevelNumber(levelNumber, config);
+  const stageIndex = config.levels.structureStages.findIndex(
     (candidate) => levelNumber >= candidate.minLevel && levelNumber <= candidate.maxLevel,
   );
   if (stageIndex < 0) {
@@ -435,9 +441,15 @@ export function getDogV13LevelStageIndex(levelNumber: number): number {
   return stageIndex;
 }
 
-export function getDogV13LogicalBlockCount(levelNumber: number): number {
-  validateLevelNumber(levelNumber, DOG_V13_CONFIG);
-  const progression = DOG_V13_CONFIG.levels.logicalBlockCount;
+export function getDogV13LogicalBlockCount(
+  levelNumber: number,
+  configOrMapIndex: DogV13Config | number = DOG_V13_CONFIG,
+): number {
+  const config = typeof configOrMapIndex === "number"
+    ? DOG_V13_CONFIG
+    : configOrMapIndex;
+  validateLevelNumber(levelNumber, config);
+  const progression = config.levels.logicalBlockCount;
   return Math.min(
     progression.cap,
     progression.start +
@@ -445,11 +457,17 @@ export function getDogV13LogicalBlockCount(levelNumber: number): number {
   );
 }
 
-export function getDogV13SpecialMechanismBudget(logicalBlockCount: number): number {
+export function getDogV13SpecialMechanismBudget(
+  logicalBlockCount: number,
+  configOrMapIndex: DogV13Config | number = DOG_V13_CONFIG,
+): number {
+  const config = typeof configOrMapIndex === "number"
+    ? DOG_V13_CONFIG
+    : configOrMapIndex;
   if (!Number.isSafeInteger(logicalBlockCount) || logicalBlockCount < 0) {
     throw new Error("狗了个狗 v13 logical block count must be a non-negative integer");
   }
-  const { logicalBudgetRatio, budgetRounding } = DOG_V13_CONFIG.specialMechanisms;
+  const { logicalBudgetRatio, budgetRounding } = config.specialMechanisms;
   const budget = logicalBlockCount * logicalBudgetRatio;
   return budgetRounding === "floor" ? Math.floor(budget + Number.EPSILON) : budget;
 }
@@ -462,9 +480,15 @@ export interface DogV13MechanismPlan {
   readonly unallocatedLogicalUnitCount: number;
 }
 
-export function getDogV13MechanismPlan(logicalBlockCount: number): DogV13MechanismPlan {
-  const budget = getDogV13SpecialMechanismBudget(logicalBlockCount);
-  const definitions = DOG_V13_CONFIG.specialMechanisms.mechanisms;
+export function getDogV13MechanismPlan(
+  logicalBlockCount: number,
+  configOrMapIndex: DogV13Config | number = DOG_V13_CONFIG,
+): DogV13MechanismPlan {
+  const config = typeof configOrMapIndex === "number"
+    ? DOG_V13_CONFIG
+    : configOrMapIndex;
+  const budget = getDogV13SpecialMechanismBudget(logicalBlockCount, config);
+  const definitions = config.specialMechanisms.mechanisms;
   const counts = Object.fromEntries(
     definitions.map((definition) => [definition.type, 0]),
   ) as Record<DogV13MechanismType, number>;
@@ -472,7 +496,7 @@ export function getDogV13MechanismPlan(logicalBlockCount: number): DogV13Mechani
     (total, definition) => total + definition.logicalUnitWeight,
     0,
   );
-  if (DOG_V13_CONFIG.specialMechanisms.requireAllTypes && budget < requiredLogicalUnits) {
+  if (config.specialMechanisms.requireAllTypes && budget < requiredLogicalUnits) {
     throw new Error(
       `狗了个狗 v13 special mechanism budget ${budget} cannot include all mechanism types`,
     );
@@ -508,32 +532,40 @@ export function getDogV13MechanismPlan(logicalBlockCount: number): DogV13Mechani
   });
 }
 
-export function getDogV13DifficultyTarget(levelNumber: number): DogV13DifficultyTarget {
-  const stage = DOG_V13_CONFIG.difficulty.targets.find(
+export function getDogV13DifficultyTarget(
+  levelNumber: number,
+  config: DogV13Config = DOG_V13_CONFIG,
+): DogV13DifficultyTarget {
+  const stage = config.difficulty.targets.find(
     (candidate) => levelNumber >= candidate.minLevel && levelNumber <= candidate.maxLevel,
   );
   if (stage === undefined) {
-    validateLevelNumber(levelNumber, DOG_V13_CONFIG);
+    validateLevelNumber(levelNumber, config);
     throw new Error(`狗了个狗 v13 difficulty target is unavailable for level ${levelNumber}`);
   }
   return cloneAndFreeze(stage) as DogV13DifficultyTarget;
 }
 
-export function getDogV13ItemUses(itemId: DogV13ItemId): number {
-  if (!DOG_V13_CONFIG.items.ids.includes(itemId)) {
+export function getDogV13ItemUses(
+  itemId: DogV13ItemId,
+  config: DogV13Config = DOG_V13_CONFIG,
+): number {
+  if (!config.items.ids.includes(itemId)) {
     throw new Error(`狗了个狗 v13 item is not configured: ${itemId}`);
   }
-  return itemId === DOG_V13_CONFIG.items.key.id
-    ? DOG_V13_CONFIG.items.key.initialUses
-    : DOG_V13_CONFIG.items.maxSuccessfulUsesPerLevel;
+  return itemId === config.items.key.id
+    ? config.items.key.initialUses
+    : config.items.maxSuccessfulUsesPerLevel;
 }
 
 export function getDogTestProfile(
-  profileName: DogV13TestProfileName = DOG_V13_CONFIG.testProfiles.default,
+  profileName?: DogV13TestProfileName,
+  config: DogV13Config = DOG_V13_CONFIG,
 ): DogV13TestProfile {
-  const profile = DOG_V13_CONFIG.testProfiles.profiles[profileName];
+  const resolvedProfileName = profileName ?? config.testProfiles.default;
+  const profile = config.testProfiles.profiles[resolvedProfileName];
   if (profile === undefined) {
-    throw new Error(`狗了个狗 v13 test profile is unavailable: ${profileName}`);
+    throw new Error(`狗了个狗 v13 test profile is unavailable: ${resolvedProfileName}`);
   }
   return cloneAndFreeze(profile) as DogV13TestProfile;
 }

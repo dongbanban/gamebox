@@ -546,10 +546,12 @@ describe("狗了个狗首关", () => {
 
     const level = game.getState().level;
     const selectedPatterns: string[] = [];
-    for (let selectionNumber = 0; selectionNumber < 7; selectionNumber += 1) {
+    for (let selectionNumber = 0; selectionNumber < 20 && game.getState().status !== "lost"; selectionNumber += 1) {
       const candidateId = game.getState().session.selectableBlockIds.find((blockId) => {
-        const patternType = level.blocks.find((block) => block.id === blockId)?.patternType;
+        const block = level.blocks.find((candidate) => candidate.id === blockId);
+        const patternType = block?.patternType;
         return patternType !== undefined &&
+          block?.specialMechanism === undefined &&
           selectedPatterns.filter((selected) => selected === patternType).length < 2;
       });
       expect(candidateId).toBeDefined();
@@ -562,7 +564,7 @@ describe("狗了个狗首关", () => {
           `[data-testid="dog-block"][data-block-id="${candidateId}"]`,
         )
         ?.dispatchEvent(new Event("pointerup", { bubbles: true, cancelable: true }));
-      if (selectionNumber < 6) {
+      if (game.getState().status === "playing") {
         await vi.runAllTimersAsync();
       }
     }
@@ -644,7 +646,7 @@ describe("狗了个狗首关", () => {
     expect(
       root.querySelector('[data-testid="dog-special-mechanism"][data-special-mechanism="freeze"]'),
     ).not.toBeNull();
-    expect(root.querySelectorAll('[data-testid="dog-special-mechanism-thumbnail"]')).toHaveLength(3);
+    expect(root.querySelectorAll('[data-testid="dog-special-mechanism-thumbnail"]')).toHaveLength(4);
     const freezeThumbnail = root.querySelector<HTMLElement>(
       '[data-testid="dog-special-mechanism-thumbnail"][data-special-mechanism="freeze"]',
     );

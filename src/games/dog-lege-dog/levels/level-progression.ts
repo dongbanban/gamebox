@@ -1,8 +1,10 @@
 import type { DogDifficultyTarget } from "@/games/dog-lege-dog/levels/level-types";
+import type { DogV13Config } from "@/games/dog-lege-dog/game/v13-config";
 import {
   DOG_DIFFICULTY_CURVE_GENERATOR_VERSION,
+  DOG_V13_CONFIG,
+  getDogV13DifficultyTarget,
   LEVEL_GENERATOR_VERSION,
-  MAX_LEVEL_NUMBER,
   getDogV13LevelStage,
   getDogV13LevelStageIndex,
   getDogV13LogicalBlockCount,
@@ -133,17 +135,29 @@ const PREVIOUS_CURRENT_DIFFICULTY_TARGETS: readonly DogDifficultyTarget[] =
     }),
   );
 
-export function getBlockCount(levelNumber: number): number {
-  validateLevelNumber(levelNumber);
-  return getDogV13LogicalBlockCount(levelNumber);
+export function getBlockCount(
+  levelNumber: number,
+  configOrMapIndex: DogV13Config | number = DOG_V13_CONFIG,
+): number {
+  const config = resolveConfig(configOrMapIndex);
+  validateLevelNumber(levelNumber, config);
+  return getDogV13LogicalBlockCount(levelNumber, config);
 }
 
-export function getMaxLayers(levelNumber: number): number {
-  return getDogV13LevelStage(levelNumber).maxLayers;
+export function getMaxLayers(
+  levelNumber: number,
+  configOrMapIndex: DogV13Config | number = DOG_V13_CONFIG,
+): number {
+  const config = resolveConfig(configOrMapIndex);
+  return getDogV13LevelStage(levelNumber, config).maxLayers;
 }
 
-export function getPatternTypeCount(levelNumber: number): number {
-  return getDogV13LevelStage(levelNumber).patternTypeCount;
+export function getPatternTypeCount(
+  levelNumber: number,
+  configOrMapIndex: DogV13Config | number = DOG_V13_CONFIG,
+): number {
+  const config = resolveConfig(configOrMapIndex);
+  return getDogV13LevelStage(levelNumber, config).patternTypeCount;
 }
 
 export function getDifficultyTarget(levelNumber: number): DogDifficultyTarget {
@@ -153,11 +167,23 @@ export function getDifficultyTarget(levelNumber: number): DogDifficultyTarget {
 export function getDifficultyTargetForGeneratorVersion(
   levelNumber: number,
   generatorVersion: number | undefined,
+  config: DogV13Config = DOG_V13_CONFIG,
 ): DogDifficultyTarget {
-  validateLevelNumber(levelNumber);
+  validateLevelNumber(levelNumber, config);
+  if (
+    generatorVersion !== undefined &&
+    generatorVersion >= config.game.generatorVersion
+  ) {
+    const target = getDogV13DifficultyTarget(levelNumber, config);
+    return {
+      safeChoiceCount: { ...target.safeChoiceCount },
+      safeChoiceRate: { ...target.safeChoiceRate },
+      durationMinutes: { ...target.durationMinutes },
+    };
+  }
   const target = generatorVersion !== undefined &&
       generatorVersion < DOG_DIFFICULTY_CURVE_GENERATOR_VERSION
-    ? LEGACY_DIFFICULTY_TARGETS[getProgressStage(levelNumber)]
+    ? LEGACY_DIFFICULTY_TARGETS[getProgressStage(levelNumber, config)]
     : getCurrentDifficultyTarget(
         levelNumber,
         generatorVersion !== undefined && generatorVersion < LEVEL_GENERATOR_VERSION
@@ -196,19 +222,29 @@ function getCurrentDifficultyTarget(
   return target;
 }
 
-export function getProgressStage(levelNumber: number): ProgressStage {
-  validateLevelNumber(levelNumber);
-  return getDogV13LevelStageIndex(levelNumber) as ProgressStage;
+export function getProgressStage(
+  levelNumber: number,
+  config: DogV13Config = DOG_V13_CONFIG,
+): ProgressStage {
+  validateLevelNumber(levelNumber, config);
+  return getDogV13LevelStageIndex(levelNumber, config) as ProgressStage;
 }
 
-function validateLevelNumber(levelNumber: number): void {
+function validateLevelNumber(
+  levelNumber: number,
+  config: DogV13Config = DOG_V13_CONFIG,
+): void {
   if (
     !Number.isSafeInteger(levelNumber) ||
     levelNumber < 1 ||
-    levelNumber > MAX_LEVEL_NUMBER
+    levelNumber > config.game.maxLevelNumber
   ) {
     throw new Error(
-      `狗了个狗 level number must be an integer from 1 to ${MAX_LEVEL_NUMBER}`,
+      `狗了个狗 level number must be an integer from 1 to ${config.game.maxLevelNumber}`,
     );
   }
+}
+
+function resolveConfig(configOrMapIndex: DogV13Config | number): DogV13Config {
+  return typeof configOrMapIndex === "number" ? DOG_V13_CONFIG : configOrMapIndex;
 }

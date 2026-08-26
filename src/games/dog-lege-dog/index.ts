@@ -179,6 +179,17 @@ export type {
   DogSpecialMechanismAssignmentOptions,
   DogSpecialMechanismComposition,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
+export {
+  assignDogV13SpecialMechanisms,
+} from "@/games/dog-lege-dog/levels/level-mechanism-assignment";
+export {
+  chooseDogMagneticTargetIndex,
+  createDogMagneticRandom,
+  resolveDogSelection,
+} from "@/games/dog-lege-dog/levels/level-mechanism-resolution";
+export type {
+  DogSelectionResolution,
+} from "@/games/dog-lege-dog/levels/level-mechanism-resolution";
 
 export {
   DOG_ITEM_DEFINITIONS,

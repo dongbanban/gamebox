@@ -164,6 +164,8 @@ export interface DogLevelGeometry {
   readonly number: number;
   /** Optional for hand-built test geometry; generated levels always provide it. */
   readonly generatorVersion?: number;
+  /** Seed used by deterministic mechanism resolution; generated levels always provide it. */
+  readonly runSeed?: string;
   /** Number of rightmost tray slots that start locked for this run. */
   readonly lockedTraySlotCount?: number;
   readonly maxLayers: number;

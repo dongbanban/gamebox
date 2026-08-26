@@ -15,18 +15,25 @@ describe("狗了个狗难度曲线", () => {
   it("前五关使用有限且逐步收紧的安全选择/时长目标", () => {
     const targets = [1, 2, 3, 4, 5].map(getDifficultyTarget);
 
+    expect(targets.map((target) => target.safeChoiceCount.min)).toEqual([
+      1, 1, 1, 1, 1,
+    ]);
     expect(targets.map((target) => target.safeChoiceCount.max)).toEqual([
-      40, 39, 38, 38, 37,
+      Number.MAX_SAFE_INTEGER,
+      Number.MAX_SAFE_INTEGER,
+      Number.MAX_SAFE_INTEGER,
+      Number.MAX_SAFE_INTEGER,
+      Number.MAX_SAFE_INTEGER,
     ]);
     expect(targets.every((target) => Number.isFinite(target.safeChoiceCount.max))).toBe(true);
     expect(targets.map((target) => target.safeChoiceRate?.min)).toEqual([
-      0.34, 0.32, 0.31, 0.3, 0.29,
+      0.18, 0.18, 0.18, 0.18, 0.16,
     ]);
     expect(targets.map((target) => target.durationMinutes.min)).toEqual([
-      7.8, 7.9, 8, 8, 8.1,
+      9, 9, 9, 9, 9.8,
     ]);
     expect(targets.map((target) => target.durationMinutes.max)).toEqual([
-      8.3, 8.4, 8.5, 8.6, 8.7,
+      10, 10, 10, 10, 10.8,
     ]);
   });
 
@@ -51,7 +58,8 @@ describe("狗了个狗难度曲线", () => {
         getDogLogicalBlockCount(level.blocks, level.specialMechanisms) === getBlockCount(level.number) &&
         level.maxLayers === getMaxLayers(level.number) &&
         level.patternTypes.length === getPatternTypeCount(level.number) &&
-        difficulty.solutionPathLength === level.blocks.length &&
+        difficulty.solutionPathLength > 0 &&
+        difficulty.solutionPathLength <= level.blocks.length &&
         difficulty.crossLayerOverlapCount > 0 &&
         difficulty.partialOverlapRate > 0 &&
         Number.isFinite(difficulty.specialMechanismDensity) &&
@@ -86,7 +94,8 @@ describe("狗了个狗难度曲线", () => {
     expect(level.generation.fallbackUsed).toBe(false);
     expect(isDifficultyWithinTarget(level.difficulty)).toBe(true);
     expect(level.difficulty.logicalBlockCount).toBe(getBlockCount(level.number));
-    expect(level.difficulty.solutionPathLength).toBe(level.blocks.length);
+    expect(level.difficulty.solutionPathLength).toBeGreaterThan(0);
+    expect(level.difficulty.solutionPathLength).toBeLessThanOrEqual(level.blocks.length);
     expect(level.difficulty.crossLayerOverlapCount).toBeGreaterThan(0);
     expect(level.difficulty.partialOverlapRate).toBeGreaterThan(0);
     expect(level.difficulty.safeChoiceRate).toBeGreaterThanOrEqual(

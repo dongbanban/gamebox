@@ -67,6 +67,7 @@ export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameSta
       class="dog-game"
       data-testid="dog-game"
       data-game-id="${state.gameId}"
+      data-run-seed=""
       data-input-locked="${state.inputLocked}"
       data-feedback="${state.feedback}"
     >
@@ -130,6 +131,10 @@ export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameSta
       <div class="dog-animation-layer" data-testid="dog-animation-layer"></div>
     </section>
   `;
+  const createdGame = gameRoot.querySelector<HTMLElement>('[data-testid="dog-game"]');
+  if (createdGame !== null) {
+    createdGame.dataset.runSeed = state.level.runSeed;
+  }
   fitDogBoardToFrame(gameRoot);
 }
 
@@ -153,6 +158,7 @@ function updateDogLegeDogGame(
 
   gameRoot.dataset.inputLocked = String(state.inputLocked);
   gameRoot.dataset.feedback = state.feedback;
+  gameRoot.dataset.runSeed = state.level.runSeed;
 
   if (statusElement !== null) {
     statusElement.className = `dog-game__status dog-game__status--${state.session.status}`;
