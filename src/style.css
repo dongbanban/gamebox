@@ -1424,7 +1424,6 @@ h2 {
   isolation: isolate;
   overflow: visible;
   opacity: 0.76;
-  filter: saturate(0.72) contrast(0.94);
 }
 
 .dog-block--special-illusion .dog-block__glyph--fuzzy {
@@ -3368,8 +3367,8 @@ h2 {
   }
 
   .dog-loadout-option__icon {
-    width: 42px;
-    height: 42px;
+    width: 48px;
+    height: 48px;
     border-radius: 12px;
     font-size: 18px;
   }
