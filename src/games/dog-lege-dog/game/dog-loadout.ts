@@ -181,12 +181,12 @@ export function renderDogLoadoutEditor({
         data-loadout-id="${item.id}"
         aria-pressed="${selected}"
       >
-        <span class="dog-loadout-option__icon" aria-hidden="true">${renderDogItemAsset(item.id)}</span>
-        <span class="dog-loadout-option__body">
+        <span class="dog-loadout-option__heading">
+          <span class="dog-loadout-option__icon" aria-hidden="true">${renderDogItemAsset(item.id)}</span>
           <strong>${item.name}</strong>
-          <span>${item.description}</span>
-          <small>${uses === undefined ? "次数按关卡规则初始化" : `本关 ${uses} 次`}</small>
         </span>
+        <span class="dog-loadout-option__description">${item.description}</span>
+        <small class="dog-loadout-option__uses">${uses === undefined ? "次数按关卡规则初始化" : `本关 ${uses} 次`}</small>
         <span class="dog-loadout-option__check" aria-hidden="true">${selected ? "✓" : ""}</span>
       </button>
     `;
@@ -207,7 +207,7 @@ export function renderDogLoadoutEditor({
       `
     : `
         <div class="dog-loadout-editor__actions">
-          <button class="text-button" type="button" data-action="cancel-loadout">${isChange ? "取消" : "清空"}</button>
+          <button class="text-button${isChange ? "" : " dog-loadout-editor__clear"}" type="button" data-action="cancel-loadout">${isChange ? "取消" : "清空"}</button>
           <button class="primary-button" type="button" data-action="confirm-loadout" data-testid="dog-loadout-confirm" ${canConfirm ? "" : "disabled"}>
             确认
           </button>

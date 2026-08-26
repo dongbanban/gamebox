@@ -599,12 +599,14 @@ h2 {
 }
 
 .dog-loadout-modal .dog-loadout {
+  --dog-loadout-panel-padding: 20px;
   position: relative;
   z-index: 1;
   width: min(100%, 900px);
   max-height: calc(100dvh - 48px);
   margin: 0;
   overflow-y: auto;
+  padding: var(--dog-loadout-panel-padding);
   box-shadow: 0 24px 70px rgba(22, 68, 93, 0.28);
 }
 
@@ -649,12 +651,13 @@ h2 {
 }
 
 .dog-loadout-option {
-  display: flex;
+  position: relative;
+  display: grid;
+  align-content: center;
+  grid-template-columns: minmax(0, 1fr);
   min-width: 0;
-  min-height: 92px;
-  flex-direction: row;
-  align-items: center;
-  gap: 12px;
+  min-height: 112px;
+  gap: 5px;
   padding: 12px;
   border: 1px solid rgba(22, 68, 93, 0.12);
   border-radius: 16px;
@@ -679,6 +682,13 @@ h2 {
   box-shadow: inset 0 0 0 2px rgba(79, 155, 192, 0.14);
 }
 
+.dog-loadout-option__heading {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+}
+
 .dog-loadout-option__icon {
   display: inline-grid;
   width: 48px;
@@ -701,21 +711,15 @@ h2 {
   object-fit: cover;
 }
 
-.dog-loadout-option__body {
-  display: flex;
+.dog-loadout-option__heading strong {
   min-width: 0;
-  flex: 1 1 auto;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.dog-loadout-option__body strong {
   font-size: 13px;
   line-height: 1.25;
 }
 
-.dog-loadout-option__body span,
-.dog-loadout-option__body small {
+.dog-loadout-option__description,
+.dog-loadout-option__uses {
+  min-width: 0;
   color: var(--ink-muted);
   font-size: 11px;
   line-height: 1.35;
@@ -735,6 +739,44 @@ h2 {
   justify-content: flex-end;
   gap: 14px;
   margin-top: 16px;
+}
+
+.dog-loadout-editor__actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  margin-right: calc(-1 * var(--dog-loadout-panel-padding, 20px));
+  margin-bottom: calc(-1 * var(--dog-loadout-panel-padding, 20px));
+  margin-left: calc(-1 * var(--dog-loadout-panel-padding, 20px));
+  padding: 12px var(--dog-loadout-panel-padding, 20px) var(--dog-loadout-panel-padding, 20px);
+  border-top: 1px solid rgba(79, 155, 192, 0.18);
+  background: #f2fbff;
+}
+
+.dog-loadout-editor__clear {
+  min-height: 42px;
+  padding: 10px 16px;
+  border: 1px solid var(--sky-deep);
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--sky-deep);
+}
+
+.dog-loadout-editor__clear:hover {
+  border-color: #2f7fae;
+  background: #f5fcff;
+  color: #2f7fae;
+}
+
+.dog-loadout-editor__actions > .text-button,
+.dog-loadout-editor__actions > .primary-button,
+.dog-loadout-confirmation__actions > .text-button,
+.dog-loadout-confirmation__actions > .primary-button {
+  flex: 0 0 72px;
+  width: 72px;
+  min-height: 44px;
+  height: 44px;
+  padding: 10px 12px;
 }
 
 .dog-loadout-confirmation {
@@ -1485,12 +1527,17 @@ h2 {
 .dog-block--special-magnetic::before {
   z-index: 2;
   inset: -2px;
-  border: 1px dashed rgba(255, 244, 208, 0.96);
+  border: 1px solid rgba(255, 244, 208, 0.88);
   border-radius: 13px;
   background:
     radial-gradient(circle at 28% 32%, rgba(255, 255, 255, 0.78) 0 2px, transparent 3px),
     radial-gradient(circle at 72% 68%, rgba(255, 232, 172, 0.8) 0 2px, transparent 3px),
-    repeating-linear-gradient(135deg, rgba(255, 247, 218, 0.24) 0 2px, transparent 2px 8px);
+    repeating-radial-gradient(
+      ellipse at center,
+      transparent 0 5px,
+      rgba(255, 247, 218, 0.26) 6px 7px,
+      transparent 8px 12px
+    );
   box-shadow:
     0 0 0 1px rgba(255, 204, 115, 0.48),
     0 0 8px 2px rgba(255, 153, 58, 0.42),
@@ -1499,25 +1546,27 @@ h2 {
   animation: dog-magnetic-field 1100ms linear infinite;
 }
 
-.dog-block--special-magnetic::after {
+.dog-block__mechanism-icon {
   position: absolute;
   z-index: 3;
-  right: -5px;
-  bottom: -5px;
+  pointer-events: none;
+}
+
+.dog-block__mechanism-icon--magnetic {
+  right: -4px;
+  bottom: -4px;
   display: grid;
-  width: 24px;
-  height: 24px;
+  width: 25px;
+  height: 25px;
   place-items: center;
-  border: 2px solid rgba(255, 244, 208, 0.96);
-  border-radius: 50%;
-  background: rgba(220, 105, 38, 0.94);
-  color: #fff8df;
-  content: "↗";
-  font-size: 15px;
+  color: #ffffff;
+  font-size: 18px;
   font-weight: 900;
   line-height: 1;
-  pointer-events: none;
-  text-shadow: 0 1px 0 rgba(22, 68, 93, 0.35);
+  text-shadow:
+    0 0 3px #e77831,
+    0 0 8px rgba(255, 183, 66, 0.86),
+    2px 3px 0 rgba(22, 68, 93, 0.3);
 }
 
 @keyframes dog-magnetic-pulse {
@@ -1541,18 +1590,18 @@ h2 {
 
 @keyframes dog-magnetic-field {
   0% {
-    transform: rotate(0deg) scale(0.96);
-    opacity: 0.58;
+    transform: scale(0.94);
+    opacity: 0.46;
   }
 
   50% {
-    transform: rotate(180deg) scale(1.04);
-    opacity: 1;
+    transform: scale(1.03);
+    opacity: 0.88;
   }
 
   100% {
-    transform: rotate(360deg) scale(0.96);
-    opacity: 0.58;
+    transform: scale(0.94);
+    opacity: 0.46;
   }
 }
 
@@ -1840,6 +1889,8 @@ h2 {
   .dog-block--special-magnetic,
   .dog-block--special-magnetic::before,
   .dog-magnetic-attraction-effect,
+  .dog-magnetic-attraction-effect__ring,
+  .dog-magnetic-attraction-effect__pulse,
   .dog-block--special-twin,
   .dog-block--special-twin::before,
   .dog-twin-split-effect,
@@ -2299,8 +2350,10 @@ h2 {
   box-shadow:
     0 0 0 5px rgba(255, 209, 102, 0.42),
     inset 0 0 30px rgba(255, 255, 255, 0.7);
+  contain: paint;
   pointer-events: none;
-  animation: dog-match-flash 620ms ease-out both;
+  will-change: opacity;
+  animation: dog-match-flash 420ms ease-out both;
 }
 
 .dog-match-effect::before {
@@ -2315,7 +2368,8 @@ h2 {
     transparent 72%
   );
   content: "";
-  animation: dog-match-glow 620ms ease-out both;
+  will-change: opacity, transform;
+  animation: dog-match-glow 420ms ease-out both;
 }
 
 .dog-match-effect__ring {
@@ -2327,7 +2381,8 @@ h2 {
   box-shadow:
     0 0 0 8px rgba(255, 209, 102, 0.32),
     0 0 34px rgba(255, 255, 255, 0.9);
-  animation: dog-match-ring 620ms cubic-bezier(0.16, 0.8, 0.3, 1) both;
+  will-change: opacity, transform;
+  animation: dog-match-ring 420ms cubic-bezier(0.16, 0.8, 0.3, 1) both;
 }
 
 .dog-match-effect::after {
@@ -2349,7 +2404,8 @@ h2 {
   line-height: 1;
   text-shadow: 0 2px 0 rgba(22, 68, 93, 0.28);
   transform: translate(-50%, -50%);
-  animation: dog-match-badge 620ms cubic-bezier(0.16, 0.8, 0.3, 1) both;
+  will-change: opacity, transform;
+  animation: dog-match-badge 420ms cubic-bezier(0.16, 0.8, 0.3, 1) both;
 }
 
 .dog-match-effect__spark {
@@ -2362,7 +2418,8 @@ h2 {
   background: linear-gradient(180deg, #fff, #ffd166);
   box-shadow: 0 0 12px rgba(255, 255, 255, 0.9);
   transform-origin: 50% 100%;
-  animation: dog-match-spark 620ms cubic-bezier(0.16, 0.8, 0.3, 1) both;
+  will-change: opacity, transform;
+  animation: dog-match-spark 420ms cubic-bezier(0.16, 0.8, 0.3, 1) both;
 }
 
 .dog-match-effect__spark--1 {
@@ -2655,41 +2712,144 @@ h2 {
 .dog-magnetic-attraction-effect {
   position: absolute;
   z-index: 52;
-  display: grid;
-  place-items: center;
-  border: 2px dashed rgba(255, 187, 88, 0.94);
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 209, 102, 0.3), transparent 68%);
-  box-shadow: 0 0 18px rgba(255, 135, 47, 0.64);
-  transform-origin: 0 0;
-  animation: dog-magnetic-attraction 360ms cubic-bezier(0.16, 0.8, 0.3, 1) both;
+  pointer-events: none;
+  transform-origin: 0 50%;
+  animation: dog-magnetic-attraction 360ms cubic-bezier(0.2, 0.86, 0.28, 1) both;
 }
 
-.dog-magnetic-attraction-effect__arrow {
+.dog-magnetic-attraction-effect__track {
   position: absolute;
-  left: 50%;
+  left: 0;
   top: 50%;
-  color: #fff4c8;
-  font-size: 28px;
-  font-weight: 900;
-  text-shadow: 0 0 8px rgba(255, 112, 38, 0.95);
+  width: 100%;
+  height: 3px;
+  border-radius: 999px;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(255, 244, 200, 0.12) 0 4px,
+    rgba(255, 176, 63, 0.86) 4px 8px,
+    transparent 8px 15px
+  );
+  box-shadow: 0 0 8px rgba(255, 135, 47, 0.72);
+  transform: translateY(-50%);
+}
+
+.dog-magnetic-attraction-effect__ring {
+  position: absolute;
+  top: 50%;
+  width: 22px;
+  height: 22px;
+  border: 2px solid rgba(255, 235, 176, 0.92);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 3px rgba(255, 166, 55, 0.2),
+    0 0 12px rgba(255, 135, 47, 0.68);
   transform: translate(-50%, -50%);
+  animation: dog-magnetic-ring 360ms ease-out both;
+}
+
+.dog-magnetic-attraction-effect__ring--source {
+  left: 0;
+}
+
+.dog-magnetic-attraction-effect__ring--target {
+  right: 0;
+  transform: translate(50%, -50%);
+}
+
+.dog-magnetic-attraction-effect__pulse {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 13px;
+  height: 13px;
+  border: 2px solid rgba(255, 248, 212, 0.96);
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(255, 135, 47, 0.88);
+  transform: translate(-50%, -50%) scale(0.5);
+  animation: dog-magnetic-pull 360ms cubic-bezier(0.16, 0.8, 0.3, 1) both;
+}
+
+.dog-magnetic-attraction-effect__pulse--1 {
+  animation-delay: 0ms;
+}
+
+.dog-magnetic-attraction-effect__pulse--2 {
+  animation-delay: 70ms;
+}
+
+.dog-magnetic-attraction-effect__pulse--3 {
+  animation-delay: 140ms;
 }
 
 @keyframes dog-magnetic-attraction {
   0% {
     opacity: 0;
-    transform: scale(0.42) rotate(-18deg);
+    transform: rotate(var(--dog-magnetic-angle, 0deg)) scaleX(0.08);
   }
 
-  35% {
+  20% {
     opacity: 1;
-    transform: scale(1.04) rotate(8deg);
+    transform: rotate(var(--dog-magnetic-angle, 0deg)) scaleX(0.72);
   }
 
   100% {
-    opacity: 0.12;
-    transform: translate3d(var(--dog-magnetic-delta-x), var(--dog-magnetic-delta-y), 0) scale(0.6) rotate(24deg);
+    opacity: 0;
+    transform: rotate(var(--dog-magnetic-angle, 0deg)) scaleX(1);
+  }
+}
+
+@keyframes dog-magnetic-ring {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.52);
+  }
+
+  28% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0.08;
+    transform: translate(-50%, -50%) scale(1.22);
+  }
+}
+
+.dog-magnetic-attraction-effect__ring--target {
+  animation-name: dog-magnetic-target-ring;
+}
+
+@keyframes dog-magnetic-target-ring {
+  0% {
+    opacity: 0;
+    transform: translate(50%, -50%) scale(0.52);
+  }
+
+  28% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0.08;
+    transform: translate(50%, -50%) scale(1.22);
+  }
+}
+
+@keyframes dog-magnetic-pull {
+  0% {
+    left: 0;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.48);
+  }
+
+  18% {
+    opacity: 1;
+  }
+
+  100% {
+    left: 100%;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.08);
   }
 }
 
@@ -3155,6 +3315,7 @@ h2 {
   }
 
   .dog-loadout-modal .dog-loadout {
+    --dog-loadout-panel-padding: 16px;
     width: 100%;
     max-height: calc(100dvh - 24px);
     padding: 16px;
@@ -3191,30 +3352,44 @@ h2 {
   }
 
   .dog-loadout__options {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 7px;
     margin-top: 10px;
   }
 
   .dog-loadout-option {
-    min-height: 76px;
+    min-height: 96px;
+    gap: 4px;
+    padding: 8px;
+  }
+
+  .dog-loadout-option__heading {
     gap: 6px;
-    padding: 9px;
   }
 
   .dog-loadout-option__icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 14px;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
     font-size: 18px;
   }
 
-  .dog-loadout-option__body strong {
+  .dog-loadout-option__heading strong {
+    padding-right: 14px;
+  }
+
+  .dog-loadout-option__check {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+  }
+
+  .dog-loadout-option__heading strong {
     font-size: 12px;
   }
 
-  .dog-loadout-option__body span,
-  .dog-loadout-option__body small {
+  .dog-loadout-option__description,
+  .dog-loadout-option__uses {
     font-size: 10px;
   }
 

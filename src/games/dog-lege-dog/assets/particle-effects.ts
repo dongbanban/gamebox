@@ -15,7 +15,7 @@ interface ParticleRun {
 }
 
 const EFFECT_DURATION: Record<ParticleEffect, number> = {
-  match: 620,
+  match: 420,
   won: 560,
   lost: 380,
 };
@@ -143,7 +143,7 @@ function resizeCanvas(canvas: HTMLCanvasElement): void {
 
 function createParticles(effect: ParticleEffect): Particle[] {
   const colors = EFFECT_COLORS[effect];
-  return Array.from({ length: effect === "match" ? 32 : effect === "won" ? 28 : 16 }, (_, index) => ({
+  return Array.from({ length: effect === "match" ? 20 : effect === "won" ? 28 : 16 }, (_, index) => ({
     x: 0.2 + ((index * 37) % 60) / 100,
     y: 0.32 + ((index * 19) % 25) / 100,
     velocityX: ((index % 7) - 3) * (effect === "match" ? 0.82 : 0.7),

@@ -126,22 +126,41 @@ export function animateDogMagneticAttractionEffect(
   effect.dataset.sourceId = options.sourceId;
   effect.dataset.targetId = options.targetId;
   effect.setAttribute("aria-hidden", "true");
-  effect.innerHTML = '<span class="dog-magnetic-attraction-effect__arrow">↗</span>';
+  effect.innerHTML = `
+    <span class="dog-magnetic-attraction-effect__track"></span>
+    <span class="dog-magnetic-attraction-effect__ring dog-magnetic-attraction-effect__ring--source"></span>
+    <span class="dog-magnetic-attraction-effect__ring dog-magnetic-attraction-effect__ring--target"></span>
+    <span class="dog-magnetic-attraction-effect__pulse dog-magnetic-attraction-effect__pulse--1"></span>
+    <span class="dog-magnetic-attraction-effect__pulse dog-magnetic-attraction-effect__pulse--2"></span>
+    <span class="dog-magnetic-attraction-effect__pulse dog-magnetic-attraction-effect__pulse--3"></span>
+  `;
   const layerRect = layer.getBoundingClientRect();
   const source = options.source;
   const target = options.target;
-  const sourceLeft = (source?.left ?? layerRect.left) - layerRect.left;
-  const sourceTop = (source?.top ?? layerRect.top) - layerRect.top;
-  const targetLeft = (target?.left ?? layerRect.left) - layerRect.left;
-  const targetTop = (target?.top ?? layerRect.top) - layerRect.top;
+  const sourceWidth = source?.width || 48;
+  const sourceHeight = source?.height || 48;
+  const targetWidth = target?.width || 48;
+  const targetHeight = target?.height || 48;
+  const sourceCenterLeft =
+    (source?.left ?? layerRect.left) - layerRect.left + sourceWidth / 2;
+  const sourceCenterTop =
+    (source?.top ?? layerRect.top) - layerRect.top + sourceHeight / 2;
+  const targetCenterLeft =
+    (target?.left ?? layerRect.left) - layerRect.left + targetWidth / 2;
+  const targetCenterTop =
+    (target?.top ?? layerRect.top) - layerRect.top + targetHeight / 2;
+  const deltaX = targetCenterLeft - sourceCenterLeft;
+  const deltaY = targetCenterTop - sourceCenterTop;
+  const distance = Math.hypot(deltaX, deltaY);
+  const angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
+  const effectHeight = 32;
   Object.assign(effect.style, {
-    left: `${Math.min(sourceLeft, targetLeft)}px`,
-    top: `${Math.min(sourceTop, targetTop)}px`,
-    width: `${Math.max(Math.abs(targetLeft - sourceLeft), 48)}px`,
-    height: `${Math.max(Math.abs(targetTop - sourceTop), 48)}px`,
-    "--dog-magnetic-delta-x": `${targetLeft - sourceLeft}px`,
-    "--dog-magnetic-delta-y": `${targetTop - sourceTop}px`,
+    left: `${sourceCenterLeft}px`,
+    top: `${sourceCenterTop - effectHeight / 2}px`,
+    width: `${Math.max(distance, 1)}px`,
+    height: `${effectHeight}px`,
   });
+  effect.style.setProperty("--dog-magnetic-angle", `${angle}deg`);
   layer.append(effect);
 
   return createAnimationLifecycle(DOG_MAGNETIC_ATTRACTION_DURATION_MS, () => {

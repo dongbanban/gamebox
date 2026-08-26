@@ -439,7 +439,7 @@ function renderBlock(
       aria-label="${selectingBlockTarget ? "选择道具目标" : "可选择方块"}"
       ${selectable ? "" : "disabled"}
       style="--block-left: ${left}px; --block-top: ${top}px; --block-width: ${blockWidth}px; --block-height: ${blockHeight}px; --block-z: ${block.z};${illusionStyle}"
-    ><span class="${glyphClass}">${renderDogPatternAsset(displayPatternType)}</span></button>
+    ><span class="${glyphClass}">${renderDogPatternAsset(displayPatternType)}</span>${renderSpecialMechanismIcon(block.specialMechanism?.type)}</button>
   `;
 }
 
@@ -560,8 +560,16 @@ function renderSpecialMechanismThumbnail(
       data-testid="dog-special-mechanism-thumbnail"
       ${renderSpecialMechanismAttributes(block.specialMechanism)}
       aria-hidden="true"${illusionStyle}
-    ><span class="${glyphClass}">${renderDogPatternAsset(displayPatternType)}</span></span>
+    ><span class="${glyphClass}">${renderDogPatternAsset(displayPatternType)}</span>${renderSpecialMechanismIcon(block.specialMechanism?.type)}</span>
   `;
+}
+
+function renderSpecialMechanismIcon(type: string | undefined): string {
+  if (type !== DOG_MAGNETIC_MECHANISM_TYPE) {
+    return "";
+  }
+
+  return '<span class="dog-block__mechanism-icon dog-block__mechanism-icon--magnetic" aria-hidden="true">🧲</span>';
 }
 
 function renderTraySlots(
