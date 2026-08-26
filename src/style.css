@@ -782,13 +782,13 @@ h2 {
 .dog-loadout-confirmation {
   margin-top: 16px;
   padding: 14px;
-  border: 1px solid rgba(238, 128, 105, 0.35);
+  border: 1px solid rgba(79, 155, 192, 0.35);
   border-radius: 14px;
-  background: rgba(238, 128, 105, 0.1);
+  background: rgba(79, 155, 192, 0.1);
 }
 
 .dog-loadout-confirmation strong {
-  color: var(--coral-dark);
+  color: var(--sky-deep);
 }
 
 .dog-loadout-confirmation p {

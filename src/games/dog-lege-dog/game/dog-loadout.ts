@@ -206,14 +206,14 @@ export function renderDogLoadoutEditor({
             ? `确认后进入第 ${levelNumber} 关，已完成关卡、奖励与解锁保持不变。`
             : "确认后将重置本关局内状态"}</p>
           <div class="dog-loadout-confirmation__actions">
-            <button class="text-button" type="button" data-action="cancel-loadout-confirmation">返回修改</button>
-            <button class="primary-button" type="button" data-action="apply-loadout-change">确认更换</button>
+            <button class="text-button dog-loadout-editor__clear" type="button" data-action="cancel-loadout-confirmation">取消</button>
+            <button class="primary-button" type="button" data-action="apply-loadout-change">确认</button>
           </div>
         </div>
       `
     : `
         <div class="dog-loadout-editor__actions">
-          <button class="text-button${isChange ? "" : " dog-loadout-editor__clear"}" type="button" data-action="cancel-loadout">${isChange ? "取消" : "清空"}</button>
+          <button class="text-button dog-loadout-editor__clear" type="button" data-action="cancel-loadout">${isChange ? "取消" : "清空"}</button>
           <button class="primary-button" type="button" data-action="confirm-loadout" data-testid="dog-loadout-confirm" ${canConfirm ? "" : "disabled"}>
             确认
           </button>

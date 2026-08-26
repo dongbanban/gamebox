@@ -69,6 +69,13 @@ describe("狗了个狗道具组", () => {
       levelNumber: 1,
       confirming: false,
     });
+    const changeConfirmation = renderDogLoadoutEditor({
+      mode: "change",
+      draft: ["triple-removal", "tray-capacity", "torch"],
+      current: ["triple-removal", "tray-capacity", "wildcard"],
+      levelNumber: 1,
+      confirming: true,
+    });
     const summary = renderDogLoadoutSummary([
       "triple-removal",
       "tray-capacity",
@@ -95,8 +102,22 @@ describe("狗了个狗道具组", () => {
     expect(editor).not.toContain("DOG · LOADOUT");
     expect(editor).toContain(">清空</button>");
     expect(editor).toMatch(/data-action="confirm-loadout"[^>]*>\s*确认\s*<\/button>/);
-    expect(changeEditor).toContain(">取消</button>");
+    expect(changeEditor).toMatch(
+      /<button class="text-button dog-loadout-editor__clear"[^>]*data-action="cancel-loadout">取消<\/button>/,
+    );
     expect(changeEditor).toMatch(/data-action="confirm-loadout"[^>]*>\s*确认\s*<\/button>/);
+    expect(changeConfirmation).toMatch(
+      /<button class="text-button dog-loadout-editor__clear"[^>]*data-action="cancel-loadout-confirmation">取消<\/button>/,
+    );
+    expect(changeConfirmation).toMatch(
+      /<button class="primary-button"[^>]*data-action="apply-loadout-change">确认<\/button>/,
+    );
+    expect(changeConfirmation).not.toMatch(
+      /data-action="cancel-loadout-confirmation">返回修改<\/button>/,
+    );
+    expect(changeConfirmation).not.toMatch(
+      /data-action="apply-loadout-change">确认更换<\/button>/,
+    );
     expect(summary.match(/data-testid="dog-loadout-thumbnail"/g)).toHaveLength(3);
     expect(summary.match(/data-action="use-item"/g)).toHaveLength(3);
     expect(summary).toContain('data-item-id="tray-capacity"');
