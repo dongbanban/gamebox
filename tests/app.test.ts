@@ -1043,6 +1043,35 @@ describe("注册与游戏目录 UI", () => {
     refreshedApp.destroy();
   });
 
+  it("静音后仍可选择方块并将方块放入暂存槽", () => {
+    const root = document.createElement("div");
+    const app = mountApp(root, {
+      store: new ProgressStore({
+        storage: new MemoryStorage(),
+        userIdFactory: () => "123e4567-e89b-12d3-a456-426614174000",
+      }),
+    });
+
+    root.querySelector<HTMLButtonElement>('[data-action="register"]')?.click();
+    root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
+    confirmDogLoadout(root);
+    const soundButton = root.querySelector<HTMLButtonElement>('[data-action="toggle-sound"]');
+    expect(soundButton?.dataset.soundEnabled).toBe("true");
+
+    soundButton?.click();
+    expect(root.querySelector<HTMLButtonElement>('[data-action="toggle-sound"]')?.dataset.soundEnabled).toBe(
+      "false",
+    );
+    expect(root.querySelector('[data-testid="dog-game"]')?.getAttribute("data-input-locked")).toBe(
+      "false",
+    );
+
+    root.querySelector<HTMLButtonElement>('[data-testid="dog-block"]:not([disabled])')?.click();
+    expect(root.querySelectorAll('[data-testid="dog-tray-slot"][data-pattern-type]')).toHaveLength(1);
+
+    app.destroy();
+  });
+
   it("Pointer 动画期间先持久化通关结果，动画完成后再显示结果页", async () => {
     vi.useFakeTimers();
     const storage = new MemoryStorage();

@@ -68,35 +68,6 @@ describe("游戏公开音效行为", () => {
     }
   });
 
-  it("首次交互后可静音，静音切换立即更新且不阻塞方块选择", () => {
-    const root = document.createElement("div");
-    const app = mountApp(root, {
-      store: new ProgressStore({
-        storage: new MemoryStorage(),
-        userIdFactory: () => "123e4567-e89b-12d3-a456-426614174000",
-      }),
-    });
-
-    root.querySelector<HTMLButtonElement>('[data-action="register"]')?.click();
-    root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
-    confirmDogLoadout(root);
-    const soundButton = root.querySelector<HTMLButtonElement>('[data-action="toggle-sound"]');
-    expect(soundButton?.dataset.soundEnabled).toBe("true");
-
-    soundButton?.click();
-    expect(root.querySelector<HTMLButtonElement>('[data-action="toggle-sound"]')?.dataset.soundEnabled).toBe(
-      "false",
-    );
-    expect(root.querySelector('[data-testid="dog-game"]')?.getAttribute("data-input-locked")).toBe(
-      "false",
-    );
-
-    root.querySelector<HTMLButtonElement>('[data-testid="dog-block"]:not([disabled])')?.click();
-    expect(root.querySelectorAll('[data-testid="dog-tray-slot"][data-pattern-type]')).toHaveLength(1);
-
-    app.destroy();
-  });
-
   it("关闭音效后，公开反馈状态仍可完成通关流程", async () => {
     vi.useFakeTimers();
     const root = document.createElement("div");
