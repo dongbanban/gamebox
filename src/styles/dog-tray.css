@@ -1,0 +1,355 @@
+
+.dog-block--working-dog {
+  --dog-block-background: #ef6f63;
+  background: var(--dog-block-background);
+}
+
+.dog-block--single-dog {
+  --dog-block-background: #ffbf21;
+  background: var(--dog-block-background);
+}
+
+.dog-block--licking-dog {
+  --dog-block-background: #8fd8bf;
+  background: var(--dog-block-background);
+}
+
+.dog-block--guard-dog {
+  --dog-block-background: #45c2e9;
+  background: var(--dog-block-background);
+}
+
+.dog-block--mad-dog {
+  --dog-block-background: #a98ce4;
+  background: var(--dog-block-background);
+}
+
+.dog-block--destructive-dog {
+  --dog-block-background: #ff8c19;
+  background: var(--dog-block-background);
+}
+
+.dog-block--snarling-dog {
+  --dog-block-background: #9ac62a;
+  background: var(--dog-block-background);
+}
+
+.dog-block--shy-dog {
+  --dog-block-background: #4f72cf;
+  background: var(--dog-block-background);
+}
+
+.dog-block--foodie-dog {
+  --dog-block-background: #ec99aa;
+  background: var(--dog-block-background);
+}
+
+.dog-block--silly-dog {
+  --dog-block-background: #16aeb8;
+  background: var(--dog-block-background);
+}
+
+.dog-block__glyph {
+  display: block;
+  line-height: 1;
+}
+
+.dog-block__glyph img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.dog-tray {
+  position: relative;
+  margin-top: 24px;
+  padding: 20px;
+  border-radius: 20px;
+  background: #e7f5fc;
+}
+
+.dog-tray__slots {
+  display: grid;
+  grid-template-columns: repeat(var(--dog-tray-columns, 7), minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dog-tray__slot {
+  display: grid;
+  min-width: 0;
+  aspect-ratio: 1;
+  place-items: center;
+  overflow: hidden;
+  border: 2px dashed rgba(22, 68, 93, 0.2);
+  border-radius: 14px;
+  background: rgba(251, 254, 255, 0.78);
+}
+
+.dog-tray__slot--filled {
+  border: 2px solid rgba(255, 253, 248, 0.82);
+  background: var(--dog-block-background);
+  box-shadow:
+    4px 5px 0 rgba(22, 68, 93, 0.2),
+    inset 0 0 0 1px rgba(22, 68, 93, 0.12);
+}
+
+.dog-tray__slot--locked {
+  border: 2px solid rgba(22, 68, 93, 0.2);
+  background:
+    linear-gradient(135deg, rgba(22, 68, 93, 0.08), rgba(255, 255, 255, 0.36)),
+    repeating-linear-gradient(135deg, transparent 0 8px, rgba(22, 68, 93, 0.08) 8px 10px);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.58);
+  filter: grayscale(0.32);
+}
+
+.dog-tray__lock {
+  font-size: clamp(18px, 4vw, 32px);
+  opacity: 0.58;
+}
+
+.dog-tray__slot--unlocking {
+  border-color: rgba(255, 209, 102, 0.96);
+  box-shadow: 0 0 0 4px rgba(255, 209, 102, 0.28), 0 0 24px rgba(255, 209, 102, 0.72);
+}
+
+.dog-tray__slot--wildcard {
+  position: relative;
+  border: 3px solid #ffe78a;
+  box-shadow:
+    0 0 0 3px rgba(255, 209, 102, 0.48),
+    0 0 18px rgba(255, 209, 102, 0.86),
+    4px 5px 0 rgba(22, 68, 93, 0.2),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.92);
+}
+
+.dog-tray__slot--wildcard::after {
+  position: absolute;
+  top: 3px;
+  right: 4px;
+  color: #fffdf8;
+  content: "◇";
+  font-size: clamp(10px, 1.8vw, 16px);
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 1px 3px rgba(22, 68, 93, 0.58);
+}
+
+.dog-tray__slot--item-targetable {
+  position: relative;
+  z-index: 4;
+  cursor: pointer;
+  border-color: rgba(53, 198, 239, 0.96);
+  box-shadow:
+    0 0 0 3px rgba(77, 213, 255, 0.34),
+    0 0 18px rgba(64, 204, 255, 0.72),
+    4px 5px 0 rgba(22, 68, 93, 0.2),
+    inset 0 0 0 2px rgba(239, 254, 255, 0.96),
+    inset 0 0 14px rgba(121, 225, 255, 0.44);
+}
+
+.dog-tray__slot--item-targetable:hover,
+.dog-tray__slot--item-targetable:focus-visible {
+  outline: 0;
+  transform: translateY(-2px) scale(1.035);
+  box-shadow:
+    0 0 0 4px rgba(77, 213, 255, 0.42),
+    0 0 24px rgba(64, 204, 255, 0.88),
+    4px 5px 0 rgba(22, 68, 93, 0.2),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.98),
+    inset 0 0 16px rgba(121, 225, 255, 0.54);
+}
+
+.dog-tray__slot--item-target-disabled {
+  cursor: default;
+  filter: grayscale(1) brightness(0.72) saturate(0.76);
+  box-shadow:
+    4px 5px 0 rgba(22, 68, 93, 0.28),
+    inset 0 0 0 999px rgba(22, 68, 93, 0.14),
+    inset 0 0 0 1px rgba(22, 68, 93, 0.18);
+  pointer-events: none;
+}
+
+.dog-block--item-targetable {
+  position: relative;
+  z-index: 40;
+  border-color: rgba(53, 198, 239, 0.96);
+  box-shadow:
+    0 0 0 3px rgba(77, 213, 255, 0.34),
+    0 0 18px rgba(64, 204, 255, 0.72),
+    4px 5px 0 rgba(22, 68, 93, 0.2),
+    inset 0 0 0 2px rgba(239, 254, 255, 0.96),
+    inset 0 0 14px rgba(121, 225, 255, 0.44);
+}
+
+.dog-block--item-targetable:hover,
+.dog-block--item-targetable:focus-visible {
+  outline: 0;
+  transform: translateY(-2px) scale(1.035);
+  box-shadow:
+    0 0 0 4px rgba(77, 213, 255, 0.42),
+    0 0 24px rgba(64, 204, 255, 0.88),
+    4px 5px 0 rgba(22, 68, 93, 0.2),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.98),
+    inset 0 0 16px rgba(121, 225, 255, 0.54);
+}
+
+.dog-tray__slot.dog-tray__slot--item-target-disabled {
+  animation: none;
+  box-shadow:
+    4px 5px 0 rgba(22, 68, 93, 0.28),
+    inset 0 0 0 999px rgba(22, 68, 93, 0.14),
+    inset 0 0 0 1px rgba(22, 68, 93, 0.18);
+}
+
+.dog-tray__slot.dog-tray__slot--item-target-disabled::before,
+.dog-tray__slot.dog-tray__slot--item-target-disabled::after {
+  animation: none;
+  filter: none;
+  box-shadow: none;
+}
+
+.dog-tray__slot .dog-block__glyph {
+  width: 88%;
+  height: 88%;
+}
+
+.dog-match-effect {
+  position: absolute;
+  z-index: 35;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: clamp(3px, 0.6vw, 7px) solid rgba(255, 255, 255, 0.94);
+  border-radius: inherit;
+  background: radial-gradient(
+    circle at 50% 42%,
+    rgba(255, 255, 255, 0.46),
+    rgba(255, 209, 102, 0.2) 42%,
+    transparent 76%
+  );
+  box-shadow:
+    0 0 0 5px rgba(255, 209, 102, 0.42),
+    inset 0 0 30px rgba(255, 255, 255, 0.7);
+  contain: paint;
+  pointer-events: none;
+  will-change: opacity;
+  animation: dog-match-flash var(--dog-animation-duration, 420ms) ease-out both;
+}
+
+.dog-match-effect::before {
+  position: absolute;
+  width: clamp(120px, 24vw, 260px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.72),
+    rgba(123, 199, 245, 0.16) 48%,
+    transparent 72%
+  );
+  content: "";
+  will-change: opacity, transform;
+  animation: dog-match-glow var(--dog-animation-duration, 420ms) ease-out both;
+}
+
+.dog-match-effect__ring {
+  position: absolute;
+  width: min(46%, 240px);
+  aspect-ratio: 1;
+  border: clamp(5px, 0.8vw, 9px) solid rgba(255, 255, 255, 0.94);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 8px rgba(255, 209, 102, 0.32),
+    0 0 34px rgba(255, 255, 255, 0.9);
+  will-change: opacity, transform;
+  animation: dog-match-ring var(--dog-animation-duration, 420ms) cubic-bezier(0.16, 0.8, 0.3, 1) both;
+}
+
+.dog-match-effect::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  padding: 6px 14px;
+  border: 2px solid rgba(255, 255, 255, 0.94);
+  border-radius: 999px;
+  background: rgba(22, 68, 93, 0.76);
+  box-shadow:
+    0 5px 0 rgba(22, 68, 93, 0.22),
+    0 0 22px rgba(255, 255, 255, 0.72);
+  color: #fff;
+  content: "三消！";
+  font-size: clamp(18px, 3.6vw, 30px);
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-shadow: 0 2px 0 rgba(22, 68, 93, 0.28);
+  transform: translate(-50%, -50%);
+  will-change: opacity, transform;
+  animation: dog-match-badge var(--dog-animation-duration, 420ms) cubic-bezier(0.16, 0.8, 0.3, 1) both;
+}
+
+.dog-match-effect__spark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: clamp(5px, 0.8vw, 9px);
+  height: clamp(26px, 5vw, 64px);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #fff, #ffd166);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.9);
+  transform-origin: 50% 100%;
+  will-change: opacity, transform;
+  animation: dog-match-spark var(--dog-animation-duration, 420ms) cubic-bezier(0.16, 0.8, 0.3, 1) both;
+}
+
+.dog-match-effect__spark--1 {
+  --spark-angle: 0deg;
+}
+.dog-match-effect__spark--2 {
+  --spark-angle: 45deg;
+}
+.dog-match-effect__spark--3 {
+  --spark-angle: 90deg;
+}
+.dog-match-effect__spark--4 {
+  --spark-angle: 135deg;
+}
+.dog-match-effect__spark--5 {
+  --spark-angle: 180deg;
+}
+.dog-match-effect__spark--6 {
+  --spark-angle: 225deg;
+}
+.dog-match-effect__spark--7 {
+  --spark-angle: 270deg;
+}
+.dog-match-effect__spark--8 {
+  --spark-angle: 315deg;
+}
+
+.dog-effects-layer,
+.dog-animation-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.dog-effects-layer {
+  z-index: 20;
+}
+
+.dog-effects-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.dog-animation-layer {
+  z-index: 30;
+}

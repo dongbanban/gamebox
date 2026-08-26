@@ -1,3 +1,9 @@
+import {
+  DOG_V13_CONFIG,
+  type DogV13Config,
+  type DogV13ParticleEffectProfile,
+} from "@/games/dog-lege-dog/game/game-config";
+
 export type ParticleEffect = "match" | "won" | "lost";
 
 interface Particle {
@@ -14,24 +20,15 @@ interface ParticleRun {
   complete(): void;
 }
 
-const EFFECT_DURATION: Record<ParticleEffect, number> = {
-  match: 420,
-  won: 560,
-  lost: 380,
-};
-
-const EFFECT_COLORS: Record<ParticleEffect, readonly string[]> = {
-  match: ["#ffffff", "#ffd166", "#ff6f91", "#52d6c6", "#7bc7f5"],
-  won: ["#ffd166", "#63b88a", "#7bc7f5", "#ffffff"],
-  lost: ["#ff8c7a", "#d86556", "#16445d"],
-};
-
 export interface ParticleEffects {
   play(effect: ParticleEffect): Promise<void>;
   destroy(): void;
 }
 
-export function createParticleEffects(root: HTMLElement): ParticleEffects {
+export function createParticleEffects(
+  root: HTMLElement,
+  config: DogV13Config = DOG_V13_CONFIG,
+): ParticleEffects {
   const runs = new Set<ParticleRun>();
   let destroyed = false;
 
@@ -45,8 +42,9 @@ export function createParticleEffects(root: HTMLElement): ParticleEffects {
         '[data-testid="dog-effects-canvas"]',
       );
       const context = getCanvasContext(canvas);
-      const duration = EFFECT_DURATION[effect];
-      const particles = createParticles(effect);
+      const profile = config.ui.particles[effect];
+      const duration = profile.durationMs;
+      const particles = createParticles(effect, profile);
       const startedAt = getNow();
       let animationFrame: number | null = null;
       let timer: ReturnType<typeof setTimeout> | null = null;
@@ -141,15 +139,17 @@ function resizeCanvas(canvas: HTMLCanvasElement): void {
   }
 }
 
-function createParticles(effect: ParticleEffect): Particle[] {
-  const colors = EFFECT_COLORS[effect];
-  return Array.from({ length: effect === "match" ? 20 : effect === "won" ? 28 : 16 }, (_, index) => ({
+function createParticles(
+  effect: ParticleEffect,
+  profile: DogV13ParticleEffectProfile,
+): Particle[] {
+  return Array.from({ length: profile.count }, (_, index) => ({
     x: 0.2 + ((index * 37) % 60) / 100,
     y: 0.32 + ((index * 19) % 25) / 100,
     velocityX: ((index % 7) - 3) * (effect === "match" ? 0.82 : 0.7),
     velocityY: -1.2 - (index % 4) * (effect === "match" ? 0.16 : 0.12),
     size: effect === "match" ? 6 + (index % 4) * 2 : 4 + (index % 4) * 2,
-    color: colors[index % colors.length],
+    color: profile.colors[index % profile.colors.length],
     rotation: (index * 27) % 360,
   }));
 }

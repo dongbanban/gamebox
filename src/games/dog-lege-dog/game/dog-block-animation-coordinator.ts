@@ -85,7 +85,7 @@ export class DogBlockAnimationCoordinator {
     const isMagnetic = sourceBlock?.specialMechanism?.type === DOG_MAGNETIC_MECHANISM_TYPE;
     const isTwin = sourceBlock?.specialMechanism?.type === DOG_TWIN_MECHANISM_TYPE;
     const patternMarkup = isIllusion && sourceBlock !== undefined
-      ? renderDogPatternAsset(getDogIllusionDisguisedPattern(sourceBlock))
+      ? renderDogPatternAsset(getDogIllusionDisguisedPattern(sourceBlock), runtime.config)
       : sourceElement?.querySelector<HTMLElement>(".dog-block__glyph")?.outerHTML ?? "";
 
     if (isIllusion && shouldAnimate && runtime.started && sourceBlock !== undefined) {

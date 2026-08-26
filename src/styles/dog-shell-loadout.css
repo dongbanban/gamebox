@@ -1,0 +1,397 @@
+.dog-game {
+  --dog-loadout-board-gap: 8px;
+  --dog-board-frame-padding: clamp(8px, 2vw, 20px);
+  position: relative;
+  isolation: isolate;
+  padding: clamp(14px, 2.5vw, 26px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 26px;
+  background: rgba(251, 254, 255, 0.94);
+  box-shadow: var(--shadow);
+}
+
+.dog-loadout-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(16px, 4vw, 40px);
+  overflow: auto;
+}
+
+.dog-loadout-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(22, 68, 93, 0.38);
+  backdrop-filter: blur(3px);
+}
+
+.dog-loadout,
+.dog-loadout-summary {
+  margin-top: 20px;
+  padding: 20px;
+  border: 1px solid rgba(79, 155, 192, 0.18);
+  border-radius: 20px;
+  background: #f2fbff;
+}
+
+.dog-loadout-modal .dog-loadout {
+  --dog-loadout-panel-padding: 20px;
+  position: relative;
+  z-index: 1;
+  width: min(100%, 900px);
+  max-height: calc(100dvh - 48px);
+  margin: 0;
+  overflow-y: auto;
+  padding: var(--dog-loadout-panel-padding);
+  box-shadow: 0 24px 70px rgba(22, 68, 93, 0.28);
+}
+
+.dog-loadout__heading,
+.dog-loadout-summary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.dog-loadout__heading h3,
+.dog-loadout-summary h3 {
+  margin: 0 0 6px;
+  color: var(--ink);
+  font-size: 20px;
+}
+
+.dog-loadout__heading p {
+  max-width: 42em;
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.dog-loadout__count {
+  flex: 0 0 auto;
+  padding: 8px 11px;
+  border-radius: 999px;
+  background: #dceff9;
+  color: var(--sky-deep);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.dog-loadout__options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.dog-loadout-option {
+  position: relative;
+  display: grid;
+  align-content: center;
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+  min-height: 112px;
+  gap: 5px;
+  padding: 12px;
+  border: 1px solid rgba(22, 68, 93, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 253, 248, 0.86);
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.dog-loadout-option:hover {
+  border-color: var(--sky-deep);
+  transform: translateY(-2px);
+}
+
+.dog-loadout-option--selected {
+  border-color: var(--sky-deep);
+  background: #dff3fc;
+  box-shadow: inset 0 0 0 2px rgba(79, 155, 192, 0.14);
+}
+
+.dog-loadout-option__heading {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+}
+
+.dog-loadout-option__icon {
+  display: inline-grid;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--yellow);
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.dog-loadout-option__icon img,
+.dog-loadout-thumbnail__icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dog-loadout-option__heading strong {
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.dog-loadout-option__description,
+.dog-loadout-option__uses {
+  min-width: 0;
+  color: var(--ink-muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.dog-loadout-option__check {
+  flex: 0 0 auto;
+  min-height: 16px;
+  color: var(--sky-deep);
+  font-weight: 900;
+}
+
+.dog-loadout-editor__actions,
+.dog-loadout-confirmation__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.dog-loadout-editor__actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  margin-right: calc(-1 * var(--dog-loadout-panel-padding, 20px));
+  margin-bottom: calc(-1 * var(--dog-loadout-panel-padding, 20px));
+  margin-left: calc(-1 * var(--dog-loadout-panel-padding, 20px));
+  padding: 12px var(--dog-loadout-panel-padding, 20px) var(--dog-loadout-panel-padding, 20px);
+  border-top: 1px solid rgba(79, 155, 192, 0.18);
+  background: #f2fbff;
+}
+
+.dog-loadout-editor__clear {
+  min-height: 42px;
+  padding: 10px 16px;
+  border: 1px solid var(--sky-deep);
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--sky-deep);
+}
+
+.dog-loadout-editor__clear:hover {
+  border-color: #2f7fae;
+  background: #f5fcff;
+  color: #2f7fae;
+}
+
+.dog-loadout-editor__actions > .text-button,
+.dog-loadout-editor__actions > .primary-button,
+.dog-loadout-confirmation__actions > .text-button,
+.dog-loadout-confirmation__actions > .primary-button {
+  flex: 0 0 72px;
+  width: 72px;
+  min-height: 44px;
+  height: 44px;
+  padding: 10px 12px;
+}
+
+.dog-loadout-confirmation {
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid rgba(79, 155, 192, 0.35);
+  border-radius: 14px;
+  background: rgba(79, 155, 192, 0.1);
+}
+
+.dog-loadout-confirmation strong {
+  color: var(--sky-deep);
+}
+
+.dog-loadout-confirmation p {
+  margin: 6px 0 0;
+  color: var(--ink-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.dog-loadout-summary {
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: calc(var(--dog-loadout-board-gap) - var(--dog-board-frame-padding));
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.dog-loadout-summary__items {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.dog-loadout-thumbnail {
+  position: relative;
+  display: inline-flex;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  appearance: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+
+.dog-loadout-thumbnail:disabled {
+  cursor: not-allowed;
+}
+
+.dog-loadout-thumbnail:focus-visible {
+  outline: 3px solid var(--yellow);
+  outline-offset: 3px;
+}
+
+.dog-loadout-thumbnail--unavailable {
+  filter: grayscale(1);
+  opacity: 0.46;
+}
+
+.dog-loadout-thumbnail__icon {
+  display: inline-grid;
+  width: 48px;
+  height: 48px;
+  overflow: hidden;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--yellow);
+  color: #fffdf8;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.dog-loadout-thumbnail__uses {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  display: grid;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  place-items: center;
+  border: 2px solid #f2fbff;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fffdf8;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.dog-loadout-summary__actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.dog-loadout-summary .text-button {
+  flex: 0 0 auto;
+  padding: 8px 0;
+  border-bottom: 0;
+  color: var(--sky-deep);
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+.dog-loadout-summary .text-button:hover {
+  border-bottom: 0;
+  color: var(--sky-deep);
+  text-decoration: underline;
+}
+
+.dog-loadout-summary__actions .text-button {
+  margin-left: 0;
+}
+
+.dog-loadout-summary__edit:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  text-decoration: none;
+}
+
+.dog-loadout-summary .dog-loadout-summary__cancel {
+  min-width: 56px;
+  min-height: 32px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-muted);
+  text-align: center;
+}
+
+.dog-loadout-summary .dog-loadout-summary__cancel:hover {
+  background: rgba(79, 155, 192, 0.1);
+  color: var(--sky-deep);
+  text-decoration: none;
+}
+
+.dog-loadout-summary > .dog-item-targeting {
+  flex: 0 0 100%;
+  min-width: 0;
+}
+
+.dog-item-targeting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dog-item-targeting {
+  margin-top: 2px;
+  padding: 0;
+  color: var(--ink-muted);
+  font-size: 11px;
+}
+
+.dog-item-targeting__label {
+  flex: 0 0 auto;
+}
+
+.game-result-card__loadout-action {
+  margin: -8px auto 22px;
+}

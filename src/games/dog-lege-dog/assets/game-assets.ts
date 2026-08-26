@@ -1,6 +1,7 @@
 import type { DogPatternType } from "@/games/dog-lege-dog/levels/level-types";
 import { resolveAssetUrl } from "@/asset-url";
 import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/game-config";
+import type { DogV13Config } from "@/games/dog-lege-dog/game/v13-config";
 
 export interface DogPatternPresentation {
   readonly className: string;
@@ -59,12 +60,18 @@ export function getDogPatternClassName(patternType: DogPatternType): string {
   return DOG_PATTERN_PRESENTATIONS[patternType].className;
 }
 
-export function getDogPatternAssetUrl(patternType: DogPatternType): string {
-  return resolveAssetUrl(DOG_PATTERN_PRESENTATIONS[patternType].assetPath);
+export function getDogPatternAssetUrl(
+  patternType: DogPatternType,
+  config: DogV13Config = DOG_V13_CONFIG,
+): string {
+  return resolveAssetUrl(config.assets.patterns[patternType]);
 }
 
-export function renderDogPatternAsset(patternType: DogPatternType): string {
-  const assetUrl = getDogPatternAssetUrl(patternType);
+export function renderDogPatternAsset(
+  patternType: DogPatternType,
+  config: DogV13Config = DOG_V13_CONFIG,
+): string {
+  const assetUrl = getDogPatternAssetUrl(patternType, config);
 
   return `
     <img src="${assetUrl}" crossorigin="anonymous" width="100%" height="100%" alt="" aria-hidden="true" />

@@ -8,6 +8,8 @@ export const DOG_V13_SCHEMA_VERSION = 13 as const;
 
 export type DogV13MechanismType = "freeze" | "illusion" | "magnetic" | "twin";
 
+export type DogV13ParticleEffectName = "match" | "won" | "lost";
+
 export type DogV13ItemId =
   | "triple-removal"
   | "tray-capacity"
@@ -16,6 +18,16 @@ export type DogV13ItemId =
   | "detector"
   | "demagnetizer"
   | "key";
+
+const DOG_V13_ITEM_COPY_KEYS: readonly DogV13ItemId[] = [
+  "triple-removal",
+  "tray-capacity",
+  "wildcard",
+  "torch",
+  "detector",
+  "demagnetizer",
+  "key",
+];
 
 export type DogV13TestProfileName = "focused" | "smoke" | "full";
 
@@ -69,6 +81,85 @@ export interface DogV13SoundEffectProfile {
   readonly waveform: DogV13SoundWaveform;
   readonly volume: number;
   readonly noteSpacingSeconds: number;
+}
+
+export interface DogV13MechanismPresentation {
+  readonly name: string;
+  readonly description: string;
+}
+
+export interface DogV13ResultDisplay {
+  readonly eyebrow: string;
+  readonly title: string;
+  readonly description: string;
+}
+
+export interface DogV13ParticleEffectProfile {
+  readonly durationMs: number;
+  readonly count: number;
+  readonly colors: readonly string[];
+}
+
+export interface DogV13ItemCopy {
+  readonly name: string;
+  readonly icon: string;
+  readonly description: string;
+}
+
+export interface DogV13AppCopy {
+  readonly brandName: string;
+  readonly registrationTitle: string;
+  readonly registrationIntro: string;
+  readonly register: string;
+  readonly registrationFinePrint: string;
+  readonly catalogTitle: string;
+  readonly reset: string;
+  readonly catalogAriaLabel: string;
+  readonly highestUnlockedLevel: string;
+  readonly startGame: string;
+  readonly activeGame: string;
+  readonly returnCatalog: string;
+  readonly soundEnabled: string;
+  readonly soundDisabled: string;
+  readonly persistenceSaved: string;
+  readonly persistenceTemporary: string;
+  readonly resetConfirmation: string;
+  readonly leaveConfirmation: string;
+  readonly result: {
+    readonly completedLevel: string;
+    readonly finalReward: string;
+    readonly totalScore: string;
+    readonly finalTitle: string;
+    readonly finalTitleValue: string;
+    readonly currentLevel: string;
+    readonly reward: string;
+    readonly nextLevel: string;
+  };
+  readonly actions: {
+    readonly loadout: string;
+    readonly nextLevel: string;
+    readonly retry: string;
+  };
+}
+
+export interface DogV13LoadoutCopy {
+  readonly initialTitle: string;
+  readonly changeTitle: string;
+  readonly initialIntro: string;
+  readonly changeCurrentIntro: string;
+  readonly changeNextIntro: string;
+  readonly usesFallback: string;
+  readonly usesPerLevel: string;
+  readonly confirmationTitle: string;
+  readonly confirmationNext: string;
+  readonly confirmationCurrent: string;
+  readonly cancel: string;
+  readonly clear: string;
+  readonly confirm: string;
+  readonly summaryAriaLabel: string;
+  readonly edit: string;
+  readonly targetPrompt: string;
+  readonly remainingUses: string;
 }
 
 export interface DogV13TestProfile {
@@ -178,6 +269,47 @@ export interface DogV13Config {
       readonly volume: number;
     };
     readonly effects: Readonly<Record<string, DogV13SoundEffectProfile>>;
+  };
+  readonly ui: {
+    readonly visual: {
+      readonly blockSizePx: number;
+      readonly boardSafeMarginPx: number;
+      readonly keyDropSizePx: number;
+      readonly magneticEffectHeightPx: number;
+      readonly flightTargetScale: number;
+    };
+    readonly copy: {
+      readonly app: DogV13AppCopy;
+      readonly labels: {
+        readonly level: string;
+        readonly activeLevel: string;
+        readonly specialMechanism: string;
+        readonly board: string;
+        readonly blockSelectable: string;
+        readonly itemTarget: string;
+        readonly tray: string;
+        readonly lockedTraySlot: string;
+        readonly emptyTraySlot: string;
+        readonly wildcard: string;
+        readonly match: string;
+        readonly status: {
+          readonly won: string;
+          readonly lost: string;
+        };
+      };
+      readonly loadout: DogV13LoadoutCopy;
+      readonly items: Readonly<Record<DogV13ItemId, DogV13ItemCopy>>;
+      readonly specialMechanisms: {
+        readonly title: string;
+        readonly hint: string;
+        readonly empty: string;
+        readonly closeLabel: string;
+        readonly fallbackDescription: string;
+        readonly presentations: Readonly<Record<DogV13MechanismType, DogV13MechanismPresentation>>;
+      };
+      readonly result: Readonly<Record<"won" | "final" | "lost", DogV13ResultDisplay>>;
+    };
+    readonly particles: Readonly<Record<DogV13ParticleEffectName, DogV13ParticleEffectProfile>>;
   };
   readonly testProfiles: {
     readonly default: DogV13TestProfileName;
@@ -386,6 +518,184 @@ const DOG_V13_CONFIG_SOURCE: DogV13Config = {
         waveform: "sawtooth",
         volume: 0.12,
         noteSpacingSeconds: 0.08,
+      },
+    },
+  },
+  ui: {
+    visual: {
+      blockSizePx: 48,
+      boardSafeMarginPx: 12,
+      keyDropSizePx: 42,
+      magneticEffectHeightPx: 32,
+      flightTargetScale: 0.48,
+    },
+    copy: {
+      app: {
+        brandName: "GAMEBOX",
+        registrationTitle: "开始你的第一局",
+        registrationIntro: "一次点击创建本地匿名身份，游戏进度只保存在当前浏览器。",
+        register: "匿名注册",
+        registrationFinePrint: "不需要姓名、密码或邮箱。",
+        catalogTitle: "游戏目录",
+        reset: "重置本地数据",
+        catalogAriaLabel: "游戏目录",
+        highestUnlockedLevel: "最高解锁关卡",
+        startGame: "开始游戏",
+        activeGame: "活动游戏",
+        returnCatalog: "返回游戏目录",
+        soundEnabled: "音效开启",
+        soundDisabled: "音效关闭",
+        persistenceSaved: "进度已保存。",
+        persistenceTemporary: "当前为临时运行模式，刷新后进度可能丢失。",
+        resetConfirmation: "确认重置本地数据？用户、游戏进度、积分与应用设置都会被清除。",
+        leaveConfirmation: "当前关卡不会保存，确认离开？",
+        result: {
+          completedLevel: "完成关卡",
+          finalReward: "最终奖励",
+          totalScore: "累计积分",
+          finalTitle: "最终称号",
+          finalTitleValue: "最狗玩家",
+          currentLevel: "当前关卡",
+          reward: "通关奖励",
+          nextLevel: "下一关",
+        },
+        actions: {
+          loadout: "更换道具组",
+          nextLevel: "进入下一关",
+          retry: "重新挑战",
+        },
+      },
+      labels: {
+        level: "关卡",
+        activeLevel: "当前关卡",
+        specialMechanism: "查看本关特殊机制",
+        board: "第 {level} 关矩形棋盘，{blockCount} 个层叠方块",
+        blockSelectable: "可选择方块",
+        itemTarget: "选择道具目标",
+        tray: "暂存槽",
+        lockedTraySlot: "已锁定暂存槽",
+        emptyTraySlot: "空暂存槽",
+        wildcard: "万能方块",
+        match: "三消成功",
+        status: {
+          won: "通关！棋盘已清空。",
+          lost: "失败！暂存槽已满。",
+        },
+      },
+      loadout: {
+        initialTitle: "选择本关道具",
+        changeTitle: "更换道具组",
+        initialIntro: "本关棋盘已生成。选择 {loadoutSize} 种不同道具后确认。",
+        changeCurrentIntro: "当前道具组将应用于第 {levelNumber} 关。新组合至少替换一种道具。",
+        changeNextIntro: "新道具组将在第 {levelNumber} 关生效。新组合至少替换一种道具。",
+        usesFallback: "次数按关卡规则初始化",
+        usesPerLevel: "本关 {uses} 次",
+        confirmationTitle: "确认更换道具组？",
+        confirmationNext: "确认后进入第 {levelNumber} 关，已完成关卡、奖励与解锁保持不变。",
+        confirmationCurrent: "确认后将重置本关局内状态",
+        cancel: "取消",
+        clear: "清空",
+        confirm: "确认",
+        summaryAriaLabel: "当前道具组",
+        edit: "变更",
+        targetPrompt: "选择道具目标",
+        remainingUses: "，剩余 {uses} 次",
+      },
+      items: {
+        "triple-removal": {
+          name: "道具三消移除",
+          icon: "✦",
+          description: "选择槽内相邻方块并一次移除",
+        },
+        "tray-capacity": {
+          name: "暂存槽容量提升",
+          icon: "+1",
+          description: "当前关卡暂存槽增加 1 格",
+        },
+        wildcard: {
+          name: "万能方块",
+          icon: "◇",
+          description: "点击槽内方块复制其图案",
+        },
+        torch: {
+          name: "火把",
+          icon: "火",
+          description: "融化一个冻结方块",
+        },
+        detector: {
+          name: "检测仪",
+          icon: "⌕",
+          description: "揭示一个幻化方块",
+        },
+        demagnetizer: {
+          name: "消磁仪",
+          icon: "⊖",
+          description: "移除一个磁吸方块的磁性",
+        },
+        key: {
+          name: "钥匙",
+          icon: "⚿",
+          description: "解锁一个暂存槽",
+        },
+      },
+      specialMechanisms: {
+        title: "本关特殊机制",
+        hint: "无需使用道具也可应对本关机制。",
+        empty: "本关暂无特殊机制。",
+        closeLabel: "关闭特殊机制说明",
+        fallbackDescription: "本关包含特殊规则，请结合棋盘上的视觉提示操作。",
+        presentations: {
+          freeze: {
+            name: "冻结方块",
+            description: "冻结方块进入暂存槽后暂不参与三消；其后的成功三消累计 2 次后自动融化。火把可将其解冻为普通方块，万能方块可直接消除。",
+          },
+          illusion: {
+            name: "幻化方块",
+            description: "幻化方块点击后飞入暂存槽，飞行过程中显现真实图案并按真实图案参与三消。",
+          },
+          magnetic: {
+            name: "磁吸方块",
+            description: "磁吸方块进入暂存槽后随机吸取一个不同真实图案的方块；优先可点击目标，不产生连锁磁吸。",
+          },
+          twin: {
+            name: "双生方块",
+            description: "双生方块点击后分裂为两个相邻的普通方块，各占一个暂存槽单位并按普通顺序参与三消。",
+          },
+        },
+      },
+      result: {
+        won: {
+          eyebrow: "狗了个狗 · 关卡结果",
+          title: "通关！",
+          description: "完成。",
+        },
+        final: {
+          eyebrow: "狗了个狗 · 最终通关",
+          title: "你就是最狗的玩家",
+          description: "全部 99 关完成。",
+        },
+        lost: {
+          eyebrow: "狗了个狗 · 关卡结果",
+          title: "失败",
+          description: "暂存槽已满，进度未改变。",
+        },
+      },
+    },
+    particles: {
+      match: {
+        durationMs: 420,
+        count: 20,
+        colors: ["#ffffff", "#ffd166", "#ff6f91", "#52d6c6", "#7bc7f5"],
+      },
+      won: {
+        durationMs: 560,
+        count: 28,
+        colors: ["#ffd166", "#63b88a", "#7bc7f5", "#ffffff"],
+      },
+      lost: {
+        durationMs: 380,
+        count: 16,
+        colors: ["#ff8c7a", "#d86556", "#16445d"],
       },
     },
   },
@@ -623,6 +933,7 @@ function collectConfigIssues(input: unknown): DogV13ConfigIssue[] {
   requiredObject(input, "animation", issues);
   requiredObject(input, "assets", issues);
   requiredObject(input, "audio", issues);
+  requiredObject(input, "ui", issues);
   requiredObject(input, "testProfiles", issues);
 
   if (!("schemaVersion" in input)) {
@@ -1016,6 +1327,8 @@ function collectConfigIssues(input: unknown): DogV13ConfigIssue[] {
     }
   }
 
+  validateUiConfig(input.ui, "ui", issues);
+
   const testProfiles = asRecord(input.testProfiles);
   if (testProfiles !== undefined) {
     if (!["focused", "smoke", "full"].includes(String(testProfiles.default))) {
@@ -1243,6 +1556,260 @@ function validateAssetMap(
   }
   for (const key of keys) {
     validateNonEmptyString(record[key], `${path}.${key}`, issues);
+  }
+}
+
+function validateUiConfig(value: unknown, path: string, issues: DogV13ConfigIssue[]): void {
+  const ui = asRecord(value);
+  if (ui === undefined) {
+    return;
+  }
+
+  const visual = asRecord(ui.visual);
+  if (visual === undefined) {
+    requiredObject(ui, "visual", issues, path);
+  } else {
+    for (const key of [
+      "blockSizePx",
+      "boardSafeMarginPx",
+      "keyDropSizePx",
+      "magneticEffectHeightPx",
+    ]) {
+      validateInteger(visual[key], `${path}.visual.${key}`, 1, issues);
+    }
+    validateRange(visual.flightTargetScale, `${path}.visual.flightTargetScale`, 0, 1, issues, false);
+  }
+
+  const copy = asRecord(ui.copy);
+  if (copy === undefined) {
+    requiredObject(ui, "copy", issues, path);
+  } else {
+    const app = asRecord(copy.app);
+    if (app === undefined) {
+      requiredObject(copy, "app", issues, `${path}.copy`);
+    } else {
+      for (const key of [
+        "brandName",
+        "registrationTitle",
+        "registrationIntro",
+        "register",
+        "registrationFinePrint",
+        "catalogTitle",
+        "reset",
+        "catalogAriaLabel",
+        "highestUnlockedLevel",
+        "startGame",
+        "activeGame",
+        "returnCatalog",
+        "soundEnabled",
+        "soundDisabled",
+        "persistenceSaved",
+        "persistenceTemporary",
+        "resetConfirmation",
+        "leaveConfirmation",
+      ]) {
+        validateNonEmptyString(app[key], `${path}.copy.app.${key}`, issues);
+      }
+      const resultLabels = asRecord(app.result);
+      if (resultLabels === undefined) {
+        requiredObject(app, "result", issues, `${path}.copy.app`);
+      } else {
+        for (const key of [
+          "completedLevel",
+          "finalReward",
+          "totalScore",
+          "finalTitle",
+          "finalTitleValue",
+          "currentLevel",
+          "reward",
+          "nextLevel",
+        ]) {
+          validateNonEmptyString(resultLabels[key], `${path}.copy.app.result.${key}`, issues);
+        }
+      }
+      const actions = asRecord(app.actions);
+      if (actions === undefined) {
+        requiredObject(app, "actions", issues, `${path}.copy.app`);
+      } else {
+        for (const key of ["loadout", "nextLevel", "retry"]) {
+          validateNonEmptyString(actions[key], `${path}.copy.app.actions.${key}`, issues);
+        }
+      }
+    }
+
+    const labels = asRecord(copy.labels);
+    if (labels === undefined) {
+      requiredObject(copy, "labels", issues, `${path}.copy`);
+    } else {
+      for (const key of [
+        "level",
+        "activeLevel",
+        "specialMechanism",
+        "board",
+        "blockSelectable",
+        "itemTarget",
+        "tray",
+        "lockedTraySlot",
+        "emptyTraySlot",
+        "wildcard",
+        "match",
+      ]) {
+        validateNonEmptyString(labels[key], `${path}.copy.labels.${key}`, issues);
+      }
+      const status = asRecord(labels.status);
+      if (status === undefined) {
+        requiredObject(labels, "status", issues, `${path}.copy.labels`);
+      } else {
+        validateNonEmptyString(status.won, `${path}.copy.labels.status.won`, issues);
+        validateNonEmptyString(status.lost, `${path}.copy.labels.status.lost`, issues);
+      }
+    }
+    const specialMechanisms = asRecord(copy.specialMechanisms);
+    if (specialMechanisms === undefined) {
+      requiredObject(copy, "specialMechanisms", issues, `${path}.copy`);
+    } else {
+      for (const key of ["title", "hint", "empty", "closeLabel", "fallbackDescription"]) {
+        validateNonEmptyString(
+          specialMechanisms[key],
+          `${path}.copy.specialMechanisms.${key}`,
+          issues,
+        );
+      }
+      validatePresentationMap(
+        specialMechanisms.presentations,
+        `${path}.copy.specialMechanisms.presentations`,
+        ["freeze", "illusion", "magnetic", "twin"],
+        issues,
+      );
+    }
+
+    const result = asRecord(copy.result);
+    if (result === undefined) {
+      requiredObject(copy, "result", issues, `${path}.copy`);
+    } else {
+      validateResultDisplayMap(result, `${path}.copy.result`, ["won", "final", "lost"], issues);
+    }
+
+    const loadout = asRecord(copy.loadout);
+    if (loadout === undefined) {
+      requiredObject(copy, "loadout", issues, `${path}.copy`);
+    } else {
+      for (const key of [
+        "initialTitle",
+        "changeTitle",
+        "initialIntro",
+        "changeCurrentIntro",
+        "changeNextIntro",
+        "usesFallback",
+        "usesPerLevel",
+        "confirmationTitle",
+        "confirmationNext",
+        "confirmationCurrent",
+        "cancel",
+        "clear",
+        "confirm",
+        "summaryAriaLabel",
+        "edit",
+        "targetPrompt",
+        "remainingUses",
+      ]) {
+        validateNonEmptyString(loadout[key], `${path}.copy.loadout.${key}`, issues);
+      }
+    }
+
+    validateItemCopyMap(copy.items, `${path}.copy.items`, DOG_V13_ITEM_COPY_KEYS, issues);
+  }
+
+  const particles = asRecord(ui.particles);
+  if (particles === undefined) {
+    requiredObject(ui, "particles", issues, path);
+    return;
+  }
+  for (const effectName of ["match", "won", "lost"]) {
+    const profile = asRecord(particles[effectName]);
+    if (profile === undefined) {
+      requiredObject(particles, effectName, issues, `${path}.particles`);
+      continue;
+    }
+    validateInteger(profile.durationMs, `${path}.particles.${effectName}.durationMs`, 1, issues);
+    validateInteger(profile.count, `${path}.particles.${effectName}.count`, 1, issues);
+    if (!Array.isArray(profile.colors) || profile.colors.length === 0) {
+      issues.push({
+        path: `${path}.particles.${effectName}.colors`,
+        code: "required",
+        message: "必须包含颜色",
+      });
+    } else {
+      validateStringArray(profile.colors, `${path}.particles.${effectName}.colors`, issues);
+    }
+  }
+}
+
+function validateItemCopyMap(
+  value: unknown,
+  path: string,
+  keys: readonly string[],
+  issues: DogV13ConfigIssue[],
+): void {
+  const record = asRecord(value);
+  if (record === undefined) {
+    issues.push({ path, code: "required", message: "必须包含道具文案映射" });
+    return;
+  }
+  for (const key of keys) {
+    const item = asRecord(record[key]);
+    if (item === undefined) {
+      requiredObject(record, key, issues, path);
+      continue;
+    }
+    validateNonEmptyString(item.name, `${path}.${key}.name`, issues);
+    validateNonEmptyString(item.icon, `${path}.${key}.icon`, issues);
+    validateNonEmptyString(item.description, `${path}.${key}.description`, issues);
+  }
+}
+
+function validatePresentationMap(
+  value: unknown,
+  path: string,
+  keys: readonly string[],
+  issues: DogV13ConfigIssue[],
+): void {
+  const record = asRecord(value);
+  if (record === undefined) {
+    issues.push({ path, code: "required", message: "必须包含文案映射" });
+    return;
+  }
+  for (const key of keys) {
+    const presentation = asRecord(record[key]);
+    if (presentation === undefined) {
+      requiredObject(record, key, issues, path);
+      continue;
+    }
+    validateNonEmptyString(presentation.name, `${path}.${key}.name`, issues);
+    validateNonEmptyString(presentation.description, `${path}.${key}.description`, issues);
+  }
+}
+
+function validateResultDisplayMap(
+  value: unknown,
+  path: string,
+  keys: readonly string[],
+  issues: DogV13ConfigIssue[],
+): void {
+  const record = asRecord(value);
+  if (record === undefined) {
+    issues.push({ path, code: "required", message: "必须包含结果文案映射" });
+    return;
+  }
+  for (const key of keys) {
+    const display = asRecord(record[key]);
+    if (display === undefined) {
+      requiredObject(record, key, issues, path);
+      continue;
+    }
+    validateNonEmptyString(display.eyebrow, `${path}.${key}.eyebrow`, issues);
+    validateNonEmptyString(display.title, `${path}.${key}.title`, issues);
+    validateNonEmptyString(display.description, `${path}.${key}.description`, issues);
   }
 }
 

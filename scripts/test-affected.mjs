@@ -116,8 +116,10 @@ function isUiOnlyChange(files) {
     files.every(
       (file) =>
         file === "src/style.css" ||
-        /^src\/games\/dog-lege-dog\/(?:assets\/(?:animation-effects|game-assets|particle-effects|sound-effects)\.ts|game\/game-renderer\.ts)$/.test(file) ||
-        /^tests\/(?:app|dog-lege-dog|sound-effects)\.test\.ts$/.test(file) ||
+        /^src\/styles\/[^/]+\.css$/.test(file) ||
+        /^src\/app\/[^/]+\.ts$/.test(file) ||
+        /^src\/games\/dog-lege-dog\/(?:visual-metrics\.ts|assets\/(?:animation-effects|animation-lifecycle|animation-timing|block-animation-effects|game-assets|item-animation-effects|item-assets|particle-effects|sound-effects)\.ts|game\/game-renderer(?:-[^/]+)?\.ts)$/.test(file) ||
+        /^tests\/(?:app|dog-lege-dog|sound-effects|ui-rendering-modules)\.test\.ts$/.test(file) ||
         /^public\/audio\//.test(file),
     )
   );

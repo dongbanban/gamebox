@@ -1,0 +1,126 @@
+.game-entry-view {
+  width: min(100%, 1200px);
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 32px 24px 56px;
+}
+
+.game-entry-view__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 0 0 20px;
+}
+
+.game-entry-view__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.game-entry-view__header .brand-lockup--compact {
+  margin-bottom: 0;
+}
+
+.game-entry-view__game {
+  min-width: 0;
+}
+
+.game-result-view {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 32px 24px 56px;
+}
+
+.game-result-card {
+  width: min(100%, 560px);
+  padding: clamp(32px, 7vw, 64px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 30px;
+  background: rgba(255, 253, 248, 0.88);
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.game-result-card--won h1 {
+  color: #39825c;
+}
+
+.game-result-card--won .eyebrow {
+  color: var(--sky-deep);
+}
+
+.game-result-card--final {
+  border-color: rgba(217, 161, 48, 0.42);
+  background: linear-gradient(145deg, rgba(255, 253, 248, 0.96), rgba(255, 245, 214, 0.96));
+}
+
+.game-result-card--final h1,
+.game-result-card--final .eyebrow {
+  color: #b17812;
+}
+
+.game-result-card--lost h1 {
+  color: var(--coral-dark);
+}
+
+.game-result-card__intro {
+  margin-bottom: 28px;
+  color: var(--ink-muted);
+  line-height: 1.7;
+}
+
+.game-result-card__stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 28px;
+  text-align: left;
+}
+
+.game-result-card__stats > div {
+  padding: 14px;
+  border-radius: 14px;
+  background: #f6f0e5;
+}
+
+.game-result-card__stats dt {
+  margin-bottom: 6px;
+  color: var(--ink-muted);
+  font-size: 11px;
+}
+
+.game-result-card__stats dd {
+  margin: 0;
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.game-result-card__actions {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+}
+
+.game-result-card__actions--split,
+.game-result-card__actions--retry {
+  grid-template-columns: 56px minmax(0, 1fr);
+  align-items: stretch;
+  justify-items: stretch;
+  gap: 12px;
+}
+
+.game-result-card__actions--split .icon-button,
+.game-result-card__actions--retry .icon-button {
+  width: 56px;
+  height: 56px;
+}
+
+.game-result-card__actions .icon-button {
+  border-color: var(--sky-deep);
+}
+

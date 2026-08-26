@@ -23,14 +23,21 @@ export {
 } from "@/games/dog-lege-dog/game/v13-config";
 export type {
   DogConfigChangeArea,
+  DogV13AppCopy,
   DogV13Config,
   DogV13ConfigIssue,
   DogV13DifficultyTarget,
   DogV13ItemId,
+  DogV13ItemCopy,
+  DogV13LoadoutCopy,
   DogV13MechanismDefinition,
   DogV13MechanismPlan,
   DogV13MechanismType,
+  DogV13MechanismPresentation,
+  DogV13ParticleEffectName,
+  DogV13ParticleEffectProfile,
   DogV13Range,
+  DogV13ResultDisplay,
   DogV13SoundEffectProfile,
   DogV13SoundWaveform,
   DogV13StructureStage,
@@ -46,21 +53,9 @@ export const DOG_MAX_LOCKED_TRAY_SLOTS = DOG_V13_CONFIG.tray.maxLockedSlotCount;
 export const DOG_KEY_DROP_RATE = DOG_V13_CONFIG.items.key.dropRate;
 
 export const DOG_GAME_RESULT_DISPLAY = Object.freeze({
-  won: Object.freeze({
-    eyebrow: "狗了个狗 · 关卡结果",
-    title: "通关！",
-    description: "完成。",
-  }),
-  final: Object.freeze({
-    eyebrow: "狗了个狗 · 最终通关",
-    title: "你就是最狗的玩家",
-    description: `全部 ${MAX_LEVEL_NUMBER} 关完成。`,
-  }),
-  lost: Object.freeze({
-    eyebrow: "狗了个狗 · 关卡结果",
-    title: "失败",
-    description: "暂存槽已满，进度未改变。",
-  }),
+  won: Object.freeze({ ...DOG_V13_CONFIG.ui.copy.result.won }),
+  final: Object.freeze({ ...DOG_V13_CONFIG.ui.copy.result.final }),
+  lost: Object.freeze({ ...DOG_V13_CONFIG.ui.copy.result.lost }),
 });
 
 /** Stable identity/config for all dog-lege-dog level consumers. */

@@ -1,0 +1,243 @@
+
+@media (prefers-reduced-motion: reduce) {
+  .dog-block--special-illusion,
+  .dog-block--special-illusion::before,
+  .dog-block--special-illusion .dog-block__glyph--fuzzy,
+  .dog-block--special-illusion .dog-block__glyph--fuzzy::before,
+  .dog-block--special-illusion .dog-block__glyph--fuzzy::after,
+  .dog-block--special-illusion .dog-block__glyph--fuzzy > img,
+  .dog-block--detector-reveal,
+  .dog-block__glyph--detector-reveal,
+  .dog-demagnetizer-effect,
+  .dog-demagnetizer-effect__ring,
+  .dog-tray__slot--illusion-reveal::before,
+  .dog-tray__slot--illusion-reveal .dog-block__glyph,
+  .dog-flying-block--illusion::before,
+  .dog-block--special-magnetic,
+  .dog-block--special-magnetic::before,
+  .dog-magnetic-attraction-effect,
+  .dog-magnetic-attraction-effect__ring,
+  .dog-magnetic-attraction-effect__pulse,
+  .dog-block--special-twin,
+  .dog-block--special-twin::before,
+  .dog-twin-split-effect,
+  .dog-twin-split-effect__piece {
+    animation: none;
+  }
+}
+
+@keyframes dog-detector-reveal {
+  0% {
+    opacity: 0;
+    transform: scale(0.58) rotate(-8deg);
+    filter: blur(8px) saturate(1.8);
+  }
+
+  48% {
+    opacity: 1;
+    transform: scale(1.08) rotate(3deg);
+    filter: blur(0) saturate(1.2);
+  }
+
+  100% {
+    opacity: 0.94;
+    transform: scale(1) rotate(0deg);
+    filter: blur(0) saturate(1);
+  }
+}
+
+.dog-tray__slot.dog-block--special-freeze {
+  overflow: visible;
+  z-index: 2;
+}
+
+.dog-tray__slot.dog-block--special-freeze[data-special-mechanism-progress="1"] {
+  animation: dog-freeze-pulse-soft 2200ms ease-in-out infinite;
+  box-shadow:
+    0 0 0 2px rgba(77, 213, 255, 0.26),
+    0 0 7px 2.5px rgba(64, 204, 255, 0.42),
+    4px 5px 0 rgba(22, 68, 93, 0.2),
+    inset 0 0 0 2px rgba(229, 253, 255, 0.78),
+    inset 0 0 12px rgba(121, 225, 255, 0.34);
+}
+
+.dog-tray__slot.dog-block--special-freeze[data-special-mechanism-progress="1"]::before {
+  box-shadow:
+    0 0 0 1px rgba(213, 251, 255, 0.42),
+    0 0 5px 1.5px rgba(91, 220, 255, 0.28),
+    inset 0 0 8px rgba(255, 255, 255, 0.38);
+  animation: dog-freeze-ice-soft 2200ms ease-in-out infinite;
+}
+
+.dog-tray__slot.dog-block--special-freeze[data-special-mechanism-progress="1"]::after {
+  filter: opacity(0.62) drop-shadow(0 0 4px rgba(112, 233, 255, 0.72));
+  animation-duration: 2600ms;
+}
+
+.dog-tray__slot--illusion-reveal {
+  position: relative;
+  z-index: 3;
+}
+
+.dog-tray__slot--illusion-reveal::before {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.66) 0 2px, transparent 2px 7px),
+    repeating-linear-gradient(8deg, rgba(255, 209, 102, 0.68) 0 3px, transparent 3px 9px);
+  box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.88);
+  content: "";
+  pointer-events: none;
+  animation: dog-illusion-tray-mask var(--dog-animation-duration, 420ms) ease-out both;
+}
+
+.dog-tray__slot--illusion-reveal .dog-block__glyph {
+  position: relative;
+  z-index: 1;
+  animation: dog-illusion-tray-glyph var(--dog-animation-duration, 420ms) ease-out both;
+}
+
+@keyframes dog-illusion-tray-mask {
+  0% {
+    opacity: 0.96;
+    transform: scale(0.92) rotate(0deg);
+  }
+
+  55% {
+    opacity: 0.52;
+    transform: scale(1.04) rotate(8deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.18) rotate(18deg);
+  }
+}
+
+@keyframes dog-illusion-tray-glyph {
+  0% {
+    opacity: 0.22;
+    filter: blur(4px) saturate(1.9) contrast(1.18);
+    transform: scale(0.78);
+  }
+
+  42% {
+    opacity: 0.78;
+    filter: blur(1.4px) saturate(1.45) contrast(1.08);
+    transform: scale(1.08);
+  }
+
+  100% {
+    opacity: 1;
+    filter: none;
+    transform: scale(1);
+  }
+}
+
+@keyframes dog-freeze-pulse-soft {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 2px rgba(77, 213, 255, 0.22),
+      0 0 6px 2px rgba(64, 204, 255, 0.34),
+      4px 5px 0 rgba(22, 68, 93, 0.2),
+      inset 0 0 0 2px rgba(229, 253, 255, 0.78),
+      inset 0 0 10px rgba(121, 225, 255, 0.3);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 3px rgba(77, 213, 255, 0.34),
+      0 0 9px 3px rgba(64, 204, 255, 0.5),
+      4px 5px 0 rgba(22, 68, 93, 0.2),
+      inset 0 0 0 2px rgba(245, 255, 255, 0.88),
+      inset 0 0 14px rgba(121, 225, 255, 0.44);
+  }
+}
+
+@keyframes dog-freeze-ice-soft {
+  0%,
+  100% {
+    opacity: 0.24;
+    transform: rotate(-0.5deg) scale(0.995);
+  }
+
+  50% {
+    opacity: 0.42;
+    transform: rotate(0.5deg) scale(1.005);
+  }
+}
+
+@keyframes dog-freeze-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1.5px rgba(193, 246, 255, 0.96),
+      0 0 0 3.5px rgba(77, 213, 255, 0.48),
+      0 0 8px 3px rgba(64, 204, 255, 0.78),
+      0 0 15px 5px rgba(151, 240, 255, 0.5),
+      4px 5px 0 rgba(22, 68, 93, 0.2),
+      inset 0 0 0 2px rgba(229, 253, 255, 0.94),
+      inset 0 0 14px rgba(121, 225, 255, 0.66);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 2px rgba(240, 255, 255, 1),
+      0 0 0 4.5px rgba(77, 213, 255, 0.62),
+      0 0 11px 4px rgba(64, 204, 255, 0.9),
+      0 0 20px 6px rgba(151, 240, 255, 0.62),
+      4px 5px 0 rgba(22, 68, 93, 0.2),
+      inset 0 0 0 3px rgba(245, 255, 255, 1),
+      inset 0 0 18px rgba(121, 225, 255, 0.78);
+  }
+}
+
+@keyframes dog-freeze-ice {
+  0%,
+  100% {
+    opacity: 0.42;
+    transform: rotate(-1deg) scale(0.99);
+  }
+
+  50% {
+    opacity: 0.68;
+    transform: rotate(1deg) scale(1.01);
+  }
+}
+
+@keyframes dog-freeze-snowflake {
+  0% {
+    opacity: 0.9;
+    transform: rotate(0deg);
+  }
+
+  100% {
+    opacity: 0.9;
+    transform: rotate(360deg);
+  }
+}
+
+.dog-block--special .dog-block__glyph {
+  position: relative;
+  z-index: 1;
+}
+
+.dog-tray__slot.dog-block--special {
+  position: relative;
+}
+
+@keyframes dog-special-shimmer {
+  0%,
+  100% {
+    opacity: 0.48;
+    transform: translateX(-3%);
+  }
+
+  50% {
+    opacity: 0.9;
+    transform: translateX(3%);
+  }
+}

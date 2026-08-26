@@ -1,4 +1,5 @@
 import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/game-config";
+import type { DogV13Config } from "@/games/dog-lege-dog/game/v13-config";
 
 export type DogSoundEffect = "select" | "match" | "won" | "lost";
 
@@ -20,15 +21,8 @@ interface SoundProfile {
   readonly noteSpacing: number;
 }
 
-const SOUND_PROFILES: Record<DogSoundEffect, SoundProfile> = {
-  select: toSoundProfile("select"),
-  match: toSoundProfile("match"),
-  won: toSoundProfile("won"),
-  lost: toSoundProfile("lost"),
-};
-
-function toSoundProfile(effect: DogSoundEffect): SoundProfile {
-  const profile = DOG_V13_CONFIG.audio.effects[effect];
+function toSoundProfile(effect: DogSoundEffect, config: DogV13Config): SoundProfile {
+  const profile = config.audio.effects[effect];
   return {
     frequencies: profile.frequencies,
     duration: profile.durationSeconds,
@@ -40,11 +34,20 @@ function toSoundProfile(effect: DogSoundEffect): SoundProfile {
 
 type AudioContextConstructor = new () => AudioContext;
 
-export function createSoundEffects(initialEnabled: boolean): SoundEffects {
+export function createSoundEffects(
+  initialEnabled: boolean,
+  config: DogV13Config = DOG_V13_CONFIG,
+): SoundEffects {
   let enabled = initialEnabled;
   let initialized = false;
   let context: AudioContext | null = null;
   let music: HTMLAudioElement | null = null;
+  const soundProfiles: Record<DogSoundEffect, SoundProfile> = {
+    select: toSoundProfile("select", config),
+    match: toSoundProfile("match", config),
+    won: toSoundProfile("won", config),
+    lost: toSoundProfile("lost", config),
+  };
 
   function startMusic(): void {
     if (!music || !enabled) {
@@ -79,7 +82,7 @@ export function createSoundEffects(initialEnabled: boolean): SoundEffects {
       }
 
       initialized = true;
-      music = createBackgroundMusic();
+      music = createBackgroundMusic(config);
       const browserGlobal = globalThis as typeof globalThis & {
         AudioContext?: AudioContextConstructor;
         webkitAudioContext?: AudioContextConstructor;
@@ -116,7 +119,7 @@ export function createSoundEffects(initialEnabled: boolean): SoundEffects {
         return;
       }
 
-      const profile = SOUND_PROFILES[effect];
+      const profile = soundProfiles[effect];
       const now = context.currentTime;
       for (const [index, frequency] of profile.frequencies.entries()) {
         const startAt = now + index * profile.noteSpacing;
@@ -160,7 +163,7 @@ export function createSoundEffects(initialEnabled: boolean): SoundEffects {
   };
 }
 
-function createBackgroundMusic(): HTMLAudioElement | null {
+function createBackgroundMusic(config: DogV13Config): HTMLAudioElement | null {
   if (
     typeof document === "undefined" ||
     document.defaultView?.navigator.userAgent.includes("jsdom")
@@ -169,10 +172,10 @@ function createBackgroundMusic(): HTMLAudioElement | null {
   }
 
   const audio = document.createElement("audio");
-  audio.src = new URL(DOG_MUSIC_ASSET_PATH, document.baseURI).toString();
+  audio.src = new URL(config.audio.music.path, document.baseURI).toString();
   audio.loop = true;
   audio.preload = "auto";
-  audio.volume = 0.1;
+  audio.volume = config.audio.music.volume;
   audio.setAttribute("aria-hidden", "true");
   return audio;
 }

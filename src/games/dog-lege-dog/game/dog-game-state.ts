@@ -5,8 +5,6 @@ import type {
 } from "@/game-contracts";
 import {
   DOG_GAME_ID,
-  DOG_GAME_RESULT_DISPLAY,
-  MAX_LEVEL_NUMBER,
 } from "@/games/dog-lege-dog/game/game-config";
 import type { GameSessionSnapshot } from "@/games/dog-lege-dog/game/game-session";
 import type {
@@ -69,9 +67,9 @@ export function createDogResult(
     return null;
   }
 
-  const isFinal = status === "won" && runtime.level.number === MAX_LEVEL_NUMBER;
+  const isFinal = status === "won" && runtime.level.number === runtime.config.game.maxLevelNumber;
   const resultDisplay: GameResultDisplay = {
-    ...(isFinal ? DOG_GAME_RESULT_DISPLAY.final : DOG_GAME_RESULT_DISPLAY[status]),
+    ...(isFinal ? runtime.config.ui.copy.result.final : runtime.config.ui.copy.result[status]),
   };
   const actions: readonly GameResultAction[] = isFinal
     ? ["catalog"]

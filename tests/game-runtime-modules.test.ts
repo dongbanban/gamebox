@@ -13,6 +13,7 @@ import {
   animateBlockFlight,
   renderDogMeltEffect,
 } from "@/games/dog-lege-dog/assets/animation-effects";
+import { createSoundEffects } from "@/games/dog-lege-dog/assets/sound-effects";
 
 describe("狗了个狗 runtime config seam", () => {
   it("uses supplied v13 tray capacity and freeze state rules", () => {
@@ -94,7 +95,7 @@ describe("狗了个狗 runtime config seam", () => {
         target: null,
       });
 
-      expect(meltEffect?.style.animationDuration).toBe("2ms");
+      expect(meltEffect?.style.getPropertyValue("--dog-animation-duration")).toBe("2ms");
 
       await vi.advanceTimersByTimeAsync(1);
 
@@ -102,6 +103,80 @@ describe("狗了个狗 runtime config seam", () => {
       meltEffect?.remove();
     } finally {
       vi.useRealTimers();
+    }
+  });
+
+  it("uses supplied v13 audio profile at the sound seam", () => {
+    const previousAudioContext = (globalThis as typeof globalThis & {
+      AudioContext?: unknown;
+    }).AudioContext;
+    const oscillator = {
+      type: "sine" as OscillatorType,
+      frequency: { setValueAtTime: vi.fn() },
+      connect: vi.fn(),
+      start: vi.fn(),
+      stop: vi.fn(),
+    };
+    const gain = {
+      gain: {
+        setValueAtTime: vi.fn(),
+        exponentialRampToValueAtTime: vi.fn(),
+      },
+      connect: vi.fn(),
+    };
+    class FakeAudioContext {
+      readonly state = "running" as const;
+      readonly currentTime = 10;
+      readonly destination = {} as AudioNode;
+
+      createOscillator(): OscillatorNode {
+        return oscillator as unknown as OscillatorNode;
+      }
+
+      createGain(): GainNode {
+        return gain as unknown as GainNode;
+      }
+
+      close(): Promise<void> {
+        return Promise.resolve();
+      }
+    }
+
+    Object.defineProperty(globalThis, "AudioContext", {
+      configurable: true,
+      value: FakeAudioContext,
+    });
+    try {
+      const config = loadDogV13Config({
+        ...DOG_V13_CONFIG,
+        audio: {
+          ...DOG_V13_CONFIG.audio,
+          effects: {
+            ...DOG_V13_CONFIG.audio.effects,
+            select: {
+              ...DOG_V13_CONFIG.audio.effects.select,
+              frequencies: [123],
+              volume: 0.9,
+            },
+          },
+        },
+      });
+      const sound = createSoundEffects(true, config);
+      sound.initialize();
+      sound.play("select");
+
+      expect(oscillator.frequency.setValueAtTime).toHaveBeenCalledWith(123, 10);
+      expect(gain.gain.exponentialRampToValueAtTime).toHaveBeenCalledWith(0.9, 10.012);
+      sound.destroy();
+    } finally {
+      if (previousAudioContext === undefined) {
+        Reflect.deleteProperty(globalThis, "AudioContext");
+      } else {
+        Object.defineProperty(globalThis, "AudioContext", {
+          configurable: true,
+          value: previousAudioContext,
+        });
+      }
     }
   });
 

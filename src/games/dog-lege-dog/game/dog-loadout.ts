@@ -3,6 +3,7 @@ import {
   DOG_V13_CONFIG,
   type DogV13ItemId,
 } from "@/games/dog-lege-dog/game/game-config";
+import type { DogV13Config } from "@/games/dog-lege-dog/game/v13-config";
 
 /** Migration adapter. Item identity and quota policy live in v13 config. */
 export const DOG_LOADOUT_SIZE = DOG_V13_CONFIG.items.loadoutSize;
@@ -27,64 +28,24 @@ export interface DogItemDefinition {
   readonly visualFeedback: DogItemVisualFeedback;
 }
 
-export const DOG_ITEM_DEFINITIONS: readonly DogItemDefinition[] = Object.freeze([
-  Object.freeze({
-    id: "triple-removal",
-    name: "道具三消移除",
-    icon: "✦",
-    description: "选择槽内相邻方块并一次移除",
-    targetType: "tray-block",
-    visualFeedback: "triple-removal",
-  }),
-  Object.freeze({
-    id: "tray-capacity",
-    name: "暂存槽容量提升",
-    icon: "+1",
-    description: "当前关卡暂存槽增加 1 格",
-    targetType: "none",
-    visualFeedback: "tray-capacity",
-  }),
-  Object.freeze({
-    id: "wildcard",
-    name: "万能方块",
-    icon: "◇",
-    description: "点击槽内方块复制其图案",
-    targetType: "tray-block",
-    visualFeedback: "wildcard",
-  }),
-  Object.freeze({
-    id: "torch",
-    name: "火把",
-    icon: "火",
-    description: "融化一个冻结方块",
-    targetType: "block",
-    visualFeedback: "torch",
-  }),
-  Object.freeze({
-    id: "detector",
-    name: "检测仪",
-    icon: "⌕",
-    description: "揭示一个幻化方块",
-    targetType: "block",
-    visualFeedback: "detector",
-  }),
-  Object.freeze({
-    id: "demagnetizer",
-    name: "消磁仪",
-    icon: "⊖",
-    description: "移除一个磁吸方块的磁性",
-    targetType: "block",
-    visualFeedback: "demagnetizer",
-  }),
-  Object.freeze({
-    id: "key",
-    name: "钥匙",
-    icon: "⚿",
-    description: "解锁一个暂存槽",
-    targetType: "none",
-    visualFeedback: "key",
-  }),
-]);
+const DOG_ITEM_RULES: readonly Pick<DogItemDefinition, "id" | "targetType" | "visualFeedback">[] = [
+  { id: "triple-removal", targetType: "tray-block", visualFeedback: "triple-removal" },
+  { id: "tray-capacity", targetType: "none", visualFeedback: "tray-capacity" },
+  { id: "wildcard", targetType: "tray-block", visualFeedback: "wildcard" },
+  { id: "torch", targetType: "block", visualFeedback: "torch" },
+  { id: "detector", targetType: "block", visualFeedback: "detector" },
+  { id: "demagnetizer", targetType: "block", visualFeedback: "demagnetizer" },
+  { id: "key", targetType: "none", visualFeedback: "key" },
+];
+
+export const DOG_ITEM_DEFINITIONS: readonly DogItemDefinition[] = Object.freeze(
+  DOG_ITEM_RULES.map((rule) =>
+    Object.freeze({
+      ...rule,
+      ...DOG_V13_CONFIG.ui.copy.items[rule.id],
+    }),
+  ),
+);
 
 const DOG_ITEM_ID_SET: ReadonlySet<string> = new Set(DOG_ITEM_IDS);
 
@@ -124,13 +85,23 @@ export function areDogLoadoutsEqual(
   return first.every((itemId) => second.includes(itemId));
 }
 
-export function getDogItemDefinition(itemId: DogItemId): DogItemDefinition {
+export function getDogItemDefinition(
+  itemId: DogItemId,
+  config: DogV13Config = DOG_V13_CONFIG,
+): DogItemDefinition {
   const definition = DOG_ITEM_DEFINITIONS.find((item) => item.id === itemId);
   if (definition === undefined) {
     throw new Error(`Unknown 狗了个狗 item id: ${itemId}`);
   }
 
-  return definition;
+  if (config === DOG_V13_CONFIG) {
+    return definition;
+  }
+
+  return {
+    ...definition,
+    ...config.ui.copy.items[itemId],
+  };
 }
 
 export interface DogLoadoutEditorRenderOptions {
@@ -141,6 +112,7 @@ export interface DogLoadoutEditorRenderOptions {
   readonly confirming: boolean;
   readonly changeTarget?: "current" | "next";
   readonly itemUses?: Partial<Record<DogItemId, number>>;
+  readonly config?: DogV13Config;
   readonly loadoutSize?: number;
 }
 
@@ -162,20 +134,23 @@ export function renderDogLoadoutEditor({
   confirming,
   changeTarget = "current",
   itemUses,
-  loadoutSize = DOG_LOADOUT_SIZE,
+  config = DOG_V13_CONFIG,
+  loadoutSize = config.items.loadoutSize,
 }: DogLoadoutEditorRenderOptions): string {
   const isChange = mode === "change";
   const isNextChange = changeTarget === "next";
   const canConfirm = isValidDogLoadout(draft, loadoutSize) &&
     (!isChange || !areDogLoadoutsEqual(current, draft, loadoutSize));
-  const title = isChange ? "更换道具组" : "选择本关道具";
+  const copy = config.ui.copy.loadout;
+  const title = isChange ? copy.changeTitle : copy.initialTitle;
   const intro = isChange
     ? isNextChange
-      ? `新道具组将在第 ${levelNumber} 关生效。新组合至少替换一种道具。`
-      : `当前道具组将应用于第 ${levelNumber} 关。新组合至少替换一种道具。`
-    : `本关棋盘已生成。选择 ${loadoutSize} 种不同道具后确认。`;
+      ? fillDogLoadoutCopy(copy.changeNextIntro, { levelNumber })
+      : fillDogLoadoutCopy(copy.changeCurrentIntro, { levelNumber })
+    : fillDogLoadoutCopy(copy.initialIntro, { loadoutSize });
   const titleId = `dog-loadout-title-${mode}`;
-  const options = DOG_ITEM_DEFINITIONS.map((item) => {
+  const options = DOG_ITEM_DEFINITIONS.map((baseItem) => {
+    const item = getDogItemDefinition(baseItem.id, config);
     const selected = draft.includes(item.id);
     const uses = itemUses?.[item.id];
     return `
@@ -188,11 +163,11 @@ export function renderDogLoadoutEditor({
         aria-pressed="${selected}"
       >
         <span class="dog-loadout-option__heading">
-          <span class="dog-loadout-option__icon" aria-hidden="true">${renderDogItemAsset(item.id)}</span>
+          <span class="dog-loadout-option__icon" aria-hidden="true">${renderDogItemAsset(item.id, config)}</span>
           <strong>${item.name}</strong>
         </span>
         <span class="dog-loadout-option__description">${item.description}</span>
-        <small class="dog-loadout-option__uses">${uses === undefined ? "次数按关卡规则初始化" : `本关 ${uses} 次`}</small>
+        <small class="dog-loadout-option__uses">${uses === undefined ? copy.usesFallback : fillDogLoadoutCopy(copy.usesPerLevel, { uses })}</small>
         <span class="dog-loadout-option__check" aria-hidden="true">${selected ? "✓" : ""}</span>
       </button>
     `;
@@ -201,21 +176,21 @@ export function renderDogLoadoutEditor({
   const confirmation = confirming
     ? `
         <div class="dog-loadout-confirmation" data-testid="dog-loadout-confirmation" role="alert">
-          <strong>确认更换道具组？</strong>
+          <strong>${copy.confirmationTitle}</strong>
           <p>${isNextChange
-            ? `确认后进入第 ${levelNumber} 关，已完成关卡、奖励与解锁保持不变。`
-            : "确认后将重置本关局内状态"}</p>
+            ? fillDogLoadoutCopy(copy.confirmationNext, { levelNumber })
+            : copy.confirmationCurrent}</p>
           <div class="dog-loadout-confirmation__actions">
-            <button class="text-button dog-loadout-editor__clear" type="button" data-action="cancel-loadout-confirmation">取消</button>
-            <button class="primary-button" type="button" data-action="apply-loadout-change">确认</button>
+            <button class="text-button dog-loadout-editor__clear" type="button" data-action="cancel-loadout-confirmation">${copy.cancel}</button>
+            <button class="primary-button" type="button" data-action="apply-loadout-change">${copy.confirm}</button>
           </div>
         </div>
       `
     : `
         <div class="dog-loadout-editor__actions">
-          <button class="text-button dog-loadout-editor__clear" type="button" data-action="cancel-loadout">${isChange ? "取消" : "清空"}</button>
+          <button class="text-button dog-loadout-editor__clear" type="button" data-action="cancel-loadout">${isChange ? copy.cancel : copy.clear}</button>
           <button class="primary-button" type="button" data-action="confirm-loadout" data-testid="dog-loadout-confirm" ${canConfirm ? "" : "disabled"}>
-            确认
+            ${copy.confirm}
           </button>
         </div>
       `;
@@ -244,13 +219,15 @@ export function renderDogLoadoutSummary(
   itemStates: readonly DogLoadoutSummaryItemState[] = [],
   targetState?: DogLoadoutSummaryTargetState,
   loadoutLocked = inputLocked,
+  config: DogV13Config = DOG_V13_CONFIG,
 ): string {
+  const copy = config.ui.copy.loadout;
   const targetType = targetState?.targetType ?? null;
   const isTargeting = targetType !== null;
   const targetPrompt = isTargeting
     ? `
         <div class="dog-item-targeting" data-testid="dog-item-targeting" role="status">
-          <span class="dog-item-targeting__label">选择道具目标</span>
+          <span class="dog-item-targeting__label">${copy.targetPrompt}</span>
         </div>
       `
     : "";
@@ -260,15 +237,17 @@ export function renderDogLoadoutSummary(
       class="dog-loadout-summary"
       data-testid="dog-loadout-summary"
       data-target-type="${targetType ?? ""}"
-      aria-label="当前道具组"
+      aria-label="${copy.summaryAriaLabel}"
     >
       <div class="dog-loadout-summary__items">
         ${loadout.map((itemId) => {
-          const item = getDogItemDefinition(itemId);
+          const item = getDogItemDefinition(itemId, config);
           const state = itemStates.find((itemState) => itemState.id === itemId);
           const available = !inputLocked && (state?.available ?? true);
           const remainingUses = state?.remainingUses;
-          const remainingLabel = remainingUses === undefined ? "" : `，剩余 ${remainingUses} 次`;
+          const remainingLabel = remainingUses === undefined
+            ? ""
+            : fillDogLoadoutCopy(copy.remainingUses, { uses: remainingUses });
           const usageBadge = remainingUses === undefined
             ? ""
             : `<span class="dog-loadout-thumbnail__uses" data-testid="dog-loadout-thumbnail-uses" aria-hidden="true">${remainingUses}</span>`;
@@ -285,7 +264,7 @@ export function renderDogLoadoutSummary(
             aria-label="${item.name}${remainingLabel}"
             ${available ? "" : "disabled"}
           >
-            <span class="dog-loadout-thumbnail__icon" aria-hidden="true">${renderDogItemAsset(item.id)}</span>
+            <span class="dog-loadout-thumbnail__icon" aria-hidden="true">${renderDogItemAsset(item.id, config)}</span>
             ${usageBadge}
           </button>`;
         }).join("")}
@@ -293,10 +272,20 @@ export function renderDogLoadoutSummary(
       <div class="dog-loadout-summary__actions" data-testid="dog-loadout-actions">
         ${targetType === null
           ? ""
-          : '<button class="text-button dog-loadout-summary__cancel" type="button" data-action="cancel-item-target">取消</button>'}
-        <button class="text-button dog-loadout-summary__edit" type="button" data-action="edit-loadout" data-testid="dog-edit-loadout" ${loadoutLocked ? "disabled" : ""}>变更</button>
+          : `<button class="text-button dog-loadout-summary__cancel" type="button" data-action="cancel-item-target">${copy.cancel}</button>`}
+        <button class="text-button dog-loadout-summary__edit" type="button" data-action="edit-loadout" data-testid="dog-edit-loadout" ${loadoutLocked ? "disabled" : ""}>${copy.edit}</button>
       </div>
       ${targetPrompt}
     </section>
   `;
+}
+
+function fillDogLoadoutCopy(
+  template: string,
+  values: Readonly<Record<string, number>>,
+): string {
+  return Object.entries(values).reduce(
+    (result, [key, value]) => result.replaceAll(`{${key}}`, String(value)),
+    template,
+  );
 }

@@ -38,6 +38,7 @@ export interface GameLaunchContext {
   readonly levelNumber?: number;
   readonly runSeed?: string;
   readonly loadout?: readonly string[] | null;
+  readonly config?: unknown;
 }
 
 export type GameLauncher = (

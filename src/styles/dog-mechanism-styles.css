@@ -1,0 +1,262 @@
+
+.dog-block--special {
+  isolation: isolate;
+  border-color: rgba(220, 250, 255, 0.96);
+}
+
+.dog-block--special::before {
+  position: absolute;
+  z-index: -1;
+  inset: 3px;
+  border: 1px solid rgba(239, 253, 255, 0.9);
+  border-radius: 7px;
+  background: repeating-linear-gradient(
+    135deg,
+    rgba(240, 253, 255, 0.38) 0 3px,
+    rgba(112, 207, 239, 0.14) 3px 7px
+  );
+  content: "";
+  pointer-events: none;
+  animation: dog-special-shimmer 2200ms ease-in-out infinite;
+}
+
+.dog-block--special-freeze {
+  border: 3px solid rgba(245, 255, 255, 0.98);
+  box-shadow:
+    0 0 0 1.5px rgba(193, 246, 255, 0.96),
+    0 0 0 3.5px rgba(77, 213, 255, 0.48),
+    0 0 8px 3px rgba(64, 204, 255, 0.78),
+    0 0 15px 5px rgba(151, 240, 255, 0.5),
+    4px 5px 0 rgba(22, 68, 93, 0.2),
+    inset 0 0 0 2px rgba(229, 253, 255, 0.94),
+    inset 0 0 14px rgba(121, 225, 255, 0.66);
+  animation: dog-freeze-pulse 1800ms ease-in-out infinite;
+}
+
+.dog-block--special-freeze::before {
+  z-index: 0;
+  inset: -2.5px;
+  border: 1px solid rgba(232, 254, 255, 0.98);
+  border-radius: 13px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent 36% 62%, rgba(145, 238, 255, 0.08)),
+    linear-gradient(135deg, transparent 38%, rgba(239, 255, 255, 0.48) 39% 42%, transparent 43%),
+    linear-gradient(45deg, transparent 54%, rgba(167, 241, 255, 0.38) 55% 58%, transparent 59%),
+    repeating-linear-gradient(118deg, rgba(239, 255, 255, 0.16) 0 2px, transparent 2px 9px),
+    rgba(108, 221, 255, 0.12);
+  box-shadow:
+    0 0 0 1px rgba(213, 251, 255, 0.62),
+    0 0 6px 2px rgba(91, 220, 255, 0.46),
+    inset 0 0 10px rgba(255, 255, 255, 0.58);
+  content: "";
+  backdrop-filter: blur(0.8px) saturate(0.82);
+  animation: dog-freeze-ice 1500ms ease-in-out infinite;
+}
+
+.dog-block--special-freeze::after {
+  position: absolute;
+  z-index: 3;
+  right: -4px;
+  bottom: -4px;
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  color: #ffffff;
+  content: "❄";
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1;
+  pointer-events: none;
+  text-shadow:
+    0 0 3px #1aaee0,
+    0 0 9px #70e9ff,
+    0 0 16px #efffff,
+    0 0 24px rgba(239, 253, 255, 0.88),
+    2px 3px 0 rgba(22, 68, 93, 0.3);
+  animation: dog-freeze-snowflake 1800ms linear infinite;
+}
+
+.dog-block--special-freeze .dog-block__glyph {
+  opacity: 0.94;
+  filter: none;
+}
+
+.dog-block--special-illusion {
+  border: 3px solid rgba(255, 244, 188, 0.98);
+  box-shadow:
+    0 0 0 1.5px rgba(255, 209, 102, 0.72),
+    0 0 8px 2.5px rgba(255, 209, 102, 0.54),
+    4px 5px 0 rgba(22, 68, 93, 0.2),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.88);
+  animation: dog-illusion-pulse 1600ms ease-in-out infinite;
+}
+
+.dog-block--special-illusion::before {
+  z-index: 2;
+  inset: -2px;
+  border: 1px solid rgba(255, 249, 214, 0.96);
+  border-radius: 13px;
+  background:
+    repeating-conic-gradient(
+      from 18deg,
+      rgba(255, 255, 255, 0.52) 0deg 10deg,
+      rgba(255, 209, 102, 0.08) 10deg 24deg
+    ),
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.24) 0 2px, transparent 2px 8px);
+  box-shadow:
+    0 0 0 1px rgba(255, 222, 133, 0.48),
+    0 0 7px 2px rgba(255, 209, 102, 0.42),
+    inset 0 0 12px rgba(255, 255, 255, 0.6);
+  content: "";
+  animation: dog-illusion-mask 1200ms linear infinite;
+}
+
+.dog-block--special-illusion .dog-block__glyph {
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
+  opacity: 0.76;
+}
+
+.dog-block--special-illusion .dog-block__glyph--fuzzy {
+  animation: dog-illusion-fuzzy-base 820ms steps(9, end) infinite;
+}
+
+.dog-block--special-illusion .dog-block__glyph--fuzzy::before,
+.dog-block--special-illusion .dog-block__glyph--fuzzy::after {
+  position: absolute;
+  z-index: 2;
+  inset: -10%;
+  display: block;
+  background-image: var(--dog-illusion-image);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  content: "";
+  pointer-events: none;
+  mask-image: repeating-linear-gradient(
+    to bottom,
+    #000 0 3px,
+    transparent 3px 5px
+  );
+  -webkit-mask-image: repeating-linear-gradient(
+    to bottom,
+    #000 0 3px,
+    transparent 3px 5px
+  );
+}
+
+.dog-block--special-illusion .dog-block__glyph--fuzzy::before {
+  opacity: 0.42;
+  filter: blur(0.2px) saturate(1.5) hue-rotate(-10deg);
+  mix-blend-mode: screen;
+  animation: dog-illusion-fuzzy-slice-a 720ms steps(8, end) infinite;
+}
+
+.dog-block--special-illusion .dog-block__glyph--fuzzy::after {
+  opacity: 0.34;
+  filter: blur(0.35px) saturate(1.65) hue-rotate(14deg);
+  mix-blend-mode: multiply;
+  animation: dog-illusion-fuzzy-slice-b 940ms steps(10, end) infinite;
+}
+
+.dog-block--special-illusion .dog-block__glyph--fuzzy > img {
+  position: relative;
+  z-index: 1;
+  filter: contrast(1.08) saturate(0.78);
+  animation: dog-illusion-fuzzy-image 880ms steps(9, end) infinite;
+}
+
+.dog-block--special-twin {
+  border: 3px solid rgba(226, 255, 224, 0.98);
+  box-shadow:
+    0 0 0 1.5px rgba(111, 224, 128, 0.86),
+    0 0 9px 3px rgba(86, 211, 112, 0.56),
+    4px 5px 0 rgba(22, 68, 93, 0.2),
+    inset 0 0 0 2px rgba(246, 255, 237, 0.9);
+  animation: dog-twin-pulse 1500ms ease-in-out infinite;
+}
+
+.dog-block--special-twin::before {
+  background:
+    linear-gradient(90deg, transparent 43%, rgba(236, 255, 232, 0.9) 44% 56%, transparent 57%),
+    repeating-linear-gradient(135deg, rgba(244, 255, 239, 0.26) 0 2px, transparent 2px 8px);
+  box-shadow: inset 0 0 10px rgba(197, 255, 196, 0.58);
+}
+
+.dog-block--special-twin::after {
+  position: absolute;
+  z-index: 3;
+  right: -5px;
+  bottom: -5px;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 2px solid rgba(236, 255, 232, 0.96);
+  border-radius: 50%;
+  background: rgba(49, 157, 77, 0.92);
+  color: #f5fff1;
+  content: "2";
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1;
+  pointer-events: none;
+  text-shadow: 0 1px 0 rgba(22, 68, 93, 0.35);
+}
+
+.dog-block--special-magnetic {
+  border: 3px solid rgba(255, 226, 171, 0.98);
+  box-shadow:
+    0 0 0 1.5px rgba(255, 159, 67, 0.84),
+    0 0 10px 3px rgba(255, 135, 47, 0.56),
+    4px 5px 0 rgba(22, 68, 93, 0.2),
+    inset 0 0 0 2px rgba(255, 252, 235, 0.92);
+  animation: dog-magnetic-pulse 1400ms ease-in-out infinite;
+}
+
+.dog-block--special-magnetic::before {
+  z-index: 2;
+  inset: -2px;
+  border: 1px solid rgba(255, 244, 208, 0.88);
+  border-radius: 13px;
+  background:
+    radial-gradient(circle at 28% 32%, rgba(255, 255, 255, 0.78) 0 2px, transparent 3px),
+    radial-gradient(circle at 72% 68%, rgba(255, 232, 172, 0.8) 0 2px, transparent 3px),
+    repeating-radial-gradient(
+      ellipse at center,
+      transparent 0 5px,
+      rgba(255, 247, 218, 0.26) 6px 7px,
+      transparent 8px 12px
+    );
+  box-shadow:
+    0 0 0 1px rgba(255, 204, 115, 0.48),
+    0 0 8px 2px rgba(255, 153, 58, 0.42),
+    inset 0 0 12px rgba(255, 255, 255, 0.48);
+  content: "";
+  animation: dog-magnetic-field 1100ms linear infinite;
+}
+
+.dog-block__mechanism-icon {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.dog-block__mechanism-icon--magnetic {
+  right: -4px;
+  bottom: -4px;
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1;
+  text-shadow:
+    0 0 3px #e77831,
+    0 0 8px rgba(255, 183, 66, 0.86),
+    2px 3px 0 rgba(22, 68, 93, 0.3);
+}

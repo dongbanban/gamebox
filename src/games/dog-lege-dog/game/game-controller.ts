@@ -102,8 +102,8 @@ export function createDogLegeDogGame(
       : null,
   };
   const gameContentRoot = root.querySelector<HTMLElement>("[data-game-content]") ?? root;
-  const soundEffects = createSoundEffects(runtime.soundEnabled);
-  const particleEffects = createParticleEffects(root);
+  const soundEffects = createSoundEffects(runtime.soundEnabled, config);
+  const particleEffects = createParticleEffects(root, config);
 
   const renderStartedGame = (snapshot?: GameSessionSnapshot): void => {
     if (runtime.started) {
@@ -250,7 +250,7 @@ export function createDogLegeDogGame(
     ) {
       return;
     }
-    gameRoot.insertAdjacentHTML("beforeend", renderDogSpecialMechanismModal(level));
+    gameRoot.insertAdjacentHTML("beforeend", renderDogSpecialMechanismModal(level, config));
     gameRoot.querySelector<HTMLButtonElement>(".dog-special-mechanism-modal__close")?.focus();
   }
 

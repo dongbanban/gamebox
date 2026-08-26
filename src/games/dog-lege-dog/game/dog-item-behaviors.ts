@@ -10,6 +10,7 @@ import type {
 } from "@/games/dog-lege-dog/game/game-session";
 import {
   DOG_ITEM_DEFINITIONS,
+  getDogItemDefinition,
   type DogItemDefinition,
   type DogItemId,
 } from "@/games/dog-lege-dog/game/dog-loadout";
@@ -246,14 +247,15 @@ export function createDogItemRuntimeDefinitions(
   config: DogV13Config = DOG_V13_CONFIG,
 ): readonly DogItemRuntimeDefinition[] {
   return Object.freeze(
-    DOG_ITEM_DEFINITIONS.map((definition) =>
-      Object.freeze({
+    DOG_ITEM_DEFINITIONS.map((baseDefinition) => {
+      const definition = getDogItemDefinition(baseDefinition.id, config);
+      return Object.freeze({
         definition,
         getUses: (level: DogLegeDogLevel, runtimeConfig = config) =>
           getDogItemUses(level, definition.id, runtimeConfig),
         ...DOG_ITEM_BEHAVIORS[definition.id],
-      }),
-    ),
+      });
+    }),
   );
 }
 

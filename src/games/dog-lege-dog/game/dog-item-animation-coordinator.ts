@@ -84,6 +84,7 @@ export class DogItemAnimationCoordinator {
               patternMarkup: renderDogPatternAsset(
                 runtime.level.blocks.find((block) => block.id === effect.blockId)?.patternType ??
                   DOG_PATTERN_TYPES[0],
+                runtime.config,
               ),
             })
           : effect?.type === "demagnetize"
