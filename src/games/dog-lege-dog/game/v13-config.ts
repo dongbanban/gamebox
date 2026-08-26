@@ -150,6 +150,7 @@ export interface DogV13Config {
     readonly budgetRounding: "floor";
     readonly remainderStrategy: "stable-round-robin";
     readonly requireAllTypes: true;
+    readonly freezeMeltTripleCount: number;
     readonly mechanisms: readonly DogV13MechanismDefinition[];
   };
   readonly difficulty: {
@@ -325,6 +326,7 @@ const DOG_V13_CONFIG_SOURCE: DogV13Config = {
     budgetRounding: "floor",
     remainderStrategy: "stable-round-robin",
     requireAllTypes: true,
+    freezeMeltTripleCount: 2,
     mechanisms: [
       { type: "freeze", logicalUnitWeight: 1 },
       { type: "illusion", logicalUnitWeight: 1 },
@@ -844,6 +846,12 @@ function collectConfigIssues(input: unknown): DogV13ConfigIssue[] {
         message: "必须为 true",
       });
     }
+    validateInteger(
+      specialMechanisms.freezeMeltTripleCount,
+      "specialMechanisms.freezeMeltTripleCount",
+      1,
+      issues,
+    );
     const mechanisms = specialMechanisms.mechanisms;
     if (!Array.isArray(mechanisms) || mechanisms.length === 0) {
       issues.push({

@@ -1,118 +1,77 @@
-import type {
-  GameLaunchContext,
-  GameResult,
-  GameResultAction,
-  GameResultDisplay,
-} from "@/game-contracts";
+import type { GameResult } from "@/game-contracts";
 import {
-  DOG_PATTERN_TYPES,
   FIRST_LEVEL,
-  type DogBlock,
   type DogLegeDogLevel,
-  type DogPatternType,
 } from "@/games/dog-lege-dog/levels/first-level";
-import { renderDogPatternAsset } from "@/games/dog-lege-dog/assets/game-assets";
 import {
-  DOG_GAME_ID,
-  DOG_GAME_RESULT_DISPLAY,
   loadDogV13Config,
-  MAX_LEVEL_NUMBER,
 } from "@/games/dog-lege-dog/game/game-config";
-import {
-  DOG_ILLUSION_MECHANISM_TYPE,
-  DOG_MAGNETIC_MECHANISM_TYPE,
-  DOG_TWIN_MECHANISM_TYPE,
-  getDogIllusionDisguisedPattern,
-} from "@/games/dog-lege-dog/game/special-mechanisms";
-import { getDogLegeDogLevel } from "@/games/dog-lege-dog/levels/level-provider";
+import { getDogLegeDogLevel, DogLevelProvider } from "@/games/dog-lege-dog/levels/level-provider";
 import { createRunSeed } from "@/games/dog-lege-dog/levels/level-random";
 import {
-  animateBlockFlight,
-  animateDogDetectorReveal,
-  animateDogDemagnetizerEffect,
-  animateDogIllusionReveal,
-  animateDogItemEffect,
-  animateDogKeyDropEffect,
-  animateDogMagneticAttractionEffect,
-  animateDogTripleRemovalEffect,
-  animateDogTorchMeltEffect,
-  animateDogTwinSplitEffect,
-  animateDogUnlockTrayEffect,
-  DOG_FREEZE_MELT_DURATION_MS,
-  renderDogMeltEffect,
-  type CancellableAnimation,
-} from "@/games/dog-lege-dog/assets/animation-effects";
-import {
-  GameSession,
-  type GameSessionSelectionResult,
-  type GameSessionSnapshot,
-} from "@/games/dog-lege-dog/game/game-session";
+  renderDogSpecialMechanismModal,
+  renderDogLegeDogGame,
+  fitDogBoardToFrame,
+} from "@/games/dog-lege-dog/game/game-renderer";
+import { createParticleEffects } from "@/games/dog-lege-dog/assets/particle-effects";
+import { createSoundEffects } from "@/games/dog-lege-dog/assets/sound-effects";
 import {
   DogItemRuntime,
   type DogItemActionResult,
   type DogItemTarget,
-  type DogItemRuntimeSnapshot,
 } from "@/games/dog-lege-dog/game/dog-item-runtime";
-import { createParticleEffects } from "@/games/dog-lege-dog/assets/particle-effects";
-import { createSoundEffects } from "@/games/dog-lege-dog/assets/sound-effects";
 import {
-  fitDogBoardToFrame,
-  renderDogSpecialMechanismModal,
-  renderDogLegeDogGame,
-} from "@/games/dog-lege-dog/game/game-renderer";
-import {
-  areDogLoadoutsEqual,
   isDogItemId,
   isValidDogLoadout,
   normalizeDogLoadout,
 } from "@/games/dog-lege-dog/game/dog-loadout";
+import type { DogItemId } from "@/games/dog-lege-dog/game/dog-loadout";
+import {
+  DogFeedbackCoordinator,
+} from "@/games/dog-lege-dog/game/dog-feedback-coordinator";
+import {
+  DogBlockAnimationCoordinator,
+} from "@/games/dog-lege-dog/game/dog-block-animation-coordinator";
+import {
+  DogItemAnimationCoordinator,
+} from "@/games/dog-lege-dog/game/dog-item-animation-coordinator";
+import { bindDogInputController } from "@/games/dog-lege-dog/game/dog-input-controller";
+import { DogLoadoutController } from "@/games/dog-lege-dog/game/dog-loadout-controller";
+import {
+  captureDogTripleRemovalSourceRects,
+  findDogItemTargetElement,
+} from "@/games/dog-lege-dog/game/dog-game-dom";
+import {
+  createDogGameState,
+  createDogResult,
+  isDogGameInputLocked,
+} from "@/games/dog-lege-dog/game/dog-game-state";
 import type {
-  DogLoadoutEditorState,
   DogLegeDogGame,
   DogLegeDogGameOptions,
   DogLegeDogGameState,
-  DogVisualFeedback,
 } from "@/games/dog-lege-dog/game/game-types";
-import type { DogItemId } from "@/games/dog-lege-dog/game/dog-loadout";
-
-interface DogGameRuntime {
-  session: GameSession;
-  started: boolean;
-  destroyed: boolean;
-  hasInteracted: boolean;
-  inputLocked: boolean;
-  feedback: DogVisualFeedback;
-  soundEnabled: boolean;
-  resultConfirmed: boolean;
-  resultPresented: boolean;
-  startedAt: number | null;
-  endedAt: number | null;
-  activeFlights: Set<CancellableAnimation>;
-  matchFeedbackActive: boolean;
-  matchAnimation: Promise<void> | null;
-  meltAnimation: Promise<void> | null;
-  loadout: readonly DogItemId[] | null;
-  itemRuntime: DogItemRuntime | null;
-  itemAnimation: CancellableAnimation | null;
-  loadoutEditor: DogLoadoutEditorState | null;
-}
+import {
+  GameSession,
+  type GameSessionSnapshot,
+} from "@/games/dog-lege-dog/game/game-session";
+import type { DogGameRuntime } from "@/games/dog-lege-dog/game/dog-game-runtime-types";
 
 export function createDogLegeDogGame(
   root: HTMLElement,
   options: DogLegeDogGameOptions = {},
 ): DogLegeDogGame {
-  loadDogV13Config(options.config);
-  const level = options.level ?? getDogLegeDogLevel(
-    options.levelNumber ?? FIRST_LEVEL.number,
-    options.runSeed ?? createRunSeed(),
-  );
+  const config = loadDogV13Config(options.config);
+  const level = options.level ?? createLevel(options, config);
   const managesLoadout =
     options.loadout !== undefined || options.onLoadoutConfirmed !== undefined;
   const initialLoadout = managesLoadout
-    ? normalizeDogLoadout(options.loadout)
+    ? normalizeDogLoadout(options.loadout, config.items.loadoutSize)
     : null;
-  const initialSession = new GameSession(level);
+  const initialSession = new GameSession({ level, config });
   const runtime: DogGameRuntime = {
+    level,
+    config,
     session: initialSession,
     started: false,
     destroyed: false,
@@ -129,769 +88,105 @@ export function createDogLegeDogGame(
     matchAnimation: null,
     meltAnimation: null,
     loadout: initialLoadout,
-    itemRuntime:
-      initialLoadout === null
-        ? null
-        : new DogItemRuntime({
-            level,
-            session: initialSession,
-            loadout: initialLoadout,
-          }),
+    itemRuntime: initialLoadout === null
+      ? null
+      : new DogItemRuntime({
+          config,
+          level,
+          session: initialSession,
+          loadout: initialLoadout,
+        }),
     itemAnimation: null,
-    loadoutEditor:
-      managesLoadout && initialLoadout === null
-        ? { mode: "initial", draft: [], confirming: false }
-        : null,
+    loadoutEditor: managesLoadout && initialLoadout === null
+      ? { mode: "initial", draft: [], confirming: false }
+      : null,
   };
-  const gameContentRoot =
-    root.querySelector<HTMLElement>("[data-game-content]") ?? root;
+  const gameContentRoot = root.querySelector<HTMLElement>("[data-game-content]") ?? root;
   const soundEffects = createSoundEffects(runtime.soundEnabled);
   const particleEffects = createParticleEffects(root);
-  const handleViewportResize = (): void => fitDogBoardToFrame(root);
-  window.addEventListener("resize", handleViewportResize);
 
-  const selectBlock = (blockId: string): GameSessionSnapshot => {
-    if (runtime.destroyed) {
-      throw new Error("Cannot select a block in a destroyed 狗了个狗 game");
+  const renderStartedGame = (snapshot?: GameSessionSnapshot): void => {
+    if (runtime.started) {
+      renderDogLegeDogGame(root, createDogGameState(runtime, snapshot), runtime.config);
     }
-
-    return commitBlockSelection(blockId, true);
   };
-
-  function commitBlockSelection(blockId: string, shouldAnimate: boolean): GameSessionSnapshot {
-    if (runtime.itemRuntime?.getState().phase === "targeting" || isGameInputLocked()) {
-      return runtime.session.getState();
-    }
-
-    soundEffects.initialize();
-
-    const sourceElement = findBlockElement(root, blockId);
-    const sourceBlock = runtime.session.getState().remainingBlocks.find(
-      (block) => block.id === blockId,
-    );
-    const sourceRect = sourceElement?.getBoundingClientRect() ?? null;
-    const isIllusion = sourceBlock?.specialMechanism?.type === DOG_ILLUSION_MECHANISM_TYPE;
-    const isMagnetic = sourceBlock?.specialMechanism?.type === DOG_MAGNETIC_MECHANISM_TYPE;
-    const isTwin = sourceBlock?.specialMechanism?.type === DOG_TWIN_MECHANISM_TYPE;
-    const patternMarkup = isIllusion
-      ? renderDogPatternAsset(getDogIllusionDisguisedPattern(sourceBlock))
-      : sourceElement?.querySelector<HTMLElement>(".dog-block__glyph")?.outerHTML ?? "";
-    if (isIllusion && shouldAnimate && runtime.started && sourceBlock !== undefined) {
-      return commitAnimatedIllusionSelection(
-        blockId,
-        sourceBlock,
-        sourceRect,
-        patternMarkup,
-      );
-    }
-    if (isMagnetic && shouldAnimate && runtime.started && sourceBlock !== undefined) {
-      return commitAnimatedMagneticSelection(
-        blockId,
-        sourceBlock,
-        sourceRect,
-        patternMarkup,
-      );
-    }
-
-    const patternType = sourceElement?.dataset.patternType;
-    const trayRectsBeforeSelection = captureTrayBlockRects(root);
-    const selection = runtime.session.selectBlock(blockId);
-    const nextState = selection.snapshot;
-    if (!selection.selected) {
-      return nextState;
-    }
-
-    runtime.hasInteracted = true;
-    const didMatch = selection.removedCount > 0;
-    const result = createResult(level, nextState.status);
-    if (result !== null) {
-      runtime.endedAt = Date.now();
-      confirmResult(result, !shouldAnimate || !runtime.started);
-    }
-
-    if (!shouldAnimate || !runtime.started) {
-      soundEffects.play("select");
-      playFeedbackSounds(didMatch, result);
-      void settleKeyDrop(selection.tripleCount, false);
-      runtime.feedback = "idle";
-      runtime.matchFeedbackActive = false;
-      runtime.inputLocked = false;
-      renderStartedGame(nextState);
-      if (result !== null) {
-        presentResult(result);
-      }
-      return nextState;
-    }
-
-    runtime.inputLocked = true;
-    if (isIllusion) {
-      runtime.matchFeedbackActive = didMatch;
-      runtime.feedback = "idle";
-    } else if (didMatch) {
-      runtime.matchFeedbackActive = true;
-      runtime.feedback = "match";
-    } else if (result !== null) {
-      runtime.feedback = result.status;
-    } else if (!runtime.matchFeedbackActive) {
-      runtime.feedback = "idle";
-    }
-    soundEffects.play("select");
-    if (!isIllusion) {
-      playFeedbackSounds(didMatch, result);
-    }
-    if (didMatch && result === null) {
-      void ensureMatchFeedback();
-    }
-    const target = findTrayTarget(root, patternType);
-    const flight = animateBlockFlight({
-      root,
-      patternMarkup,
-      patternType: sourceBlock?.patternType ?? patternType,
-      isIllusion,
-      source: sourceRect,
-      target: target?.getBoundingClientRect() ?? null,
-    });
-    runtime.activeFlights.add(flight);
-    startMeltAnimations(selection.meltedBlockIds, trayRectsBeforeSelection);
-    const twinSplit = isTwin
-      ? animateDogTwinSplitEffect({
-          root,
-          sourceId: blockId,
-          blockIds: [`${blockId}-1`, `${blockId}-2`],
-          patternMarkup,
-          source: sourceRect,
-          target: target?.getBoundingClientRect() ?? null,
-        })
-      : null;
-    if (twinSplit !== null) {
-      runtime.activeFlights.add(twinSplit);
-    }
-    renderStartedGame(nextState);
-    void finishAnimatedSelection(
-      flight,
-      result,
-      didMatch,
-      false,
-      null,
-      twinSplit,
-      selection.tripleCount,
-    );
-
-    return nextState;
-  }
-
-  function commitAnimatedIllusionSelection(
-    blockId: string,
-    block: DogBlock,
-    sourceRect: DOMRect | null,
-    patternMarkup: string,
-  ): GameSessionSnapshot {
-    const pending = runtime.session.beginBlockSelection(blockId);
-    if (!pending.selected) {
-      return pending.snapshot;
-    }
-
-    runtime.hasInteracted = true;
-    runtime.inputLocked = true;
-    runtime.feedback = "idle";
-    runtime.matchFeedbackActive = false;
-    soundEffects.play("select");
-    const target = findTrayTarget(root, block.patternType);
-    const flight = animateBlockFlight({
-      root,
-      patternMarkup,
-      patternType: block.patternType,
-      isIllusion: true,
-      source: sourceRect,
-      target: target?.getBoundingClientRect() ?? null,
-    });
-    runtime.activeFlights.add(flight);
-    renderStartedGame(pending.snapshot);
-    void finishAnimatedSelection(flight, null, false, true, blockId);
-    return pending.snapshot;
-  }
-
-  function commitAnimatedMagneticSelection(
-    blockId: string,
-    block: DogBlock,
-    sourceRect: DOMRect | null,
-    patternMarkup: string,
-  ): GameSessionSnapshot {
-    const pending = runtime.session.beginBlockSelection(blockId);
-    if (!pending.selected) {
-      return pending.snapshot;
-    }
-
-    const targetBlockId = pending.magneticResolution?.targetBlockId ?? null;
-    const targetBlock = targetBlockId === null
-      ? undefined
-      : pending.snapshot.remainingBlocks.find((candidate) => candidate.id === targetBlockId);
-    const targetElement = targetBlockId === null ? null : findBlockElement(root, targetBlockId);
-    const targetRect = targetElement?.getBoundingClientRect() ?? null;
-    const targetPatternMarkup =
-      targetElement?.querySelector<HTMLElement>(".dog-block__glyph")?.outerHTML ?? patternMarkup;
-
-    runtime.hasInteracted = true;
-    runtime.inputLocked = true;
-    runtime.feedback = "idle";
-    runtime.matchFeedbackActive = false;
-    soundEffects.play("select");
-    renderStartedGame(pending.snapshot);
-    const trayTarget = findTrayBlockElement(root, blockId) ??
-      findTrayTarget(root, block.patternType);
-    const sourceFlight = animateBlockFlight({
-      root,
-      patternMarkup,
-      patternType: block.patternType,
-      isMagnetic: true,
-      source: sourceRect,
-      target: trayTarget?.getBoundingClientRect() ?? null,
-    });
-    runtime.activeFlights.add(sourceFlight);
-    void finishAnimatedMagneticSelection(
-      sourceFlight,
-      block,
-      targetBlock,
-      targetRect,
-      targetPatternMarkup,
-    );
-    return pending.snapshot;
-  }
-
-  async function finishAnimatedSelection(
-    flight: CancellableAnimation,
-    result: GameResult | null,
-    didMatch: boolean,
-    isIllusion: boolean,
-    illusionBlockId: string | null = null,
-    twinSplit: CancellableAnimation | null = null,
-    tripleCount = 0,
-  ): Promise<void> {
-    await flight.promise;
-    runtime.activeFlights.delete(flight);
-    if (runtime.destroyed) {
-      return;
-    }
-
-    if (isIllusion) {
-      const selection = runtime.session.completeBlockSelection();
-      renderStartedGame(selection.snapshot);
-      const reveal = animateDogIllusionReveal({
-        root,
-        blockId: illusionBlockId ?? "",
-      });
-      runtime.activeFlights.add(reveal);
-      void finishIllusionReveal(reveal, selection);
-      return;
-    }
-
-    if (twinSplit !== null) {
-      await twinSplit.promise;
-      runtime.activeFlights.delete(twinSplit);
-      if (runtime.destroyed) {
-        return;
-      }
-    }
-
-    await finishResolvedSelection(result, didMatch, tripleCount);
-  }
-
-  async function finishAnimatedMagneticSelection(
-    sourceFlight: CancellableAnimation,
-    sourceBlock: DogBlock,
-    targetBlock: DogBlock | undefined,
-    targetRect: DOMRect | null,
-    targetPatternMarkup: string,
-  ): Promise<void> {
-    await sourceFlight.promise;
-    runtime.activeFlights.delete(sourceFlight);
-    if (runtime.destroyed) {
-      return;
-    }
-
-    if (targetBlock !== undefined && targetRect !== null) {
-      const sourceElement = findTrayBlockElement(root, sourceBlock.id);
-      const attraction = animateDogMagneticAttractionEffect({
-        root,
-        sourceId: sourceBlock.id,
-        targetId: targetBlock.id,
-        source: sourceElement?.getBoundingClientRect() ?? null,
-        target: targetRect,
-      });
-      runtime.activeFlights.add(attraction);
-      await attraction.promise;
-      runtime.activeFlights.delete(attraction);
-      if (runtime.destroyed) {
-        return;
-      }
-
-      const targetTray = findTrayInsertionTarget(
-        root,
-        runtime.session.getState().trayBlocks.length,
-        targetBlock.patternType,
-      );
-      const targetFlight = animateBlockFlight({
-        root,
-        patternMarkup: targetPatternMarkup,
-        patternType: targetBlock.patternType,
-        isIllusion: targetBlock.specialMechanism?.type === DOG_ILLUSION_MECHANISM_TYPE,
-        source: targetRect,
-        target: targetTray?.getBoundingClientRect() ?? null,
-      });
-      runtime.activeFlights.add(targetFlight);
-      await targetFlight.promise;
-      runtime.activeFlights.delete(targetFlight);
-      if (runtime.destroyed) {
-        return;
-      }
-    }
-
-    const magneticResolution = runtime.session.completeMagneticEntry();
-    if (magneticResolution === null) {
-      runtime.inputLocked = false;
-      renderStartedGame();
-      return;
-    }
-
-    renderStartedGame(runtime.session.getState());
-    const trayRectsBeforeSelection = captureTrayBlockRects(root);
-    const targetTray = targetBlock === undefined
-      ? null
-      : findTrayBlockElement(
-          root,
-          magneticResolution.targetTrayBlockIds[0] ?? targetBlock.id,
-        );
-
-    if (targetBlock !== undefined) {
-      if (targetBlock.specialMechanism?.type === DOG_ILLUSION_MECHANISM_TYPE) {
-        const reveal = animateDogIllusionReveal({
-          root,
-          blockId: targetBlock.id,
-        });
-        runtime.activeFlights.add(reveal);
-        await reveal.promise;
-        runtime.activeFlights.delete(reveal);
-        if (runtime.destroyed) {
-          return;
-        }
-      }
-
-      if (targetBlock.specialMechanism?.type === DOG_TWIN_MECHANISM_TYPE) {
-        const split = animateDogTwinSplitEffect({
-          root,
-          sourceId: targetBlock.id,
-          blockIds: magneticResolution.targetTrayBlockIds,
-          patternMarkup: targetPatternMarkup,
-          source: targetRect,
-          target: targetTray?.getBoundingClientRect() ?? null,
-        });
-        runtime.activeFlights.add(split);
-        await split.promise;
-        runtime.activeFlights.delete(split);
-        if (runtime.destroyed) {
-          return;
-        }
-      }
-    }
-
-    const selection = runtime.session.resolveMagneticEntry();
-    const result = createResult(level, selection.snapshot.status);
-    if (result !== null) {
-      runtime.endedAt = Date.now();
-      confirmResult(result, false);
-    }
-    if (selection.removedCount > 0) {
-      runtime.matchFeedbackActive = true;
-      runtime.feedback = "match";
-      soundEffects.play("match");
-    }
-    startMeltAnimations(selection.meltedBlockIds, trayRectsBeforeSelection);
-    await finishResolvedSelection(
-      result,
-      selection.removedCount > 0,
-      selection.tripleCount,
-    );
-  }
-
-  async function finishIllusionReveal(
-    reveal: CancellableAnimation,
-    selection: GameSessionSelectionResult,
-  ): Promise<void> {
-    await reveal.promise;
-    runtime.activeFlights.delete(reveal);
-    if (runtime.destroyed) {
-      return;
-    }
-
-    const result = createResult(level, selection.snapshot.status);
-    if (result !== null) {
-      runtime.endedAt = Date.now();
-      confirmResult(result, false);
-    }
-    if (selection.removedCount > 0) {
-      runtime.matchFeedbackActive = true;
-      runtime.feedback = "match";
-      soundEffects.play("match");
-    }
-    await finishResolvedSelection(result, selection.removedCount > 0, selection.tripleCount);
-  }
-
-  async function finishResolvedSelection(
-    resolvedResult: GameResult | null,
-    resolvedDidMatch: boolean,
-    tripleCount = 0,
-  ): Promise<void> {
-    if (resolvedResult !== null) {
-      if (resolvedDidMatch) {
-        await ensureMatchFeedback();
-        if (runtime.destroyed) {
-          return;
-        }
-      } else if (runtime.matchFeedbackActive) {
-        await ensureMatchFeedback();
-        if (runtime.destroyed) {
-          return;
-        }
-      }
-
-      await waitForMeltAnimation();
-      await settleKeyDrop(tripleCount);
-      if (runtime.destroyed) {
-        return;
-      }
-
-      runtime.feedback = resolvedResult.status;
-      renderStartedGame();
-      await particleEffects.play(resolvedResult.status);
-      if (runtime.destroyed) {
-        return;
-      }
-      runtime.inputLocked = false;
-      runtime.feedback = "idle";
-      runtime.matchFeedbackActive = false;
-      renderStartedGame();
-      presentResult(resolvedResult);
-      return;
-    }
-
-    if (resolvedDidMatch) {
-      void ensureMatchFeedback()
-        .then(waitForMeltAnimation)
-        .then(() => settleKeyDrop(tripleCount));
-      return;
-    }
-
-    runtime.inputLocked = false;
-    renderStartedGame();
-  }
-
-  function ensureMatchFeedback(): Promise<void> {
-    if (runtime.matchAnimation !== null) {
-      return runtime.matchAnimation;
-    }
-
-    if (!runtime.matchFeedbackActive) {
-      return Promise.resolve();
-    }
-
-    runtime.inputLocked = true;
-
-    if (runtime.feedback !== "match") {
-      runtime.feedback = "match";
-      renderStartedGame();
-    }
-
-    let animation: Promise<void>;
-    animation = particleEffects.play("match").then(() => {
-      if (runtime.matchAnimation === animation) {
-        runtime.matchAnimation = null;
-      }
-      if (runtime.destroyed || !runtime.matchFeedbackActive) {
-        return;
-      }
-
-      runtime.matchFeedbackActive = false;
-      if (runtime.session.getState().status === "playing") {
-        runtime.inputLocked = false;
-      }
-      if (runtime.feedback === "match") {
-        runtime.feedback = "idle";
-        renderStartedGame();
-      }
-    });
-    runtime.matchAnimation = animation;
-    return animation;
-  }
-
-  async function waitForMeltAnimation(): Promise<void> {
-    const meltAnimation = runtime.meltAnimation;
-    if (meltAnimation !== null) {
-      await meltAnimation;
-    }
-  }
-
-  async function settleKeyDrop(tripleCount: number, animate = true): Promise<void> {
-    const itemRuntime = runtime.itemRuntime;
-    if (itemRuntime === null) {
-      return;
-    }
-
-    const drop = itemRuntime.settleSuccessfulTriples(tripleCount);
-    if (!drop.dropped) {
-      return;
-    }
-
-    if (!animate || !runtime.started || runtime.destroyed) {
-      renderStartedGame();
-      return;
-    }
-
-    runtime.inputLocked = true;
-    const source = root.querySelector<HTMLElement>('[data-testid="dog-tray-region"]');
-    const target = root.querySelector<HTMLElement>('[data-loadout-id="key"]');
-    const animation = animateDogKeyDropEffect({
-      root,
-      source: source?.getBoundingClientRect() ?? null,
-      target: target?.getBoundingClientRect() ?? null,
-    });
-    runtime.activeFlights.add(animation);
-    await animation.promise;
-    runtime.activeFlights.delete(animation);
-    if (runtime.destroyed) {
-      return;
-    }
-
-    runtime.inputLocked = false;
-    renderStartedGame();
-  }
-
-  function confirmResult(result: GameResult, presentImmediately: boolean): void {
+  const confirmResult = (result: GameResult, presentImmediately: boolean): void => {
     if (runtime.resultConfirmed) {
       return;
     }
-
     runtime.resultConfirmed = true;
     options.onResultConfirmed?.(result);
     if (options.onResultConfirmed === undefined && presentImmediately) {
       presentResult(result);
     }
-  }
-
-  function presentResult(result: GameResult): void {
+  };
+  const presentResult = (result: GameResult): void => {
     if (runtime.resultPresented) {
       return;
     }
-
     runtime.resultPresented = true;
     options.onResult?.(result);
-  }
-
-  function renderStartedGame(snapshot?: GameSessionSnapshot): void {
-    if (runtime.started) {
-      renderDogLegeDogGame(
-        root,
-        createGameState(runtime, snapshot),
-      );
-    }
-  }
-
-  function playFeedbackSounds(didMatch: boolean, result: GameResult | null): void {
-    if (didMatch) {
-      soundEffects.play("match");
-    }
-    if (result !== null) {
-      soundEffects.play(result.status);
-    }
-  }
-
-  function captureTrayBlockRects(rootElement: HTMLElement): ReadonlyMap<string, DOMRect> {
-    const rects = new Map<string, DOMRect>();
-    for (const slot of rootElement.querySelectorAll<HTMLElement>(
-      '[data-testid="dog-tray-slot"][data-block-id]',
-    )) {
-      const blockId = slot.dataset.blockId;
-      if (blockId !== undefined) {
-        rects.set(blockId, slot.getBoundingClientRect());
-      }
-    }
-    return rects;
-  }
-
-  function startMeltAnimations(
-    meltedBlockIds: readonly string[],
-    fallbackRects: ReadonlyMap<string, DOMRect>,
-  ): void {
-    if (meltedBlockIds.length === 0) {
-      return;
-    }
-
-    const animation = playMeltAnimations(root, meltedBlockIds, fallbackRects);
-    let trackedAnimation: Promise<void>;
-    trackedAnimation = animation.then(() => {
-      if (runtime.meltAnimation !== trackedAnimation) {
-        return;
-      }
-
-      runtime.meltAnimation = null;
-      if (!runtime.destroyed) {
-        renderStartedGame();
-      }
-    });
-    runtime.meltAnimation = trackedAnimation;
-  }
-
-  function playMeltAnimations(
-    rootElement: HTMLElement,
-    meltedBlockIds: readonly string[],
-    fallbackRects: ReadonlyMap<string, DOMRect>,
-  ): Promise<void> {
-    const traySlots = [...rootElement.querySelectorAll<HTMLElement>(
-      '[data-testid="dog-tray-slot"][data-block-id]',
-    )];
-    const animations: Promise<void>[] = [];
-    for (const blockId of meltedBlockIds) {
-      const target = traySlots.find((slot) => slot.dataset.blockId === blockId);
-      const targetRect = target?.getBoundingClientRect() ?? fallbackRects.get(blockId);
-      if (targetRect === undefined) {
-        continue;
-      }
-
-      const effect = renderDogMeltEffect({
-        root: rootElement,
-        blockId,
-        target: targetRect,
-      });
-      if (effect === null) {
-        continue;
-      }
-
-      animations.push(new Promise<void>((resolve) => {
-        let settled = false;
-        const finish = (): void => {
-          if (settled) {
-            return;
-          }
-
-          settled = true;
-          effect.removeEventListener("animationend", handleAnimationEnd);
-          window.clearTimeout(timer);
-          effect.remove();
-          resolve();
-        };
-        const handleAnimationEnd = (event: AnimationEvent): void => {
-          if (event.animationName === "dog-freeze-melt") {
-            finish();
-          }
-        };
-        const timer = window.setTimeout(finish, DOG_FREEZE_MELT_DURATION_MS);
-        effect.addEventListener("animationend", handleAnimationEnd);
-      }));
-    }
-
-    return Promise.all(animations).then(() => undefined);
-  }
-
-  const handlePointerUp = (event: Event): void => {
-    if (runtime.itemRuntime?.getState().phase === "targeting") {
-      const itemTarget = getItemTarget(event);
-      if (itemTarget !== undefined) {
-        event.preventDefault();
-        confirmItemTarget(itemTarget);
-      }
-      return;
-    }
-
-    const blockId = getBlockId(event);
-    if (blockId === undefined) {
-      return;
-    }
-
-    event.preventDefault();
-    commitBlockSelection(blockId, true);
   };
-
-  const handleClick = (event: Event): void => {
-    const target = event.target;
-    if (!(target instanceof Element)) {
-      return;
-    }
-
-    const actionElement = target.closest<HTMLElement>("[data-action]");
-    const action = actionElement?.dataset.action;
-    if (action === "toggle-loadout") {
-      toggleLoadout(actionElement?.dataset.loadoutId);
-      return;
-    }
-    if (action === "edit-loadout") {
-      openLoadoutEditor();
-      return;
-    }
-    if (action === "cancel-loadout") {
-      cancelLoadoutEditor();
-      return;
-    }
-    if (action === "confirm-loadout") {
-      requestLoadoutConfirmation();
-      return;
-    }
-    if (action === "cancel-loadout-confirmation") {
-      cancelLoadoutConfirmation();
-      return;
-    }
-    if (action === "apply-loadout-change") {
-      applyLoadoutChange();
-      return;
-    }
-    if (action === "open-special-mechanisms") {
-      openSpecialMechanisms();
-      return;
-    }
-    if (action === "close-special-mechanisms") {
-      closeSpecialMechanisms();
-      return;
-    }
-    if (action === "use-item") {
-      startItem(actionElement?.dataset.itemId);
-      return;
-    }
-    if (action === "cancel-item-target") {
-      cancelItemTarget();
-      return;
-    }
-    if (action === "toggle-sound") {
-      soundEffects.initialize();
-      runtime.soundEnabled = !runtime.soundEnabled;
-      soundEffects.setEnabled(runtime.soundEnabled);
-      options.onSoundToggle?.(runtime.soundEnabled);
-      renderStartedGame();
-      return;
-    }
-
-    const eventDetail = "detail" in event && typeof event.detail === "number" ? event.detail : 0;
-    if (eventDetail > 0) {
-      return;
-    }
-
-    if (runtime.itemRuntime?.getState().phase === "targeting") {
-      const itemTarget = getItemTarget(event);
-      if (itemTarget !== undefined) {
-        confirmItemTarget(itemTarget);
-      }
-      return;
-    }
-
-    const blockId = getBlockId(event);
-    if (blockId !== undefined) {
-      commitBlockSelection(blockId, false);
-    }
-  };
+  const feedback = new DogFeedbackCoordinator({
+    root,
+    runtime,
+    soundEffects,
+    particleEffects,
+    render: renderStartedGame,
+    presentResult,
+  });
+  const blockAnimations = new DogBlockAnimationCoordinator({
+    root,
+    runtime,
+    soundEffects,
+    feedback,
+    render: renderStartedGame,
+    createResult: (status) => createDogResult(runtime, status),
+    confirmResult,
+    presentResult,
+  });
+  const itemAnimations = new DogItemAnimationCoordinator({
+    root,
+    runtime,
+    feedback,
+    render: renderStartedGame,
+    createResult: (status) => createDogResult(runtime, status),
+    confirmResult,
+  });
+  const loadout = new DogLoadoutController({
+    runtime,
+    render: renderStartedGame,
+    commitLoadout,
+  });
+  const input = bindDogInputController({
+    root,
+    runtime,
+    selectBlock: (blockId, shouldAnimate) => {
+      blockAnimations.selectBlock(blockId, shouldAnimate);
+    },
+    startItem,
+    confirmItemTarget,
+    cancelItemTarget,
+    toggleLoadout: loadout.toggle.bind(loadout),
+    openLoadoutEditor: loadout.open.bind(loadout),
+    cancelLoadoutEditor: loadout.cancel.bind(loadout),
+    requestLoadoutConfirmation: loadout.requestConfirmation.bind(loadout),
+    cancelLoadoutConfirmation: loadout.cancelConfirmation.bind(loadout),
+    applyLoadoutChange: loadout.applyChange.bind(loadout),
+    openSpecialMechanisms,
+    closeSpecialMechanisms,
+    toggleSound,
+  });
+  const handleViewportResize = (): void => fitDogBoardToFrame(root);
+  window.addEventListener("resize", handleViewportResize);
 
   function startItem(itemId: string | undefined): void {
+    const itemRuntime = runtime.itemRuntime;
     if (
-      runtime.itemRuntime === null ||
+      itemRuntime === null ||
       itemId === undefined ||
       !isDogItemId(itemId) ||
-      isGameInputLocked() ||
+      isDogGameInputLocked(runtime) ||
       runtime.activeFlights.size > 0 ||
       runtime.matchAnimation !== null
     ) {
@@ -899,25 +194,24 @@ export function createDogLegeDogGame(
     }
 
     soundEffects.initialize();
-    const action = runtime.itemRuntime.begin(itemId);
-    applyItemAction(action);
+    applyItemAction(itemRuntime.begin(itemId));
   }
 
   function confirmItemTarget(target: DogItemTarget): void {
-    if (runtime.itemRuntime === null) {
+    const itemRuntime = runtime.itemRuntime;
+    if (itemRuntime === null) {
       return;
     }
 
-    const targetRect = findItemTargetElement(root, target)?.getBoundingClientRect() ?? null;
+    const targetRect = findDogItemTargetElement(root, target)?.getBoundingClientRect() ?? null;
     const tripleSourceRects = target.type === "tray-block" &&
-      runtime.itemRuntime.getState().selectedItemId === "triple-removal"
-      ? captureTripleRemovalSourceRects(
+      itemRuntime.getState().selectedItemId === "triple-removal"
+      ? captureDogTripleRemovalSourceRects(
           root,
           runtime.session.getTripleRemovalPlanForTrayBlock(target.blockId)?.blockIds ?? [],
         )
       : new Map<string, DOMRect>();
-    const action = runtime.itemRuntime.confirmTarget(target);
-    applyItemAction(action, targetRect, tripleSourceRects);
+    applyItemAction(itemRuntime.confirmTarget(target), targetRect, tripleSourceRects);
   }
 
   function applyItemAction(
@@ -930,7 +224,7 @@ export function createDogLegeDogGame(
     }
     renderStartedGame();
     if (action.accepted && action.success && action.itemId !== null) {
-      startItemAnimation(
+      itemAnimations.start(
         action.itemId,
         action.snapshot.visualFeedback,
         action.effect,
@@ -944,17 +238,18 @@ export function createDogLegeDogGame(
     if (runtime.itemRuntime?.getState().phase !== "targeting") {
       return;
     }
-
     runtime.itemRuntime.cancel();
     renderStartedGame();
   }
 
   function openSpecialMechanisms(): void {
     const gameRoot = root.querySelector<HTMLElement>('[data-testid="dog-game"]');
-    if (gameRoot === null || gameRoot.querySelector('[data-testid="dog-special-mechanism-modal"]') !== null) {
+    if (
+      gameRoot === null ||
+      gameRoot.querySelector('[data-testid="dog-special-mechanism-modal"]') !== null
+    ) {
       return;
     }
-
     gameRoot.insertAdjacentHTML("beforeend", renderDogSpecialMechanismModal(level));
     gameRoot.querySelector<HTMLButtonElement>(".dog-special-mechanism-modal__close")?.focus();
   }
@@ -963,250 +258,18 @@ export function createDogLegeDogGame(
     root.querySelector('[data-testid="dog-special-mechanism-modal"]')?.remove();
   }
 
-  function startItemAnimation(
-    itemId: DogItemId,
-    visualFeedback: DogItemRuntimeSnapshot["visualFeedback"],
-    effect: DogItemActionResult["effect"],
-    targetRect: DOMRect | null,
-    tripleSourceRects: ReadonlyMap<string, DOMRect>,
-  ): void {
-    if (runtime.itemAnimation !== null) {
-      return;
-    }
-
-    const animation = effect?.type === "triple-removal"
-      ? animateDogTripleRemovalEffect({
-          root,
-          itemId,
-          patternType: effect.patternType,
-          blockIds: effect.blockIds,
-          sourceRects: tripleSourceRects,
-          target: targetRect,
-        })
-      : effect?.type === "melt"
-      ? animateDogTorchMeltEffect({
-          root,
-          blockId: effect.blockId,
-          location: effect.location,
-          target: targetRect,
-        })
-      : effect?.type === "reveal"
-        ? animateDogDetectorReveal({
-            root,
-            blockId: effect.blockId,
-            patternMarkup: renderDogPatternAsset(
-              level.blocks.find((block) => block.id === effect.blockId)?.patternType ??
-                DOG_PATTERN_TYPES[0],
-            ),
-          })
-      : effect?.type === "demagnetize"
-          ? animateDogDemagnetizerEffect({
-              root,
-              blockId: effect.blockId,
-              target: targetRect,
-            })
-        : effect?.type === "unlock"
-          ? animateDogUnlockTrayEffect({
-              root,
-              slotIndex: effect.unlockedSlotIndex,
-            })
-        : animateDogItemEffect({ root, itemId, visualFeedback });
-    runtime.itemAnimation = animation;
-    void finishItemAnimation(animation);
-  }
-
-  async function finishItemAnimation(animation: CancellableAnimation): Promise<void> {
-    await animation.promise;
-    if (runtime.destroyed || runtime.itemAnimation !== animation) {
-      return;
-    }
-
-    runtime.itemAnimation = null;
-    const itemRuntime = runtime.itemRuntime;
-    itemRuntime?.completeAnimation();
-    const completedEffect = itemRuntime?.getLastCompletedEffect();
-    const result = createResult(level, runtime.session.getState().status);
-    if (result !== null) {
-      runtime.endedAt = Date.now();
-      runtime.inputLocked = true;
-      confirmResult(result, false);
-    }
-    if (
-      (completedEffect?.type === "melt" ||
-        completedEffect?.type === "triple-removal" ||
-        completedEffect?.type === "wildcard") &&
-      completedEffect.removedCount > 0
-    ) {
-      runtime.matchFeedbackActive = true;
-      runtime.feedback = "match";
-      renderStartedGame();
-      await ensureMatchFeedback();
-      if (runtime.destroyed) {
-        return;
-      }
-    }
-    const tripleCount = getItemEffectTripleCount(completedEffect);
-    await settleKeyDrop(tripleCount);
-    if (runtime.destroyed) {
-      return;
-    }
-    if (result !== null) {
-      runtime.feedback = result.status;
-      renderStartedGame();
-      await particleEffects.play(result.status);
-      if (runtime.destroyed) {
-        return;
-      }
-      runtime.inputLocked = false;
-      runtime.feedback = "idle";
-      runtime.matchFeedbackActive = false;
-      renderStartedGame();
-      presentResult(result);
-      return;
-    }
-
-    runtime.inputLocked = false;
+  function toggleSound(): void {
+    soundEffects.initialize();
+    runtime.soundEnabled = !runtime.soundEnabled;
+    soundEffects.setEnabled(runtime.soundEnabled);
+    options.onSoundToggle?.(runtime.soundEnabled);
     renderStartedGame();
-  }
-
-  function isGameInputLocked(): boolean {
-    return runtime.inputLocked ||
-      runtime.meltAnimation !== null ||
-      runtime.itemRuntime?.isInputLocked() === true;
-  }
-
-  function getItemTarget(event: Event): DogItemTarget | undefined {
-    const target = event.target;
-    if (!(target instanceof Element)) {
-      return undefined;
-    }
-
-    const targetElement = target.closest<HTMLElement>('[data-item-targetable="true"]');
-    const itemTargetType = runtime.itemRuntime?.getState().selectedItemTargetType;
-    if (
-      targetElement === null ||
-      (itemTargetType !== "block" && itemTargetType !== "tray-block")
-    ) {
-      return undefined;
-    }
-
-    const blockId = targetElement.dataset.blockId;
-    if (blockId === undefined) {
-      return undefined;
-    }
-
-    return targetElement.dataset.testid === "dog-tray-slot"
-      ? { type: "tray-block", blockId }
-      : { type: "block", blockId };
-  }
-
-  function toggleLoadout(itemId: string | undefined): void {
-    if (runtime.loadoutEditor === null || itemId === undefined || !isDogItemId(itemId)) {
-      return;
-    }
-
-    const draft = runtime.loadoutEditor.draft;
-    const nextDraft = draft.includes(itemId)
-      ? draft.filter((selectedItemId) => selectedItemId !== itemId)
-      : draft.length < 3
-        ? [...draft, itemId]
-        : draft;
-    runtime.loadoutEditor = {
-      ...runtime.loadoutEditor,
-      draft: nextDraft,
-      confirming: false,
-    };
-    renderStartedGame();
-  }
-
-  function openLoadoutEditor(): void {
-    if (
-      runtime.loadout === null ||
-      runtime.inputLocked ||
-      runtime.activeFlights.size > 0 ||
-      runtime.matchAnimation !== null ||
-      runtime.itemRuntime?.isInputLocked() === true ||
-      runtime.hasInteracted ||
-      runtime.session.getState().status !== "playing"
-    ) {
-      return;
-    }
-
-    runtime.inputLocked = true;
-    runtime.loadoutEditor = {
-      mode: "change",
-      draft: [...runtime.loadout],
-      confirming: false,
-    };
-    renderStartedGame();
-  }
-
-  function cancelLoadoutEditor(): void {
-    if (runtime.loadoutEditor === null) {
-      return;
-    }
-
-    if (runtime.loadoutEditor.mode === "initial") {
-      runtime.loadoutEditor = {
-        ...runtime.loadoutEditor,
-        draft: [],
-        confirming: false,
-      };
-      renderStartedGame();
-      return;
-    }
-
-    runtime.loadoutEditor = null;
-    runtime.inputLocked = false;
-    renderStartedGame();
-  }
-
-  function requestLoadoutConfirmation(): void {
-    const editor = runtime.loadoutEditor;
-    if (editor === null || !isValidDogLoadout(editor.draft)) {
-      return;
-    }
-
-    if (editor.mode === "change") {
-      if (areDogLoadoutsEqual(runtime.loadout, editor.draft)) {
-        cancelLoadoutEditor();
-        return;
-      }
-
-      runtime.loadoutEditor = { ...editor, confirming: true };
-      renderStartedGame();
-      return;
-    }
-
-    commitLoadout(editor.draft, editor.mode);
-  }
-
-  function cancelLoadoutConfirmation(): void {
-    if (runtime.loadoutEditor === null || !runtime.loadoutEditor.confirming) {
-      return;
-    }
-
-    runtime.loadoutEditor = {
-      ...runtime.loadoutEditor,
-      confirming: false,
-    };
-    renderStartedGame();
-  }
-
-  function applyLoadoutChange(): void {
-    const editor = runtime.loadoutEditor;
-    if (editor === null || editor.mode !== "change" || !editor.confirming) {
-      return;
-    }
-
-    commitLoadout(editor.draft, editor.mode);
   }
 
   function commitLoadout(draft: readonly DogItemId[], mode: "initial" | "change"): void {
-    if (!isValidDogLoadout(draft)) {
+    if (!isValidDogLoadout(draft, config.items.loadoutSize)) {
       return;
     }
-
     try {
       options.onLoadoutConfirmed?.([...draft]);
     } catch {
@@ -1217,7 +280,7 @@ export function createDogLegeDogGame(
     runtime.loadoutEditor = null;
     runtime.inputLocked = false;
     if (mode === "change") {
-      runtime.session = new GameSession(level);
+      runtime.session = new GameSession({ level, config });
       runtime.itemAnimation?.cancel();
       runtime.itemAnimation = null;
       runtime.hasInteracted = false;
@@ -1228,6 +291,7 @@ export function createDogLegeDogGame(
       runtime.matchAnimation = null;
     }
     runtime.itemRuntime = new DogItemRuntime({
+      config,
       level,
       session: runtime.session,
       loadout: runtime.loadout,
@@ -1235,36 +299,30 @@ export function createDogLegeDogGame(
     renderStartedGame();
   }
 
-  root.addEventListener("pointerup", handlePointerUp);
-  root.addEventListener("click", handleClick);
-
   return {
     start(): DogLegeDogGameState {
       if (runtime.destroyed) {
         throw new Error("Cannot start a destroyed 狗了个狗 game");
       }
-
       if (!runtime.started) {
         runtime.startedAt = Date.now();
-        renderDogLegeDogGame(root, createGameState(runtime));
+        renderDogLegeDogGame(root, createDogGameState(runtime), runtime.config);
         runtime.started = true;
         if (runtime.soundEnabled) {
           soundEffects.initialize();
         }
       }
-
-      return createGameState(runtime);
+      return createDogGameState(runtime);
     },
 
     getState(): DogLegeDogGameState {
-      return createGameState(runtime);
+      return createDogGameState(runtime);
     },
 
     setSoundEnabled(soundEnabled: boolean): void {
       if (runtime.destroyed) {
         return;
       }
-
       runtime.soundEnabled = soundEnabled;
       if (soundEnabled) {
         soundEffects.initialize();
@@ -1273,15 +331,15 @@ export function createDogLegeDogGame(
     },
 
     selectBlock(blockId: string): GameSessionSnapshot {
-      return selectBlock(blockId);
+      return blockAnimations.selectBlock(blockId, true);
     },
 
     destroy(): void {
       if (runtime.destroyed) {
         return;
       }
-
       runtime.destroyed = true;
+      input.destroy();
       for (const flight of runtime.activeFlights) {
         flight.cancel();
       }
@@ -1290,8 +348,6 @@ export function createDogLegeDogGame(
       runtime.itemAnimation = null;
       particleEffects.destroy();
       soundEffects.destroy();
-      root.removeEventListener("pointerup", handlePointerUp);
-      root.removeEventListener("click", handleClick);
       window.removeEventListener("resize", handleViewportResize);
       gameContentRoot.replaceChildren();
     },
@@ -1307,162 +363,20 @@ export function startDogLegeDogGame(
   return game;
 }
 
-function createGameState(
-  runtime: DogGameRuntime,
-  snapshot?: GameSessionSnapshot,
-): DogLegeDogGameState {
-  const sessionState = snapshot ?? runtime.session.getState();
-  const itemState = runtime.itemRuntime?.getState() ?? null;
-  const inputLocked = runtime.inputLocked ||
-    runtime.meltAnimation !== null ||
-    runtime.itemRuntime?.isInputLocked() === true;
-
-  return {
-    gameId: DOG_GAME_ID,
-    status:
-      sessionState.status === "playing" && !runtime.hasInteracted ? "ready" : sessionState.status,
-    level: sessionState.level,
-    session: sessionState,
-    inputLocked,
-    loadoutLocked:
-      sessionState.status !== "playing" ||
-      runtime.hasInteracted ||
-      inputLocked ||
-      runtime.activeFlights.size > 0 ||
-      runtime.matchAnimation !== null,
-    feedback: runtime.feedback,
-    soundEnabled: runtime.soundEnabled,
-    loadout: runtime.loadout,
-    items: itemState,
-    loadoutEditor:
-      runtime.loadoutEditor === null
-        ? null
-        : Object.freeze({
-            ...runtime.loadoutEditor,
-            draft: Object.freeze([...runtime.loadoutEditor.draft]),
-          }),
-    debug: { elapsedMs: getElapsedMs(runtime.startedAt, runtime.endedAt) },
-  };
-}
-
-function createResult(
-  level: DogLegeDogLevel,
-  status: GameSessionSnapshot["status"],
-): GameResult | null {
-  if (status !== "won" && status !== "lost") {
-    return null;
+function createLevel(
+  options: DogLegeDogGameOptions,
+  config: ReturnType<typeof loadDogV13Config>,
+): DogLegeDogLevel {
+  if (options.config === undefined) {
+    return getDogLegeDogLevel(
+      options.levelNumber ?? FIRST_LEVEL.number,
+      options.runSeed ?? createRunSeed(),
+    );
   }
 
-  const isFinal = status === "won" && level.number === MAX_LEVEL_NUMBER;
-  const resultDisplay: GameResultDisplay = {
-    ...(isFinal ? DOG_GAME_RESULT_DISPLAY.final : DOG_GAME_RESULT_DISPLAY[status]),
-  };
-  const actions: readonly GameResultAction[] =
-    isFinal
-      ? ["catalog"]
-      : status === "won"
-        ? ["next-level", "catalog"]
-        : ["retry", "catalog"];
-
-  return {
-    gameId: DOG_GAME_ID,
-    levelNumber: level.number,
-    status,
-    reward: status === "won" ? level.reward : 0,
-    display: resultDisplay,
-    actions,
-    ...(isFinal ? { isFinal: true } : {}),
-  };
-}
-
-function findBlockElement(root: HTMLElement, blockId: string): HTMLElement | null {
-  return [...root.querySelectorAll<HTMLElement>('[data-testid="dog-block"]')].find(
-    (block) => block.dataset.blockId === blockId,
-  ) ?? null;
-}
-
-function findTrayBlockElement(root: HTMLElement, blockId: string): HTMLElement | null {
-  return [...root.querySelectorAll<HTMLElement>('[data-testid="dog-tray-slot"][data-block-id]')].find(
-    (slot) => slot.dataset.blockId === blockId,
-  ) ?? null;
-}
-
-function findTrayInsertionTarget(
-  root: HTMLElement,
-  insertionIndex: number,
-  patternType: string | undefined,
-): HTMLElement | null {
-  const slots = [...root.querySelectorAll<HTMLElement>('[data-testid="dog-tray-slot"]')]
-    .filter((slot) => slot.dataset.slotState !== "locked");
-  return slots[insertionIndex] ?? findTrayTarget(root, patternType);
-}
-
-function findTrayTarget(root: HTMLElement, patternType: string | undefined): HTMLElement | null {
-  const slots = [...root.querySelectorAll<HTMLElement>('[data-testid="dog-tray-slot"]')]
-    .filter((slot) => slot.dataset.slotState !== "locked");
-  return (
-    slots.find((slot) => patternType !== undefined && slot.dataset.patternType === patternType) ??
-    slots.find((slot) => slot.dataset.patternType === undefined) ??
-    slots[0] ??
-    null
-  );
-}
-
-function getBlockId(event: Event): string | undefined {
-  const target = event.target;
-  if (!(target instanceof Element)) {
-    return undefined;
-  }
-
-  return target.closest<HTMLElement>('[data-testid="dog-block"]')?.dataset.blockId;
-}
-
-function findItemTargetElement(
-  root: HTMLElement,
-  target: DogItemTarget,
-): HTMLElement | null {
-  const testId = target.type === "tray-block" ? "dog-tray-slot" : "dog-block";
-  return [...root.querySelectorAll<HTMLElement>(`[data-testid="${testId}"]`)].find(
-    (element) => element.dataset.blockId === target.blockId,
-  ) ?? null;
-}
-
-function captureTripleRemovalSourceRects(
-  root: HTMLElement,
-  blockIds: readonly string[],
-): ReadonlyMap<string, DOMRect> {
-  const rects = new Map<string, DOMRect>();
-  for (const blockId of blockIds) {
-    const block = findBlockElement(root, blockId);
-    if (block === null) {
-      continue;
-    }
-
-    rects.set(blockId, block.getBoundingClientRect());
-  }
-  return rects;
-}
-
-function getElapsedMs(startedAt: number | null, endedAt: number | null): number {
-  if (startedAt === null || endedAt === null) {
-    return 0;
-  }
-
-  return Math.max(0, endedAt - startedAt);
-}
-
-function getItemEffectTripleCount(
-  effect: DogItemActionResult["effect"] | null | undefined,
-): number {
-  if (
-    effect === null ||
-    effect === undefined ||
-    (effect.type !== "melt" &&
-      effect.type !== "triple-removal" &&
-      effect.type !== "wildcard")
-  ) {
-    return 0;
-  }
-
-  return effect.tripleCount;
+  return new DogLevelProvider({ config }).getLevel({
+    levelNumber: options.levelNumber ?? FIRST_LEVEL.number,
+    runSeed: options.runSeed ?? createRunSeed(),
+    generatorVersion: config.game.generatorVersion,
+  });
 }

@@ -1,6 +1,7 @@
 import type { DogPatternType } from "@/games/dog-lege-dog/levels/level-types";
 import { renderDogItemAsset } from "@/games/dog-lege-dog/assets/item-assets";
 import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/game-config";
+import type { DogV13Config } from "@/games/dog-lege-dog/game/v13-config";
 
 /** Migration adapters. Animation timing is owned by v13 config. */
 export const BLOCK_FLIGHT_DURATION_MS = DOG_V13_CONFIG.animation.blockFlightMs;
@@ -15,7 +16,11 @@ export const DOG_MAGNETIC_ATTRACTION_DURATION_MS = DOG_V13_CONFIG.animation.magn
 export const DOG_KEY_DROP_DURATION_MS = DOG_V13_CONFIG.animation.keyDropMs;
 export const DOG_TRAY_UNLOCK_DURATION_MS = DOG_V13_CONFIG.animation.trayUnlockMs;
 
-export interface BlockFlightOptions {
+interface DogAnimationTimingOptions {
+  readonly config?: DogV13Config;
+}
+
+export interface BlockFlightOptions extends DogAnimationTimingOptions {
   readonly root: HTMLElement;
   readonly patternMarkup: string;
   readonly patternType?: string;
@@ -31,11 +36,16 @@ export interface CancellableAnimation {
 }
 
 export function animateBlockFlight(options: BlockFlightOptions): CancellableAnimation {
+  const durationMs = resolveAnimationDuration(
+    options.config,
+    "blockFlightMs",
+    BLOCK_FLIGHT_DURATION_MS,
+  );
   const layer = options.root.querySelector<HTMLElement>(
     '[data-testid="dog-animation-layer"]',
   );
   if (layer === null) {
-    return createAnimationLifecycle(BLOCK_FLIGHT_DURATION_MS, () => undefined);
+    return createAnimationLifecycle(durationMs, () => undefined);
   }
 
   const flight = document.createElement("div");
@@ -84,14 +94,14 @@ export function animateBlockFlight(options: BlockFlightOptions): CancellableAnim
             },
           ],
           {
-            duration: BLOCK_FLIGHT_DURATION_MS,
+            duration: durationMs,
             easing: "cubic-bezier(.22, .8, .35, 1)",
             fill: "forwards",
           },
         )
       : null;
 
-  const lifecycle = createAnimationLifecycle(BLOCK_FLIGHT_DURATION_MS, () => {
+  const lifecycle = createAnimationLifecycle(durationMs, () => {
     animation?.cancel();
     flight.remove();
   });
@@ -102,7 +112,7 @@ export function animateBlockFlight(options: BlockFlightOptions): CancellableAnim
   return lifecycle;
 }
 
-export interface DogMagneticAttractionEffectOptions {
+export interface DogMagneticAttractionEffectOptions extends DogAnimationTimingOptions {
   readonly root: HTMLElement;
   readonly sourceId: string;
   readonly targetId: string;
@@ -113,11 +123,16 @@ export interface DogMagneticAttractionEffectOptions {
 export function animateDogMagneticAttractionEffect(
   options: DogMagneticAttractionEffectOptions,
 ): CancellableAnimation {
+  const durationMs = resolveAnimationDuration(
+    options.config,
+    "magneticAttractionMs",
+    DOG_MAGNETIC_ATTRACTION_DURATION_MS,
+  );
   const layer = options.root.querySelector<HTMLElement>(
     '[data-testid="dog-animation-layer"]',
   );
   if (layer === null) {
-    return createAnimationLifecycle(DOG_MAGNETIC_ATTRACTION_DURATION_MS, () => undefined);
+    return createAnimationLifecycle(durationMs, () => undefined);
   }
 
   const effect = document.createElement("div");
@@ -163,12 +178,12 @@ export function animateDogMagneticAttractionEffect(
   effect.style.setProperty("--dog-magnetic-angle", `${angle}deg`);
   layer.append(effect);
 
-  return createAnimationLifecycle(DOG_MAGNETIC_ATTRACTION_DURATION_MS, () => {
+  return createAnimationLifecycle(durationMs, () => {
     effect.remove();
   });
 }
 
-export interface DogTwinSplitEffectOptions {
+export interface DogTwinSplitEffectOptions extends DogAnimationTimingOptions {
   readonly root: HTMLElement;
   readonly sourceId: string;
   readonly blockIds: readonly string[];
@@ -180,11 +195,16 @@ export interface DogTwinSplitEffectOptions {
 export function animateDogTwinSplitEffect(
   options: DogTwinSplitEffectOptions,
 ): CancellableAnimation {
+  const durationMs = resolveAnimationDuration(
+    options.config,
+    "twinSplitMs",
+    DOG_TWIN_SPLIT_DURATION_MS,
+  );
   const layer = options.root.querySelector<HTMLElement>(
     '[data-testid="dog-animation-layer"]',
   );
   if (layer === null) {
-    return createAnimationLifecycle(DOG_TWIN_SPLIT_DURATION_MS, () => undefined);
+    return createAnimationLifecycle(durationMs, () => undefined);
   }
 
   const effect = document.createElement("div");
@@ -210,12 +230,12 @@ export function animateDogTwinSplitEffect(
   });
   layer.append(effect);
 
-  return createAnimationLifecycle(DOG_TWIN_SPLIT_DURATION_MS, () => {
+  return createAnimationLifecycle(durationMs, () => {
     effect.remove();
   });
 }
 
-export interface DogIllusionRevealOptions {
+export interface DogIllusionRevealOptions extends DogAnimationTimingOptions {
   readonly root: HTMLElement;
   readonly blockId: string;
 }
@@ -223,6 +243,11 @@ export interface DogIllusionRevealOptions {
 export function animateDogIllusionReveal(
   options: DogIllusionRevealOptions,
 ): CancellableAnimation {
+  const durationMs = resolveAnimationDuration(
+    options.config,
+    "illusionRevealMs",
+    DOG_ILLUSION_REVEAL_DURATION_MS,
+  );
   const traySlot = [...options.root.querySelectorAll<HTMLElement>(
     '[data-testid="dog-tray-slot"][data-block-id]',
   )].find((slot) => slot.dataset.blockId === options.blockId) ?? null;
@@ -232,7 +257,7 @@ export function animateDogIllusionReveal(
     traySlot.dataset.illusionReveal = "true";
   }
 
-  return createAnimationLifecycle(DOG_ILLUSION_REVEAL_DURATION_MS, () => {
+  return createAnimationLifecycle(durationMs, () => {
     traySlot?.classList.remove("dog-tray__slot--illusion-reveal");
     if (traySlot?.dataset.illusionReveal === "true") {
       delete traySlot.dataset.illusionReveal;
@@ -240,7 +265,7 @@ export function animateDogIllusionReveal(
   });
 }
 
-export interface DogDetectorRevealOptions {
+export interface DogDetectorRevealOptions extends DogAnimationTimingOptions {
   readonly root: HTMLElement;
   readonly blockId: string;
   readonly patternMarkup: string;
@@ -249,6 +274,11 @@ export interface DogDetectorRevealOptions {
 export function animateDogDetectorReveal(
   options: DogDetectorRevealOptions,
 ): CancellableAnimation {
+  const durationMs = resolveAnimationDuration(
+    options.config,
+    "itemFeedbackMs",
+    DOG_DETECTOR_REVEAL_DURATION_MS,
+  );
   const boardBlock = [...options.root.querySelectorAll<HTMLElement>(
     '[data-testid="dog-block"][data-block-id]',
   )].find((block) => block.dataset.blockId === options.blockId) ?? null;
@@ -267,7 +297,7 @@ export function animateDogDetectorReveal(
     boardBlock.append(revealGlyph);
   }
 
-  return createAnimationLifecycle(DOG_DETECTOR_REVEAL_DURATION_MS, () => {
+  return createAnimationLifecycle(durationMs, () => {
     boardBlock?.classList.remove("dog-block--detector-reveal");
     if (boardBlock?.dataset.detectorReveal === "true") {
       delete boardBlock.dataset.detectorReveal;
@@ -276,7 +306,7 @@ export function animateDogDetectorReveal(
   });
 }
 
-export interface DogDemagnetizerEffectOptions {
+export interface DogDemagnetizerEffectOptions extends DogAnimationTimingOptions {
   readonly root: HTMLElement;
   readonly blockId: string;
   readonly target: DOMRect | null;
@@ -285,11 +315,16 @@ export interface DogDemagnetizerEffectOptions {
 export function animateDogDemagnetizerEffect(
   options: DogDemagnetizerEffectOptions,
 ): CancellableAnimation {
+  const durationMs = resolveAnimationDuration(
+    options.config,
+    "itemFeedbackMs",
+    DOG_DEMAGNETIZER_DURATION_MS,
+  );
   const layer = options.root.querySelector<HTMLElement>(
     '[data-testid="dog-animation-layer"]',
   );
   if (layer === null) {
-    return createAnimationLifecycle(DOG_DEMAGNETIZER_DURATION_MS, () => undefined);
+    return createAnimationLifecycle(durationMs, () => undefined);
   }
 
   const effect = document.createElement("div");
@@ -312,18 +347,18 @@ export function animateDogDemagnetizerEffect(
   });
   layer.append(effect);
 
-  return createAnimationLifecycle(DOG_DEMAGNETIZER_DURATION_MS, () => {
+  return createAnimationLifecycle(durationMs, () => {
     effect.remove();
   });
 }
 
-export interface DogItemEffectOptions {
+export interface DogItemEffectOptions extends DogAnimationTimingOptions {
   readonly root: HTMLElement;
   readonly itemId: string;
   readonly visualFeedback: string | null;
 }
 
-export interface DogTripleRemovalEffectOptions {
+export interface DogTripleRemovalEffectOptions extends DogAnimationTimingOptions {
   readonly root: HTMLElement;
   readonly itemId: string;
   readonly patternType: DogPatternType;
@@ -335,11 +370,16 @@ export interface DogTripleRemovalEffectOptions {
 export function animateDogTripleRemovalEffect(
   options: DogTripleRemovalEffectOptions,
 ): CancellableAnimation {
+  const durationMs = resolveAnimationDuration(
+    options.config,
+    "itemFeedbackMs",
+    DOG_ITEM_FEEDBACK_DURATION_MS,
+  );
   const layer = options.root.querySelector<HTMLElement>(
     '[data-testid="dog-animation-layer"]',
   );
   if (layer === null) {
-    return createAnimationLifecycle(DOG_ITEM_FEEDBACK_DURATION_MS, () => undefined);
+    return createAnimationLifecycle(durationMs, () => undefined);
   }
 
   const effect = document.createElement("div");
@@ -381,17 +421,22 @@ export function animateDogTripleRemovalEffect(
   effect.append(supplement, spark);
   layer.append(effect);
 
-  return createAnimationLifecycle(DOG_ITEM_FEEDBACK_DURATION_MS, () => {
+  return createAnimationLifecycle(durationMs, () => {
     effect.remove();
   });
 }
 
 export function animateDogItemEffect(options: DogItemEffectOptions): CancellableAnimation {
+  const durationMs = resolveAnimationDuration(
+    options.config,
+    "itemFeedbackMs",
+    DOG_ITEM_FEEDBACK_DURATION_MS,
+  );
   const layer = options.root.querySelector<HTMLElement>(
     '[data-testid="dog-animation-layer"]',
   );
   if (layer === null) {
-    return createAnimationLifecycle(DOG_ITEM_FEEDBACK_DURATION_MS, () => undefined);
+    return createAnimationLifecycle(durationMs, () => undefined);
   }
 
   const effect = document.createElement("div");
@@ -402,13 +447,13 @@ export function animateDogItemEffect(options: DogItemEffectOptions): Cancellable
   effect.innerHTML = '<span class="dog-item-effect__spark" aria-hidden="true">✦</span>';
   layer.append(effect);
 
-  const lifecycle = createAnimationLifecycle(DOG_ITEM_FEEDBACK_DURATION_MS, () => {
+  const lifecycle = createAnimationLifecycle(durationMs, () => {
     effect.remove();
   });
   return lifecycle;
 }
 
-export interface DogTrayUnlockEffectOptions {
+export interface DogTrayUnlockEffectOptions extends DogAnimationTimingOptions {
   readonly root: HTMLElement;
   readonly slotIndex: number;
 }
@@ -416,6 +461,11 @@ export interface DogTrayUnlockEffectOptions {
 export function animateDogUnlockTrayEffect(
   options: DogTrayUnlockEffectOptions,
 ): CancellableAnimation {
+  const durationMs = resolveAnimationDuration(
+    options.config,
+    "trayUnlockMs",
+    DOG_TRAY_UNLOCK_DURATION_MS,
+  );
   const slot = [...options.root.querySelectorAll<HTMLElement>(
     '[data-testid="dog-tray-slot"][data-tray-slot-index]',
   )].find((candidate) => candidate.dataset.traySlotIndex === String(options.slotIndex)) ?? null;
@@ -428,7 +478,7 @@ export function animateDogUnlockTrayEffect(
     '[data-testid="dog-animation-layer"]',
   );
   if (layer === null) {
-    return createAnimationLifecycle(DOG_TRAY_UNLOCK_DURATION_MS, () => {
+    return createAnimationLifecycle(durationMs, () => {
       slot?.classList.remove("dog-tray__slot--unlocking");
       if (slot?.dataset.unlocking === "true") {
         delete slot.dataset.unlocking;
@@ -452,7 +502,7 @@ export function animateDogUnlockTrayEffect(
   });
   layer.append(effect);
 
-  return createAnimationLifecycle(DOG_TRAY_UNLOCK_DURATION_MS, () => {
+  return createAnimationLifecycle(durationMs, () => {
     effect.remove();
     slot?.classList.remove("dog-tray__slot--unlocking");
     if (slot?.dataset.unlocking === "true") {
@@ -461,7 +511,7 @@ export function animateDogUnlockTrayEffect(
   });
 }
 
-export interface DogKeyDropEffectOptions {
+export interface DogKeyDropEffectOptions extends DogAnimationTimingOptions {
   readonly root: HTMLElement;
   readonly source: DOMRect | null;
   readonly target: DOMRect | null;
@@ -470,11 +520,16 @@ export interface DogKeyDropEffectOptions {
 export function animateDogKeyDropEffect(
   options: DogKeyDropEffectOptions,
 ): CancellableAnimation {
+  const durationMs = resolveAnimationDuration(
+    options.config,
+    "keyDropMs",
+    DOG_KEY_DROP_DURATION_MS,
+  );
   const layer = options.root.querySelector<HTMLElement>(
     '[data-testid="dog-animation-layer"]',
   );
   if (layer === null) {
-    return createAnimationLifecycle(DOG_KEY_DROP_DURATION_MS, () => undefined);
+    return createAnimationLifecycle(durationMs, () => undefined);
   }
 
   const effect = document.createElement("div");
@@ -499,12 +554,12 @@ export function animateDogKeyDropEffect(
   });
   layer.append(effect);
 
-  return createAnimationLifecycle(DOG_KEY_DROP_DURATION_MS, () => {
+  return createAnimationLifecycle(durationMs, () => {
     effect.remove();
   });
 }
 
-export interface DogTorchMeltEffectOptions {
+export interface DogTorchMeltEffectOptions extends DogAnimationTimingOptions {
   readonly root: HTMLElement;
   readonly blockId: string;
   readonly location: "board" | "tray";
@@ -514,8 +569,14 @@ export interface DogTorchMeltEffectOptions {
 export function animateDogTorchMeltEffect(
   options: DogTorchMeltEffectOptions,
 ): CancellableAnimation {
+  const durationMs = resolveAnimationDuration(
+    options.config,
+    "itemFeedbackMs",
+    DOG_TORCH_MELT_DURATION_MS,
+  );
   const effect = renderDogMeltEffect({
     root: options.root,
+    config: options.config,
     blockId: options.blockId,
     location: options.location,
     itemId: "torch",
@@ -523,15 +584,15 @@ export function animateDogTorchMeltEffect(
     target: options.target,
   });
   if (effect === null) {
-    return createAnimationLifecycle(DOG_TORCH_MELT_DURATION_MS, () => undefined);
+    return createAnimationLifecycle(durationMs, () => undefined);
   }
 
-  return createAnimationLifecycle(DOG_TORCH_MELT_DURATION_MS, () => {
+  return createAnimationLifecycle(durationMs, () => {
     effect.remove();
   });
 }
 
-export interface DogMeltEffectRenderOptions {
+export interface DogMeltEffectRenderOptions extends DogAnimationTimingOptions {
   readonly root: HTMLElement;
   readonly blockId: string;
   readonly target: DOMRect | null;
@@ -543,6 +604,11 @@ export interface DogMeltEffectRenderOptions {
 export function renderDogMeltEffect(
   options: DogMeltEffectRenderOptions,
 ): HTMLElement | null {
+  const durationMs = resolveAnimationDuration(
+    options.config,
+    options.torch ? "itemFeedbackMs" : "freezeMeltMs",
+    options.torch ? DOG_TORCH_MELT_DURATION_MS : DOG_FREEZE_MELT_DURATION_MS,
+  );
   const layer = options.root.querySelector<HTMLElement>(
     '[data-testid="dog-animation-layer"]',
   );
@@ -577,6 +643,7 @@ export function renderDogMeltEffect(
     top: `${(target?.top ?? layerRect.top) - layerRect.top}px`,
     width: `${target?.width || 48}px`,
     height: `${target?.height || 48}px`,
+    animationDuration: `${durationMs}ms`,
   });
   layer.append(effect);
   return effect;
@@ -609,4 +676,12 @@ function createAnimationLifecycle(
   timer = setTimeout(complete, durationMs);
 
   return { promise, cancel: complete };
+}
+
+function resolveAnimationDuration(
+  config: DogV13Config | undefined,
+  key: Exclude<keyof DogV13Config["animation"], "inputLockedDuringAnimation">,
+  fallback: number,
+): number {
+  return config?.animation[key] ?? fallback;
 }

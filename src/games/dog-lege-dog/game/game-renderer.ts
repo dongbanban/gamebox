@@ -30,6 +30,10 @@ import {
   type DogItemTargetType,
 } from "@/games/dog-lege-dog/game/dog-loadout";
 import { getDogItemUses } from "@/games/dog-lege-dog/game/dog-item-runtime";
+import {
+  DOG_V13_CONFIG,
+  type DogV13Config,
+} from "@/games/dog-lege-dog/game/v13-config";
 
 export const DOG_BLOCK_VISUAL_SIZE_PX = 48;
 export const DOG_LOGICAL_UNIT_VISUAL_WIDTH_PX = DOG_BLOCK_VISUAL_SIZE_PX / BLOCK_WIDTH;
@@ -38,7 +42,11 @@ export const DOG_BOARD_SAFE_MARGIN_PX = DOG_LOGICAL_UNIT_VISUAL_WIDTH_PX;
 /** Backward-compatible square-unit alias for layout consumers. */
 export const DOG_LOGICAL_UNIT_VISUAL_SIZE_PX = DOG_LOGICAL_UNIT_VISUAL_WIDTH_PX;
 
-export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameState): void {
+export function renderDogLegeDogGame(
+  root: HTMLElement,
+  state: DogLegeDogGameState,
+  config: DogV13Config = DOG_V13_CONFIG,
+): void {
   const { board } = state.level;
   const { remainingBlocks, selectableBlockIds } = state.session;
   const blocks = remainingBlocks;
@@ -58,6 +66,7 @@ export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameSta
       boardRows,
       boardPixelWidth,
       boardPixelHeight,
+      config,
     );
     return;
   }
@@ -120,7 +129,7 @@ export function renderDogLegeDogGame(root: HTMLElement, state: DogLegeDogGameSta
           </div>
         </div>
       </div>
-      <div class="dog-loadout-slot" data-testid="dog-loadout-slot">${renderLoadoutArea(state)}</div>
+      <div class="dog-loadout-slot" data-testid="dog-loadout-slot">${renderLoadoutArea(state, config)}</div>
       ${renderTray(
         state.session,
         state.feedback,
@@ -145,6 +154,7 @@ function updateDogLegeDogGame(
   boardRows: number,
   boardPixelWidth: number,
   boardPixelHeight: number,
+  config: DogV13Config,
 ): void {
   const { board } = state.level;
   const { remainingBlocks, selectableBlockIds } = state.session;
@@ -212,7 +222,7 @@ function updateDogLegeDogGame(
   }
 
   if (loadoutSlot !== null) {
-    updateDogLoadoutArea(loadoutSlot, state);
+    updateDogLoadoutArea(loadoutSlot, state, config);
   }
 
   const matchEffect = tray?.querySelector<HTMLElement>('[data-testid="dog-match-effect"]');
@@ -227,7 +237,7 @@ function updateDogLegeDogGame(
   fitDogBoardToFrame(gameRoot);
 }
 
-function renderLoadoutArea(state: DogLegeDogGameState): string {
+function renderLoadoutArea(state: DogLegeDogGameState, config: DogV13Config): string {
   if (state.loadoutEditor !== null) {
     return renderDogLoadoutEditor({
       mode: state.loadoutEditor.mode,
@@ -235,8 +245,9 @@ function renderLoadoutArea(state: DogLegeDogGameState): string {
       current: state.loadout,
       levelNumber: state.level.number,
       confirming: state.loadoutEditor.confirming,
+      loadoutSize: config.items.loadoutSize,
       itemUses: Object.fromEntries(
-        DOG_ITEM_DEFINITIONS.map((item) => [item.id, getDogItemUses(state.level, item.id)]),
+        DOG_ITEM_DEFINITIONS.map((item) => [item.id, getDogItemUses(state.level, item.id, config)]),
       ),
     });
   }
@@ -258,6 +269,7 @@ function renderLoadoutArea(state: DogLegeDogGameState): string {
 function updateDogLoadoutArea(
   loadoutSlot: HTMLElement,
   state: DogLegeDogGameState,
+  config: DogV13Config,
 ): void {
   const currentEditor = loadoutSlot.querySelector('[data-testid="dog-loadout-panel"]');
   const currentSummary = loadoutSlot.querySelector<HTMLElement>('[data-testid="dog-loadout-summary"]');
@@ -267,7 +279,7 @@ function updateDogLoadoutArea(
     state.loadout === null ||
     state.items === null
   ) {
-    loadoutSlot.innerHTML = renderLoadoutArea(state);
+    loadoutSlot.innerHTML = renderLoadoutArea(state, config);
     return;
   }
 
@@ -282,7 +294,7 @@ function updateDogLoadoutArea(
   const hasSameTargetMarkup = currentSummary?.dataset.targetType === (targetType ?? "");
 
   if (!hasSameLoadout || !hasSameTargetMarkup || currentSummary === null) {
-    loadoutSlot.innerHTML = renderLoadoutArea(state);
+    loadoutSlot.innerHTML = renderLoadoutArea(state, config);
     return;
   }
 

@@ -163,6 +163,7 @@ export {
   createDogSpecialMechanism,
   createDogIllusionMechanism,
   createDogSpecialMechanismHandlerMap,
+  createDogSpecialMechanismHandlers,
   getDogBlockLogicalUnitCount,
   getDogLogicalBlockCount,
   getDogTrayLogicalUnitCount,

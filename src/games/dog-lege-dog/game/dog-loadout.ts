@@ -94,27 +94,30 @@ export function isDogItemId(value: string): value is DogItemId {
 
 export function isValidDogLoadout(
   value: readonly string[] | null | undefined,
+  loadoutSize: number = DOG_LOADOUT_SIZE,
 ): value is readonly DogItemId[] {
   return (
     value !== null &&
     value !== undefined &&
-    value.length === DOG_LOADOUT_SIZE &&
-    new Set(value).size === DOG_LOADOUT_SIZE &&
+    value.length === loadoutSize &&
+    new Set(value).size === loadoutSize &&
     value.every(isDogItemId)
   );
 }
 
 export function normalizeDogLoadout(
   value: readonly string[] | null | undefined,
+  loadoutSize: number = DOG_LOADOUT_SIZE,
 ): readonly DogItemId[] | null {
-  return isValidDogLoadout(value) ? [...value] : null;
+  return isValidDogLoadout(value, loadoutSize) ? [...value] : null;
 }
 
 export function areDogLoadoutsEqual(
   first: readonly string[] | null | undefined,
   second: readonly string[] | null | undefined,
+  loadoutSize: number = DOG_LOADOUT_SIZE,
 ): boolean {
-  if (!isValidDogLoadout(first) || !isValidDogLoadout(second)) {
+  if (!isValidDogLoadout(first, loadoutSize) || !isValidDogLoadout(second, loadoutSize)) {
     return first === second;
   }
 
@@ -138,6 +141,7 @@ export interface DogLoadoutEditorRenderOptions {
   readonly confirming: boolean;
   readonly changeTarget?: "current" | "next";
   readonly itemUses?: Partial<Record<DogItemId, number>>;
+  readonly loadoutSize?: number;
 }
 
 export interface DogLoadoutSummaryItemState {
@@ -158,16 +162,18 @@ export function renderDogLoadoutEditor({
   confirming,
   changeTarget = "current",
   itemUses,
+  loadoutSize = DOG_LOADOUT_SIZE,
 }: DogLoadoutEditorRenderOptions): string {
   const isChange = mode === "change";
   const isNextChange = changeTarget === "next";
-  const canConfirm = isValidDogLoadout(draft) && (!isChange || !areDogLoadoutsEqual(current, draft));
+  const canConfirm = isValidDogLoadout(draft, loadoutSize) &&
+    (!isChange || !areDogLoadoutsEqual(current, draft, loadoutSize));
   const title = isChange ? "更换道具组" : "选择本关道具";
   const intro = isChange
     ? isNextChange
       ? `新道具组将在第 ${levelNumber} 关生效。新组合至少替换一种道具。`
       : `当前道具组将应用于第 ${levelNumber} 关。新组合至少替换一种道具。`
-    : `本关棋盘已生成。选择 ${DOG_LOADOUT_SIZE} 种不同道具后确认。`;
+    : `本关棋盘已生成。选择 ${loadoutSize} 种不同道具后确认。`;
   const titleId = `dog-loadout-title-${mode}`;
   const options = DOG_ITEM_DEFINITIONS.map((item) => {
     const selected = draft.includes(item.id);
@@ -223,7 +229,7 @@ export function renderDogLoadoutEditor({
             <h3 id="${titleId}">${title}</h3>
             <p>${intro}</p>
           </div>
-          <span class="dog-loadout__count" data-testid="dog-loadout-count">${draft.length}/${DOG_LOADOUT_SIZE}</span>
+          <span class="dog-loadout__count" data-testid="dog-loadout-count">${draft.length}/${loadoutSize}</span>
         </div>
         <div class="dog-loadout__options">${options}</div>
         ${confirmation}
