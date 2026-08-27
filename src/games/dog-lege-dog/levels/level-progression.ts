@@ -179,6 +179,10 @@ export function getDifficultyTargetForGeneratorVersion(
       safeChoiceCount: { ...target.safeChoiceCount },
       safeChoiceRate: { ...target.safeChoiceRate },
       durationMinutes: { ...target.durationMinutes },
+      trayPeakPressure: { ...target.trayPeakPressure },
+      mechanismDensity: { ...target.mechanismDensity },
+      operationCost: { ...target.operationCost },
+      mistakeRisk: { ...target.mistakeRisk },
     };
   }
   const target = generatorVersion !== undefined &&
@@ -203,6 +207,18 @@ function cloneDifficultyTarget(target: DogDifficultyTarget): DogDifficultyTarget
       ? {}
       : { safeChoiceRate: { ...target.safeChoiceRate } }),
     durationMinutes: { ...target.durationMinutes },
+    ...(target.trayPeakPressure === undefined
+      ? {}
+      : { trayPeakPressure: { ...target.trayPeakPressure } }),
+    ...(target.mechanismDensity === undefined
+      ? {}
+      : { mechanismDensity: { ...target.mechanismDensity } }),
+    ...(target.operationCost === undefined
+      ? {}
+      : { operationCost: { ...target.operationCost } }),
+    ...(target.mistakeRisk === undefined
+      ? {}
+      : { mistakeRisk: { ...target.mistakeRisk } }),
   };
 }
 

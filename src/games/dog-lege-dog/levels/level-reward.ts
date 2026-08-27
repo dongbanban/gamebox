@@ -90,9 +90,14 @@ function assertValidRewardConfig(config: DogLevelRewardConfig): void {
 function assertValidDifficulty(difficulty: DogLevelDifficulty): void {
   const values = [
     difficulty.blockCount,
+    difficulty.logicalBlockCount,
     difficulty.maxLayers,
     difficulty.patternTypeCount,
     difficulty.estimatedDurationMinutes,
+    difficulty.trayPeakPressure,
+    difficulty.specialMechanismDensity,
+    difficulty.operationCost,
+    difficulty.mistakeRisk,
   ];
   if (!values.every(Number.isFinite)) {
     throw new Error("Dog level difficulty values must be finite");

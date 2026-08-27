@@ -101,6 +101,7 @@ describe(`狗了个狗 ${profileName} generation profile`, () => {
     });
 
     expect(level.generation.fallbackUsed).toBe(true);
+    expect(level.difficulty.withinTarget).toBe(true);
     expect(level.generation.failures[0]).toMatchObject({
       testSeed: testCase.testSeed,
       runSeed: testCase.runSeed,

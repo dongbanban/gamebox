@@ -27,6 +27,7 @@ export type {
   DogV13Config,
   DogV13ConfigIssue,
   DogV13DifficultyTarget,
+  DogV13DifficultyScoring,
   DogV13ItemId,
   DogV13ItemCopy,
   DogV13LoadoutCopy,

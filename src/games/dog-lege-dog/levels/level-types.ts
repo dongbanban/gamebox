@@ -102,6 +102,14 @@ export interface DogDifficultyTarget {
   /** Normalizes safe choices across levels with different block counts. */
   readonly safeChoiceRate?: DogDifficultyRange;
   readonly durationMinutes: DogDifficultyRange;
+  /** v13 target score from effective occupancy and choice pressure. */
+  readonly trayPeakPressure?: DogDifficultyRange;
+  /** Logical-unit density occupied by special mechanisms. */
+  readonly mechanismDensity?: DogDifficultyRange;
+  /** Normalized cost of executing configured mechanisms on the no-item path. */
+  readonly operationCost?: DogDifficultyRange;
+  /** Normalized probability of a capacity or mechanism mistake. */
+  readonly mistakeRisk?: DogDifficultyRange;
 }
 
 export interface DogLevelDifficulty {
@@ -115,7 +123,12 @@ export interface DogLevelDifficulty {
   readonly solvabilityStatus: DogSolvabilityStatus;
   readonly safeChoiceSearchStatus: DogSafeChoiceSearchStatus;
   readonly certainty: DogDifficultyCertainty;
+  /** v13 score; legacy generator versions preserve raw logical-unit peak. */
   readonly trayPeakPressure: number;
+  /** Normalized cost of executing configured mechanisms on the no-item path. */
+  readonly operationCost: number;
+  /** Normalized probability of a capacity or mechanism mistake. */
+  readonly mistakeRisk: number;
   readonly shapeComplexity: number;
   readonly patternTypeCount: number;
   readonly logicalBlockCount: number;

@@ -5,6 +5,7 @@ import {
   getDogV13LogicalBlockCount,
   getDogV13MechanismPlan,
   getDogLogicalBlockCount,
+  isDifficultyWithinTarget,
   LEVEL_GENERATOR_VERSION,
   LevelGenerator,
 } from "@/games/dog-lege-dog";
@@ -116,7 +117,24 @@ describe("狗了个狗 v13 关卡生成 seam", () => {
       expect(getDogLogicalBlockCount(level.blocks, level.specialMechanisms)).toBe(
         getDogV13LogicalBlockCount(levelNumber),
       );
+      expect(level.lockedTraySlotCount).toBeGreaterThanOrEqual(0);
+      expect(level.lockedTraySlotCount).toBeLessThanOrEqual(
+        DOG_V13_CONFIG.tray.maxLockedSlotCount,
+      );
+      expect(level.blocks.every((block) =>
+        block.specialMechanism === undefined || typeof block.specialMechanism.type === "string",
+      )).toBe(true);
       expect(level.difficulty.solvabilityStatus).toBe("solvable");
+      expect(isDifficultyWithinTarget(level.difficulty)).toBe(true);
+      expect(level.difficulty.trayPeakPressure).toBeGreaterThanOrEqual(
+        level.difficulty.target.trayPeakPressure!.min,
+      );
+      expect(level.difficulty.operationCost).toBeGreaterThanOrEqual(
+        level.difficulty.target.operationCost!.min,
+      );
+      expect(level.difficulty.mistakeRisk).toBeGreaterThanOrEqual(
+        level.difficulty.target.mistakeRisk!.min,
+      );
       expect(level.solutionPath.length).toBeLessThanOrEqual(level.blocks.length);
       expect(generator.findSolvability(level).path).toEqual(level.solutionPath);
     }
@@ -143,6 +161,7 @@ describe("狗了个狗 v13 关卡生成 seam", () => {
       generatorVersion: LEVEL_GENERATOR_VERSION,
     });
     const session = new GameSession(level);
+    const initialLockedTraySlotCount = session.getState().lockedTraySlotCount;
 
     let state = session.getState();
     for (const blockId of level.solutionPath) {
@@ -151,6 +170,35 @@ describe("狗了个狗 v13 关卡生成 seam", () => {
 
     expect(state.status).toBe("won");
     expect(state.remainingBlocks).toEqual([]);
+    expect(initialLockedTraySlotCount).toBeGreaterThan(0);
+    expect(initialLockedTraySlotCount).toBe(level.lockedTraySlotCount);
+    expect(state.lockedTraySlotCount).toBe(initialLockedTraySlotCount);
+  });
+
+  it("相同 runSeed 与操作路径复现磁吸目标序列", () => {
+    const generator = new LevelGenerator();
+    const level = generator.generate({
+      levelNumber: 16,
+      runSeed: "v13-operation-path-replay",
+      generatorVersion: LEVEL_GENERATOR_VERSION,
+    });
+    const replayed = generator.replay(level.generation.replay);
+    expect(replayed).toEqual(level);
+
+    const collectMagneticTargets = (candidate: typeof level) => {
+      const session = new GameSession(candidate);
+      return candidate.solutionPath.flatMap((blockId) => {
+        const result = session.selectBlock(blockId);
+        return result.magneticResolution === null
+          ? []
+          : [result.magneticResolution.targetBlockId];
+      });
+    };
+
+    const firstTargets = collectMagneticTargets(level);
+    const replayedTargets = collectMagneticTargets(replayed);
+    expect(firstTargets.length).toBeGreaterThan(0);
+    expect(replayedTargets).toEqual(firstTargets);
   });
 
 });

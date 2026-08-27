@@ -22,6 +22,7 @@ import {
   calculateDifficultyMetrics,
   compareDifficultyDistance,
   getRelaxedDifficultyTarget,
+  isDifficultyAtLeastTarget,
   isDifficultyWithinTarget,
 } from "@/games/dog-lege-dog/levels/level-difficulty";
 import {
@@ -171,13 +172,13 @@ export class GeneratedLevelGenerator {
     }
 
     let fallback = closestCandidate !== undefined &&
-        meetsDifficultyMinimum(closestCandidate.difficulty)
+        meetsFallbackRequirements(closestCandidate.difficulty)
       ? closestCandidate
       : undefined;
     if (fallback === undefined) {
       try {
         const candidate = this.createFallbackCandidate(request, levelSeed, testSeed);
-        if (!meetsDifficultyMinimum(candidate.difficulty)) {
+        if (!meetsFallbackRequirements(candidate.difficulty)) {
           throw new Error("fallback candidate is below the current difficulty minimum");
         }
         fallback = candidate;
@@ -199,7 +200,7 @@ export class GeneratedLevelGenerator {
         );
         try {
           const candidate = this.createEmergencyCandidate(request, levelSeed, testSeed);
-          if (!meetsDifficultyMinimum(candidate.difficulty)) {
+          if (!meetsFallbackRequirements(candidate.difficulty)) {
             throw new Error("emergency fallback is below the current difficulty minimum");
           }
           fallback = candidate;
@@ -218,7 +219,7 @@ export class GeneratedLevelGenerator {
             ),
           );
           const candidate = this.createLastResortCandidate(request, levelSeed, testSeed);
-          if (!meetsDifficultyMinimum(candidate.difficulty)) {
+          if (!meetsFallbackRequirements(candidate.difficulty)) {
             throw new Error("last-resort fallback is below the current difficulty minimum");
           }
           fallback = candidate;
@@ -226,7 +227,7 @@ export class GeneratedLevelGenerator {
       }
     }
 
-    if (fallback === undefined || !meetsDifficultyMinimum(fallback.difficulty)) {
+    if (fallback === undefined || !meetsFallbackRequirements(fallback.difficulty)) {
       throw new Error(
         "LevelGenerator fallback did not satisfy the current difficulty minimum",
       );
@@ -424,15 +425,13 @@ export class GeneratedLevelGenerator {
 }
 
 function meetsDifficultyMinimum(difficulty: DogLevelDifficulty): boolean {
-  return (
-    difficulty.solvabilityStatus === "solvable" &&
-    difficulty.safeChoiceSearchStatus === "complete" &&
-    difficulty.certainty === "certain" &&
-    difficulty.safeChoiceCount >= difficulty.target.safeChoiceCount.min &&
-    (difficulty.target.safeChoiceRate === undefined ||
-      difficulty.safeChoiceRate >= difficulty.target.safeChoiceRate.min) &&
-    difficulty.estimatedDurationMinutes >= difficulty.target.durationMinutes.min
-  );
+  return isDifficultyAtLeastTarget(difficulty);
+}
+
+function meetsFallbackRequirements(difficulty: DogLevelDifficulty): boolean {
+  return difficulty.target.trayPeakPressure === undefined
+    ? meetsDifficultyMinimum(difficulty)
+    : isDifficultyWithinTarget(difficulty);
 }
 
 function getLevelSeed(

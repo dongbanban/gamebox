@@ -23,6 +23,7 @@ import {
   createFullBlockMask,
   createSolvabilityResult,
   type PathVerification,
+  type PathSimulationMetrics,
   type SolvabilityResult,
 } from "@/games/dog-lege-dog/levels/level-solvability-contracts";
 import {
@@ -57,6 +58,9 @@ export function verifyRemovalPath(
   const autoConsumedIndices = new Set<number>();
   const acceptedPath: string[] = [];
   const magneticRandom = createDogMagneticRandom(level);
+  const mechanismEntryCounts = new Map<string, number>();
+  let selectedBlockCount = 0;
+  let magneticTargetCount = 0;
   let trayPeakPressure = 0;
 
   for (const blockId of path) {
@@ -102,6 +106,20 @@ export function verifyRemovalPath(
       magneticRandom,
       graph,
     );
+    selectedBlockCount += 1;
+    if (resolution.magneticTargetIndex !== null) {
+      magneticTargetCount += 1;
+    }
+    for (const consumedIndex of resolution.consumedBlockIndices) {
+      const mechanismType = level.blocks[consumedIndex]?.specialMechanism?.type;
+      if (mechanismType === undefined) {
+        continue;
+      }
+      mechanismEntryCounts.set(
+        mechanismType,
+        (mechanismEntryCounts.get(mechanismType) ?? 0) + 1,
+      );
+    }
     remainingMask = resolution.remainingMask;
     for (const consumedIndex of resolution.consumedBlockIndices) {
       if (consumedIndex !== blockIndex) {
@@ -155,7 +173,17 @@ export function verifyRemovalPath(
     );
   }
 
-  return createPathVerification("solvable", acceptedPath, trayPeakPressure);
+  return createPathVerification(
+    "solvable",
+    acceptedPath,
+    trayPeakPressure,
+    undefined,
+    createPathSimulationMetrics(
+      selectedBlockCount,
+      mechanismEntryCounts,
+      magneticTargetCount,
+    ),
+  );
 }
 
 export function normalizeSolvabilityResult(
@@ -216,12 +244,26 @@ function createPathVerification(
   path: readonly string[],
   trayPeakPressure: number,
   reason?: string,
+  simulation?: PathSimulationMetrics,
 ): PathVerification {
   return {
     status,
     solvable: status === "solvable",
     path,
     trayPeakPressure,
+    ...(simulation === undefined ? {} : { simulation }),
     reason,
+  };
+}
+
+function createPathSimulationMetrics(
+  selectedBlockCount: number,
+  mechanismEntryCounts: ReadonlyMap<string, number>,
+  magneticTargetCount: number,
+): PathSimulationMetrics {
+  return {
+    selectedBlockCount,
+    mechanismEntryCounts: Object.freeze(Object.fromEntries(mechanismEntryCounts)),
+    magneticTargetCount,
   };
 }

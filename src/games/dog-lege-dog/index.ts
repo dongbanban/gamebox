@@ -136,6 +136,7 @@ export type {
   DogV13AppCopy,
   DogV13Config,
   DogV13ConfigIssue,
+  DogV13DifficultyScoring,
   DogV13DifficultyTarget,
   DogV13ItemId,
   DogV13ItemCopy,

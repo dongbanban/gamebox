@@ -27,8 +27,35 @@ import {
   getDogLogicalBlockCount,
   getDogSpecialMechanismComposition,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
+import {
+  calculateMistakeRisk,
+  calculateOperationCost,
+  calculateTrayPeakPressure,
+  getEffectiveTrayCapacity,
+} from "@/games/dog-lege-dog/levels/level-difficulty-metrics";
 
 export function isDifficultyWithinTarget(
+  difficulty: DogLevelDifficulty,
+  target: DogDifficultyTarget = difficulty.target,
+): boolean {
+  return (
+    isDifficultyAtLeastTarget(difficulty, target) &&
+    isWithinRange(difficulty.safeChoiceCount, target.safeChoiceCount) &&
+    (target.safeChoiceRate === undefined ||
+      isWithinRange(difficulty.safeChoiceRate, target.safeChoiceRate)) &&
+    isWithinRange(difficulty.estimatedDurationMinutes, target.durationMinutes) &&
+    (target.trayPeakPressure === undefined ||
+      isWithinRange(difficulty.trayPeakPressure, target.trayPeakPressure)) &&
+    (target.mechanismDensity === undefined ||
+      isWithinRange(difficulty.specialMechanismDensity, target.mechanismDensity)) &&
+    (target.operationCost === undefined ||
+      isWithinRange(difficulty.operationCost, target.operationCost)) &&
+    (target.mistakeRisk === undefined ||
+      isWithinRange(difficulty.mistakeRisk, target.mistakeRisk))
+  );
+}
+
+export function isDifficultyAtLeastTarget(
   difficulty: DogLevelDifficulty,
   target: DogDifficultyTarget = difficulty.target,
 ): boolean {
@@ -36,10 +63,18 @@ export function isDifficultyWithinTarget(
     difficulty.solvabilityStatus === "solvable" &&
     difficulty.safeChoiceSearchStatus === "complete" &&
     difficulty.certainty === "certain" &&
-    isWithinRange(difficulty.safeChoiceCount, target.safeChoiceCount) &&
+    difficulty.safeChoiceCount >= target.safeChoiceCount.min &&
     (target.safeChoiceRate === undefined ||
-      isWithinRange(difficulty.safeChoiceRate, target.safeChoiceRate)) &&
-    isWithinRange(difficulty.estimatedDurationMinutes, target.durationMinutes)
+      difficulty.safeChoiceRate >= target.safeChoiceRate.min) &&
+    difficulty.estimatedDurationMinutes >= target.durationMinutes.min &&
+    (target.trayPeakPressure === undefined ||
+      difficulty.trayPeakPressure >= target.trayPeakPressure.min) &&
+    (target.mechanismDensity === undefined ||
+      difficulty.specialMechanismDensity >= target.mechanismDensity.min) &&
+    (target.operationCost === undefined ||
+      difficulty.operationCost >= target.operationCost.min) &&
+    (target.mistakeRisk === undefined ||
+      difficulty.mistakeRisk >= target.mistakeRisk.min)
   );
 }
 
@@ -58,9 +93,11 @@ export function calculateDifficultyMetrics(
     (discoveredSolvability?.status === "solvable" ? discoveredSolvability.path : []);
   const verification =
     knownVerification ??
-    (discoveredSolvability === undefined
+    (discoveredSolvability?.status === "solvable"
       ? verifyRemovalPath(level, path)
-      : toPathVerification(discoveredSolvability));
+      : discoveredSolvability === undefined
+        ? verifyRemovalPath(level, path)
+        : toPathVerification(discoveredSolvability));
   const graph = createBlockGraph(level.blocks);
   const initialSelectable = graph.higherBlockCounts.filter((count) => count === 0).length;
   const target = getDifficultyTargetForGeneratorVersion(
@@ -106,6 +143,29 @@ export function calculateDifficultyMetrics(
       specialMechanismComposition.specialMechanismCount * 0.25) *
       10,
   ) / 10;
+  const effectiveTrayCapacity = getEffectiveTrayCapacity(level, config);
+  const trayPeakPressure = calculateTrayPeakPressure(
+    verification.trayPeakPressure,
+    effectiveTrayCapacity,
+    safeChoiceRate,
+    config,
+    isV13Level,
+  );
+  const operationCost = calculateOperationCost(
+    level,
+    specialMechanismComposition.specialMechanismDensity,
+    logicalBlockCount,
+    config,
+    verification.simulation,
+  );
+  const mistakeRisk = calculateMistakeRisk(
+    level,
+    safeChoiceRate,
+    trayPeakPressure,
+    operationCost,
+    config,
+    verification.simulation,
+  );
   const estimatedDurationMinutes = estimateDurationMinutes(
     level,
     coverageRate,
@@ -118,6 +178,7 @@ export function calculateDifficultyMetrics(
     level.patternTypes.length,
     logicalBlockCount,
     isV13Level,
+    operationCost,
     config,
   );
   const difficulty = {
@@ -131,7 +192,9 @@ export function calculateDifficultyMetrics(
     solvabilityStatus,
     safeChoiceSearchStatus: safeChoiceMetrics.searchStatus,
     certainty: safeChoiceMetrics.searchStatus === "complete" ? "certain" : "uncertain",
-    trayPeakPressure: verification.trayPeakPressure,
+    trayPeakPressure,
+    operationCost,
+    mistakeRisk,
     shapeComplexity,
     patternTypeCount: level.patternTypes.length,
     logicalBlockCount,
@@ -153,7 +216,6 @@ export function calculateDifficultyMetrics(
     withinTarget: isDifficultyWithinTarget(difficulty, target),
   });
 }
-
 export function getRelaxedDifficultyTarget(
   levelNumber: number,
   attempt: number,
@@ -183,7 +245,6 @@ export function getRelaxedDifficultyTarget(
     },
   };
 }
-
 export function compareDifficultyDistance(
   first: DogLevelDifficulty,
   second: DogLevelDifficulty,
@@ -198,7 +259,6 @@ export function compareDifficultyDistance(
 
   return difficultyDistance(first) - difficultyDistance(second);
 }
-
 function toPathVerification(result: SolvabilityResult): PathVerification {
   return {
     status: result.status === "solvable" ? "solvable" : "unsolvable",
@@ -208,7 +268,6 @@ function toPathVerification(result: SolvabilityResult): PathVerification {
     reason: result.reason,
   };
 }
-
 function difficultyDistance(difficulty: DogLevelDifficulty): number {
   const safeDistance = rangeDistance(
     difficulty.safeChoiceCount,
@@ -221,7 +280,28 @@ function difficultyDistance(difficulty: DogLevelDifficulty): number {
   const safeRateDistance = difficulty.target.safeChoiceRate === undefined
     ? 0
     : rangeDistance(difficulty.safeChoiceRate, difficulty.target.safeChoiceRate);
-  return safeDistance * 10 + safeRateDistance * 100 + durationDistance;
+  const trayPressureDistance = difficulty.target.trayPeakPressure === undefined
+    ? 0
+    : rangeDistance(difficulty.trayPeakPressure, difficulty.target.trayPeakPressure);
+  const mechanismDensityDistance = difficulty.target.mechanismDensity === undefined
+    ? 0
+    : rangeDistance(
+        difficulty.specialMechanismDensity,
+        difficulty.target.mechanismDensity,
+      );
+  const operationCostDistance = difficulty.target.operationCost === undefined
+    ? 0
+    : rangeDistance(difficulty.operationCost, difficulty.target.operationCost);
+  const mistakeRiskDistance = difficulty.target.mistakeRisk === undefined
+    ? 0
+    : rangeDistance(difficulty.mistakeRisk, difficulty.target.mistakeRisk);
+  return safeDistance * 10 +
+    safeRateDistance * 100 +
+    durationDistance +
+    trayPressureDistance * 20 +
+    mechanismDensityDistance * 100 +
+    operationCostDistance * 20 +
+    mistakeRiskDistance * 20;
 }
 
 function rangeDistance(value: number, range: { min: number; max: number }): number {
@@ -235,7 +315,6 @@ function rangeDistance(value: number, range: { min: number; max: number }): numb
 
   return 0;
 }
-
 function isWithinRange(
   value: number,
   range: { min: number; max: number },
@@ -255,6 +334,7 @@ function estimateDurationMinutes(
   patternTypeCount: number,
   logicalBlockCount: number,
   isV13Level: boolean,
+  operationCost: number,
   config: DogV13Config,
 ): number {
   const shapeScore = shapeComplexity / 4;
@@ -265,6 +345,8 @@ function estimateDurationMinutes(
   const safeChoiceScore = 1 / Math.max(1, safeChoiceCount);
   const choicePressureScore = Math.max(0, 1 - safeChoiceRate);
   const patternScore = Math.max(0, (patternTypeCount - 6) / 4);
+  const lockScore = (level.lockedTraySlotCount ?? 0) /
+    Math.max(1, config.tray.maxLockedSlotCount);
   const rawDuration =
     3.8 +
     3 * blockScore +
@@ -274,6 +356,8 @@ function estimateDurationMinutes(
     0.4 * pressureScore +
     0.4 * safeChoiceScore +
     (isV13Level ? 0.04 : 0.1) * specialMechanismDifficulty +
+    (isV13Level ? config.difficulty.scoring.duration.operationCostWeight : 0) * operationCost +
+    (isV13Level ? config.difficulty.scoring.duration.lockWeight : 0) * lockScore +
     0.15 * choicePressureScore +
     0.1 * partialOverlapRate +
     0.15 * patternScore;

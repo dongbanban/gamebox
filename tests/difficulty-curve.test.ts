@@ -37,6 +37,65 @@ describe("狗了个狗难度曲线", () => {
     ]);
   });
 
+  it("v13 难度验收包含压力、机制密度、操作成本与误操作风险", () => {
+    const target = getDifficultyTarget(1);
+    expect(target).toMatchObject({
+      trayPeakPressure: { min: 0.78, max: 0.98 },
+      mechanismDensity: { min: 0.29, max: 0.3 },
+      operationCost: { min: 0.3, max: 1 },
+      mistakeRisk: { min: 0.1, max: 0.99 },
+    });
+
+    const level = new LevelGenerator().generate({
+      levelNumber: 1,
+      runSeed: "difficulty-curve-v13-metrics",
+      testSeed: "difficulty-curve-v13-metrics",
+      generatorVersion: LEVEL_GENERATOR_VERSION,
+    });
+    expect(level.difficulty.trayPeakPressure).toBeGreaterThanOrEqual(
+      target.trayPeakPressure!.min,
+    );
+    expect(level.difficulty.trayPeakPressure).toBeLessThanOrEqual(
+      target.trayPeakPressure!.max,
+    );
+    expect(level.difficulty.specialMechanismDensity).toBeGreaterThanOrEqual(
+      target.mechanismDensity!.min,
+    );
+    expect(level.difficulty.specialMechanismDensity).toBeLessThanOrEqual(
+      target.mechanismDensity!.max,
+    );
+    expect(level.difficulty.operationCost).toBeGreaterThanOrEqual(
+      target.operationCost!.min,
+    );
+    expect(level.difficulty.operationCost).toBeLessThanOrEqual(
+      target.operationCost!.max,
+    );
+    expect(level.difficulty.mistakeRisk).toBeGreaterThanOrEqual(
+      target.mistakeRisk!.min,
+    );
+    expect(level.difficulty.mistakeRisk).toBeLessThanOrEqual(
+      target.mistakeRisk!.max,
+    );
+    expect(level.difficulty.withinTarget).toBe(true);
+
+    expect(isDifficultyWithinTarget({
+      ...level.difficulty,
+      trayPeakPressure: target.trayPeakPressure!.max + 0.01,
+    })).toBe(false);
+    expect(isDifficultyWithinTarget({
+      ...level.difficulty,
+      specialMechanismDensity: target.mechanismDensity!.max + 0.01,
+    })).toBe(false);
+    expect(isDifficultyWithinTarget({
+      ...level.difficulty,
+      operationCost: target.operationCost!.max + 0.01,
+    })).toBe(false);
+    expect(isDifficultyWithinTarget({
+      ...level.difficulty,
+      mistakeRisk: target.mistakeRisk!.max + 0.01,
+    })).toBe(false);
+  });
+
   it("固定 1–30 批次覆盖阶段边界与真实生成指标", () => {
     const generator = new LevelGenerator();
     const testSeed = "difficulty-curve-batch-v1";
@@ -123,6 +182,7 @@ describe("狗了个狗难度曲线", () => {
     });
     expect(legacy.difficulty.target.safeChoiceCount.max).toBe(Number.MAX_SAFE_INTEGER);
     expect(legacy.difficulty.target.safeChoiceRate).toBeUndefined();
+    expect(legacy.difficulty.trayPeakPressure).toBeGreaterThan(1);
     expect(generator.replay(legacy.generation.replay)).toEqual(legacy);
   });
 });

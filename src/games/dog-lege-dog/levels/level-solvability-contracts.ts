@@ -24,7 +24,14 @@ export interface PathVerification {
   readonly solvable: boolean;
   readonly path: readonly string[];
   readonly trayPeakPressure: number;
+  readonly simulation?: PathSimulationMetrics;
   readonly reason?: string;
+}
+
+export interface PathSimulationMetrics {
+  readonly selectedBlockCount: number;
+  readonly mechanismEntryCounts: Readonly<Record<string, number>>;
+  readonly magneticTargetCount: number;
 }
 
 export interface SolvabilityResult {

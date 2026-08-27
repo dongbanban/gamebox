@@ -59,6 +59,8 @@ export interface DogV13StructureStage {
 export interface DogV13MechanismDefinition {
   readonly type: DogV13MechanismType;
   readonly logicalUnitWeight: 1 | 2;
+  /** Additional operation units charged when this mechanism enters the tray. */
+  readonly operationCost: number;
 }
 
 export interface DogV13DifficultyTarget {
@@ -71,6 +73,27 @@ export interface DogV13DifficultyTarget {
   readonly mechanismDensity: DogV13Range;
   readonly operationCost: DogV13Range;
   readonly mistakeRisk: DogV13Range;
+}
+
+export interface DogV13DifficultyScoring {
+  readonly trayPressure: {
+    readonly occupancyWeight: number;
+    readonly choicePressureWeight: number;
+  };
+  readonly operationCost: {
+    readonly magneticTargetWeight: number;
+  };
+  readonly duration: {
+    readonly operationCostWeight: number;
+    readonly lockWeight: number;
+  };
+  readonly mistakeRisk: {
+    readonly base: number;
+    readonly choiceWeight: number;
+    readonly trayPressureWeight: number;
+    readonly operationCostWeight: number;
+    readonly lockWeight: number;
+  };
 }
 
 export type DogV13SoundWaveform = "sine" | "square" | "sawtooth" | "triangle";
@@ -246,6 +269,7 @@ export interface DogV13Config {
   };
   readonly difficulty: {
     readonly targets: readonly DogV13DifficultyTarget[];
+    readonly scoring: DogV13DifficultyScoring;
   };
   readonly animation: {
     readonly blockFlightMs: number;
@@ -460,14 +484,34 @@ const DOG_V13_CONFIG_SOURCE: DogV13Config = {
     requireAllTypes: true,
     freezeMeltTripleCount: 2,
     mechanisms: [
-      { type: "freeze", logicalUnitWeight: 1 },
-      { type: "illusion", logicalUnitWeight: 1 },
-      { type: "magnetic", logicalUnitWeight: 1 },
-      { type: "twin", logicalUnitWeight: 2 },
+      { type: "freeze", logicalUnitWeight: 1, operationCost: 2 },
+      { type: "illusion", logicalUnitWeight: 1, operationCost: 1 },
+      { type: "magnetic", logicalUnitWeight: 1, operationCost: 1 },
+      { type: "twin", logicalUnitWeight: 2, operationCost: 1 },
     ],
   },
   difficulty: {
     targets: DIFFICULTY_TARGETS,
+    scoring: {
+      trayPressure: {
+        occupancyWeight: 0.88,
+        choicePressureWeight: 0.12,
+      },
+      operationCost: {
+        magneticTargetWeight: 1,
+      },
+      duration: {
+        operationCostWeight: 0.2,
+        lockWeight: 0.15,
+      },
+      mistakeRisk: {
+        base: 0.15,
+        choiceWeight: 0.35,
+        trayPressureWeight: 0.25,
+        operationCostWeight: 0.15,
+        lockWeight: 0.1,
+      },
+    },
   },
   animation: {
     blockFlightMs: 180,
@@ -1213,6 +1257,12 @@ function collectConfigIssues(input: unknown): DogV13ConfigIssue[] {
           1,
           issues,
         );
+        validateFiniteNumber(
+          record.operationCost,
+          `specialMechanisms.mechanisms[${index}].operationCost`,
+          0,
+          issues,
+        );
         const expectedWeight = record.type === "twin" ? 2 : 1;
         if (record.logicalUnitWeight !== expectedWeight) {
           issues.push({
@@ -1233,6 +1283,7 @@ function collectConfigIssues(input: unknown): DogV13ConfigIssue[] {
       levels?.maxLevelNumber,
       issues,
     );
+    validateDifficultyScoring(difficulty.scoring, "difficulty.scoring", issues);
   }
 
   const animation = asRecord(input.animation);
@@ -1495,6 +1546,85 @@ function validateDifficultyTargets(
   if (maxLevel !== undefined && previousMaxLevel !== maxLevel) {
     issues.push({ path, code: "relation", message: "目标区间必须覆盖全部关卡" });
   }
+}
+
+function validateDifficultyScoring(
+  value: unknown,
+  path: string,
+  issues: DogV13ConfigIssue[],
+): void {
+  const scoring = asRecord(value);
+  if (scoring === undefined) {
+    issues.push({ path, code: "required", message: "必须是对象" });
+    return;
+  }
+  const trayPressure = asRecord(scoring.trayPressure);
+  const operationCost = asRecord(scoring.operationCost);
+  const duration = asRecord(scoring.duration);
+  const mistakeRisk = asRecord(scoring.mistakeRisk);
+  for (const [key, section] of [
+    ["trayPressure", trayPressure],
+    ["operationCost", operationCost],
+    ["duration", duration],
+    ["mistakeRisk", mistakeRisk],
+  ] as const) {
+    if (section === undefined) {
+      requiredObject(scoring, key, issues, path);
+    }
+  }
+  validateWeight(trayPressure?.occupancyWeight, `${path}.trayPressure.occupancyWeight`, issues);
+  validateWeight(trayPressure?.choicePressureWeight, `${path}.trayPressure.choicePressureWeight`, issues);
+  const occupancyWeight = trayPressure?.occupancyWeight;
+  const choicePressureWeight = trayPressure?.choicePressureWeight;
+  if (
+    isFiniteNumber(occupancyWeight) &&
+    isFiniteNumber(choicePressureWeight) &&
+    occupancyWeight + choicePressureWeight !== 1
+  ) {
+    issues.push({
+      path: `${path}.trayPressure`,
+      code: "relation",
+      message: "压力权重之和必须是 1",
+    });
+  }
+  validateWeight(
+    operationCost?.magneticTargetWeight,
+    `${path}.operationCost.magneticTargetWeight`,
+    issues,
+  );
+  for (const key of ["operationCostWeight", "lockWeight"] as const) {
+    validateWeight(duration?.[key], `${path}.duration.${key}`, issues);
+  }
+  for (const key of [
+    "base",
+    "choiceWeight",
+    "trayPressureWeight",
+    "operationCostWeight",
+    "lockWeight",
+  ] as const) {
+    validateWeight(mistakeRisk?.[key], `${path}.mistakeRisk.${key}`, issues);
+  }
+  const mistakeWeights = [
+    mistakeRisk?.base,
+    mistakeRisk?.choiceWeight,
+    mistakeRisk?.trayPressureWeight,
+    mistakeRisk?.operationCostWeight,
+    mistakeRisk?.lockWeight,
+  ];
+  if (
+    mistakeWeights.every(isFiniteNumber) &&
+    mistakeWeights.reduce((total, weight) => total + weight, 0) !== 1
+  ) {
+    issues.push({
+      path: `${path}.mistakeRisk`,
+      code: "relation",
+      message: "误操作风险权重之和必须是 1",
+    });
+  }
+}
+
+function validateWeight(value: unknown, path: string, issues: DogV13ConfigIssue[]): void {
+  validateRange(value, path, 0, 1, issues);
 }
 
 function validateStructureStages(

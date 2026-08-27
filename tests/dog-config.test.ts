@@ -60,6 +60,27 @@ describe("狗了个狗 v13 集中配置", () => {
       ["magnetic", 1],
       ["twin", 2],
     ]);
+    expect(DOG_V13_CONFIG.specialMechanisms.mechanisms.map(({ type, operationCost }) => [
+      type,
+      operationCost,
+    ])).toEqual([
+      ["freeze", 2],
+      ["illusion", 1],
+      ["magnetic", 1],
+      ["twin", 1],
+    ]);
+    expect(DOG_V13_CONFIG.difficulty.scoring).toMatchObject({
+      trayPressure: { occupancyWeight: 0.88, choicePressureWeight: 0.12 },
+      operationCost: { magneticTargetWeight: 1 },
+      duration: { operationCostWeight: 0.2, lockWeight: 0.15 },
+      mistakeRisk: {
+        base: 0.15,
+        choiceWeight: 0.35,
+        trayPressureWeight: 0.25,
+        operationCostWeight: 0.15,
+        lockWeight: 0.1,
+      },
+    });
 
     expect(DOG_V13_CONFIG.tray).toMatchObject({
       baseCapacity: 7,
@@ -195,6 +216,13 @@ describe("狗了个狗 v13 集中配置", () => {
               }
             : target,
         ),
+        scoring: {
+          ...DOG_V13_CONFIG.difficulty.scoring,
+          mistakeRisk: {
+            ...DOG_V13_CONFIG.difficulty.scoring.mistakeRisk,
+            base: 1.5,
+          },
+        },
       },
     };
 
@@ -211,6 +239,7 @@ describe("狗了个狗 v13 集中配置", () => {
           "difficulty.targets[0].safeChoiceCount.min",
           "difficulty.targets[0].safeChoiceRate.max",
           "difficulty.targets[0].mistakeRisk.max",
+          "difficulty.scoring.mistakeRisk.base",
         ]),
       );
     }

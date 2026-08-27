@@ -249,6 +249,29 @@ function assertLevelInvariants(
   expect(difficulty.estimatedDurationMinutes).toBeGreaterThanOrEqual(
     difficulty.target.durationMinutes.min,
   );
+  expect(Number.isFinite(difficulty.trayPeakPressure)).toBe(true);
+  expect(Number.isFinite(difficulty.operationCost)).toBe(true);
+  expect(Number.isFinite(difficulty.mistakeRisk)).toBe(true);
+  if (difficulty.target.trayPeakPressure !== undefined) {
+    expect(difficulty.trayPeakPressure).toBeGreaterThanOrEqual(
+      difficulty.target.trayPeakPressure.min,
+    );
+  }
+  if (difficulty.target.mechanismDensity !== undefined) {
+    expect(difficulty.specialMechanismDensity).toBeGreaterThanOrEqual(
+      difficulty.target.mechanismDensity.min,
+    );
+  }
+  if (difficulty.target.operationCost !== undefined) {
+    expect(difficulty.operationCost).toBeGreaterThanOrEqual(
+      difficulty.target.operationCost.min,
+    );
+  }
+  if (difficulty.target.mistakeRisk !== undefined) {
+    expect(difficulty.mistakeRisk).toBeGreaterThanOrEqual(
+      difficulty.target.mistakeRisk.min,
+    );
+  }
   if (difficulty.withinTarget) {
     if (Number.isFinite(difficulty.target.safeChoiceCount.max)) {
       expect(difficulty.safeChoiceCount).toBeLessThanOrEqual(
@@ -263,6 +286,26 @@ function assertLevelInvariants(
     if (Number.isFinite(difficulty.target.durationMinutes.max)) {
       expect(difficulty.estimatedDurationMinutes).toBeLessThanOrEqual(
         difficulty.target.durationMinutes.max,
+      );
+    }
+    if (difficulty.target.trayPeakPressure !== undefined) {
+      expect(difficulty.trayPeakPressure).toBeLessThanOrEqual(
+        difficulty.target.trayPeakPressure.max,
+      );
+    }
+    if (difficulty.target.mechanismDensity !== undefined) {
+      expect(difficulty.specialMechanismDensity).toBeLessThanOrEqual(
+        difficulty.target.mechanismDensity.max,
+      );
+    }
+    if (difficulty.target.operationCost !== undefined) {
+      expect(difficulty.operationCost).toBeLessThanOrEqual(
+        difficulty.target.operationCost.max,
+      );
+    }
+    if (difficulty.target.mistakeRisk !== undefined) {
+      expect(difficulty.mistakeRisk).toBeLessThanOrEqual(
+        difficulty.target.mistakeRisk.max,
       );
     }
     expect(isDifficultyWithinTarget(difficulty)).toBe(true);

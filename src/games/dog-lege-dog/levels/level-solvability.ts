@@ -52,6 +52,7 @@ export {
 } from "@/games/dog-lege-dog/levels/level-solvability-contracts";
 export type {
   PathVerification,
+  PathSimulationMetrics,
   SafeChoiceMetrics,
   SolvabilityResult,
   SolvabilitySearchOptions,
