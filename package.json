@@ -16,7 +16,7 @@
     "test:profile:unit": "node --test scripts/test-profile.test.mjs",
     "test:smoke": "node scripts/test-profile.mjs smoke",
     "test:full": "node scripts/test-profile.mjs full",
-    "test:ui": "vitest run tests/app.test.ts tests/dog-lege-dog.test.ts tests/sound-effects.test.ts tests/game-runtime-modules.test.ts tests/ui-rendering-modules.test.ts",
+    "test:ui": "vitest run tests/app.test.ts tests/dog-lege-dog.test.ts tests/dog-loadout.test.ts tests/sound-effects.test.ts tests/game-runtime-modules.test.ts tests/ui-rendering-modules.test.ts tests/special-ui.test.ts",
     "test:core": "vitest run --exclude tests/random-regression.test.ts --exclude 'tests/e2e/**' --exclude scripts/test-profile.test.mjs",
     "test:random": "vitest run tests/random-regression.test.ts",
     "test:watch": "vitest",

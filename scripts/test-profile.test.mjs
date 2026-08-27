@@ -8,6 +8,11 @@ import {
   runProfileSteps,
   selectProfileForChangedFiles,
 } from "./test-profile.mjs";
+import {
+  getPlaywrightEntriesForFiles,
+  getVitestEntriesForFiles,
+  isUiOnlyTestFile,
+} from "./test-paths.mjs";
 
 test("profile plan uses smoke boundaries and one Chromium flow", () => {
   const profile = getProfile("smoke");
@@ -46,6 +51,55 @@ test("changed files share profile selection with affected runner", () => {
   assert.equal(
     selectProfileForChangedFiles(["tests/random-regression.test.ts"]),
     "smoke",
+  );
+});
+
+test("nested Vitest cases resolve to their root entries", () => {
+  assert.deepEqual(
+    getVitestEntriesForFiles([
+      "tests/app-cases/app-contract.ts",
+      "tests/level-generator-cases/solvability.ts",
+      "tests/support/level-generator-fixtures.ts",
+      "tests/special-cases/board-ui.ts",
+      "tests/special-cases/mechanism-runtime.ts",
+    ]),
+    [
+      "tests/app.test.ts",
+      "tests/level-generator.test.ts",
+      "tests/special-mechanism.test.ts",
+      "tests/special-ui.test.ts",
+    ],
+  );
+});
+
+test("nested E2E cases resolve to their Playwright specs", () => {
+  assert.deepEqual(
+    getPlaywrightEntriesForFiles([
+      "tests/e2e/full-flow-cases/lifecycle.ts",
+      "tests/e2e/register-catalog-cases/responsive.ts",
+      "tests/e2e/support/common.ts",
+    ]),
+    [
+      "tests/e2e/full-flow.spec.ts",
+      "tests/e2e/register-catalog.spec.ts",
+    ],
+  );
+});
+
+test("nested test paths retain UI and high-risk profile classification", () => {
+  assert.equal(isUiOnlyTestFile("tests/app-cases/app-results.ts"), true);
+  assert.equal(isUiOnlyTestFile("tests/special-cases/board-ui.ts"), true);
+  assert.deepEqual(
+    classifyChangedFiles(["tests/level-generator-cases/solvability.ts"]),
+    ["generator"],
+  );
+  assert.equal(
+    selectProfileForChangedFiles(["tests/level-generator-cases/solvability.ts"]),
+    "full",
+  );
+  assert.deepEqual(
+    classifyChangedFiles(["tests/e2e/full-flow-cases/lifecycle.ts"]),
+    ["cross-browser"],
   );
 });
 

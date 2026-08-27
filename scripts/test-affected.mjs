@@ -1,5 +1,11 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import { selectProfileForChangedFiles } from "./test-profile.mjs";
+import {
+  getPlaywrightEntriesForFiles,
+  getVitestEntriesForFiles,
+  isHighRiskTestFile,
+  isUiOnlyTestFile,
+} from "./test-paths.mjs";
 
 const root = process.cwd();
 const focusedOnly = process.argv.includes("--focused");
@@ -15,23 +21,36 @@ for (const file of changedFiles) {
   console.log(`  ${file}`);
 }
 
+const selectedProfile = selectProfileForChangedFiles(changedFiles);
+
 if (isUiOnlyChange(changedFiles)) {
   console.log("检测到 UI-only 改动：运行 UI 单测，跳过相关测试、E2E 与重复构建。\n");
   runOrExit("pnpm", ["test:ui"]);
   process.exit(0);
 }
 
-if (!focusedOnly && selectProfileForChangedFiles(changedFiles) === "full") {
+if (focusedOnly && selectedProfile !== "focused") {
+  const requiredCommand = selectedProfile === "smoke" ? "pnpm test:smoke" : "pnpm test:qa";
+  console.error(
+    `当前改动需要 ${selectedProfile} profile；test:focused 拒绝通过，请运行 ${requiredCommand}。`,
+  );
+  process.exit(2);
+}
+
+if (!focusedOnly && selectedProfile === "full") {
   console.log("检测到生成器/公共契约/启动或测试基础设施改动：自动升级 full profile。\n");
   runOrExit("pnpm", ["test:full"]);
   process.exit(0);
 }
 
-const vitestTargets = changedFiles.filter(
-  (file) =>
-    /^src\/.*\.ts$/.test(file) ||
-    /^tests\/(?!e2e\/).*\.ts$/.test(file),
-);
+const vitestTargets = [...new Set([
+  ...changedFiles.filter(
+    (file) =>
+      /^src\/.*\.ts$/.test(file) ||
+      /^tests\/(?!e2e\/).*\.ts$/.test(file),
+  ),
+  ...getVitestEntriesForFiles(changedFiles),
+])].sort();
 
 if (vitestTargets.length > 0) {
   const vitestArgs = [
@@ -106,7 +125,8 @@ function requiresRandomRegression(files) {
     (file) =>
       /^src\/games\/dog-lege-dog\/levels\//.test(file) ||
       /^src\/games\/dog-lege-dog\/game\/(?:special-mechanisms|v13-config(?:-[^/]+)?)\.ts$/.test(file) ||
-      /^tests\/(?:level-generator|generation-failure|random-regression)\.test\.ts$/.test(file),
+      isHighRiskTestFile(file) ||
+      file === "tests/random-regression.test.ts",
   );
 }
 
@@ -119,16 +139,14 @@ function isUiOnlyChange(files) {
         /^src\/styles\/[^/]+\.css$/.test(file) ||
         /^src\/app\/[^/]+\.ts$/.test(file) ||
         /^src\/games\/dog-lege-dog\/(?:visual-metrics\.ts|assets\/(?:animation-effects|animation-lifecycle|animation-timing|block-animation-effects|game-assets|item-animation-effects|item-assets|particle-effects|sound-effects)\.ts|game\/game-renderer(?:-[^/]+)?\.ts)$/.test(file) ||
-        /^tests\/(?:app|dog-lege-dog|sound-effects|ui-rendering-modules)\.test\.ts$/.test(file) ||
+        isUiOnlyTestFile(file) ||
         /^public\/audio\//.test(file),
     )
   );
 }
 
 function getE2ETargets(files) {
-  const targets = new Set(
-    files.filter((file) => /^tests\/e2e\/[^/]+\.spec\.ts$/.test(file)),
-  );
+  const targets = new Set(getPlaywrightEntriesForFiles(files));
 
   if (files.some((file) => file === "src/style.css")) {
     targets.add("tests/e2e/register-catalog.spec.ts");

@@ -3,7 +3,7 @@
 ## QA 命令
 
 ```bash
-pnpm test:ui           # UI 单测：app + 狗了个狗渲染/交互/音效，快速反馈
+pnpm test:ui           # UI 单测：app、道具组、特殊机制视觉、渲染、交互与音效，快速反馈
 pnpm test:focused      # 普通 ticket：受影响核心单测，不含随机回归/E2E/build
 pnpm test:affected     # 按 Git 改动执行受影响测试、E2E 与 build
 pnpm test:smoke        # v13 smoke：关键关卡、固定 seed、生成校验、单个 Chromium 流程
@@ -18,13 +18,15 @@ pnpm build:pages       # 生成 GitHub Pages /gamebox/ 路径产物
 
 ## Ticket 验收规则
 
-UI 文案、DOM、渲染器、样式、视觉资源或游戏音效改动运行 `pnpm test:ui`；该命令不触发随机回归、浏览器 E2E 或构建。`test:ui` 已包含 `app`、`dog-lege-dog` 与 `sound-effects` 三组单测。
+测试文件分类：根 `tests/*.test.ts` 与 `tests/e2e/*.spec.ts` 是测试入口；`tests/*-cases/*.ts` 是由入口 import 的 case；`tests/support/**` 与 `tests/e2e/support/**` 是 fixture/helper。受影响 runner 会把 nested case 映射到对应根入口，不把 case 当作独立 Vitest 文件。
 
-默认采用“聚焦检查逐票、完整 QA 分批”：普通实现 ticket 完成前运行 `pnpm test:focused`。该命令按 Vitest import graph 选择受影响核心测试，排除随机回归与生成器压力套件，不运行 Chromium E2E 或构建；UI-only 改动优先运行 `pnpm test:ui`，不再叠加 `test:focused` 或 `test:affected`。每 3–5 个 ticket、一个功能阶段结束、进入高风险 ticket 前、合并前或发布前统一运行 `pnpm test:qa`。批量结果可由一个 ticket 记录，其余 ticket 关联该记录。
+UI 文案、DOM、渲染器、样式、视觉资源或游戏音效改动运行 `pnpm test:ui`；该命令不触发随机回归、浏览器 E2E 或构建。`test:ui` 当前包含 7 个入口：`app.test.ts`、`dog-lege-dog.test.ts`、`dog-loadout.test.ts`、`sound-effects.test.ts`、`game-runtime-modules.test.ts`、`ui-rendering-modules.test.ts` 与 `special-ui.test.ts`。
+
+默认采用“聚焦检查逐票、完整 QA 分批”：普通实现 ticket 完成前运行 `pnpm test:focused`。该命令按 Vitest import graph 与入口映射选择受影响核心测试，排除随机回归与生成器压力套件，不运行 Chromium E2E 或构建；UI-only 改动优先运行 `pnpm test:ui`，不再叠加 `test:focused` 或 `test:affected`。生成器、可解性、难度、特殊机制、E2E 或其他高风险 case 改动会拒绝 `test:focused`，改跑 `pnpm test:qa`；仅随机回归改动改跑 `pnpm test:smoke` 或 `pnpm test:qa`。每 3–5 个 ticket、一个功能阶段结束、进入高风险 ticket 前、合并前或发布前统一运行 `pnpm test:qa`。批量结果可由一个 ticket 记录，其余 ticket 关联该记录。
 
 `pnpm test:affected` 仅用于需要按当前 diff 同时检查相关 E2E 与构建、但尚未触发完整 QA 的场景。命令会识别纯 UI 改动并只运行 `pnpm test:ui`；其他改动按影响范围追加随机回归、Chromium E2E，最后运行一次 `build`，其内部已包含 `tsc --noEmit`。它不属于普通 ticket 默认门槛，也不与 `pnpm test:qa` 叠加。
 
-`pnpm test:smoke` 与 `pnpm test:full` 读取 `src/games/dog-lege-dog/game/v13-test-profiles.json`。profile 选择、固定 `testSeed`、关键关卡号与生成 fallback 诊断来自同一配置；步骤失败立即短路，报告打印 profile、seed、关卡边界与下一步重放命令。生成器、可解性、难度、公共契约、游戏启动、运行时、Worker 或测试脚本改动由 `pnpm test:affected` 自动升级到 full profile。
+`pnpm test:smoke` 与 `pnpm test:full` 读取 `src/games/dog-lege-dog/game/v13-test-profiles.json`。profile 选择、固定 `testSeed`、关键关卡号与生成 fallback 诊断来自同一配置；步骤失败立即短路，报告打印 profile、seed、关卡边界与下一步重放命令。生成器、可解性、难度、公共契约、游戏启动、运行时、Worker、E2E 或对应 nested case 改动由 `pnpm test:affected` 自动升级到 full profile；随机回归改动进入 smoke profile。
 
 测试失败后立即停止后续步骤，避免错误后的重复全量运行。
 

@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import DOG_TEST_PROFILES from "../src/games/dog-lege-dog/game/v13-test-profiles.json" with { type: "json" };
+import { classifyTestFile } from "./test-paths.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const PROFILE_NAMES = ["focused", "smoke", "full"];
@@ -189,6 +190,11 @@ export function classifyChangedFiles(files) {
     }
     if (file.startsWith("tests/e2e/") || file === "playwright.config.ts") {
       areas.add("cross-browser");
+      continue;
+    }
+    const testArea = classifyTestFile(file);
+    if (testArea !== undefined) {
+      areas.add(testArea);
       continue;
     }
     if (file.startsWith("src/games/dog-lege-dog/levels/") ||
