@@ -161,7 +161,7 @@ button:focus-visible {
 
 .eyebrow {
   margin: 0 0 10px;
-  color: var(--coral-dark);
+  color: var(--sky-deep);
   letter-spacing: 0.13em;
   font-size: 11px;
   font-weight: 800;
@@ -254,10 +254,10 @@ h2 {
   gap: 10px;
   margin: 20px 0 0;
   padding: 12px 14px;
-  border: 1px solid rgba(201, 94, 80, 0.25);
+  border: 1px solid rgba(79, 155, 192, 0.28);
   border-radius: 13px;
-  background: rgba(238, 128, 105, 0.1);
-  color: #9d493f;
+  background: rgba(79, 155, 192, 0.1);
+  color: var(--sky-deep);
   font-size: 12px;
   line-height: 1.6;
   text-align: left;
@@ -270,7 +270,7 @@ h2 {
   height: 20px;
   place-items: center;
   border-radius: 50%;
-  background: var(--coral);
+  background: var(--sky-deep);
   color: white;
   font-weight: 800;
 }
@@ -309,8 +309,8 @@ h2 {
 }
 
 .text-button:hover {
-  border-color: var(--coral);
-  color: var(--coral-dark);
+  border-color: var(--sky-deep);
+  color: var(--sky-deep);
 }
 
 .icon-button {
@@ -331,9 +331,9 @@ h2 {
 }
 
 .icon-button:hover {
-  border-color: var(--coral);
+  border-color: var(--sky-deep);
   background: var(--paper);
-  color: var(--coral-dark);
+  color: var(--sky-deep);
 }
 
 .catalog-view > .persistence-notice {
@@ -432,4 +432,3 @@ h2 {
   align-self: stretch;
   white-space: nowrap;
 }
-

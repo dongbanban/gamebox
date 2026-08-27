@@ -3,7 +3,7 @@
   margin: 14px 0 0;
   padding: 10px 12px;
   border-radius: 12px;
-  color: var(--ink-muted);
+  color: var(--sky-deep);
   font-size: 14px;
   line-height: 1.4;
   text-align: center;
@@ -14,17 +14,17 @@
 }
 
 .dog-game__status--won {
-  border: 1px solid rgba(38, 138, 115, 0.28);
-  background: rgba(99, 208, 172, 0.14);
-  color: #268a73;
+  border: 1px solid rgba(79, 155, 192, 0.28);
+  background: rgba(79, 155, 192, 0.1);
+  color: var(--sky-deep);
   font-weight: 800;
 }
 
 .dog-game__status--lost {
-  border: 1px solid rgba(238, 128, 105, 0.44);
-  background: rgba(238, 128, 105, 0.16);
-  box-shadow: 0 4px 12px rgba(144, 59, 43, 0.1);
-  color: var(--coral-dark);
+  border: 1px solid rgba(79, 155, 192, 0.28);
+  background: rgba(79, 155, 192, 0.1);
+  box-shadow: 0 4px 12px rgba(22, 68, 93, 0.1);
+  color: var(--sky-deep);
   font-size: 15px;
   font-weight: 800;
 }

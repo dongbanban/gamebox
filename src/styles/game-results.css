@@ -45,26 +45,14 @@
   text-align: center;
 }
 
-.game-result-card--won h1 {
-  color: #39825c;
-}
-
-.game-result-card--won .eyebrow {
+.game-result-card h1,
+.game-result-card .eyebrow {
   color: var(--sky-deep);
 }
 
 .game-result-card--final {
   border-color: rgba(217, 161, 48, 0.42);
   background: linear-gradient(145deg, rgba(255, 253, 248, 0.96), rgba(255, 245, 214, 0.96));
-}
-
-.game-result-card--final h1,
-.game-result-card--final .eyebrow {
-  color: #b17812;
-}
-
-.game-result-card--lost h1 {
-  color: var(--coral-dark);
 }
 
 .game-result-card__intro {
@@ -123,4 +111,3 @@
 .game-result-card__actions .icon-button {
   border-color: var(--sky-deep);
 }
-
