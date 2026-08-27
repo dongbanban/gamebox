@@ -4,7 +4,12 @@
 
 **Blocked by:** 20 — v13 机制与难度收口；23 — 测试 profile 与生成流程控制；26 — App/渲染/样式迁移；28 — 废弃逻辑与旧测试清理。
 
-**Status:** ready-for-agent
+**Status:** in-progress
+
+## Implementation alignment
+
+- 仓库当前关卡上限为 99；随机回归范围统一为连续前缀 1–99。
+- 原有 full profile 勾选项只验证生成器 fallback，尚未验证 Worker 生命周期；两项改为本票实施后再勾选。
 
 ## V13 current acceptance
 - [ ] 进入第一关、重开、重试及进入随机下一关时，在验证完成前显示加载态，不展示未验证棋盘。
@@ -15,8 +20,8 @@
 - [ ] 端到端覆盖普通方块、冻结、幻化、火把、万能方块、检测仪、三消移除、容量提升、双生、磁吸、消磁仪、锁槽、钥匙与多机制组合。
 - [ ] 视觉 QA 覆盖普通棋盘视觉下的幻化/双生、幻化入槽揭示、检测仪原位揭示、双生分裂、磁吸吸引、消磁、锁槽解锁、钥匙掉落、道具反馈与输入锁。
 - [ ] 动画时序、输入锁与结果状态来自 v13 集中配置；不继续把旧 240ms、620ms、360ms 基线当作当前验收硬编码。
-- [x] full profile 完成核心、随机、Chromium、WebKit、移动 Chromium、Worker/fallback、页面构建、diff 与文件行数检查；ticket 记录实际命令、结果与失败修复。
-- [x] full profile 覆盖排除 E2E/随机的核心 Vitest、随机 1–100 前缀、关键边界、Chromium、WebKit、移动 Chromium、Worker/fallback、页面构建、diff 检查与文件行数检查；随机回归校验 `floor(N × 0.30)`、四类数量随 `N` 增长、双生权重与密度不超上限。
+- [ ] full profile 完成核心、随机、Chromium、WebKit、移动 Chromium、Worker/fallback、页面构建、diff 与文件行数检查；Worker/fallback 生命周期验证由本票补齐，ticket 记录实际命令、结果与失败修复。
+- [ ] full profile 覆盖排除 E2E/随机回归的核心 Vitest、随机 1–99 前缀、关键边界、Chromium、WebKit、移动 Chromium、Worker/fallback、页面构建、diff 检查与文件行数检查；随机回归校验 `floor(N × 0.30)`、四类数量随 `N` 增长、双生权重与密度不超上限。
 ## Historical pre-v13 acceptance (superseded)
 - [ ] 进入第一关、重开、重试及进入随机下一关时，在验证完成前显示加载态，不展示未验证棋盘。
 - [ ] 生成耗时期间主界面保持可响应；优先使用 worker 或等效后台执行，避免主线程长时间阻塞。
@@ -35,7 +40,7 @@
 - [ ] `test:core` 明确排除 `tests/e2e/**` 与随机回归；`pnpm test:qa` 按核心 Vitest → 随机回归 → Chromium E2E 顺序执行，任一步失败立即退出。
 - [ ] `test:affected` 的生成器路径匹配适配当前 `src/games/dog-lege-dog/levels/` 目录与 `@/*` import graph；生成器、特殊机制、可解性或难度改动不会漏跑随机回归。
 - [ ] 测试共用内存 storage、不可用 storage、几何 oracle、首关/随机尝试通关驱动、浏览器对话框、道具组流程与关卡流程助手，不保留行为相同的重复实现。
-- [ ] 随机回归使用版本化固定 `testSeed` 生成 1–100 个连续前缀并固定覆盖关键关卡；每个尝试显式记录 `runSeed`，失败报告包含 `testSeed`、`runSeed`、关卡号、生成器版本与单关重放入口。
+- [ ] 随机回归使用版本化固定 `testSeed` 生成 1–99 个连续前缀并固定覆盖关键关卡；每个尝试显式记录 `runSeed`，失败报告包含 `testSeed`、`runSeed`、关卡号、生成器版本与单关重放入口。
 - [ ] 相同 `runSeed` 与生成器版本完整复现关卡；不同 `runSeed` 验证随机尝试确实可变化；公共进度不保存棋盘、暂存槽、次数、半局状态或 `runSeed`。
 - [ ] `pnpm test:e2e:cross-browser` 覆盖 Safari（Playwright WebKit）与移动 Chromium；`pnpm build:pages`、`git diff --check` 与实际测试数/失败修复记录同步更新。
 
