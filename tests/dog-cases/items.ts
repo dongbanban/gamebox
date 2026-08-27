@@ -114,6 +114,12 @@ describe("狗了个狗测试 · items", () => {
       "冻结方块",
     );
     expect(root.querySelector('[data-testid="dog-special-mechanism-modal"]')?.textContent).toContain(
+      "幻化方块点击后先飞入暂存槽，入槽完成后显现真实图案并按真实图案参与三消。",
+    );
+    expect(root.querySelector('[data-testid="dog-special-mechanism-modal"]')?.textContent).not.toContain(
+      "飞行过程中显现真实图案",
+    );
+    expect(root.querySelector('[data-testid="dog-special-mechanism-modal"]')?.textContent).toContain(
       "无需使用道具也可应对本关机制",
     );
     expect(root.querySelector('[data-testid="dog-special-mechanism-modal"]')?.textContent).toContain(

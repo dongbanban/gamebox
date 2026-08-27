@@ -52,7 +52,7 @@ describe("特殊机制测试 · board-ui", () => {
     vi.useRealTimers();
   });
 
-  it("直接点击幻化方块飞行时揭示真实图案、占槽并锁定重复输入", async () => {
+  it("直接点击幻化方块先保持伪装飞入，入槽后揭示真实图案并锁定重复输入", async () => {
     vi.useFakeTimers();
     const root = document.createElement("div");
     const game = startDogLegeDogGame(root, {
@@ -81,11 +81,11 @@ describe("特殊机制测试 · board-ui", () => {
     expect(boardBlock?.dataset.patternType).toBe(illusion.patternType);
     expect(boardBlock?.dataset.disguisedPatternType).toBe(disguisedPatternType);
     expect(boardBlock?.dataset.specialMechanismState).toBe("masked");
-    expect(boardBlock?.classList.contains("dog-block--special-illusion")).toBe(true);
-    expect(boardBlock?.querySelector(".dog-block__glyph--fuzzy")).not.toBeNull();
-    expect(boardBlock?.style.getPropertyValue("--dog-illusion-image")).toContain(
-      getDogPatternAssetUrl(disguisedPatternType as DogPatternType),
-    );
+    expect(boardBlock?.classList.contains("dog-block--special-illusion")).toBe(false);
+    expect(boardBlock?.classList.contains("dog-block--special")).toBe(false);
+    expect(boardBlock?.querySelector(".dog-block__glyph--fuzzy")).toBeNull();
+    expect(boardBlock?.querySelector(".dog-block__mechanism-icon")).toBeNull();
+    expect(boardBlock?.style.getPropertyValue("--dog-illusion-image")).toBe("");
 
     const beforeTrayLength = game.getState().session.tray.length;
     game.selectBlock(illusion.id);
@@ -139,6 +139,11 @@ describe("特殊机制测试 · board-ui", () => {
         `[data-testid="dog-tray-slot"][data-block-id="${illusion.id}"]`,
       )?.dataset.illusionReveal,
     ).toBe("true");
+    expect(
+      root.querySelector<HTMLElement>(
+        `[data-testid="dog-tray-slot"][data-block-id="${illusion.id}"] .dog-block__glyph img`,
+      )?.getAttribute("src"),
+    ).toBe(getDogPatternAssetUrl(illusion.patternType));
 
     await vi.advanceTimersByTimeAsync(DOG_ILLUSION_REVEAL_DURATION_MS);
     await vi.runAllTimersAsync();
@@ -152,7 +157,7 @@ describe("特殊机制测试 · board-ui", () => {
     game.destroy();
   });
 
-  it("双生方块静态识别，分裂期间锁定输入，完成后恢复普通视觉", async () => {
+  it("双生方块棋盘使用普通视觉，分裂期间锁定输入并完成分裂反馈", async () => {
     vi.useFakeTimers();
     const root = document.createElement("div");
     const game = startDogLegeDogGame(root, {
@@ -173,7 +178,9 @@ describe("特殊机制测试 · board-ui", () => {
     const boardBlock = root.querySelector<HTMLElement>(
       `[data-testid="dog-block"][data-block-id="${twin.id}"]`,
     );
-    expect(boardBlock?.classList.contains("dog-block--special-twin")).toBe(true);
+    expect(boardBlock?.classList.contains("dog-block--special-twin")).toBe(false);
+    expect(boardBlock?.classList.contains("dog-block--special")).toBe(false);
+    expect(boardBlock?.querySelector(".dog-block__mechanism-icon")).toBeNull();
     expect(boardBlock?.dataset.specialMechanismState).toBe(DOG_TWIN_MECHANISM_TYPE);
 
     game.selectBlock(twin.id);

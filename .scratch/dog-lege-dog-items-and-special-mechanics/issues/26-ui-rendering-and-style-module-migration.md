@@ -18,5 +18,5 @@
 - App、render、tray/loadout、mechanism thumbnail、animation lifecycle/timing/effects、asset/audio 与 CSS 已拆分；visual metrics 位于中立 seam。
 - `DOG_V13_CONFIG` 承担 visual、asset、audio、copy、animation/particle 可调字段；默认文案与资源行为保持兼容。
 - 新增 `tests/ui-rendering-modules.test.ts`，runtime tests 覆盖 animation timing 与 custom audio；`test:affected` UI profile 覆盖新模块。
-- illusion/twin 持久视觉标记按 ADR 0006 保留，移除工作归 ticket 27；本 ticket 保留 reveal/split 入槽反馈 seam。
+- illusion/twin 的棋盘持久视觉标记由 ticket 27 收口为普通方块视觉；本 ticket 保留 reveal/split 入槽反馈 seam。
 - 验证：`pnpm test:focused` 14 files / 207 tests；`pnpm test:ui` 5 files / 57 tests；`pnpm test:qa` full profile 通过（core 235、fallback 1、random 3、Chromium 19、cross-browser 9）；`pnpm typecheck`、`pnpm build`、`pnpm build:pages`、`git diff --check`、file-line check 通过。

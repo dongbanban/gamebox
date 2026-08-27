@@ -327,7 +327,7 @@ export const DOG_V13_CONFIG_SOURCE: DogV13Config = {
           },
           illusion: {
             name: "幻化方块",
-            description: "幻化方块点击后飞入暂存槽，飞行过程中显现真实图案并按真实图案参与三消。",
+            description: "幻化方块点击后先飞入暂存槽，入槽完成后显现真实图案并按真实图案参与三消。",
           },
           magnetic: {
             name: "磁吸方块",

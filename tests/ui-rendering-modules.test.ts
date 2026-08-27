@@ -45,10 +45,15 @@ describe("狗了个狗 UI rendering seams", () => {
     expect(illusion).toContain('data-special-mechanism="illusion"');
     expect(illusion).toContain("data-disguised-pattern-type=\"打工狗\"");
     expect(illusion).toContain("dog-block--board");
-    expect(illusion).toContain("dog-block__glyph--fuzzy");
+    expect(illusion).toContain("dog-block--working-dog");
+    expect(illusion).not.toContain("dog-block--special-illusion");
+    expect(illusion).not.toContain("dog-block__glyph--fuzzy");
+    expect(illusion).not.toContain("--dog-illusion-image");
     expect(twin).toContain('data-special-mechanism="twin"');
     expect(twin).toContain("dog-block--board");
-    expect(twin).toContain("dog-block--special-twin");
+    expect(twin).toContain("dog-block--silly-dog");
+    expect(twin).not.toContain("dog-block--special-twin");
+    expect(twin).not.toContain("dog-block__mechanism-icon");
   });
 
   it("renders tray slots and mechanism thumbnails without app lifecycle", () => {

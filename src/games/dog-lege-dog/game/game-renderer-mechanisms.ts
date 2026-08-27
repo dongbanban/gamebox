@@ -70,7 +70,7 @@ export function renderDogSpecialMechanismThumbnail(
   config: DogV13Config = DOG_V13_CONFIG,
 ): string {
   const mechanismType = block.specialMechanism?.type;
-  const ordinaryVisual = isOrdinaryMechanismPreview(mechanismType);
+  const ordinaryVisual = isDogBoardOrdinaryVisual(mechanismType);
   const displayPatternType = ordinaryVisual
     ? block.patternType
     : getDogIllusionDisguisedPattern(block);
@@ -86,7 +86,7 @@ export function renderDogSpecialMechanismThumbnail(
   `;
 }
 
-function isOrdinaryMechanismPreview(type: string | undefined): boolean {
+export function isDogBoardOrdinaryVisual(type: string | undefined): boolean {
   return type === DOG_ILLUSION_MECHANISM_TYPE || type === DOG_TWIN_MECHANISM_TYPE;
 }
 
