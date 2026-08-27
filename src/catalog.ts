@@ -1,7 +1,4 @@
-import {
-  DOG_GAME_ID,
-  DOG_GAME_RESULT_DISPLAY,
-} from "@/games/dog-lege-dog/game/game-config";
+import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
 import { startDogLegeDogGame } from "@/games/dog-lege-dog";
 import { getDogPatternAssetUrl } from "@/games/dog-lege-dog/assets/game-assets";
 import type { GameDefinition } from "@/game-contracts";
@@ -20,14 +17,14 @@ export type {
 } from "@/game-contracts";
 
 export const DOG_GAME_DEFINITION: GameDefinition = Object.freeze({
-  id: DOG_GAME_ID,
+  id: DOG_V13_CONFIG.game.id,
   name: "狗了个狗",
   category: "DOG · TRIPLE",
   description: "看清层叠关系，找出相同图案，完成一场轻松的三消挑战。",
   cover: getDogPatternAssetUrl("傻狗"),
   playable: true,
   launch: startDogLegeDogGame,
-  resultDisplay: DOG_GAME_RESULT_DISPLAY,
+  resultDisplay: DOG_V13_CONFIG.ui.copy.result,
 });
 
 export const GAME_CATALOG: readonly GameDefinition[] = Object.freeze([

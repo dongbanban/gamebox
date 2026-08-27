@@ -11,7 +11,7 @@ import type {
   GameSessionWildcardResolution,
   GameSessionWildcardResult,
 } from "@/games/dog-lege-dog/game/game-session-contracts";
-import type { DogPatternType } from "@/games/dog-lege-dog/levels/first-level";
+import type { DogPatternType } from "@/games/dog-lege-dog/levels/level-types";
 
 export function createSelectionResult(
   snapshot: GameSessionSnapshot,

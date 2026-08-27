@@ -16,11 +16,7 @@ export function calculateTrayPeakPressure(
   effectiveTrayCapacity: number,
   safeChoiceRate: number,
   config: DogV13Config,
-  isV13Level: boolean,
 ): number {
-  if (!isV13Level) {
-    return trayPeakLogicalUnitCount;
-  }
   if (effectiveTrayCapacity <= 0) {
     return 1;
   }

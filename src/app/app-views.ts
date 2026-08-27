@@ -13,17 +13,15 @@ import {
   renderDogPatternAsset,
 } from "@/games/dog-lege-dog/assets/game-assets";
 import {
-  DOG_GAME_ID,
   DOG_V13_CONFIG,
   type DogV13Config,
-} from "@/games/dog-lege-dog/game/game-config";
+} from "@/games/dog-lege-dog/game/v13-config";
 import {
   DOG_ITEM_DEFINITIONS,
   renderDogLoadoutEditor,
   type DogItemId,
 } from "@/games/dog-lege-dog/game/dog-loadout";
 import { getDogItemUses } from "@/games/dog-lege-dog/game/dog-item-runtime";
-import { getDogSpecialMechanismConfigs } from "@/games/dog-lege-dog/game/special-mechanisms";
 
 export function renderRegistrationView(
   snapshot: StoreSnapshot,
@@ -65,7 +63,7 @@ export function renderCatalogView(
 
   const cards = catalog.map((game) => {
     const progress = state.games[game.id] ?? createInitialGameProgress();
-    const cover = game.id === DOG_GAME_ID
+    const cover = game.id === config.game.id
       ? getDogPatternAssetUrl("傻狗", config)
       : game.cover;
     return `
@@ -192,10 +190,7 @@ export function renderResultLoadoutEditor({
     itemUses: Object.fromEntries(
       DOG_ITEM_DEFINITIONS.map((item) => [
         item.id,
-        getDogItemUses({
-          number: levelNumber,
-          specialMechanisms: getDogSpecialMechanismConfigs(levelNumber, config.game.generatorVersion, config),
-        }, item.id, config),
+        getDogItemUses({ number: levelNumber }, item.id, config),
       ]),
     ),
   });
@@ -335,7 +330,7 @@ function renderResultActions(result: GameResult, config: DogV13Config): string {
 }
 
 function renderLoadoutChangeAction(result: GameResult, config: DogV13Config): string {
-  if (result.gameId !== DOG_GAME_ID || result.isFinal === true) {
+  if (result.gameId !== config.game.id || result.isFinal === true) {
     return "";
   }
 

@@ -36,11 +36,11 @@ test("full plan includes all release checks", () => {
 
 test("changed files share profile selection with affected runner", () => {
   assert.deepEqual(
-    classifyChangedFiles(["src/games/dog-lege-dog/levels/level-generator.ts"]),
+    classifyChangedFiles(["src/games/dog-lege-dog/levels/level-generation-engine.ts"]),
     ["generator"],
   );
   assert.equal(
-    selectProfileForChangedFiles(["src/games/dog-lege-dog/levels/level-generator.ts"]),
+    selectProfileForChangedFiles(["src/games/dog-lege-dog/levels/level-generation-engine.ts"]),
     "full",
   );
   assert.equal(

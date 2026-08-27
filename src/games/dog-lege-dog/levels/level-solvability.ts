@@ -9,14 +9,12 @@ import type {
   DogLevelGeometry,
   DogSafeChoiceSearchStatus,
 } from "@/games/dog-lege-dog/levels/level-types";
-import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/game-config";
 import {
   blockMask,
   createFullBlockMask,
   createSolvabilityResult,
   countBits,
   resolveBranchBudget,
-  type SolvabilityMemoEntry,
 } from "@/games/dog-lege-dog/levels/level-solvability-contracts";
 import type {
   SafeChoiceMetrics,
@@ -32,7 +30,6 @@ import {
 import {
   createPreferredRank,
   findGreedyContinuation,
-  hasSolvableContinuation,
   searchSolvableContinuation,
   verifyStateContinuation,
 } from "@/games/dog-lege-dog/levels/level-solvability-search";
@@ -290,7 +287,6 @@ export function countSafeChoiceMetrics(
 
   let safeChoiceCount = 0;
   let searchStatus: DogSafeChoiceSearchStatus = "complete";
-  const completedStates = new Map<string, SolvabilityMemoEntry>();
   const handlers = createDogSpecialMechanismHandlerMap(
     options.specialMechanismHandlers ?? DOG_SPECIAL_MECHANISM_HANDLERS,
   );
@@ -315,27 +311,8 @@ export function countSafeChoiceMetrics(
       continue;
     }
 
-    // v13 metrics count directly replayable alternatives; deep search may be budget-limited.
-    if ((level.generatorVersion ?? 0) >= DOG_V13_CONFIG.game.generatorVersion) {
-      continue;
-    }
-
-    const continuation = hasSolvableContinuation(
-      level,
-      solutionPath,
-      graph,
-      index,
-      options,
-      completedStates,
-      handlers,
-    );
-    if (continuation.status === "solvable") {
-      safeChoiceCount += getDogBlockLogicalUnitCount(level.blocks[index]);
-    } else if (continuation.status === "budget-exhausted") {
-      searchStatus = "budget-exhausted";
-    }
+    // Current v13 metrics count only directly replayable alternatives.
   }
-
   return {
     safeChoiceCount,
     searchStatus,

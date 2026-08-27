@@ -30,7 +30,7 @@ if (!focusedOnly && selectProfileForChangedFiles(changedFiles) === "full") {
 const vitestTargets = changedFiles.filter(
   (file) =>
     /^src\/.*\.ts$/.test(file) ||
-    /^tests\/[^/]+\.test\.ts$/.test(file),
+    /^tests\/(?!e2e\/).*\.ts$/.test(file),
 );
 
 if (vitestTargets.length > 0) {
@@ -105,7 +105,7 @@ function requiresRandomRegression(files) {
   return files.some(
     (file) =>
       /^src\/games\/dog-lege-dog\/levels\//.test(file) ||
-      /^src\/games\/dog-lege-dog\/game\/(?:special-mechanisms|v13-config|game-config)\.ts$/.test(file) ||
+      /^src\/games\/dog-lege-dog\/game\/(?:special-mechanisms|v13-config(?:-[^/]+)?)\.ts$/.test(file) ||
       /^tests\/(?:level-generator|generation-failure|random-regression)\.test\.ts$/.test(file),
   );
 }

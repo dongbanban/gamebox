@@ -1,8 +1,7 @@
 import {
-  FIRST_LEVEL,
   type DogLegeDogLevel,
   type DogPatternType,
-} from "@/games/dog-lege-dog/levels/first-level";
+} from "@/games/dog-lege-dog/levels/level-types";
 import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
 import { GameSessionMechanismActions } from "@/games/dog-lege-dog/game/game-session-mechanism-actions";
 import { GameSessionSelectionRuntime } from "@/games/dog-lege-dog/game/game-session-selection";
@@ -35,9 +34,9 @@ export class GameSession {
   private readonly trayActions: GameSessionTrayActions;
   private readonly mechanismActions: GameSessionMechanismActions;
 
-  constructor(level?: DogLegeDogLevel);
-  constructor(options?: GameSessionOptions);
-  constructor(levelOrOptions: DogLegeDogLevel | GameSessionOptions = FIRST_LEVEL) {
+  constructor(level: DogLegeDogLevel);
+  constructor(options: GameSessionOptions);
+  constructor(levelOrOptions: DogLegeDogLevel | GameSessionOptions) {
     const options = isLevel(levelOrOptions) ? { level: levelOrOptions } : levelOrOptions;
     this.state = new GameSessionState(options);
     this.selection = new GameSessionSelectionRuntime(this.state, () => this.getState());

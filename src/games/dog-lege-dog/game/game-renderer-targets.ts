@@ -1,4 +1,4 @@
-import type { DogLegeDogLevel } from "@/games/dog-lege-dog/levels/first-level";
+import type { DogLegeDogLevel } from "@/games/dog-lege-dog/levels/level-types";
 import type { DogItemId, DogItemTargetType } from "@/games/dog-lege-dog/game/dog-loadout";
 import type { DogLegeDogGameState } from "@/games/dog-lege-dog/game/game-types";
 

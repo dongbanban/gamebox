@@ -1,7 +1,7 @@
 import type {
   DogLegeDogLevel,
   DogPatternType,
-} from "@/games/dog-lege-dog/levels/first-level";
+} from "@/games/dog-lege-dog/levels/level-types";
 import type {
   GameSession,
   GameSessionMeltLocation,

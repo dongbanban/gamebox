@@ -21,7 +21,7 @@ import type {
 import type {
   DogBlock,
   DogPatternType,
-} from "@/games/dog-lege-dog/levels/first-level";
+} from "@/games/dog-lege-dog/levels/level-types";
 import type { DogGameRuntime } from "@/games/dog-lege-dog/game/dog-game-runtime-types";
 import { isDogGameInputLocked } from "@/games/dog-lege-dog/game/dog-game-state";
 import {

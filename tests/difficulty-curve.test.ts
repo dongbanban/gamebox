@@ -1,19 +1,20 @@
 import { describe, expect, it } from "vitest";
 import {
   getBlockCount,
-  DOG_DIFFICULTY_CURVE_GENERATOR_VERSION,
+  DOG_V13_CONFIG,
   getDifficultyTarget,
   getDogLogicalBlockCount,
   getMaxLayers,
   getPatternTypeCount,
   isDifficultyWithinTarget,
-  LEVEL_GENERATOR_VERSION,
   LevelGenerator,
 } from "@/games/dog-lege-dog";
 
 describe("狗了个狗难度曲线", () => {
   it("前五关使用有限且逐步收紧的安全选择/时长目标", () => {
-    const targets = [1, 2, 3, 4, 5].map(getDifficultyTarget);
+    const targets = [1, 2, 3, 4, 5].map((levelNumber) =>
+      getDifficultyTarget(levelNumber),
+    );
 
     expect(targets.map((target) => target.safeChoiceCount.min)).toEqual([
       1, 1, 1, 1, 1,
@@ -50,7 +51,7 @@ describe("狗了个狗难度曲线", () => {
       levelNumber: 1,
       runSeed: "difficulty-curve-v13-metrics",
       testSeed: "difficulty-curve-v13-metrics",
-      generatorVersion: LEVEL_GENERATOR_VERSION,
+      generatorVersion: DOG_V13_CONFIG.game.generatorVersion,
     });
     expect(level.difficulty.trayPeakPressure).toBeGreaterThanOrEqual(
       target.trayPeakPressure!.min,
@@ -105,7 +106,7 @@ describe("狗了个狗难度曲线", () => {
         levelNumber,
         runSeed: `${testSeed}:${levelNumber}`,
         testSeed,
-        generatorVersion: LEVEL_GENERATOR_VERSION,
+        generatorVersion: DOG_V13_CONFIG.game.generatorVersion,
       });
     });
 
@@ -127,7 +128,9 @@ describe("狗了个狗难度曲线", () => {
     })).toBe(true);
 
     const boundaryLevels = [1, 5, 6, 10, 11, 15, 16, 20, 21, 25, 26, 30, 31];
-    const boundaryTargets = boundaryLevels.map(getDifficultyTarget);
+    const boundaryTargets = boundaryLevels.map((levelNumber) =>
+      getDifficultyTarget(levelNumber),
+    );
     expect(boundaryTargets.every((target) =>
       Number.isFinite(target.safeChoiceCount.max) && target.safeChoiceRate !== undefined,
     )).toBe(true);
@@ -147,7 +150,7 @@ describe("狗了个狗难度曲线", () => {
       levelNumber: 5,
       runSeed: "difficulty-curve-fixed-run-seed",
       testSeed: "difficulty-curve-fixed-test-seed",
-      generatorVersion: LEVEL_GENERATOR_VERSION,
+      generatorVersion: DOG_V13_CONFIG.game.generatorVersion,
     });
 
     expect(level.generation.fallbackUsed).toBe(false);
@@ -163,26 +166,17 @@ describe("狗了个狗难度曲线", () => {
     expect(generator.replay(level.generation.replay)).toEqual(level);
   });
 
-  it("不同 runSeed 保留目标内自然波动，旧 generator version 使用旧目标语义", () => {
+  it("不同 runSeed 保留目标内自然波动", () => {
     const generator = new LevelGenerator();
     const levels = ["difficulty-curve-seed-a", "difficulty-curve-seed-b"].map((runSeed) =>
       generator.generate({
         levelNumber: 5,
         runSeed,
-        generatorVersion: LEVEL_GENERATOR_VERSION,
+        generatorVersion: DOG_V13_CONFIG.game.generatorVersion,
       }),
     );
     expect(levels[0]).not.toEqual(levels[1]);
     expect(levels.every((level) => isDifficultyWithinTarget(level.difficulty))).toBe(true);
 
-    const legacy = generator.generate({
-      levelNumber: 5,
-      runSeed: "difficulty-curve-legacy-seed",
-      generatorVersion: DOG_DIFFICULTY_CURVE_GENERATOR_VERSION - 1,
-    });
-    expect(legacy.difficulty.target.safeChoiceCount.max).toBe(Number.MAX_SAFE_INTEGER);
-    expect(legacy.difficulty.target.safeChoiceRate).toBeUndefined();
-    expect(legacy.difficulty.trayPeakPressure).toBeGreaterThan(1);
-    expect(generator.replay(legacy.generation.replay)).toEqual(legacy);
   });
 });

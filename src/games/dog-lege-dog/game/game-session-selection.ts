@@ -1,7 +1,7 @@
 import {
   type DogBlock,
   type DogPatternType,
-} from "@/games/dog-lege-dog/levels/first-level";
+} from "@/games/dog-lege-dog/levels/level-types";
 import {
   insertDogBlockIntoTray,
   resolveDogTrayMatches,

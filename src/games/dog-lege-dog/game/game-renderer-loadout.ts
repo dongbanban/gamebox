@@ -8,7 +8,7 @@ import { getDogItemUses } from "@/games/dog-lege-dog/game/dog-item-runtime";
 import {
   DOG_V13_CONFIG,
   type DogV13Config,
-} from "@/games/dog-lege-dog/game/game-config";
+} from "@/games/dog-lege-dog/game/v13-config";
 import type { DogLegeDogGameState } from "@/games/dog-lege-dog/game/game-types";
 
 export function renderDogLoadoutArea(

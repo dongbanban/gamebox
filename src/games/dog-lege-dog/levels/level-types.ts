@@ -28,13 +28,8 @@ export interface DogSpecialMechanismConfig {
   readonly type: string;
   readonly min: number;
   readonly max: number;
-  /** Optional per-progress-stage ranges. Parsed at generation boundary. */
-  readonly minByStage?: readonly number[];
-  readonly maxByStage?: readonly number[];
   /** Logical-unit weight used by composition and difficulty validation. */
   readonly densityWeight?: number;
-  /** Stable per-level bonus for paired item quotas. */
-  readonly itemUseBonus?: number;
 }
 
 export interface DogTrayBlock {
@@ -123,7 +118,7 @@ export interface DogLevelDifficulty {
   readonly solvabilityStatus: DogSolvabilityStatus;
   readonly safeChoiceSearchStatus: DogSafeChoiceSearchStatus;
   readonly certainty: DogDifficultyCertainty;
-  /** v13 score; legacy generator versions preserve raw logical-unit peak. */
+  /** Score from effective occupancy and choice pressure. */
   readonly trayPeakPressure: number;
   /** Normalized cost of executing configured mechanisms on the no-item path. */
   readonly operationCost: number;
@@ -145,13 +140,12 @@ export interface DogLevelDifficulty {
   readonly withinTarget: boolean;
 }
 
-export type DogLevelReplayMode = "fixed" | "generated" | "guaranteed";
+export type DogLevelReplayMode = "generated";
 
 export interface DogLevelReplay {
   readonly attempt: number;
   readonly levelNumber: number;
-  readonly seed: string;
-  readonly runSeed?: string;
+  readonly runSeed: string;
   readonly levelSeed: string;
   readonly testSeed: string;
   readonly generatorVersion: number;

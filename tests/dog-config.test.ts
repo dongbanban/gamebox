@@ -11,9 +11,8 @@ import {
   getDogTestProfile,
   loadDogV13Config,
   selectDogTestProfile,
-} from "@/games/dog-lege-dog/game/game-config";
-import { LevelGenerator } from "@/games/dog-lege-dog/levels/level-generator";
-import { GeneratedLevelGenerator } from "@/games/dog-lege-dog/levels/level-generation-engine";
+} from "@/games/dog-lege-dog/game/v13-config";
+import { LevelGenerator } from "@/games/dog-lege-dog/levels/level-generation-engine";
 import { createDogLegeDogGame } from "@/games/dog-lege-dog/game/game-controller";
 
 describe("狗了个狗 v13 集中配置", () => {
@@ -22,7 +21,7 @@ describe("狗了个狗 v13 集中配置", () => {
     expect(Object.isFrozen(DOG_V13_CONFIG)).toBe(true);
     expect(Object.isFrozen(DOG_V13_CONFIG.specialMechanisms.mechanisms)).toBe(true);
     expect(DOG_V13_CONFIG.levels.maxLevelNumber).toBe(99);
-    expect([1, 5, 6, 15, 16, 30, 31, 99].map(getDogV13LogicalBlockCount)).toEqual([
+    expect([1, 5, 6, 15, 16, 30, 31, 99].map((levelNumber) => getDogV13LogicalBlockCount(levelNumber))).toEqual([
       90,
       90,
       108,
@@ -32,7 +31,7 @@ describe("狗了个狗 v13 集中配置", () => {
       180,
       180,
     ]);
-    expect([90, 108, 126, 144, 162, 180].map(getDogV13SpecialMechanismBudget)).toEqual([
+    expect([90, 108, 126, 144, 162, 180].map((count) => getDogV13SpecialMechanismBudget(count))).toEqual([
       27,
       32,
       37,
@@ -41,7 +40,7 @@ describe("狗了个狗 v13 集中配置", () => {
       54,
     ]);
 
-    const plans = [90, 108, 126, 144, 162, 180].map(getDogV13MechanismPlan);
+    const plans = [90, 108, 126, 144, 162, 180].map((count) => getDogV13MechanismPlan(count));
     expect(plans.map((plan) => plan.logicalUnitCount)).toEqual([27, 32, 37, 43, 48, 54]);
     expect(plans.every((plan) =>
       plan.counts.freeze > 0 &&
@@ -263,7 +262,6 @@ describe("狗了个狗 v13 集中配置", () => {
     };
 
     expect(() => new LevelGenerator({ config: invalid })).toThrow(DogV13ConfigError);
-    expect(() => new GeneratedLevelGenerator({ config: invalid })).toThrow(DogV13ConfigError);
   });
 
   it("游戏启动在展示棋盘前拒绝无效配置", () => {

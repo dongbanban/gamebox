@@ -21,7 +21,7 @@ import { isDogItemTargetable } from "@/games/dog-lege-dog/game/game-renderer-tar
 import {
   DOG_V13_CONFIG,
   type DogV13Config,
-} from "@/games/dog-lege-dog/game/game-config";
+} from "@/games/dog-lege-dog/game/v13-config";
 
 export function renderDogTray(
   session: GameSessionSnapshot,

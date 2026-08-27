@@ -1,4 +1,4 @@
-import type { DogLegeDogLevel } from "@/games/dog-lege-dog/levels/first-level";
+import type { DogLegeDogLevel } from "@/games/dog-lege-dog/levels/level-types";
 import {
   getDogPatternClassName,
   renderDogPatternAsset,
@@ -12,7 +12,7 @@ import {
 import {
   DOG_V13_CONFIG,
   type DogV13Config,
-} from "@/games/dog-lege-dog/game/game-config";
+} from "@/games/dog-lege-dog/game/v13-config";
 
 export function renderDogSpecialMechanismModal(
   level: DogLegeDogLevel,

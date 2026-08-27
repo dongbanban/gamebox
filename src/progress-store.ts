@@ -1,11 +1,9 @@
-import {
-  DOG_GAME_ID,
-  MAX_LEVEL_NUMBER,
-} from "@/games/dog-lege-dog/game/game-config";
+import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
 
 export const STORAGE_KEY = "gamebox.state";
 export const APP_STATE_VERSION = 1 as const;
-export const GAME_ID = DOG_GAME_ID;
+export const GAME_ID = DOG_V13_CONFIG.game.id;
+const MAX_LEVEL_NUMBER = DOG_V13_CONFIG.game.maxLevelNumber;
 const DOG_PERSISTED_LOADOUT_SIZE = 3 as const;
 
 const PERSISTENCE_WARNING = "本地数据无法持久化，当前为临时运行模式。";
@@ -419,7 +417,7 @@ function normalizeLoadout(value: unknown, gameId: string): readonly string[] | n
   if (
     !Array.isArray(value) ||
     value.length === 0 ||
-    (gameId === DOG_GAME_ID && value.length !== DOG_PERSISTED_LOADOUT_SIZE) ||
+    (gameId === GAME_ID && value.length !== DOG_PERSISTED_LOADOUT_SIZE) ||
     !value.every((itemId) => typeof itemId === "string" && itemId.trim() !== "") ||
     new Set(value).size !== value.length
   ) {
@@ -487,7 +485,7 @@ function assertLoadoutInput(gameId: string, loadout: readonly string[]): void {
 
   if (
     loadout.length === 0 ||
-    (gameId === DOG_GAME_ID && loadout.length !== DOG_PERSISTED_LOADOUT_SIZE) ||
+    (gameId === GAME_ID && loadout.length !== DOG_PERSISTED_LOADOUT_SIZE) ||
     !loadout.every((itemId) => typeof itemId === "string" && itemId.trim() !== "") ||
     new Set(loadout).size !== loadout.length
   ) {

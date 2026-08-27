@@ -2,7 +2,7 @@ import type {
   DogSpecialMechanismHandler,
   DogPatternType,
   DogTrayBlock,
-} from "@/games/dog-lege-dog/levels/first-level";
+} from "@/games/dog-lege-dog/levels/level-types";
 import {
   applyDogTraySuccessfulTripleEffects,
   insertDogBlockIntoTray,

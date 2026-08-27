@@ -7,7 +7,6 @@ import {
   getDogV13SpecialMechanismBudget,
   type DogV13TestProfileName,
   LevelGenerator,
-  LEVEL_GENERATOR_VERSION,
   createDogGenerationTestCase,
   formatDogGenerationTestReport,
 } from "@/games/dog-lege-dog";
@@ -70,14 +69,14 @@ describe(`狗了个狗 ${profileName} generation profile`, () => {
         levelNumber: testCase.levelNumber,
         runSeed: testCase.runSeed,
         testSeed: testCase.testSeed,
-        generatorVersion: LEVEL_GENERATOR_VERSION,
+        generatorVersion: DOG_V13_CONFIG.game.generatorVersion,
       });
 
       expect(level.generation.replay).toMatchObject({
         testSeed: testCase.testSeed,
         runSeed: testCase.runSeed,
         levelNumber,
-        generatorVersion: LEVEL_GENERATOR_VERSION,
+        generatorVersion: DOG_V13_CONFIG.game.generatorVersion,
         accepted: true,
       });
       expect(level.generation.replay.randomSeed).toBeTruthy();
@@ -85,7 +84,7 @@ describe(`狗了个狗 ${profileName} generation profile`, () => {
         failure.testSeed === testCase.testSeed &&
         failure.runSeed === testCase.runSeed &&
         failure.levelNumber === levelNumber &&
-        failure.generatorVersion === LEVEL_GENERATOR_VERSION,
+        failure.generatorVersion === DOG_V13_CONFIG.game.generatorVersion,
       )).toBe(true);
     }
   });
@@ -97,7 +96,7 @@ describe(`狗了个狗 ${profileName} generation profile`, () => {
       levelNumber: testCase.levelNumber,
       runSeed: testCase.runSeed,
       testSeed: testCase.testSeed,
-      generatorVersion: LEVEL_GENERATOR_VERSION,
+      generatorVersion: DOG_V13_CONFIG.game.generatorVersion,
     });
 
     expect(level.generation.fallbackUsed).toBe(true);
@@ -106,7 +105,7 @@ describe(`狗了个狗 ${profileName} generation profile`, () => {
       testSeed: testCase.testSeed,
       runSeed: testCase.runSeed,
       levelNumber: testCase.levelNumber,
-      generatorVersion: LEVEL_GENERATOR_VERSION,
+      generatorVersion: DOG_V13_CONFIG.game.generatorVersion,
     });
   });
 });

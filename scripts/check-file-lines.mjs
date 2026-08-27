@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 export function runFileLineCheck(argumentsList = process.argv) {
@@ -7,12 +7,9 @@ export function runFileLineCheck(argumentsList = process.argv) {
   const files = argumentsList.includes("--changed")
     ? collectChangedFiles()
     : argumentsList.slice(2).filter((argument) => !argument.startsWith("--"));
-  const checkableFiles = files.filter(isCheckableFile);
+  const checkableFiles = files.filter((file) => isCheckableFile(file) && existsSync(file));
   const violations = findLineCountViolations(checkableFiles, maxLines);
 
-  for (const skipped of checkableFiles.filter((file) => skippedByBaseline(file, maxLines))) {
-    console.log(`跳过已有行数超限文件：${skipped}`);
-  }
   for (const violation of violations) {
     console.error(
       `文件行数超限：${violation.file} ${violation.lineCount} > ${violation.maxLines}`,
@@ -27,7 +24,6 @@ export function runFileLineCheck(argumentsList = process.argv) {
 
 export function findLineCountViolations(files, limit) {
   return files
-    .filter((file) => !skippedByBaseline(file, limit))
     .map((file) => ({ file, lineCount: countLines(file), maxLines: limit }))
     .filter((entry) => entry.lineCount > entry.maxLines);
 }
@@ -62,22 +58,6 @@ function isCheckableFile(file) {
 
 function countLines(file) {
   return readFileSync(file, "utf8").split(/\r?\n/).length - 1;
-}
-
-function baselineLineCount(file) {
-  try {
-    return execFileSync("git", ["show", `HEAD:${file}`], {
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
-    })
-      .split(/\r?\n/).length - 1;
-  } catch {
-    return 0;
-  }
-}
-
-function skippedByBaseline(file, limit) {
-  return baselineLineCount(file) > limit;
 }
 
 if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {

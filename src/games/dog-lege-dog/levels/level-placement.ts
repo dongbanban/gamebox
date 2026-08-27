@@ -52,48 +52,6 @@ export function createSolvableBlockPlacements(
   return assignPlacementsToRemovalPlan(structuralPlacements, blockCount, maxLayers, removalPlan);
 }
 
-export function createFirstLevelBlockPlacements(
-  template: DogShapeTemplate,
-  blockCount: number,
-  maxLayers: number,
-  random: SeededRandom,
-  removalPlan: RemovalPathPlan,
-  config: DogV13Config = DOG_V13_CONFIG,
-): readonly BlockPlacement[] {
-  if (
-    blockCount < 1 ||
-    blockCount > config.firstLevel.blockCount ||
-    maxLayers !== config.firstLevel.maxLayers
-  ) {
-    throw new Error("LevelGenerator first-level placement config is invalid");
-  }
-
-  const structuralPlacements = createStructuralBlockPlacements(
-    template,
-    blockCount,
-    maxLayers,
-    random,
-    true,
-  );
-  return assignPlacementsToRemovalPlan(structuralPlacements, blockCount, maxLayers, removalPlan);
-}
-
-export function createGuaranteedBlockPlacements(
-  template: DogShapeTemplate,
-  blockCount: number,
-  maxLayers: number,
-  random: SeededRandom,
-  removalPlan: RemovalPathPlan,
-): readonly BlockPlacement[] {
-  const structuralPlacements = createStructuralBlockPlacements(
-    template,
-    blockCount,
-    maxLayers,
-    random,
-  );
-  return assignPlacementsToRemovalPlan(structuralPlacements, blockCount, maxLayers, removalPlan);
-}
-
 function assignPlacementsToRemovalPlan(
   structuralPlacements: readonly BlockPlacement[],
   blockCount: number,

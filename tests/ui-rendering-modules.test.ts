@@ -1,13 +1,14 @@
 // @vitest-environment jsdom
 
 import { describe, expect, it } from "vitest";
-import { FIRST_LEVEL, type DogBlock } from "@/games/dog-lege-dog";
+import type { DogBlock } from "@/games/dog-lege-dog";
+import { TEST_LEVEL } from "./support/dog-level-fixture";
 import { getDogPatternAssetUrl } from "@/games/dog-lege-dog/assets/game-assets";
 import { renderDogItemAsset } from "@/games/dog-lege-dog/assets/item-assets";
 import {
   DOG_V13_CONFIG,
   type DogV13Config,
-} from "@/games/dog-lege-dog/game/game-config";
+} from "@/games/dog-lege-dog/game/v13-config";
 import { renderDogBlock } from "@/games/dog-lege-dog/game/game-renderer-blocks";
 import {
   renderDogSpecialMechanismModal,
@@ -91,7 +92,7 @@ describe("狗了个狗 UI rendering seams", () => {
       ...createBlockRenderOptions(block),
       config,
     });
-    const modal = renderDogSpecialMechanismModal(FIRST_LEVEL, config);
+    const modal = renderDogSpecialMechanismModal(TEST_LEVEL, config);
 
     expect(markup).toContain("--block-width: 64px");
     expect(modal).toContain("定制机制说明");
@@ -182,9 +183,9 @@ function createBlock(
   patternType: DogBlock["patternType"],
   specialMechanism?: DogBlock["specialMechanism"],
 ): DogBlock {
-  const source = FIRST_LEVEL.blocks[0];
+  const source = TEST_LEVEL.blocks[0];
   if (source === undefined) {
-    throw new Error("FIRST_LEVEL must contain a block");
+    throw new Error("Test level must contain a block");
   }
 
   return {
@@ -197,8 +198,8 @@ function createBlock(
 
 function createBlockRenderOptions(block: DogBlock) {
   return {
-    boardPixelWidth: FIRST_LEVEL.board.width * 12,
-    boardPixelHeight: FIRST_LEVEL.board.height * 12,
+    boardPixelWidth: TEST_LEVEL.board.width * 12,
+    boardPixelHeight: TEST_LEVEL.board.height * 12,
     selectableBlockIds: [block.id],
     inputLocked: false,
     itemTargetType: null,

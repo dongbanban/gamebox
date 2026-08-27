@@ -1,10 +1,9 @@
 import {
-  FIRST_LEVEL,
   type DogBlock,
   type DogLegeDogLevel,
   type DogSpecialMechanismHandler,
   type DogTrayBlock,
-} from "@/games/dog-lege-dog/levels/first-level";
+} from "@/games/dog-lege-dog/levels/level-types";
 import { createBlockGraph, type BlockGraph } from "@/games/dog-lege-dog/levels/level-graph";
 import { freezeDogLegeDogLevel } from "@/games/dog-lege-dog/levels/level-immutability";
 import {
@@ -49,9 +48,9 @@ export class GameSessionState {
   lockedTraySlotCount: number;
   status: GameSessionStatus = "playing";
 
-  constructor(options: GameSessionOptions = {}) {
+  constructor(options: GameSessionOptions) {
     this.config = options.config ?? DOG_V13_CONFIG;
-    this.level = freezeDogLegeDogLevel(options.level ?? FIRST_LEVEL);
+    this.level = freezeDogLegeDogLevel(options.level);
     this.magneticRandom = new SeededRandom(`${this.level.runSeed}:magnetic-target`);
     this.graph = createBlockGraph(this.level.blocks);
     this.higherBlockCounts = [...this.graph.higherBlockCounts];

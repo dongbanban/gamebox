@@ -8,7 +8,7 @@ import {
   type CancellableAnimation,
 } from "@/games/dog-lege-dog/assets/animation-effects";
 import { renderDogPatternAsset } from "@/games/dog-lege-dog/assets/game-assets";
-import { DOG_PATTERN_TYPES } from "@/games/dog-lege-dog/levels/first-level";
+import { DOG_PATTERN_TYPES } from "@/games/dog-lege-dog/levels/level-types";
 import type { GameResult } from "@/game-contracts";
 import type { GameSessionSnapshot } from "@/games/dog-lege-dog/game/game-session";
 import type {

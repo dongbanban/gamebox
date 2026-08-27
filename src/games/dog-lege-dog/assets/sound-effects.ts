@@ -1,10 +1,9 @@
-import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/game-config";
-import type { DogV13Config } from "@/games/dog-lege-dog/game/v13-config";
+import {
+  DOG_V13_CONFIG,
+  type DogV13Config,
+} from "@/games/dog-lege-dog/game/v13-config";
 
 export type DogSoundEffect = "select" | "match" | "won" | "lost";
-
-/** Migration adapter. Music and effect profiles are owned by v13 config. */
-export const DOG_MUSIC_ASSET_PATH = DOG_V13_CONFIG.audio.music.path;
 
 export interface SoundEffects {
   initialize(): void;

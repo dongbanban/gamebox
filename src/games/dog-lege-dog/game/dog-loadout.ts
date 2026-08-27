@@ -1,11 +1,10 @@
 import { renderDogItemAsset } from "@/games/dog-lege-dog/assets/item-assets";
 import {
   DOG_V13_CONFIG,
+  type DogV13Config,
   type DogV13ItemId,
-} from "@/games/dog-lege-dog/game/game-config";
-import type { DogV13Config } from "@/games/dog-lege-dog/game/v13-config";
+} from "@/games/dog-lege-dog/game/v13-config";
 
-/** Migration adapter. Item identity and quota policy live in v13 config. */
 export const DOG_LOADOUT_SIZE = DOG_V13_CONFIG.items.loadoutSize;
 
 export const DOG_ITEM_IDS = DOG_V13_CONFIG.items.ids;

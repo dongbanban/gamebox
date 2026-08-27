@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  DOG_GAME_ID,
   DOG_V13_CONFIG,
   DOG_PATTERN_TYPES,
   GameSession,
@@ -13,13 +12,13 @@ import {
   getDogV13MechanismPlan,
   getDogV13SpecialMechanismBudget,
   isDifficultyWithinTarget,
-  LEVEL_GENERATOR_VERSION,
   LevelGenerator,
-  MAX_LEVEL_NUMBER,
   formatDogGenerationTestReport,
   type DogGenerationTestCase,
   type DogLegeDogLevel,
 } from "@/games/dog-lege-dog";
+
+const MAX_LEVEL_NUMBER = DOG_V13_CONFIG.game.maxLevelNumber;
 
 const RANDOM_TEST_SEED =
   process.env.DOG_RANDOM_TEST_SEED ?? "random-regression-default-v1";
@@ -104,10 +103,9 @@ function createLevel(
   const runSeed = getRunSeed(testSeed);
   return generator.generate({
     levelNumber,
-    seed: runSeed,
     runSeed,
     testSeed,
-    generatorVersion: LEVEL_GENERATOR_VERSION,
+    generatorVersion: DOG_V13_CONFIG.game.generatorVersion,
   });
 }
 
@@ -121,13 +119,14 @@ function createPendingCase(
     runSeed,
     levelNumber,
     levelSeed:
-      `${runSeed}:v${LEVEL_GENERATOR_VERSION}:level-${levelNumber}`,
-    generatorVersion: LEVEL_GENERATOR_VERSION,
+      `${runSeed}:v${DOG_V13_CONFIG.game.generatorVersion}:level-${levelNumber}`,
+    generatorVersion: DOG_V13_CONFIG.game.generatorVersion,
   };
 }
 
 function getRunSeed(testSeed: string): string {
-  return process.env.DOG_RANDOM_RUN_SEED ?? `${DOG_GAME_ID}:random-regression:${testSeed}`;
+  return process.env.DOG_RANDOM_RUN_SEED ??
+    `${DOG_V13_CONFIG.game.id}:random-regression:${testSeed}`;
 }
 
 function assertV13MechanismPlan(levelNumber: number, level?: DogLegeDogLevel): void {
@@ -323,9 +322,19 @@ function assertLevelInvariants(
     expect(failure.levelNumber).toBe(level.number);
     expect(failure.levelSeed).toBe(level.seed);
     expect(failure.generatorVersion).toBe(level.generatorVersion);
-    expect(generator.replayFailure(failure).blocks).toEqual(
-      generator.replayAttempt(failure).blocks,
-    );
+    const replayedFailure = generator.replayAttempt(failure);
+    expect(replayedFailure).toMatchObject({
+      number: failure.levelNumber,
+      seed: failure.levelSeed,
+      runSeed: failure.runSeed,
+      generatorVersion: failure.generatorVersion,
+    });
+    expect(replayedFailure.generation.replay).toMatchObject({
+      attempt: failure.attempt,
+      randomSeed: failure.randomSeed,
+      testSeed: failure.testSeed,
+    });
+    expect(replayedFailure.blocks).toEqual(generator.replayAttempt(failure).blocks);
   }
 
   if (!playSolution) {

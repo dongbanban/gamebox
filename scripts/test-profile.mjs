@@ -193,7 +193,7 @@ export function classifyChangedFiles(files) {
     }
     if (file.startsWith("src/games/dog-lege-dog/levels/") ||
         file === "src/games/dog-lege-dog/game/special-mechanisms.ts" ||
-        file === "src/games/dog-lege-dog/game/v13-config.ts" ||
+        /^src\/games\/dog-lege-dog\/game\/v13-config(?:-[^/]+)?\.ts$/.test(file) ||
         file === "src/games/dog-lege-dog/game/v13-test-profiles.json" ||
         file === "src/games/dog-lege-dog/game/test-profile.ts" ||
         file === "tests/generation-profile.test.ts") {

@@ -2,7 +2,7 @@ import {
   DOG_V13_CONFIG,
   type DogV13Config,
   type DogV13ParticleEffectProfile,
-} from "@/games/dog-lege-dog/game/game-config";
+} from "@/games/dog-lege-dog/game/v13-config";
 
 export type ParticleEffect = "match" | "won" | "lost";
 

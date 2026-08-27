@@ -1,4 +1,4 @@
-import { createBlockGraph, type BlockGraph } from "@/games/dog-lege-dog/levels/level-graph";
+import type { BlockGraph } from "@/games/dog-lege-dog/levels/level-graph";
 import {
   getDogTrayLogicalUnitCount,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
@@ -7,16 +7,13 @@ import type {
   DogSpecialMechanismHandler,
   DogTrayBlock,
 } from "@/games/dog-lege-dog/levels/level-types";
-import { DOG_BASE_TRAY_CAPACITY } from "@/games/dog-lege-dog/game/game-config";
+import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
 import {
   blockMask,
-  createFullBlockMask,
   createSolvabilityResult,
   resolveBranchBudget,
-  type SolvabilityMemoEntry,
   type SolvabilityResult,
   type SolvabilitySearchContext,
-  type SolvabilitySearchOptions,
 } from "@/games/dog-lege-dog/levels/level-solvability-contracts";
 import {
   cloneTray,
@@ -27,94 +24,7 @@ import {
   trayPeakPressureForPath,
 } from "@/games/dog-lege-dog/levels/level-solvability-simulation";
 import { createDogMagneticRandom, resolveDogSelection } from "@/games/dog-lege-dog/levels/level-mechanism-resolution";
-import { resolveLevelTrayCapacity } from "@/games/dog-lege-dog/levels/level-solvability-verification";
 import { SeededRandom } from "@/games/dog-lege-dog/levels/level-random";
-
-export function hasSolvableContinuation(
-  level: DogLevelGeometry,
-  solutionPath: readonly string[],
-  graph: BlockGraph,
-  firstBlockIndex: number,
-  options: SolvabilitySearchOptions,
-  completedStates: Map<string, SolvabilityMemoEntry>,
-  handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
-): SolvabilityResult {
-  const initialMagneticRandom = createDogMagneticRandom(level);
-  const initialResolution = resolveDogSelection(
-    level,
-    firstBlockIndex,
-    createFullBlockMask(level.blocks.length),
-    graph.higherBlockCounts,
-    [],
-    handlers,
-    initialMagneticRandom,
-    graph,
-  );
-  const nextRemainingMask = initialResolution.remainingMask;
-  const tray: DogTrayBlock[] = [...initialResolution.tray];
-  const firstBlockId = level.blocks[firstBlockIndex].id;
-  const trayLogicalUnitCount = getDogTrayLogicalUnitCount(tray);
-  const trayCapacity = resolveLevelTrayCapacity(level);
-  const higherBlockCounts = [...initialResolution.higherBlockCounts];
-  const selectable = getSelectableBlocks(level, nextRemainingMask, higherBlockCounts);
-  if (isCapacityBlocked(
-    level,
-    tray,
-    trayLogicalUnitCount,
-    trayCapacity,
-    nextRemainingMask !== 0n,
-    selectable,
-    handlers,
-    higherBlockCounts,
-    initialMagneticRandom,
-    nextRemainingMask,
-    graph,
-  )) {
-    return createSolvabilityResult(
-      "unsolvable",
-      [firstBlockId],
-      trayLogicalUnitCount,
-      `solvable path fills the ${trayCapacity}-slot tray before clearing the board`,
-    );
-  }
-
-  const preferredRank = createPreferredRank(solutionPath, graph);
-  const greedyResult = findGreedyContinuation(
-    level,
-    graph,
-    nextRemainingMask,
-    higherBlockCounts,
-    tray,
-    handlers,
-    preferredRank,
-    [firstBlockId],
-    1,
-    trayCapacity,
-    initialMagneticRandom.clone(),
-  );
-  if (greedyResult !== undefined) {
-    return greedyResult;
-  }
-
-  return searchSolvableContinuation(
-    level,
-    graph,
-    nextRemainingMask,
-    higherBlockCounts,
-    tray,
-    handlers,
-    preferredRank,
-    {
-      completedStates,
-      branchAttempts: 0,
-      branchBudget: resolveBranchBudget(options),
-    },
-    [firstBlockId],
-    1,
-    trayCapacity,
-    initialMagneticRandom.clone(),
-  );
-}
 
 export function searchSolvableContinuation(
   level: DogLevelGeometry,
@@ -127,7 +37,7 @@ export function searchSolvableContinuation(
   context: SolvabilitySearchContext,
   path: readonly string[],
   pathDepth: number,
-  trayCapacity: number = DOG_BASE_TRAY_CAPACITY,
+  trayCapacity: number = DOG_V13_CONFIG.tray.baseCapacity,
   magneticRandom: SeededRandom = createDogMagneticRandom(level),
 ): SolvabilityResult {
   if (remainingMask === 0n) {
@@ -309,7 +219,7 @@ export function findGreedyContinuation(
   preferredRank: ReadonlyMap<number, number>,
   initialPath: readonly string[],
   initialPathDepth: number,
-  trayCapacity: number = DOG_BASE_TRAY_CAPACITY,
+  trayCapacity: number = DOG_V13_CONFIG.tray.baseCapacity,
   magneticRandom: SeededRandom = createDogMagneticRandom(level),
 ): SolvabilityResult | undefined {
   let remainingMask = initialRemainingMask;

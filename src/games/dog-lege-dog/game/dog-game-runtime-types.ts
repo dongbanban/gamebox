@@ -6,7 +6,7 @@ import type {
   DogVisualFeedback,
 } from "@/games/dog-lege-dog/game/game-types";
 import type { GameSession } from "@/games/dog-lege-dog/game/game-session";
-import type { DogLegeDogLevel } from "@/games/dog-lege-dog/levels/first-level";
+import type { DogLegeDogLevel } from "@/games/dog-lege-dog/levels/level-types";
 import type { DogV13Config } from "@/games/dog-lege-dog/game/v13-config";
 
 export interface DogGameRuntime {

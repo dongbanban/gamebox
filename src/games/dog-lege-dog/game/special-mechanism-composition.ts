@@ -192,12 +192,6 @@ function getLogicalUnitWeightForType(
 export function validateDogSpecialMechanismConfiguration(
   configuration: DogSpecialMechanismConfig,
 ): void {
-  const hasValidStageRanges = [configuration.minByStage, configuration.maxByStage].every(
-    (ranges) => ranges === undefined || (
-      ranges.length > 0 &&
-      ranges.every((range) => Number.isSafeInteger(range) && range >= 1)
-    ),
-  );
   if (
     typeof configuration.type !== "string" ||
     configuration.type.length === 0 ||
@@ -205,11 +199,8 @@ export function validateDogSpecialMechanismConfiguration(
     !Number.isSafeInteger(configuration.max) ||
     configuration.min < 1 ||
     configuration.max < configuration.min ||
-    !hasValidStageRanges ||
     (configuration.densityWeight !== undefined &&
-      (!Number.isFinite(configuration.densityWeight) || configuration.densityWeight <= 0)) ||
-    (configuration.itemUseBonus !== undefined &&
-      (!Number.isSafeInteger(configuration.itemUseBonus) || configuration.itemUseBonus < 0))
+      (!Number.isFinite(configuration.densityWeight) || configuration.densityWeight <= 0))
   ) {
     throw new Error("狗了个狗 special mechanism count range is invalid");
   }

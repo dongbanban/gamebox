@@ -10,10 +10,10 @@ import type {
   DogSolvabilityStatus,
   DogTrayBlock,
 } from "@/games/dog-lege-dog/levels/level-types";
-import {
-  DOG_BASE_TRAY_CAPACITY,
-  DOG_MAX_LOCKED_TRAY_SLOTS,
-} from "@/games/dog-lege-dog/game/game-config";
+import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
+
+const DOG_BASE_TRAY_CAPACITY = DOG_V13_CONFIG.tray.baseCapacity;
+const DOG_MAX_LOCKED_TRAY_SLOTS = DOG_V13_CONFIG.tray.maxLockedSlotCount;
 import {
   createDogMagneticRandom,
   resolveDogSelection,

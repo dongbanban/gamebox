@@ -3,12 +3,12 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   DOG_V13_CONFIG,
-  FIRST_LEVEL,
   GameSession,
   loadDogV13Config,
   startDogLegeDogGame,
   type DogBlock,
 } from "@/games/dog-lege-dog";
+import { TEST_LEVEL } from "./support/dog-level-fixture";
 import {
   animateBlockFlight,
   renderDogMeltEffect,
@@ -213,7 +213,7 @@ describe("狗了个狗 runtime config seam", () => {
 });
 
 function createLevel(blocks: readonly DogBlock[]) {
-  return { ...FIRST_LEVEL, blocks };
+  return { ...TEST_LEVEL, blocks };
 }
 
 function createBlock(id: string, patternType: DogBlock["patternType"], x = 0): DogBlock {

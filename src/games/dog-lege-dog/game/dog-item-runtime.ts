@@ -3,7 +3,7 @@ import {
 } from "@/games/dog-lege-dog/game/game-session";
 import type {
   DogLegeDogLevel,
-} from "@/games/dog-lege-dog/levels/first-level";
+} from "@/games/dog-lege-dog/levels/level-types";
 import {
   type DogItemId,
 } from "@/games/dog-lege-dog/game/dog-loadout";

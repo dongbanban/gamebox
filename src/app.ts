@@ -13,7 +13,7 @@ import {
 import {
   loadDogV13Config,
   type DogV13Config,
-} from "@/games/dog-lege-dog/game/game-config";
+} from "@/games/dog-lege-dog/game/v13-config";
 import { createRunSeed } from "@/games/dog-lege-dog/levels/level-random";
 import { ResultLoadoutController } from "@/app/app-loadout";
 import {

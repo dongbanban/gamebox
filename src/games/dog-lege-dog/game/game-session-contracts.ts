@@ -4,13 +4,13 @@ import type {
   DogPatternType,
   DogSpecialMechanismHandler,
   DogTrayBlock,
-} from "@/games/dog-lege-dog/levels/first-level";
+} from "@/games/dog-lege-dog/levels/level-types";
 import type { DogV13Config } from "@/games/dog-lege-dog/game/v13-config";
 
 export type GameSessionStatus = "playing" | "won" | "lost";
 
 export interface GameSessionOptions {
-  readonly level?: DogLegeDogLevel;
+  readonly level: DogLegeDogLevel;
   readonly config?: DogV13Config;
   readonly initialTray?: readonly DogPatternType[];
   readonly initialTrayBlocks?: readonly DogTrayBlock[];

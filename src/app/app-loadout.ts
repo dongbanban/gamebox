@@ -7,10 +7,9 @@ import {
   type DogItemId,
 } from "@/games/dog-lege-dog/game/dog-loadout";
 import {
-  DOG_GAME_ID,
   DOG_V13_CONFIG,
   type DogV13Config,
-} from "@/games/dog-lege-dog/game/game-config";
+} from "@/games/dog-lege-dog/game/v13-config";
 import { renderResultLoadoutEditor } from "@/app/app-views";
 
 export interface ResultLoadoutControllerOptions {
@@ -48,12 +47,12 @@ export class ResultLoadoutController {
 
   open(): void {
     const result = this.getResult();
-    const loadout = result?.gameId === DOG_GAME_ID
-      ? this.store.snapshot().state?.games[DOG_GAME_ID]?.loadout
+    const loadout = result?.gameId === this.config.game.id
+      ? this.store.snapshot().state?.games[this.config.game.id]?.loadout
       : null;
     if (
       result === null ||
-      result.gameId !== DOG_GAME_ID ||
+      result.gameId !== this.config.game.id ||
       !isValidDogLoadout(loadout, this.config.items.loadoutSize)
     ) {
       return;
@@ -111,7 +110,7 @@ export class ResultLoadoutController {
     const current = this.getCurrentLoadout();
     if (
       result === null ||
-      result.gameId !== DOG_GAME_ID ||
+      result.gameId !== this.config.game.id ||
       !this.confirming ||
       !isValidDogLoadout(current, this.config.items.loadoutSize) ||
       !isValidDogLoadout(this.draft, this.config.items.loadoutSize) ||
@@ -120,19 +119,19 @@ export class ResultLoadoutController {
       return;
     }
 
-    this.store.setGameLoadout(DOG_GAME_ID, this.draft);
+    this.store.setGameLoadout(this.config.game.id, this.draft);
     const runSeed = result.status === "lost" ? this.getResultRunSeed() : undefined;
     this.reset();
     this.onApplied(result, runSeed);
   }
 
   private getCurrentLoadout(): readonly string[] | null | undefined {
-    return this.store.snapshot().state?.games[DOG_GAME_ID]?.loadout;
+    return this.store.snapshot().state?.games[this.config.game.id]?.loadout;
   }
 
   private render(): void {
     const result = this.getResult();
-    if (result === null || result.gameId !== DOG_GAME_ID) {
+    if (result === null || result.gameId !== this.config.game.id) {
       return;
     }
 

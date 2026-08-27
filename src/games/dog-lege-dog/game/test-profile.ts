@@ -1,9 +1,8 @@
 import {
   DOG_V13_CONFIG,
-  LEVEL_GENERATOR_VERSION,
   getDogTestProfile,
   type DogV13TestProfileName,
-} from "@/games/dog-lege-dog/game/game-config";
+} from "@/games/dog-lege-dog/game/v13-config";
 
 export interface DogGenerationTestCase {
   readonly testSeed: string;
@@ -28,7 +27,7 @@ export function createDogGenerationTestCase(
     testSeed,
     runSeed: `${DOG_V13_CONFIG.game.id}:${profileName}:${testSeed}:level-${levelNumber}`,
     levelNumber,
-    generatorVersion: LEVEL_GENERATOR_VERSION,
+    generatorVersion: DOG_V13_CONFIG.game.generatorVersion,
   };
 }
 

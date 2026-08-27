@@ -3,13 +3,8 @@ import type { DogV13Config } from "@/games/dog-lege-dog/game/v13-config";
 
 export function getDogTrayLockCount(
   runSeed: string,
-  generatorVersion: number,
   config: DogV13Config = DOG_V13_CONFIG,
 ): number {
-  if (generatorVersion < config.game.generatorVersion) {
-    return 0;
-  }
-
   return new SeededRandom(`${runSeed}:tray-lock-slot-count`).nextInt(
     config.tray.maxLockedSlotCount + 1,
   );
@@ -21,10 +16,6 @@ export function getCandidateRandomSeed(
   attempt: number,
 ): string {
   return `${gameId}:${levelSeed}:attempt-${attempt}`;
-}
-
-export function getGuaranteedRandomSeed(gameId: string, levelSeed: string): string {
-  return `${gameId}:guaranteed:${levelSeed}`;
 }
 
 let generatedRunSeedCount = 0;

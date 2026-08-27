@@ -7,7 +7,7 @@ import {
 import { getDogBlockVisualMetrics } from "@/games/dog-lege-dog/visual-metrics";
 import {
   DOG_V13_CONFIG,
-} from "@/games/dog-lege-dog/game/game-config";
+} from "@/games/dog-lege-dog/game/v13-config";
 import {
   DOG_FREEZE_MELT_DURATION_MS,
   DOG_ITEM_FEEDBACK_DURATION_MS,

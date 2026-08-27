@@ -27,7 +27,6 @@ export function createStructuralBlockPlacements(
   blockCount: number,
   maxLayers: number,
   random: SeededRandom,
-  keepVisualSafeInset = false,
 ): readonly BlockPlacement[] {
   const layerCounts = distributeBlocks(blockCount, maxLayers);
   let failedLayer = 0;
@@ -44,7 +43,6 @@ export function createStructuralBlockPlacements(
         desiredCount,
         placements,
         random,
-        keepVisualSafeInset,
       );
 
       if (selected.length !== desiredCount) {
@@ -89,7 +87,6 @@ function selectStructuralLayerPlacements(
   desiredCount: number,
   previousPlacements: readonly BlockPlacement[],
   random: SeededRandom,
-  keepVisualSafeInset: boolean,
 ): BlockPlacement[] {
   // Every layer uses quarter-block phases; overlap and alignment limits stay enforced below.
   const candidateOffsets = getLayerOffsetOrder(z);
@@ -101,7 +98,6 @@ function selectStructuralLayerPlacements(
             template,
             candidateOffset.x,
             candidateOffset.y,
-            keepVisualSafeInset,
           ),
         )
         .map((candidate) => [`${candidate.x}:${candidate.y}`, candidate]),
@@ -351,22 +347,12 @@ function getCandidateAnchors(
   template: DogShapeTemplate,
   offsetX: number,
   offsetY: number,
-  keepVisualSafeInset = false,
 ): readonly Omit<BlockPlacement, "z">[] {
   const playable = new Set(template.playableCells.map(cellKey));
   const candidates: Omit<BlockPlacement, "z">[] = [];
 
   for (let y = offsetY; y <= template.height - BLOCK_HEIGHT; y += BLOCK_HEIGHT) {
     for (let x = offsetX; x <= template.width - BLOCK_WIDTH; x += BLOCK_WIDTH) {
-      if (
-        keepVisualSafeInset &&
-        (x < BLOCK_WIDTH ||
-          y < BLOCK_HEIGHT ||
-          x + BLOCK_WIDTH > template.width - BLOCK_WIDTH ||
-          y + BLOCK_HEIGHT > template.height - BLOCK_HEIGHT)
-      ) {
-        continue;
-      }
       if (isPlayablePlacement(x, y, playable)) {
         candidates.push({ x, y });
       }

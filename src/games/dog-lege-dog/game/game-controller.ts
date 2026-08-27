@@ -1,12 +1,7 @@
 import type { GameResult } from "@/game-contracts";
-import {
-  FIRST_LEVEL,
-  type DogLegeDogLevel,
-} from "@/games/dog-lege-dog/levels/first-level";
-import {
-  loadDogV13Config,
-} from "@/games/dog-lege-dog/game/game-config";
-import { getDogLegeDogLevel, DogLevelProvider } from "@/games/dog-lege-dog/levels/level-provider";
+import { loadDogV13Config } from "@/games/dog-lege-dog/game/v13-config";
+import { LevelGenerator } from "@/games/dog-lege-dog/levels/level-generation-engine";
+import type { DogLegeDogLevel } from "@/games/dog-lege-dog/levels/level-types";
 import { createRunSeed } from "@/games/dog-lege-dog/levels/level-random";
 import {
   renderDogSpecialMechanismModal,
@@ -367,15 +362,8 @@ function createLevel(
   options: DogLegeDogGameOptions,
   config: ReturnType<typeof loadDogV13Config>,
 ): DogLegeDogLevel {
-  if (options.config === undefined) {
-    return getDogLegeDogLevel(
-      options.levelNumber ?? FIRST_LEVEL.number,
-      options.runSeed ?? createRunSeed(),
-    );
-  }
-
-  return new DogLevelProvider({ config }).getLevel({
-    levelNumber: options.levelNumber ?? FIRST_LEVEL.number,
+  return new LevelGenerator({ config }).generate({
+    levelNumber: options.levelNumber ?? config.game.firstLevelNumber,
     runSeed: options.runSeed ?? createRunSeed(),
     generatorVersion: config.game.generatorVersion,
   });

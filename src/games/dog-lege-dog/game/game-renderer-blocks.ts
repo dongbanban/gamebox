@@ -1,4 +1,4 @@
-import type { DogLegeDogLevel } from "@/games/dog-lege-dog/levels/first-level";
+import type { DogLegeDogLevel } from "@/games/dog-lege-dog/levels/level-types";
 import {
   BLOCK_HEIGHT,
   BLOCK_WIDTH,
@@ -16,7 +16,7 @@ import {
 import {
   DOG_V13_CONFIG,
   type DogV13Config,
-} from "@/games/dog-lege-dog/game/game-config";
+} from "@/games/dog-lege-dog/game/v13-config";
 import {
   getSpecialMechanismClass,
   renderSpecialMechanismAttributes,
@@ -32,8 +32,6 @@ export const DOG_BLOCK_VISUAL_SIZE_PX = DOG_V13_CONFIG.ui.visual.blockSizePx;
 export const DOG_LOGICAL_UNIT_VISUAL_WIDTH_PX = DOG_BLOCK_VISUAL_SIZE_PX / BLOCK_WIDTH;
 export const DOG_LOGICAL_UNIT_VISUAL_HEIGHT_PX = DOG_BLOCK_VISUAL_SIZE_PX / BLOCK_HEIGHT;
 export const DOG_BOARD_SAFE_MARGIN_PX = DOG_V13_CONFIG.ui.visual.boardSafeMarginPx;
-/** Backward-compatible square-unit alias for layout consumers. */
-export const DOG_LOGICAL_UNIT_VISUAL_SIZE_PX = DOG_LOGICAL_UNIT_VISUAL_WIDTH_PX;
 
 export {
   getDogBlockVisualMetrics,

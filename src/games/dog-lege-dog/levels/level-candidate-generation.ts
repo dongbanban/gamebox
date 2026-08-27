@@ -1,8 +1,4 @@
-import {
-  DOG_BASE_TRAY_CAPACITY,
-  FIRST_LEVEL_NUMBER,
-} from "@/games/dog-lege-dog/game/game-config";
-import type { DogV13Config } from "@/games/dog-lege-dog/game/game-config";
+import type { DogV13Config } from "@/games/dog-lege-dog/game/v13-config";
 import {
   getBlockCount,
   getMaxLayers,
@@ -13,7 +9,6 @@ import {
   type DogShapeTemplate,
 } from "@/games/dog-lege-dog/levels/level-shapes";
 import {
-  createFirstLevelBlockPlacements,
   createRemovalPathPlan,
   createSolvableBlockPlacements,
   createSolvableBlocks,
@@ -28,7 +23,6 @@ import {
   verifyRemovalPath,
   type SolvabilityResult,
 } from "@/games/dog-lege-dog/levels/level-solvability";
-import { createBlockGraph } from "@/games/dog-lege-dog/levels/level-graph";
 import {
   calculateDifficultyMetrics,
 } from "@/games/dog-lege-dog/levels/level-difficulty";
@@ -41,12 +35,9 @@ import {
   SeededRandom,
 } from "@/games/dog-lege-dog/levels/level-random";
 import {
-  assignDogSpecialMechanisms,
   createDogSpecialMechanism,
   DOG_TWIN_MECHANISM_TYPE,
   getDogSpecialMechanismConfigs,
-  getDogSpecialMechanismConfigsForGeneration,
-  limitDogSpecialMechanismConfigsForLogicalDensity,
   selectDogSpecialMechanismCounts,
   validateDogSpecialMechanismComposition,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
@@ -57,7 +48,6 @@ import type {
   DogLevelReplayMode,
   DogLegeDogLevel,
   DogPatternType,
-  DogSpecialMechanismConfig,
 } from "@/games/dog-lege-dog/levels/level-types";
 import type { NormalizedLevelGeneratorRequest } from "@/games/dog-lege-dog/levels/level-generator-contracts";
 import type { GeneratedLevelCandidate } from "@/games/dog-lege-dog/levels/level-replay";
@@ -98,26 +88,15 @@ export function createLevelCandidate(
   const random = new SeededRandom(options.randomSeed);
   const lockedTraySlotCount = getDogTrayLockCount(
     request.runSeed,
-    request.generatorVersion,
     options.config,
   );
   const specialMechanisms = getDogSpecialMechanismConfigs(
     request.levelNumber,
-    request.generatorVersion,
     options.config,
   );
   const logicalBlockCount = getBlockCount(request.levelNumber, options.config);
-  const generationSpecialMechanisms = limitDogSpecialMechanismConfigsForLogicalDensity(
-    getDogSpecialMechanismConfigsForGeneration(
-      request.levelNumber,
-      request.generatorVersion,
-      options.config,
-    ),
-    logicalBlockCount,
-    options.config.specialMechanisms.logicalBudgetRatio,
-  );
   const mechanismCounts = selectDogSpecialMechanismCounts(
-    generationSpecialMechanisms,
+    specialMechanisms,
     random,
     logicalBlockCount,
     options.config.specialMechanisms.logicalBudgetRatio,
@@ -175,54 +154,16 @@ export function createLevelCandidate(
         }
       : block,
   );
-  const placementGraph = createBlockGraph(blocksWithTwins);
   let blocks: readonly DogBlock[];
   let shouldValidateMechanismComposition = true;
   try {
-    blocks = request.generatorVersion >= options.config.game.generatorVersion
-      ? assignV13Mechanisms(
-          blocksWithTwins,
-          generationSpecialMechanisms,
-          removalPlan.order,
-          random,
-          maxLayers,
-        )
-      : assignDogSpecialMechanisms(
-          blocksWithTwins,
-          generationSpecialMechanisms,
-          random,
-          (candidateBlocks) => {
-            const candidateGeometry: DogLevelGeometry = {
-              number: request.levelNumber,
-              generatorVersion: request.generatorVersion,
-              runSeed: request.runSeed,
-              lockedTraySlotCount,
-              maxLayers,
-              board,
-              patternTypes,
-              blocks: candidateBlocks,
-              specialMechanisms,
-            };
-            const fixedPathVerification = verifyRemovalPath(
-              candidateGeometry,
-              solutionPath,
-              placementGraph,
-            );
-            if (fixedPathVerification.solvable) {
-              return true;
-            }
-
-            // A sampled path may only fail because locks are tighter; finalization searches again.
-            return verifyRemovalPath(
-              candidateGeometry,
-              solutionPath,
-              placementGraph,
-              undefined,
-              DOG_BASE_TRAY_CAPACITY,
-            ).solvable;
-          },
-          { maxLayers, countOverrides: mechanismCounts },
-        );
+    blocks = assignDogV13SpecialMechanisms(
+      blocksWithTwins,
+      specialMechanisms,
+      removalPlan.order,
+      random,
+      maxLayers,
+    );
   } catch (error) {
     if (spatialValidation !== "diagnostic") {
       throw error;
@@ -243,29 +184,12 @@ export function createLevelCandidate(
     patternTypes,
     blocks,
     specialMechanisms,
-    generationSpecialMechanisms,
     lockedTraySlotCount,
     solutionPath,
     options.replayMode,
     options.randomSeed,
     spatialValidation,
     shouldValidateMechanismComposition,
-  );
-}
-
-function assignV13Mechanisms(
-  blocks: readonly DogBlock[],
-  configurations: readonly DogSpecialMechanismConfig[],
-  removalOrder: readonly number[],
-  random: SeededRandom,
-  maxLayers: number,
-): readonly DogBlock[] {
-  return assignDogV13SpecialMechanisms(
-    blocks,
-    configurations,
-    removalOrder,
-    random,
-    maxLayers,
   );
 }
 
@@ -280,7 +204,6 @@ function createCandidateLevel(
   patternTypes: DogLegeDogLevel["patternTypes"],
   blocks: DogLegeDogLevel["blocks"],
   specialMechanisms: DogLegeDogLevel["specialMechanisms"],
-  generationSpecialMechanisms: DogLegeDogLevel["specialMechanisms"],
   lockedTraySlotCount: number,
   solutionPath: readonly string[],
   replayMode: DogLevelReplayMode,
@@ -313,7 +236,7 @@ function createCandidateLevel(
     const mechanismCompositionError = validateDogSpecialMechanismComposition(
       blocks,
       maxLayers,
-      generationSpecialMechanisms,
+      specialMechanisms,
       undefined,
       config.specialMechanisms.logicalBudgetRatio,
     );
@@ -387,7 +310,6 @@ function createCandidateLevel(
     specialMechanisms: Object.freeze([...specialMechanisms]),
     solutionPath: Object.freeze([...acceptedSolutionPath]),
     difficulty,
-    baseSeed: request.seed,
     testSeed,
     replayMode,
     randomSeed,
@@ -401,17 +323,6 @@ function createGenerationPlan(
   placementFactory: PlacementFactory,
   blockCount: number,
 ): CandidateGenerationPlan {
-  if (request.levelNumber === FIRST_LEVEL_NUMBER) {
-    return {
-      blockCount,
-      maxLayers: getMaxLayers(request.levelNumber, config),
-      templateFactory,
-      placementFactory: (...args) => createFirstLevelBlockPlacements(...args, config),
-      patternTypesFactory: (random) =>
-        selectPatternTypes(request.levelNumber, random, config),
-    };
-  }
-
   return {
     blockCount,
     maxLayers: getMaxLayers(request.levelNumber, config),
@@ -422,10 +333,10 @@ function createGenerationPlan(
   };
 }
 
-export function getFallbackTemplate(kind: "fallback" | "emergency"): DogShapeTemplate {
+export function getFallbackTemplate(): DogShapeTemplate {
   const template = DOG_SHAPE_TEMPLATES.find((candidate) => candidate.id === "irregular-notch-1");
   if (template === undefined) {
-    throw new Error(`LevelGenerator ${kind} template is unavailable`);
+    throw new Error("LevelGenerator fallback template is unavailable");
   }
   return template;
 }

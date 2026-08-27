@@ -6,7 +6,6 @@ import {
   getDogV13MechanismPlan,
   getDogLogicalBlockCount,
   isDifficultyWithinTarget,
-  LEVEL_GENERATOR_VERSION,
   LevelGenerator,
 } from "@/games/dog-lege-dog";
 
@@ -16,12 +15,11 @@ describe("狗了个狗 v13 关卡生成 seam", () => {
     const level = generator.generate({
       levelNumber: 1,
       runSeed: "v13-generation-red-test",
-      generatorVersion: LEVEL_GENERATOR_VERSION,
+      generatorVersion: DOG_V13_CONFIG.game.generatorVersion,
     });
     const plan = getDogV13MechanismPlan(getDogV13LogicalBlockCount(level.number));
     const counts = countMechanisms(level.blocks);
 
-    expect(LEVEL_GENERATOR_VERSION).toBe(DOG_V13_CONFIG.game.generatorVersion);
     expect(level.generatorVersion).toBe(DOG_V13_CONFIG.game.generatorVersion);
     expect(counts).toEqual(plan.counts);
     expect(getDogLogicalBlockCount(level.blocks, level.specialMechanisms)).toBe(
@@ -44,7 +42,7 @@ describe("狗了个狗 v13 关卡生成 seam", () => {
     const request = {
       levelNumber: 1,
       runSeed: "v13-replay-red-test",
-      generatorVersion: LEVEL_GENERATOR_VERSION,
+      generatorVersion: DOG_V13_CONFIG.game.generatorVersion,
     } as const;
     const first = generator.generate(request);
     const repeated = generator.generate(request);
@@ -61,10 +59,6 @@ describe("狗了个狗 v13 关卡生成 seam", () => {
   it("生成器读取传入配置的结构阶段", () => {
     const config = {
       ...DOG_V13_CONFIG,
-      firstLevel: {
-        ...DOG_V13_CONFIG.firstLevel,
-        maxLayers: 4,
-      },
       levels: {
         ...DOG_V13_CONFIG.levels,
         structureStages: DOG_V13_CONFIG.levels.structureStages.map((stage, index) =>
@@ -79,28 +73,10 @@ describe("狗了个狗 v13 关卡生成 seam", () => {
     const level = generator.generate({
       levelNumber: 1,
       runSeed: "v13-custom-config-red-test",
-      generatorVersion: LEVEL_GENERATOR_VERSION,
+      generatorVersion: DOG_V13_CONFIG.game.generatorVersion,
     });
 
     expect(level.maxLayers).toBe(4);
-  });
-
-  it("数字生成 seam 使用传入配置的默认与首关 seed", () => {
-    const config = {
-      ...DOG_V13_CONFIG,
-      game: {
-        ...DOG_V13_CONFIG.game,
-        defaultSeed: "v13-custom-default-seed",
-      },
-      firstLevel: {
-        ...DOG_V13_CONFIG.firstLevel,
-        seed: "v13-custom-first-level-seed",
-      },
-    };
-    const level = new LevelGenerator({ config, candidateFilter: () => true }).generate(1);
-
-    expect(level.runSeed).toBe("v13-custom-default-seed");
-    expect(level.seed).toBe("v13-custom-first-level-seed");
   });
 
   it("覆盖 v13 阶段边界并保持机制计划与无道具可解", () => {
@@ -109,7 +85,7 @@ describe("狗了个狗 v13 关卡生成 seam", () => {
       const level = generator.generate({
         levelNumber,
         runSeed: `v13-boundary-${levelNumber}`,
-        generatorVersion: LEVEL_GENERATOR_VERSION,
+        generatorVersion: DOG_V13_CONFIG.game.generatorVersion,
       });
       const plan = getDogV13MechanismPlan(getDogV13LogicalBlockCount(levelNumber));
       expect(level.generatorVersion).toBe(DOG_V13_CONFIG.game.generatorVersion);
@@ -146,7 +122,7 @@ describe("狗了个狗 v13 关卡生成 seam", () => {
       levelNumber: 30,
       runSeed: "dog-lege-dog:random-regression:v13-full-a",
       testSeed: "v13-full-a",
-      generatorVersion: LEVEL_GENERATOR_VERSION,
+      generatorVersion: DOG_V13_CONFIG.game.generatorVersion,
     });
 
     expect(level.difficulty.solvabilityStatus).toBe("solvable");
@@ -158,7 +134,7 @@ describe("狗了个狗 v13 关卡生成 seam", () => {
     const level = generator.generate({
       levelNumber: 16,
       runSeed: "dog-lege-dog:random-regression:v13-full-a",
-      generatorVersion: LEVEL_GENERATOR_VERSION,
+      generatorVersion: DOG_V13_CONFIG.game.generatorVersion,
     });
     const session = new GameSession(level);
     const initialLockedTraySlotCount = session.getState().lockedTraySlotCount;
@@ -180,7 +156,7 @@ describe("狗了个狗 v13 关卡生成 seam", () => {
     const level = generator.generate({
       levelNumber: 16,
       runSeed: "v13-operation-path-replay",
-      generatorVersion: LEVEL_GENERATOR_VERSION,
+      generatorVersion: DOG_V13_CONFIG.game.generatorVersion,
     });
     const replayed = generator.replay(level.generation.replay);
     expect(replayed).toEqual(level);

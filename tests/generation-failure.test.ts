@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  LEVEL_GENERATOR_VERSION,
+  DOG_V13_CONFIG,
   MAX_LEVEL_GENERATION_ATTEMPTS,
   LevelGenerator,
 } from "@/games/dog-lege-dog";
@@ -12,9 +12,9 @@ describe("LevelGenerator 候选筛选失败", () => {
     });
     const request = {
       levelNumber: 2,
-      seed: "qa-filter-failure",
+      runSeed: "qa-filter-failure",
       testSeed: "qa-filter-test-seed",
-      generatorVersion: LEVEL_GENERATOR_VERSION,
+      generatorVersion: DOG_V13_CONFIG.game.generatorVersion,
     } as const;
 
     const level = generator.generate(request);
@@ -35,16 +35,22 @@ describe("LevelGenerator 候选筛选失败", () => {
     expect(level.generation.failures).toHaveLength(MAX_LEVEL_GENERATION_ATTEMPTS);
     expect(failure).toMatchObject({
       levelNumber: request.levelNumber,
-      seed: request.seed,
+      runSeed: request.runSeed,
       testSeed: request.testSeed,
       generatorVersion: request.generatorVersion,
     });
     expect(failure).toBeDefined();
 
-    const replayedFailure = generator.replayFailure(failure!);
+    const replayedFailure = generator.replayAttempt(failure!);
     expect(replayedFailure).toMatchObject({
       number: request.levelNumber,
       seed: level.seed,
+      runSeed: request.runSeed,
+    });
+    expect(replayedFailure.generation.replay).toMatchObject({
+      attempt: failure!.attempt,
+      randomSeed: failure!.randomSeed,
+      testSeed: request.testSeed,
     });
     expect(replayedFailure.blocks).toEqual(
       generator.replayAttempt(failure!).blocks,

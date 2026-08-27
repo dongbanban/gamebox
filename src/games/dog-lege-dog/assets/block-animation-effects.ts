@@ -3,7 +3,7 @@ import {
   type CancellableAnimation,
 } from "@/games/dog-lege-dog/assets/animation-lifecycle";
 import { getDogBlockVisualMetrics } from "@/games/dog-lege-dog/visual-metrics";
-import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/game-config";
+import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
 import {
   BLOCK_FLIGHT_DURATION_MS,
   DOG_DETECTOR_REVEAL_DURATION_MS,

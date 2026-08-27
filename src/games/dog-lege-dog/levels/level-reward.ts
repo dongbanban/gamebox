@@ -1,4 +1,4 @@
-import { DEFAULT_LEVEL_REWARD } from "@/games/dog-lege-dog/game/game-config";
+import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
 import type { DogLevelDifficulty } from "@/games/dog-lege-dog/levels/level-types";
 
 export const DOG_REWARD_CONFIG_VERSION = 1 as const;
@@ -18,7 +18,7 @@ export interface DogLevelRewardConfig {
 
 export const DOG_LEVEL_REWARD_CONFIG: DogLevelRewardConfig = Object.freeze({
   version: DOG_REWARD_CONFIG_VERSION,
-  baseReward: DEFAULT_LEVEL_REWARD,
+  baseReward: DOG_V13_CONFIG.game.defaultReward,
   baselineBlockCount: 90,
   blocksPerStage: 18,
   rewardPerBlockStage: 20,

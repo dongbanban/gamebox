@@ -3,9 +3,6 @@ import type {
   GameResultAction,
   GameResultDisplay,
 } from "@/game-contracts";
-import {
-  DOG_GAME_ID,
-} from "@/games/dog-lege-dog/game/game-config";
 import type { GameSessionSnapshot } from "@/games/dog-lege-dog/game/game-session";
 import type {
   DogLegeDogGameState,
@@ -22,7 +19,7 @@ export function createDogGameState(
   const inputLocked = isDogGameInputLocked(runtime);
 
   return {
-    gameId: DOG_GAME_ID,
+    gameId: runtime.config.game.id,
     status:
       sessionState.status === "playing" && !runtime.hasInteracted
         ? "ready"
@@ -78,7 +75,7 @@ export function createDogResult(
       : ["retry", "catalog"];
 
   return {
-    gameId: DOG_GAME_ID,
+    gameId: runtime.config.game.id,
     levelNumber: runtime.level.number,
     status,
     reward: status === "won" ? runtime.level.reward : 0,
