@@ -20,7 +20,10 @@ import {
   type DogPatternType,
 } from "@/games/dog-lege-dog";
 import type { GameLaunchContext } from "@/game-contracts";
-import { renderDogPatternAsset } from "@/games/dog-lege-dog/assets/game-assets";
+import {
+  getDogPatternClassName,
+  renderDogPatternAsset,
+} from "@/games/dog-lege-dog/assets/game-assets";
 import {
   DOG_BLOCK_VISUAL_SIZE_PX,
   DOG_BOARD_SAFE_MARGIN_PX,
@@ -653,17 +656,26 @@ describe("狗了个狗首关", () => {
     const illusionThumbnail = root.querySelector<HTMLElement>(
       '[data-testid="dog-special-mechanism-thumbnail"][data-special-mechanism="illusion"]',
     );
+    const illusionBlock = game.getState().level.blocks.find(
+      (block) => block.specialMechanism?.type === DOG_ILLUSION_MECHANISM_TYPE,
+    );
+    const twinThumbnail = root.querySelector<HTMLElement>(
+      `[data-testid="dog-special-mechanism-thumbnail"][data-special-mechanism="${DOG_TWIN_MECHANISM_TYPE}"]`,
+    );
     expect(freezeThumbnail?.classList.contains("dog-block--mechanism-preview")).toBe(true);
     expect(freezeThumbnail?.classList.contains("dog-block--special-freeze")).toBe(true);
     expect(freezeThumbnail?.querySelector("img")).not.toBeNull();
     expect(illusionThumbnail?.classList.contains("dog-block--mechanism-preview")).toBe(true);
-    expect(illusionThumbnail?.classList.contains("dog-block--special-illusion")).toBe(true);
-    expect(illusionThumbnail?.querySelector(".dog-block__glyph--fuzzy")).not.toBeNull();
+    expect(illusionThumbnail?.classList.contains("dog-block--special-illusion")).toBe(false);
+    expect(illusionBlock).not.toBeUndefined();
     expect(
-      root.querySelector<HTMLElement>(
-        `[data-testid="dog-special-mechanism-thumbnail"][data-special-mechanism="${DOG_TWIN_MECHANISM_TYPE}"]`,
-      )?.classList.contains("dog-block--special-twin"),
+      illusionThumbnail?.classList.contains(
+        `dog-block--${getDogPatternClassName(illusionBlock?.patternType ?? "傻狗")}`,
+      ),
     ).toBe(true);
+    expect(illusionThumbnail?.querySelector(".dog-block__glyph--fuzzy")).toBeNull();
+    expect(twinThumbnail?.classList.contains("dog-block--special-twin")).toBe(false);
+    expect(twinThumbnail?.querySelector(".dog-block__glyph")).not.toBeNull();
     expect(root.querySelectorAll(".dog-special-mechanism-card__icon")).toHaveLength(0);
     expect(root.querySelector('[data-testid="dog-special-mechanism-modal"]')?.textContent).toContain(
       "冻结方块",

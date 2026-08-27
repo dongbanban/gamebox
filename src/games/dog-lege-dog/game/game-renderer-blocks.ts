@@ -100,7 +100,7 @@ export function renderDogBlock(
   return `
     <button
       type="button"
-      class="dog-block dog-block--${className}${mechanismClass}${targetClass}"
+      class="dog-block dog-block--board dog-block--${className}${mechanismClass}${targetClass}"
       data-testid="dog-block"
       data-block-id="${block.id}"
       data-pattern-type="${block.patternType}"

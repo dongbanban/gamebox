@@ -1,12 +1,12 @@
 import type { DogLegeDogLevel } from "@/games/dog-lege-dog/levels/first-level";
 import {
   getDogPatternClassName,
-  getDogPatternAssetUrl,
   renderDogPatternAsset,
 } from "@/games/dog-lege-dog/assets/game-assets";
 import {
   DOG_ILLUSION_MECHANISM_TYPE,
   DOG_MAGNETIC_MECHANISM_TYPE,
+  DOG_TWIN_MECHANISM_TYPE,
   getDogIllusionDisguisedPattern,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
 import {
@@ -69,23 +69,25 @@ export function renderDogSpecialMechanismThumbnail(
   block: DogLegeDogLevel["blocks"][number],
   config: DogV13Config = DOG_V13_CONFIG,
 ): string {
-  const displayPatternType = getDogIllusionDisguisedPattern(block);
-  const isIllusion = block.specialMechanism?.type === DOG_ILLUSION_MECHANISM_TYPE;
-  const glyphClass = isIllusion
-    ? "dog-block__glyph dog-block__glyph--fuzzy"
-    : "dog-block__glyph";
-  const illusionStyle = isIllusion
-    ? ` style="--dog-illusion-image: url(${getDogPatternAssetUrl(displayPatternType, config)});"`
-    : "";
+  const mechanismType = block.specialMechanism?.type;
+  const ordinaryVisual = isOrdinaryMechanismPreview(mechanismType);
+  const displayPatternType = ordinaryVisual
+    ? block.patternType
+    : getDogIllusionDisguisedPattern(block);
+  const previewMechanismType = ordinaryVisual ? undefined : mechanismType;
 
   return `
     <span
-      class="dog-special-mechanism-card__thumbnail dog-block dog-block--${getDogPatternClassName(displayPatternType)}${getSpecialMechanismClass(block.specialMechanism?.type)} dog-block--mechanism-preview"
+      class="dog-special-mechanism-card__thumbnail dog-block dog-block--${getDogPatternClassName(displayPatternType)}${getSpecialMechanismClass(previewMechanismType)} dog-block--mechanism-preview"
       data-testid="dog-special-mechanism-thumbnail"
       ${renderSpecialMechanismAttributes(block.specialMechanism)}
-      aria-hidden="true"${illusionStyle}
-    ><span class="${glyphClass}">${renderDogPatternAsset(displayPatternType, config)}</span>${renderSpecialMechanismIcon(block.specialMechanism?.type)}</span>
+      aria-hidden="true"
+    ><span class="dog-block__glyph">${renderDogPatternAsset(displayPatternType, config)}</span>${renderSpecialMechanismIcon(previewMechanismType)}</span>
   `;
+}
+
+function isOrdinaryMechanismPreview(type: string | undefined): boolean {
+  return type === DOG_ILLUSION_MECHANISM_TYPE || type === DOG_TWIN_MECHANISM_TYPE;
 }
 
 export function getSpecialMechanismClass(type: string | undefined): string {

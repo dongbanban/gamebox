@@ -28,15 +28,26 @@ describe("狗了个狗 UI rendering seams", () => {
       type: "illusion",
       state: { status: "disguised", disguisedPatternType: "打工狗" },
     });
+    const twinBlock = createBlock("twin", "傻狗", {
+      type: "twin",
+      state: { status: "twin" },
+    });
 
     const ordinary = renderDogBlock(ordinaryBlock, createBlockRenderOptions(ordinaryBlock));
     const illusion = renderDogBlock(illusionBlock, createBlockRenderOptions(illusionBlock));
+    const twin = renderDogBlock(twinBlock, createBlockRenderOptions(twinBlock));
 
     expect(ordinary).toContain('data-block-id="ordinary"');
     expect(ordinary).toContain("dog-block--silly-dog");
+    expect(ordinary).toContain("dog-block--board");
     expect(ordinary).not.toContain("data-special-mechanism=");
     expect(illusion).toContain('data-special-mechanism="illusion"');
     expect(illusion).toContain("data-disguised-pattern-type=\"打工狗\"");
+    expect(illusion).toContain("dog-block--board");
+    expect(illusion).toContain("dog-block__glyph--fuzzy");
+    expect(twin).toContain('data-special-mechanism="twin"');
+    expect(twin).toContain("dog-block--board");
+    expect(twin).toContain("dog-block--special-twin");
   });
 
   it("renders tray slots and mechanism thumbnails without app lifecycle", () => {
@@ -49,13 +60,26 @@ describe("狗了个狗 UI rendering seams", () => {
       type: "twin",
       state: { status: "twin" },
     });
+    const illusionBlock = createBlock("illusion", "傻狗", {
+      type: "illusion",
+      state: { status: "masked", disguisedPatternType: "打工狗" },
+    });
     const thumbnail = renderDogSpecialMechanismThumbnail(twinBlock);
+    const illusionThumbnail = renderDogSpecialMechanismThumbnail(illusionBlock);
 
     expect(tray.match(/data-testid="dog-tray-slot"/g)).toHaveLength(session.trayCapacity);
     expect(tray).toContain('data-slot-state="empty"');
     expect(thumbnail).toContain('data-testid="dog-special-mechanism-thumbnail"');
-    expect(thumbnail).toContain("dog-block--special-twin");
+    expect(thumbnail).toContain('data-special-mechanism="twin"');
+    expect(thumbnail).toContain("dog-block--single-dog");
+    expect(thumbnail).not.toContain("dog-block--special-twin");
     expect(thumbnail).toContain("dog-block--mechanism-preview");
+    expect(illusionThumbnail).toContain('data-special-mechanism="illusion"');
+    expect(illusionThumbnail).toContain("dog-block--silly-dog");
+    expect(illusionThumbnail).not.toContain("dog-block--working-dog");
+    expect(illusionThumbnail).not.toContain("dog-block--special-illusion");
+    expect(illusionThumbnail).not.toContain("dog-block__glyph--fuzzy");
+    expect(illusionThumbnail).not.toContain("--dog-illusion-image");
 
     game.destroy();
   });

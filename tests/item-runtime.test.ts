@@ -3,15 +3,16 @@ import {
   DOG_FREEZE_MECHANISM_TYPE,
   DOG_ILLUSION_MECHANISM_TYPE,
   DOG_MAGNETIC_MECHANISM_TYPE,
-  DOG_SPECIAL_MECHANISM_GENERATOR_VERSION,
   FIRST_LEVEL,
   GameSession,
+  LEVEL_GENERATOR_VERSION,
   type DogBlock,
   type DogLegeDogLevel,
   type DogPatternType,
 } from "@/games/dog-lege-dog";
 import {
   DOG_ITEM_DEFINITIONS,
+  DOG_ITEM_IDS,
   type DogItemDefinition,
   type DogItemId,
 } from "@/games/dog-lege-dog/game/dog-loadout";
@@ -28,75 +29,32 @@ const LICKING_DOG: DogPatternType = "舔狗";
 const GUARD_DOG: DogPatternType = "看门狗";
 
 describe("DogItemRuntime", () => {
-  it("按关卡机制配置增加对应道具次数，不读取本次实际机制数量", () => {
-    const baseLevel = {
+  it("v13 非钥匙道具每关只有一次，不读取机制数量或权重 bonus", () => {
+    const level = {
       ...FIRST_LEVEL,
       number: 1,
-      generatorVersion: DOG_SPECIAL_MECHANISM_GENERATOR_VERSION,
-      specialMechanisms: [
-        { type: DOG_FREEZE_MECHANISM_TYPE, min: 1, max: 2 },
-        { type: DOG_ILLUSION_MECHANISM_TYPE, min: 1, max: 2 },
-      ],
-    } satisfies DogLegeDogLevel;
-    const highMechanismLevel = {
-      ...baseLevel,
+      generatorVersion: LEVEL_GENERATOR_VERSION,
       specialMechanisms: [
         { type: DOG_FREEZE_MECHANISM_TYPE, min: 3, max: 4 },
         { type: DOG_ILLUSION_MECHANISM_TYPE, min: 3, max: 5 },
+        { type: DOG_MAGNETIC_MECHANISM_TYPE, min: 3, max: 5, densityWeight: 2 },
       ],
     } satisfies DogLegeDogLevel;
 
-    expect(getDogItemUses(highMechanismLevel, "torch")).toBeGreaterThan(
-      getDogItemUses(baseLevel, "torch"),
-    );
-    expect(getDogItemUses(highMechanismLevel, "wildcard")).toBeGreaterThan(
-      getDogItemUses(baseLevel, "wildcard"),
-    );
-    expect(getDogItemUses(highMechanismLevel, "detector")).toBeGreaterThan(
-      getDogItemUses(baseLevel, "detector"),
-    );
+    const nonKeyItemIds = DOG_ITEM_IDS.filter((itemId) => itemId !== "key");
+    expect(nonKeyItemIds.every((itemId) => getDogItemUses(level, itemId) === 1)).toBe(true);
+    expect(getDogItemUses(level, "key")).toBe(0);
 
-    const magneticLevel = {
-      ...baseLevel,
-      specialMechanisms: [
-        { type: "magnetic", min: 1, max: 2 },
-      ],
-    };
-    const highMagneticLevel = {
-      ...baseLevel,
-      specialMechanisms: [
-        { type: "magnetic", min: 3, max: 4 },
-      ],
-    };
-    expect(getDogItemUses(magneticLevel, "demagnetizer")).toBe(1);
-    expect(getDogItemUses({ ...magneticLevel, number: 2 }, "demagnetizer")).toBe(2);
-    expect(getDogItemUses(highMagneticLevel, "demagnetizer")).toBeGreaterThan(
-      getDogItemUses(magneticLevel, "demagnetizer"),
-    );
-    expect(getDogItemUses(highMechanismLevel, "key")).toBe(0);
-
-    const weightedMechanismLevel = {
-      ...baseLevel,
-      specialMechanisms: [
-        { type: DOG_FREEZE_MECHANISM_TYPE, min: 1, max: 2 },
-        {
-          type: DOG_ILLUSION_MECHANISM_TYPE,
-          min: 1,
-          max: 2,
-          densityWeight: 2,
-        },
-      ],
-    } satisfies DogLegeDogLevel;
-    expect(getDogItemUses(weightedMechanismLevel, "detector")).toBeGreaterThan(
-      getDogItemUses(baseLevel, "detector"),
-    );
-
-    const sameConfigDifferentBlocks = {
-      ...highMechanismLevel,
-      blocks: highMechanismLevel.blocks.slice(0, 3),
-    } as DogLegeDogLevel;
-    expect(getDogItemUses(sameConfigDifferentBlocks, "torch")).toBe(
-      getDogItemUses(highMechanismLevel, "torch"),
+    const session = new GameSession(level);
+    const runtime = new DogItemRuntime({
+      level,
+      session,
+      loadout: DOG_ITEM_IDS,
+    });
+    expect(runtime.getState().items).toEqual(
+      expect.arrayContaining(
+        nonKeyItemIds.map((id) => expect.objectContaining({ id, maxUses: 1, remainingUses: 1 })),
+      ),
     );
   });
 
@@ -547,7 +505,7 @@ describe("DogItemRuntime", () => {
     });
   });
 
-  it("万能方块同一图案可重复选择，每次成功各扣一次", () => {
+  it("万能方块每关成功一次后不可再次使用", () => {
     const level = {
       ...createLevel([
         createBlock("working-hidden-1", WORKING_DOG),
@@ -556,10 +514,7 @@ describe("DogItemRuntime", () => {
         createBlock("single-cover-2", SINGLE_DOG, undefined, { x: 8, z: 1 }),
       ]),
       number: 2,
-      generatorVersion: DOG_SPECIAL_MECHANISM_GENERATOR_VERSION,
-      specialMechanisms: [
-        { type: DOG_FREEZE_MECHANISM_TYPE, min: 1, max: 2 },
-      ],
+      generatorVersion: LEVEL_GENERATOR_VERSION,
     };
     const session = new GameSession({
       level,
@@ -567,19 +522,20 @@ describe("DogItemRuntime", () => {
     });
     const runtime = new DogItemRuntime({ level, session, loadout: ["wildcard"] });
 
-    for (const expectedRemainingUses of [1, 0]) {
-      expect(runtime.begin("wildcard")).toMatchObject({
-        accepted: true,
-        requiresTarget: true,
-      });
-      expect(
-        runtime.confirmTarget({ type: "tray-block", blockId: "target-working" }),
-      ).toMatchObject({ accepted: true, success: true });
-      runtime.completeAnimation();
-      expect(runtime.getState().items[0]?.remainingUses).toBe(expectedRemainingUses);
-    }
+    expect(runtime.begin("wildcard")).toMatchObject({
+      accepted: true,
+      requiresTarget: true,
+    });
+    expect(
+      runtime.confirmTarget({ type: "tray-block", blockId: "target-working" }),
+    ).toMatchObject({ accepted: true, success: true });
+    runtime.completeAnimation();
+    expect(runtime.getState().items[0]).toMatchObject({ remainingUses: 0, available: false });
 
-    expect(session.getState().trayBlocks).toEqual([]);
+    expect(session.getState().trayBlocks).toMatchObject([
+      { id: "target-working", patternType: WORKING_DOG },
+      { patternType: WORKING_DOG, visualMarker: "wildcard" },
+    ]);
     expect(runtime.begin("wildcard")).toMatchObject({ accepted: false, success: false });
   });
 
