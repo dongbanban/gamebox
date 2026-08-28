@@ -2,6 +2,7 @@ import {
   type DogConfigChangeArea,
   type DogV13ConfigIssue,
   type DogV13ItemId,
+  DOG_V13_MECHANISM_TYPES,
   type DogV13MechanismType,
 } from "@/games/dog-lege-dog/game/v13-config-types";
 import { DOG_PATTERN_TYPES } from "@/games/dog-lege-dog/levels/level-types";
@@ -161,15 +162,16 @@ export function validateSpecialMechanisms(value: unknown, issues: DogV13ConfigIs
   if (special.remainderStrategy !== "stable-round-robin") issues.push({ path: "specialMechanisms.remainderStrategy", code: "value", message: "必须是 stable-round-robin" });
   if (special.requireAllTypes !== true) issues.push({ path: "specialMechanisms.requireAllTypes", code: "value", message: "必须为 true" });
   validateInteger(special.freezeMeltTripleCount, "specialMechanisms.freezeMeltTripleCount", 1, issues);
+  validateShuffleConfig(special.shuffle, issues);
   const mechanisms = special.mechanisms;
   if (!Array.isArray(mechanisms) || mechanisms.length === 0) {
     issues.push({ path: "specialMechanisms.mechanisms", code: "required", message: "必须包含机制定义" });
     return;
   }
-  const expectedTypes: readonly DogV13MechanismType[] = ["freeze", "illusion", "magnetic", "twin"];
+  const requiredTypes: readonly DogV13MechanismType[] = ["freeze", "illusion", "magnetic", "twin"];
   const types = mechanisms.map((mechanism) => asRecord(mechanism)?.type);
   validateUnique(types, "specialMechanisms.mechanisms.type", issues);
-  for (const type of expectedTypes) {
+  for (const type of requiredTypes) {
     if (!types.includes(type)) issues.push({ path: "specialMechanisms.mechanisms", code: "relation", message: `必须包含 ${type}` });
   }
   for (const [index, mechanism] of mechanisms.entries()) {
@@ -178,7 +180,7 @@ export function validateSpecialMechanisms(value: unknown, issues: DogV13ConfigIs
       issues.push({ path: `specialMechanisms.mechanisms[${index}]`, code: "type", message: "必须是对象" });
       continue;
     }
-    if (!expectedTypes.includes(record.type as DogV13MechanismType)) {
+    if (!DOG_V13_MECHANISM_TYPES.includes(record.type as DogV13MechanismType)) {
       issues.push({ path: `specialMechanisms.mechanisms[${index}].type`, code: "value", message: "机制类型不受支持" });
     }
     validateInteger(record.logicalUnitWeight, `specialMechanisms.mechanisms[${index}].logicalUnitWeight`, 1, issues);
@@ -188,6 +190,43 @@ export function validateSpecialMechanisms(value: unknown, issues: DogV13ConfigIs
       issues.push({ path: `specialMechanisms.mechanisms[${index}].logicalUnitWeight`, code: "value", message: `${String(record.type)} 的 v13 权重必须是 ${expectedWeight}` });
     }
   }
+}
+
+function validateShuffleConfig(value: unknown, issues: DogV13ConfigIssue[]): void {
+  const shuffle = asRecord(value);
+  if (shuffle === undefined) {
+    issues.push({
+      path: "specialMechanisms.shuffle",
+      code: "required",
+      message: "必须是对象",
+    });
+    return;
+  }
+
+  if (typeof shuffle.enabled !== "boolean") {
+    issues.push({ path: "specialMechanisms.shuffle.enabled", code: "type", message: "必须是布尔值" });
+  }
+  validateInteger(shuffle.firstLevelNumber, "specialMechanisms.shuffle.firstLevelNumber", 1, issues, 3);
+  validateInteger(shuffle.maxPerLevel, "specialMechanisms.shuffle.maxPerLevel", 1, issues, 1);
+  const threshold = asRecord(shuffle.threshold);
+  if (threshold === undefined) {
+    requiredObject(shuffle, "threshold", issues, "specialMechanisms.shuffle");
+    return;
+  }
+  validateInteger(
+    threshold.maxLogicalUnitCount,
+    "specialMechanisms.shuffle.threshold.maxLogicalUnitCount",
+    1,
+    issues,
+    5,
+  );
+  validateInteger(
+    threshold.capacityBuffer,
+    "specialMechanisms.shuffle.threshold.capacityBuffer",
+    0,
+    issues,
+    2,
+  );
 }
 
 export function validateDifficulty(value: unknown, maxLevelValue: unknown, issues: DogV13ConfigIssue[]): void {

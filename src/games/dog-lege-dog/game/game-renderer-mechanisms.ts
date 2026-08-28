@@ -6,6 +6,7 @@ import {
 import {
   DOG_ILLUSION_MECHANISM_TYPE,
   DOG_MAGNETIC_MECHANISM_TYPE,
+  DOG_SHUFFLE_MECHANISM_TYPE,
   DOG_TWIN_MECHANISM_TYPE,
   getDogIllusionDisguisedPattern,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
@@ -87,7 +88,9 @@ export function renderDogSpecialMechanismThumbnail(
 }
 
 export function isDogBoardOrdinaryVisual(type: string | undefined): boolean {
-  return type === DOG_ILLUSION_MECHANISM_TYPE || type === DOG_TWIN_MECHANISM_TYPE;
+  return type === DOG_ILLUSION_MECHANISM_TYPE ||
+    type === DOG_SHUFFLE_MECHANISM_TYPE ||
+    type === DOG_TWIN_MECHANISM_TYPE;
 }
 
 export function getSpecialMechanismClass(type: string | undefined): string {

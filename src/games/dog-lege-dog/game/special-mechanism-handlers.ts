@@ -2,6 +2,7 @@ import {
   DOG_PATTERN_TYPES,
   type DogBlock,
   type DogPatternType,
+  type DogShuffleMechanismStatus,
   type DogSpecialMechanism,
   type DogSpecialMechanismHandler,
   type DogSpecialMechanismStateValue,
@@ -20,6 +21,11 @@ export const DOG_ILLUSION_MECHANISM_TYPE = "illusion" as const;
 export const DOG_ILLUSION_MASK_STATUS = "masked" as const;
 export const DOG_MAGNETIC_MECHANISM_TYPE = "magnetic" as const;
 export const DOG_TWIN_MECHANISM_TYPE = "twin" as const;
+export const DOG_SHUFFLE_MECHANISM_TYPE = "shuffle" as const;
+export const DOG_SHUFFLE_DORMANT_STATUS = "dormant" as const;
+export const DOG_SHUFFLE_ARMED_STATUS = "armed" as const;
+export const DOG_SHUFFLE_TRIGGERABLE_STATUS = "triggerable" as const;
+export const DOG_SHUFFLE_CONSUMED_STATUS = "consumed" as const;
 export const DOG_SPECIAL_MECHANISM_DENSITY_LIMIT =
   DOG_V13_CONFIG.specialMechanisms.logicalBudgetRatio;
 export const DOG_SPECIAL_MECHANISM_MIDDLE_LAYER_RATIO = 0.7 as const;
@@ -60,6 +66,12 @@ export function createDogSpecialMechanismHandlers(
       onEnterTray: splitTwinBlock,
       onSuccessfulTriples: keepTwinBlock,
     }),
+    Object.freeze({
+      type: DOG_SHUFFLE_MECHANISM_TYPE,
+      isMatchable: () => true,
+      onEnterTray: keepShuffleBlock,
+      onSuccessfulTriples: keepShuffleBlock,
+    }),
   ]);
 }
 
@@ -90,7 +102,36 @@ export function createDogSpecialMechanism(type: string): DogSpecialMechanism {
       state: Object.freeze({ status: DOG_TWIN_MECHANISM_TYPE }),
     });
   }
+  if (type === DOG_SHUFFLE_MECHANISM_TYPE) {
+    return createDogShuffleMechanism();
+  }
   throw new Error(`狗了个狗 special mechanism is unsupported: ${type}`);
+}
+
+export function createDogShuffleMechanism(): DogSpecialMechanism {
+  return Object.freeze({
+    type: DOG_SHUFFLE_MECHANISM_TYPE,
+    state: Object.freeze({ status: DOG_SHUFFLE_DORMANT_STATUS }),
+  });
+}
+
+export function getDogShuffleMechanismStatus(
+  mechanism: Pick<DogSpecialMechanism, "type" | "state"> | undefined,
+): DogShuffleMechanismStatus {
+  if (mechanism?.type !== DOG_SHUFFLE_MECHANISM_TYPE) {
+    return DOG_SHUFFLE_DORMANT_STATUS;
+  }
+
+  const status = mechanism.state.status;
+  return isDogShuffleMechanismStatus(status) ? status : DOG_SHUFFLE_DORMANT_STATUS;
+}
+
+export function armDogShuffleBlock(block: DogTrayBlock): DogTrayBlock {
+  return withDogShuffleStatus(block, DOG_SHUFFLE_DORMANT_STATUS, DOG_SHUFFLE_ARMED_STATUS);
+}
+
+export function triggerDogShuffleBlock(block: DogTrayBlock): DogTrayBlock {
+  return withDogShuffleStatus(block, DOG_SHUFFLE_ARMED_STATUS, DOG_SHUFFLE_TRIGGERABLE_STATUS);
 }
 
 export function createDogIllusionMechanism(
@@ -196,8 +237,42 @@ function keepTwinBlock(block: DogTrayBlock): DogTrayBlock {
   return block;
 }
 
+function keepShuffleBlock(block: DogTrayBlock): DogTrayBlock {
+  return block;
+}
+
+function withDogShuffleStatus(
+  block: DogTrayBlock,
+  expectedStatus: DogShuffleMechanismStatus,
+  nextStatus: DogShuffleMechanismStatus,
+): DogTrayBlock {
+  if (
+    block.specialMechanism?.type !== DOG_SHUFFLE_MECHANISM_TYPE ||
+    getDogShuffleMechanismStatus(block.specialMechanism) !== expectedStatus
+  ) {
+    return block;
+  }
+
+  return {
+    ...block,
+    specialMechanism: {
+      ...block.specialMechanism,
+      state: { ...block.specialMechanism.state, status: nextStatus },
+    },
+  };
+}
+
 function isDogPatternType(value: DogSpecialMechanismStateValue): value is DogPatternType {
   return typeof value === "string" && DOG_PATTERN_TYPES.includes(value as DogPatternType);
+}
+
+function isDogShuffleMechanismStatus(
+  value: DogSpecialMechanismStateValue,
+): value is DogShuffleMechanismStatus {
+  return value === DOG_SHUFFLE_DORMANT_STATUS ||
+    value === DOG_SHUFFLE_ARMED_STATUS ||
+    value === DOG_SHUFFLE_TRIGGERABLE_STATUS ||
+    value === DOG_SHUFFLE_CONSUMED_STATUS;
 }
 
 function getCompletedTriples(mechanism: DogSpecialMechanism): number {

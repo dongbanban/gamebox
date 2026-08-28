@@ -2,6 +2,7 @@ import type {
   DogBlock,
   DogLegeDogLevel,
   DogPatternType,
+  DogShuffleMechanismStatus,
   DogSpecialMechanismHandler,
   DogTrayBlock,
 } from "@/games/dog-lege-dog/levels/level-types";
@@ -30,7 +31,14 @@ export interface GameSessionSnapshot {
   readonly lockedTraySlotCount: number;
   readonly remainingLogicalUnitCount: number;
   readonly trayLogicalUnitCount: number;
+  readonly shuffle: GameSessionShuffleState | null;
   readonly selectableBlockIds: readonly string[];
+}
+
+export interface GameSessionShuffleState {
+  readonly blockId: string;
+  readonly status: DogShuffleMechanismStatus;
+  readonly threshold: number;
 }
 
 export interface GameSessionUnlockResult extends GameSessionSnapshot {

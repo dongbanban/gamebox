@@ -18,6 +18,12 @@ export type DogPatternType = (typeof DOG_PATTERN_TYPES)[number];
 
 export type DogSpecialMechanismStateValue = string | number | boolean | null;
 
+export type DogShuffleMechanismStatus =
+  | "dormant"
+  | "armed"
+  | "triggerable"
+  | "consumed";
+
 /** Opaque mechanism payload owned by the concrete game. */
 export interface DogSpecialMechanism {
   readonly type: string;

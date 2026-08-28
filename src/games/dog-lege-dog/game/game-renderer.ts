@@ -18,6 +18,7 @@ import { renderDogSpecialMechanismModal } from "@/games/dog-lege-dog/game/game-r
 import { getActiveItemTargetBlockIds } from "@/games/dog-lege-dog/game/game-renderer-targets";
 import {
   renderDogMatchFeedback,
+  renderDogShuffleStatus,
   renderDogStatusMessage,
   renderDogTray,
   renderDogTraySlots,
@@ -123,6 +124,7 @@ function updateDogLegeDogGame(
   const statusElement = gameRoot.querySelector<HTMLElement>('[data-testid="dog-status"]');
   const tray = gameRoot.querySelector<HTMLElement>('[data-testid="dog-tray-region"]');
   const traySlots = tray?.querySelector<HTMLOListElement>('[data-testid="dog-tray"]');
+  const shuffleStatusElement = tray?.querySelector<HTMLElement>('[data-testid="dog-shuffle-status"]') ?? null;
   const loadoutSlot = gameRoot.querySelector<HTMLElement>('[data-testid="dog-loadout-slot"]');
   const itemTargetBlockIds = getActiveItemTargetBlockIds(state);
 
@@ -164,6 +166,16 @@ function updateDogLegeDogGame(
     traySlots.dataset.trayFreeCapacity = String(state.session.trayFreeCapacity);
     traySlots.dataset.lockedTraySlotCount = String(state.session.lockedTraySlotCount);
     traySlots.innerHTML = renderDogTraySlots(state.session, state.items?.selectedItemTargetType ?? null, state.items?.selectedItemId ?? null, itemTargetBlockIds, config);
+  }
+  const shuffleStatusMarkup = renderDogShuffleStatus(state.session, config);
+  if (shuffleStatusElement !== null) {
+    if (shuffleStatusMarkup === "") {
+      shuffleStatusElement.remove();
+    } else {
+      shuffleStatusElement.outerHTML = shuffleStatusMarkup;
+    }
+  } else if (shuffleStatusMarkup !== "" && tray !== null && tray !== undefined && traySlots !== null && traySlots !== undefined) {
+    traySlots.insertAdjacentHTML("beforebegin", shuffleStatusMarkup);
   }
   if (loadoutSlot !== null) {
     updateDogLoadoutArea(loadoutSlot, state, config);

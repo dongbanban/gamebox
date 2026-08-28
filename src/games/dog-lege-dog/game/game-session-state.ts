@@ -16,13 +16,18 @@ import {
   createDogSpecialMechanismHandlerMap,
   createDogSpecialMechanismHandlers,
   DOG_SPECIAL_MECHANISM_HANDLERS,
+  armDogShuffleBlock,
+  DOG_SHUFFLE_MECHANISM_TYPE,
   DOG_TWIN_MECHANISM_TYPE,
   getDogLogicalBlockCount,
+  getDogShuffleMechanismStatus,
   getDogTrayLogicalUnitCount,
+  triggerDogShuffleBlock,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
 import { SeededRandom } from "@/games/dog-lege-dog/levels/level-random";
 import {
   DOG_V13_CONFIG,
+  getDogShuffleThreshold,
   type DogV13Config,
 } from "@/games/dog-lege-dog/game/v13-config";
 import type {
@@ -134,6 +139,7 @@ export class GameSessionState {
       lockedTraySlotCount: this.lockedTraySlotCount,
       remainingLogicalUnitCount: getDogLogicalBlockCount([...this.remainingBlocks.values()]),
       trayLogicalUnitCount: getDogTrayLogicalUnitCount(trayBlocks),
+      shuffle: this.getShuffleState(),
       selectableBlockIds: Object.freeze(this.getSelectableBlockIds()),
     });
   }
@@ -173,6 +179,7 @@ export class GameSessionState {
     }
 
     this.trayCapacity += 1;
+    this.updateResult();
     return true;
   }
 
@@ -247,6 +254,7 @@ export class GameSessionState {
       return;
     }
 
+    this.updateShuffleState();
     const trayLogicalUnitCount = getDogTrayLogicalUnitCount(this.tray);
     const effectiveTrayCapacity = this.getEffectiveTrayCapacity();
     if (trayLogicalUnitCount > effectiveTrayCapacity) {
@@ -272,6 +280,42 @@ export class GameSessionState {
     ) {
       this.status = "lost";
     }
+  }
+
+  private updateShuffleState(): void {
+    const threshold = this.getShuffleThreshold();
+    const trayLogicalUnitCount = getDogTrayLogicalUnitCount(this.tray);
+    for (let index = 0; index < this.tray.length; index += 1) {
+      const block = this.tray[index];
+      if (block === undefined) {
+        continue;
+      }
+
+      const armedBlock = armDogShuffleBlock(block);
+      const nextBlock = trayLogicalUnitCount >= threshold
+        ? triggerDogShuffleBlock(armedBlock)
+        : armedBlock;
+      this.tray[index] = nextBlock;
+    }
+  }
+
+  private getShuffleThreshold(): number {
+    return getDogShuffleThreshold(this.getEffectiveTrayCapacity(), this.config);
+  }
+
+  private getShuffleState(): GameSessionSnapshot["shuffle"] {
+    const shuffleBlock = this.tray.find(
+      (block) => block.specialMechanism?.type === DOG_SHUFFLE_MECHANISM_TYPE,
+    );
+    if (shuffleBlock === undefined) {
+      return null;
+    }
+
+    return Object.freeze({
+      blockId: shuffleBlock.id,
+      status: getDogShuffleMechanismStatus(shuffleBlock.specialMechanism),
+      threshold: this.getShuffleThreshold(),
+    });
   }
 
   getVisibleTrayBlocks(): DogTrayBlock[] {

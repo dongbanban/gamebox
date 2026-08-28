@@ -152,7 +152,7 @@ function validateSpecialMechanismCopy(value: unknown, path: string, issues: DogV
   for (const key of ["title", "hint", "empty", "closeLabel", "fallbackDescription"]) {
     validateNonEmptyString(copy[key], `${path}.${key}`, issues);
   }
-  validatePresentationMap(copy.presentations, `${path}.presentations`, ["freeze", "illusion", "magnetic", "twin"], issues);
+  validatePresentationMap(copy.presentations, `${path}.presentations`, ["freeze", "illusion", "magnetic", "twin", "shuffle"], issues);
 }
 
 function validateItemCopyMap(
@@ -192,6 +192,16 @@ function validatePresentationMap(value: unknown, path: string, keys: readonly st
     }
     validateNonEmptyString(presentation.name, `${path}.${key}.name`, issues);
     validateNonEmptyString(presentation.description, `${path}.${key}.description`, issues);
+    if (presentation.stateLabels !== undefined) {
+      const stateLabels = asRecord(presentation.stateLabels);
+      if (stateLabels === undefined) {
+        issues.push({ path: `${path}.${key}.stateLabels`, code: "type", message: "必须是对象" });
+      } else {
+        for (const [state, label] of Object.entries(stateLabels)) {
+          validateNonEmptyString(label, `${path}.${key}.stateLabels.${state}`, issues);
+        }
+      }
+    }
   }
 }
 

@@ -121,6 +121,15 @@ export const DOG_V13_CONFIG_SOURCE: DogV13Config = {
     remainderStrategy: "stable-round-robin",
     requireAllTypes: true,
     freezeMeltTripleCount: 2,
+    shuffle: {
+      enabled: false,
+      firstLevelNumber: 3,
+      maxPerLevel: 1,
+      threshold: {
+        maxLogicalUnitCount: 5,
+        capacityBuffer: 2,
+      },
+    },
     mechanisms: [
       { type: "freeze", logicalUnitWeight: 1, operationCost: 2 },
       { type: "illusion", logicalUnitWeight: 1, operationCost: 1 },
@@ -353,6 +362,16 @@ export const DOG_V13_CONFIG_SOURCE: DogV13Config = {
           twin: {
             name: "双生方块",
             description: "双生方块点击后分裂为两个相邻的普通方块，各占一个暂存槽单位并按普通顺序参与三消。",
+          },
+          shuffle: {
+            name: "乱序方块",
+            description: "乱序方块入槽并完成首次结算后进入待乱序；暂存槽达到当前阈值时交给安全乱序流程。",
+            stateLabels: {
+              dormant: "未激活",
+              armed: "待乱序",
+              triggerable: "可触发乱序",
+              consumed: "已消耗",
+            },
           },
         },
       },

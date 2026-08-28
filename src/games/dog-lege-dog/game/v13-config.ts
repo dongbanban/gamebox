@@ -6,6 +6,7 @@ import {
   type DogV13DifficultyTarget,
   type DogV13ItemId,
   type DogV13MechanismPlan,
+  type DogV13MechanismType,
   type DogV13StructureStage,
   type DogV13TestProfile,
   type DogV13TestProfileName,
@@ -98,13 +99,30 @@ export function getDogV13SpecialMechanismBudget(
   return budgetRounding === "floor" ? Math.floor(budget + Number.EPSILON) : budget;
 }
 
+export function getDogShuffleThreshold(
+  effectiveTrayCapacity: number,
+  config: DogV13Config = DOG_V13_CONFIG,
+): number {
+  if (!Number.isSafeInteger(effectiveTrayCapacity) || effectiveTrayCapacity < 1) {
+    throw new Error("狗了个狗 shuffle effective tray capacity must be a positive integer");
+  }
+
+  const { maxLogicalUnitCount, capacityBuffer } = config.specialMechanisms.shuffle.threshold;
+  return Math.min(
+    maxLogicalUnitCount,
+    Math.max(0, effectiveTrayCapacity - capacityBuffer),
+  );
+}
+
 export function getDogV13MechanismPlan(
   logicalBlockCount: number,
   config: DogV13Config = DOG_V13_CONFIG,
 ): DogV13MechanismPlan {
   const budget = getDogV13SpecialMechanismBudget(logicalBlockCount, config);
   const definitions = config.specialMechanisms.mechanisms;
-  const counts = Object.fromEntries(definitions.map((definition) => [definition.type, 0])) as Record<string, number>;
+  const counts = Object.fromEntries(
+    definitions.map((definition) => [definition.type, 0]),
+  ) as Record<DogV13MechanismType, number>;
   const requiredLogicalUnits = definitions.reduce((total, definition) => total + definition.logicalUnitWeight, 0);
   if (config.specialMechanisms.requireAllTypes && budget < requiredLogicalUnits) {
     throw new Error(`狗了个狗 v13 special mechanism budget ${budget} cannot include all mechanism types`);
@@ -126,7 +144,7 @@ export function getDogV13MechanismPlan(
   }
   return Object.freeze({
     budget,
-    counts: Object.freeze(counts) as Readonly<Record<keyof DogV13MechanismPlan["counts"], number>>,
+    counts: Object.freeze(counts),
     logicalUnitCount: budget - remaining,
     physicalBlockCount: Object.values(counts).reduce((total, count) => total + count, 0),
     unallocatedLogicalUnitCount: remaining,

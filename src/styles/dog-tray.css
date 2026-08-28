@@ -68,6 +68,14 @@
   background: #e7f5fc;
 }
 
+.dog-tray__shuffle-status {
+  margin: 0 0 12px;
+  color: #16445d;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
 .dog-tray__slots {
   display: grid;
   grid-template-columns: repeat(var(--dog-tray-columns, 7), minmax(0, 1fr));

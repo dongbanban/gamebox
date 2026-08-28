@@ -2,7 +2,14 @@ import type { DogPatternType } from "@/games/dog-lege-dog/levels/level-types";
 
 export const DOG_V13_SCHEMA_VERSION = 13 as const;
 
-export type DogV13MechanismType = "freeze" | "illusion" | "magnetic" | "twin";
+export type DogV13MechanismType = "freeze" | "illusion" | "magnetic" | "twin" | "shuffle";
+export const DOG_V13_MECHANISM_TYPES: readonly DogV13MechanismType[] = [
+  "freeze",
+  "illusion",
+  "magnetic",
+  "twin",
+  "shuffle",
+];
 export type DogV13ParticleEffectName = "match" | "won" | "lost";
 export type DogV13ItemId =
   | "triple-removal"
@@ -54,6 +61,16 @@ export interface DogV13MechanismDefinition {
   readonly operationCost: number;
 }
 
+export interface DogV13ShuffleConfig {
+  readonly enabled: boolean;
+  readonly firstLevelNumber: number;
+  readonly maxPerLevel: 1;
+  readonly threshold: {
+    readonly maxLogicalUnitCount: number;
+    readonly capacityBuffer: number;
+  };
+}
+
 export interface DogV13DifficultyTarget {
   readonly minLevel: number;
   readonly maxLevel: number;
@@ -98,6 +115,7 @@ export interface DogV13SoundEffectProfile {
 export interface DogV13MechanismPresentation {
   readonly name: string;
   readonly description: string;
+  readonly stateLabels?: Readonly<Record<string, string>>;
 }
 
 export interface DogV13ResultDisplay {
@@ -260,6 +278,7 @@ export interface DogV13Config {
     readonly remainderStrategy: "stable-round-robin";
     readonly requireAllTypes: true;
     readonly freezeMeltTripleCount: number;
+    readonly shuffle: DogV13ShuffleConfig;
     readonly mechanisms: readonly DogV13MechanismDefinition[];
   };
   readonly difficulty: {

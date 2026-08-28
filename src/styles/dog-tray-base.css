@@ -12,6 +12,8 @@
   .dog-demagnetizer-effect__ring,
   .dog-tray__slot--illusion-reveal::before,
   .dog-tray__slot--illusion-reveal .dog-block__glyph,
+  .dog-tray__slot--shuffle-armed,
+  .dog-tray__slot--shuffle-triggerable,
   .dog-flying-block--illusion::before,
   .dog-block--special-magnetic,
   .dog-block--special-magnetic::before,
@@ -97,6 +99,52 @@
   position: relative;
   z-index: 1;
   animation: dog-illusion-tray-glyph var(--dog-animation-duration, 420ms) ease-out both;
+}
+
+.dog-tray__slot--shuffle-armed {
+  animation: dog-shuffle-armed 1800ms ease-in-out infinite;
+}
+
+.dog-tray__slot--shuffle-triggerable {
+  animation: dog-shuffle-triggerable 1200ms ease-in-out infinite;
+}
+
+@keyframes dog-shuffle-armed {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 2px rgba(255, 209, 102, 0.34),
+      0 0 10px rgba(255, 209, 102, 0.38),
+      4px 5px 0 rgba(22, 68, 93, 0.2),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.72);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 4px rgba(255, 209, 102, 0.54),
+      0 0 20px rgba(255, 209, 102, 0.72),
+      4px 5px 0 rgba(22, 68, 93, 0.2),
+      inset 0 0 0 2px rgba(255, 255, 255, 0.94);
+  }
+}
+
+@keyframes dog-shuffle-triggerable {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 3px rgba(255, 122, 89, 0.46),
+      0 0 14px rgba(255, 122, 89, 0.6),
+      4px 5px 0 rgba(22, 68, 93, 0.2),
+      inset 0 0 0 2px rgba(255, 255, 255, 0.82);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 5px rgba(255, 122, 89, 0.72),
+      0 0 28px rgba(255, 122, 89, 0.9),
+      4px 5px 0 rgba(22, 68, 93, 0.2),
+      inset 0 0 0 3px rgba(255, 255, 255, 1);
+  }
 }
 
 @keyframes dog-illusion-tray-mask {

@@ -33,7 +33,6 @@ import {
   type DogBlock,
   type DogLegeDogLevel,
   type DogPatternType,
-  type DogTrayBlock,
   startDogLegeDogGame,
 } from "@/games/dog-lege-dog";
 import { TEST_LEVEL, TEST_PATTERN_TYPES } from "../support/dog-level-fixture";
@@ -484,18 +483,6 @@ function createBlock(
     width: BLOCK_WIDTH,
     height: BLOCK_HEIGHT,
     rotation: 0,
-    patternType,
-    ...(specialMechanism === undefined ? {} : { specialMechanism }),
-  };
-}
-
-function createTrayBlock(
-  id: string,
-  patternType: DogPatternType,
-  specialMechanism?: DogTrayBlock["specialMechanism"],
-): DogTrayBlock {
-  return {
-    id,
     patternType,
     ...(specialMechanism === undefined ? {} : { specialMechanism }),
   };
