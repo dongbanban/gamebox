@@ -37,6 +37,12 @@ test("full plan includes all release checks", () => {
     steps.map((step) => step.name),
     ["core", "worker-fallback", "random-regression", "chromium", "cross-browser", "pages-build", "diff-check", "file-line-check"],
   );
+  assert.equal(
+    steps.find((step) => step.name === "worker-fallback")?.args.includes(
+      "tests/generation-lifecycle.test.ts",
+    ),
+    true,
+  );
 });
 
 test("changed files share profile selection with affected runner", () => {

@@ -15,6 +15,7 @@ import {
   validateBoard,
   validateDifficulty,
   validateGame,
+  validateGeneration,
   validateItems,
   validateLevels,
   validateSpecialMechanisms,
@@ -31,7 +32,7 @@ export function collectConfigIssues(input: unknown): DogV13ConfigIssue[] {
   }
 
   const issues: DogV13ConfigIssue[] = [];
-  for (const key of ["game", "board", "levels", "tray", "items", "specialMechanisms", "difficulty", "animation", "assets", "audio", "ui", "testProfiles"]) {
+  for (const key of ["game", "generation", "board", "levels", "tray", "items", "specialMechanisms", "difficulty", "animation", "assets", "audio", "ui", "testProfiles"]) {
     requiredObject(input, key, issues);
   }
   if (!("schemaVersion" in input)) {
@@ -41,6 +42,7 @@ export function collectConfigIssues(input: unknown): DogV13ConfigIssue[] {
   }
 
   validateGame(input.game, issues);
+  validateGeneration(input.generation, issues);
   validateBoard(input.board, issues);
   validateLevels(input.levels, issues);
   validateTray(input.tray, issues);

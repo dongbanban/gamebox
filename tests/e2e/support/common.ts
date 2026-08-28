@@ -8,7 +8,13 @@ export async function resetPage(page: Page): Promise<void> {
 
 export async function confirmDogLoadout(page: Page): Promise<void> {
   const panel = page.getByTestId("dog-loadout-panel");
-  if (!(await panel.isVisible().catch(() => false))) {
+  const summary = page.getByTestId("dog-loadout-summary");
+  await expect
+    .poll(async () => (await panel.isVisible()) || (await summary.isVisible()), {
+      timeout: 30_000,
+    })
+    .toBe(true);
+  if (await summary.isVisible()) {
     return;
   }
 
@@ -18,7 +24,7 @@ export async function confirmDogLoadout(page: Page): Promise<void> {
     ).click();
   }
   await page.getByTestId("dog-loadout-confirm").click();
-  await expect(page.getByTestId("dog-loadout-summary")).toBeVisible();
+  await expect(summary).toBeVisible();
 }
 
 export async function acceptBeforeUnload<T>(

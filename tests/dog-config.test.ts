@@ -92,6 +92,12 @@ describe("狗了个狗 v13 集中配置", () => {
       key: { initialUses: 0, usesCappedByLockedSlots: true },
     });
     expect(DOG_V13_CONFIG.animation.blockFlightMs).toBeGreaterThan(0);
+    expect(DOG_V13_CONFIG.generation).toMatchObject({
+      preferWorker: true,
+      preGenerateNextLevel: true,
+      verifyReplayBeforePublish: true,
+    });
+    expect(DOG_V13_CONFIG.generation.workerTimeoutMs).toBeGreaterThan(0);
     expect(DOG_V13_CONFIG.assets.patterns["打工狗"]).toContain("01-working-dog.svg");
     expect(getDogTestProfile("smoke")).toMatchObject({
       levelNumbers: [1, 6, 16, 31, 99],
@@ -138,6 +144,10 @@ describe("狗了个狗 v13 集中配置", () => {
         ...DOG_V13_CONFIG.tray,
         baseCapacity: 0,
       },
+      generation: {
+        ...DOG_V13_CONFIG.generation,
+        workerTimeoutMs: 0,
+      },
     };
 
     expect(() => loadDogV13Config(invalid)).toThrow(DogV13ConfigError);
@@ -148,10 +158,15 @@ describe("狗了个狗 v13 集中配置", () => {
       expect(error).toBeInstanceOf(DogV13ConfigError);
       const configError = error as DogV13ConfigError;
       expect(configError.issues.map((issue) => issue.path)).toEqual(
-        expect.arrayContaining(["levels.maxLevelNumber", "tray.baseCapacity"]),
+        expect.arrayContaining([
+          "levels.maxLevelNumber",
+          "tray.baseCapacity",
+          "generation.workerTimeoutMs",
+        ]),
       );
       expect(configError.message).toContain("levels.maxLevelNumber");
       expect(configError.message).toContain("tray.baseCapacity");
+      expect(configError.message).toContain("generation.workerTimeoutMs");
     }
   });
 

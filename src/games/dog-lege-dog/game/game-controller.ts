@@ -1,6 +1,7 @@
 import type { GameResult } from "@/game-contracts";
 import { loadDogV13Config } from "@/games/dog-lege-dog/game/v13-config";
-import { LevelGenerator } from "@/games/dog-lege-dog/levels/level-generation-engine";
+import { generateVerifiedDogLevel } from "@/games/dog-lege-dog/levels/level-generation-verification";
+import { getPreparedDogLevel } from "@/games/dog-lege-dog/levels/level-generation-service";
 import type { DogLegeDogLevel } from "@/games/dog-lege-dog/levels/level-types";
 import { createRunSeed } from "@/games/dog-lege-dog/levels/level-random";
 import {
@@ -362,9 +363,17 @@ function createLevel(
   options: DogLegeDogGameOptions,
   config: ReturnType<typeof loadDogV13Config>,
 ): DogLegeDogLevel {
-  return new LevelGenerator({ config }).generate({
-    levelNumber: options.levelNumber ?? config.game.firstLevelNumber,
-    runSeed: options.runSeed ?? createRunSeed(),
-    generatorVersion: config.game.generatorVersion,
-  });
+  const levelNumber = options.levelNumber ?? config.game.firstLevelNumber;
+  const runSeed = options.runSeed ?? createRunSeed();
+  if (options.preparation !== undefined) {
+    return getPreparedDogLevel(options.preparation, {
+      levelNumber,
+      runSeed,
+      config,
+    });
+  }
+  return generateVerifiedDogLevel(
+    { levelNumber, runSeed, generatorVersion: config.game.generatorVersion },
+    config,
+  );
 }

@@ -81,6 +81,17 @@ function validateAppCopy(value: unknown, path: string, issues: DogV13ConfigIssue
   ]) {
     validateNonEmptyString(app[key], `${path}.${key}`, issues);
   }
+  const generation = asRecord(app.generation);
+  if (generation === undefined) {
+    requiredObject(app, "generation", issues, path);
+  } else {
+    for (const key of [
+      "loadingTitle", "loadingDescription", "errorTitle", "errorDescription", "retry",
+      "runSeed", "generatorVersion", "workerFailure", "fallbackFailure",
+    ]) {
+      validateNonEmptyString(generation[key], `${path}.generation.${key}`, issues);
+    }
+  }
   const result = asRecord(app.result);
   if (result === undefined) {
     requiredObject(app, "result", issues, path);

@@ -60,6 +60,12 @@ export const DOG_V13_CONFIG_SOURCE: DogV13Config = {
     generatorVersion: 13,
     defaultReward: 100,
   },
+  generation: {
+    preferWorker: true,
+    workerTimeoutMs: 30_000,
+    preGenerateNextLevel: true,
+    verifyReplayBeforePublish: true,
+  },
   board: {
     shape: "irregular",
     logicalCellSize: 4,
@@ -225,6 +231,17 @@ export const DOG_V13_CONFIG_SOURCE: DogV13Config = {
         persistenceTemporary: "当前为临时运行模式，刷新后进度可能丢失。",
         resetConfirmation: "确认重置本地数据？用户、游戏进度、积分与应用设置都会被清除。",
         leaveConfirmation: "当前关卡不会保存，确认离开？",
+        generation: {
+          loadingTitle: "正在生成第 {levelNumber} 关",
+          loadingDescription: "正在验证棋盘结构、特殊机制、可解性与难度。",
+          errorTitle: "关卡生成失败",
+          errorDescription: "未展示未验证棋盘。可沿用本次 runSeed 重新生成。",
+          retry: "重新生成",
+          runSeed: "runSeed",
+          generatorVersion: "生成器版本",
+          workerFailure: "Worker 诊断",
+          fallbackFailure: "同步重试诊断",
+        },
         result: {
           completedLevel: "完成关卡",
           finalReward: "最终奖励",

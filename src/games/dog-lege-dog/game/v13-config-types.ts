@@ -137,6 +137,17 @@ export interface DogV13AppCopy {
   readonly persistenceTemporary: string;
   readonly resetConfirmation: string;
   readonly leaveConfirmation: string;
+  readonly generation: {
+    readonly loadingTitle: string;
+    readonly loadingDescription: string;
+    readonly errorTitle: string;
+    readonly errorDescription: string;
+    readonly retry: string;
+    readonly runSeed: string;
+    readonly generatorVersion: string;
+    readonly workerFailure: string;
+    readonly fallbackFailure: string;
+  };
   readonly result: {
     readonly completedLevel: string;
     readonly finalReward: string;
@@ -200,6 +211,12 @@ export interface DogV13Config {
     readonly maxLevelNumber: 99;
     readonly generatorVersion: 13;
     readonly defaultReward: number;
+  };
+  readonly generation: {
+    readonly preferWorker: true;
+    readonly workerTimeoutMs: number;
+    readonly preGenerateNextLevel: true;
+    readonly verifyReplayBeforePublish: true;
   };
   readonly board: {
     readonly shape: "irregular";

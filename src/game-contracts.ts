@@ -3,6 +3,49 @@ export interface GameLaunchHandle {
   setSoundEnabled?(soundEnabled: boolean): void;
 }
 
+export interface GameLaunchPreparation {
+  readonly gameId: string;
+  readonly levelNumber: number;
+  readonly runSeed: string;
+  readonly generatorVersion: number;
+  readonly payload: unknown;
+}
+
+export interface GamePreparationContext {
+  readonly gameId: string;
+  readonly levelNumber: number;
+  readonly runSeed: string;
+  readonly config?: unknown;
+  readonly signal: AbortSignal;
+}
+
+export type GamePreparationResult =
+  | GameLaunchPreparation
+  | Promise<GameLaunchPreparation>;
+
+export type GamePreparer = (
+  context: GamePreparationContext,
+) => GamePreparationResult;
+
+export interface GamePreparationFailureDetails {
+  readonly gameId: string;
+  readonly levelNumber: number;
+  readonly runSeed: string;
+  readonly generatorVersion: number;
+  readonly workerFailure?: string;
+  readonly fallbackFailure?: string;
+}
+
+export class GamePreparationError extends Error {
+  readonly details: GamePreparationFailureDetails;
+
+  constructor(details: GamePreparationFailureDetails) {
+    super("Game preparation failed in worker and synchronous fallback");
+    this.name = "GamePreparationError";
+    this.details = Object.freeze({ ...details });
+  }
+}
+
 export type GameResultStatus = "won" | "lost";
 
 export type GameResultAction = "next-level" | "retry" | "catalog";
@@ -39,6 +82,7 @@ export interface GameLaunchContext {
   readonly runSeed?: string;
   readonly loadout?: readonly string[] | null;
   readonly config?: unknown;
+  readonly preparation?: GameLaunchPreparation;
 }
 
 export type GameLauncher = (
@@ -53,6 +97,7 @@ export interface GameDefinition {
   readonly description: string;
   readonly cover: string;
   readonly playable: boolean;
+  readonly prepareLaunch?: GamePreparer;
   readonly launch: GameLauncher;
   readonly resultDisplay: GameResultDisplayMetadata;
 }

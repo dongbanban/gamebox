@@ -1,5 +1,6 @@
 import {
   type GameDefinition,
+  type GamePreparationFailureDetails,
   type GameResult,
   type GameResultAction,
 } from "@/catalog";
@@ -131,10 +132,68 @@ export function renderGameEntryView(
         ${renderSoundButton(soundEnabled, config)}
       </header>
       <div class="game-entry-view__game">
-        <div data-game-content></div>
+        <div data-game-content>
+          ${renderGameGenerationLoading(levelNumber, config)}
+        </div>
       </div>
     </main>
   `;
+}
+
+export function renderGameGenerationError(
+  details: GamePreparationFailureDetails,
+  config: DogV13Config = DOG_V13_CONFIG,
+): string {
+  const copy = config.ui.copy.app.generation;
+  const diagnostics = [
+    renderGenerationDiagnostic(copy.runSeed, details.runSeed),
+    renderGenerationDiagnostic(copy.generatorVersion, String(details.generatorVersion)),
+    details.workerFailure === undefined
+      ? ""
+      : renderGenerationDiagnostic(copy.workerFailure, details.workerFailure),
+    details.fallbackFailure === undefined
+      ? ""
+      : renderGenerationDiagnostic(copy.fallbackFailure, details.fallbackFailure),
+  ].join("");
+  return `
+    <section class="game-generation-state game-generation-state--error" data-testid="game-generation-error" role="alert">
+      <p class="eyebrow">${escapeHtml(copy.errorTitle)}</p>
+      <h2>${escapeHtml(copy.errorTitle)}</h2>
+      <p>${escapeHtml(copy.errorDescription)}</p>
+      <dl class="game-generation-state__diagnostics">${diagnostics}</dl>
+      <button class="primary-button" type="button" data-action="retry-generation" data-game-id="${escapeHtml(details.gameId)}" data-level-number="${details.levelNumber}">
+        ${escapeHtml(copy.retry)}
+      </button>
+    </section>
+  `;
+}
+
+function renderGameGenerationLoading(
+  levelNumber: number,
+  config: DogV13Config,
+): string {
+  const copy = config.ui.copy.app.generation;
+  const title = copy.loadingTitle.replace("{levelNumber}", String(levelNumber));
+  return `
+    <section class="game-generation-state" data-testid="game-generation-loading" role="status" aria-live="polite">
+      <span class="game-generation-state__spinner" aria-hidden="true"></span>
+      <h2>${escapeHtml(title)}</h2>
+      <p>${escapeHtml(copy.loadingDescription)}</p>
+    </section>
+  `;
+}
+
+function renderGenerationDiagnostic(label: string, value: string): string {
+  return `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`;
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 export function renderGameResultView(

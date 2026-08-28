@@ -141,7 +141,7 @@ describe("通用游戏定义与结果契约", () => {
     app.destroy();
   });
 
-  it("下一关生成或启动失败时安全返回游戏目录", () => {
+  it("下一关启动失败时返回目录，不伪装成生成失败", () => {
     const root = document.createElement("div");
     const resultDisplay = {
       won: { eyebrow: "测试游戏 · 结果", title: "测试通关", description: "完成。" },
@@ -170,7 +170,12 @@ describe("通用游戏定义与结果契约", () => {
       storage: new MemoryStorage(),
       userIdFactory: () => "123e4567-e89b-12d3-a456-426614174000",
     });
-    const app = mountApp(root, { store, catalog: [testGame] });
+    let runSeedIndex = 0;
+    const app = mountApp(root, {
+      store,
+      catalog: [testGame],
+      runSeedFactory: () => `launch-failure-seed-${++runSeedIndex}`,
+    });
 
     root.querySelector<HTMLButtonElement>('[data-action="register"]')?.click();
     root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
@@ -195,7 +200,8 @@ describe("通用游戏定义与结果契约", () => {
     expect(launchedLevels).toEqual([1, 2]);
     expect(root.querySelector('[data-view="catalog"]')).not.toBeNull();
     expect(root.querySelector('[data-view="game-entry"]')).toBeNull();
-    expect(root.textContent).toContain("测试游戏");
+    expect(root.querySelector('[data-testid="game-generation-error"]')).toBeNull();
+    expect(root.querySelector('[data-testid="dog-game"]')).toBeNull();
     app.destroy();
   });
 

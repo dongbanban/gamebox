@@ -63,6 +63,19 @@ export type {
   LevelGeneratorRequest,
 } from "@/games/dog-lege-dog/levels/level-generator-contracts";
 export {
+  DogLevelGenerationService,
+  getPreparedDogLevel,
+} from "@/games/dog-lege-dog/levels/level-generation-service";
+export type {
+  DogLevelGenerationServiceOptions,
+  DogLevelGenerationWorker,
+  DogLevelGenerationWorkerRequest,
+  DogLevelGenerationWorkerResponse,
+  DogLevelPreparationRequest,
+  DogPreparedLevelPayload,
+} from "@/games/dog-lege-dog/levels/level-generation-service";
+export { GamePreparationError } from "@/game-contracts";
+export {
   DOG_SHAPE_TEMPLATES,
 } from "@/games/dog-lege-dog/levels/level-shapes";
 export type { DogShapeTemplate } from "@/games/dog-lege-dog/levels/level-shapes";

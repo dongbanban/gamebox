@@ -44,6 +44,21 @@ export function validateGame(value: unknown, issues: DogV13ConfigIssue[]): void 
   validateFiniteNumber(game.defaultReward, "game.defaultReward", 0, issues);
 }
 
+export function validateGeneration(value: unknown, issues: DogV13ConfigIssue[]): void {
+  const generation = asRecord(value);
+  if (generation === undefined) return;
+  if (generation.preferWorker !== true) {
+    issues.push({ path: "generation.preferWorker", code: "value", message: "必须为 true" });
+  }
+  validateInteger(generation.workerTimeoutMs, "generation.workerTimeoutMs", 1, issues);
+  if (generation.preGenerateNextLevel !== true) {
+    issues.push({ path: "generation.preGenerateNextLevel", code: "value", message: "必须为 true" });
+  }
+  if (generation.verifyReplayBeforePublish !== true) {
+    issues.push({ path: "generation.verifyReplayBeforePublish", code: "value", message: "必须为 true" });
+  }
+}
+
 export function validateBoard(value: unknown, issues: DogV13ConfigIssue[]): void {
   const board = asRecord(value);
   if (board === undefined) return;

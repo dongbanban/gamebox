@@ -76,4 +76,57 @@ test.describe("狗了个狗完整浏览器闭环 · lifecycle", () => {
     await expect(page.getByRole("heading", { name: "开始你的第一局" })).toBeVisible();
     await expect(page.evaluate(() => window.localStorage.getItem("gamebox.state"))).resolves.toBeNull();
   });
+
+  test("首关优先使用 Worker，并在发布候选后终止", async ({ page }) => {
+    await page.addInitScript(() => {
+      const NativeWorker = window.Worker;
+      const lifecycle = { created: 0, terminated: 0 };
+      Object.defineProperty(window, "__dogWorkerLifecycle", {
+        configurable: true,
+        value: lifecycle,
+      });
+      window.Worker = class TrackedWorker extends NativeWorker {
+        constructor(scriptURL: string | URL, options?: WorkerOptions) {
+          super(scriptURL, options);
+          lifecycle.created += 1;
+        }
+
+        override terminate(): void {
+          lifecycle.terminated += 1;
+          super.terminate();
+        }
+      };
+    });
+    await page.reload();
+    await page.getByRole("button", { name: "匿名注册" }).click();
+    await page.getByRole("button", { name: "开始游戏" }).click();
+
+    await expect(page.getByTestId("dog-board")).toBeVisible();
+    const lifecycle = await page.evaluate(() =>
+      (window as Window & {
+        __dogWorkerLifecycle?: { created: number; terminated: number };
+      }).__dogWorkerLifecycle,
+    );
+    expect(lifecycle).toEqual({ created: 1, terminated: 1 });
+  });
+
+  test("Worker 启动失败后同步重试并发布已验证棋盘", async ({ page }) => {
+    await page.addInitScript(() => {
+      window.Worker = class FailedWorker {
+        constructor() {
+          throw new Error("forced worker startup failure");
+        }
+      } as unknown as typeof Worker;
+    });
+    await page.reload();
+    await page.getByRole("button", { name: "匿名注册" }).click();
+    await page.getByRole("button", { name: "开始游戏" }).click();
+
+    await expect(page.getByTestId("dog-board")).toBeVisible();
+    await expect(page.getByTestId("game-generation-error")).toHaveCount(0);
+    await expect(page.getByTestId("dog-game")).toHaveAttribute(
+      "data-run-seed",
+      /^run-/,
+    );
+  });
 });

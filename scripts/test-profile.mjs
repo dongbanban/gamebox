@@ -90,9 +90,7 @@ export function buildProfilePlan(profileName) {
         "exec",
         "vitest",
         "run",
-        "tests/generation-profile.test.ts",
-        "--testNamePattern",
-        "fallback profile",
+        "tests/generation-lifecycle.test.ts",
       ],
       env: { DOG_TEST_PROFILE: profileName },
     });

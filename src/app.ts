@@ -1,7 +1,6 @@
 import {
   GAME_CATALOG,
   type GameDefinition,
-  type GameLaunchHandle,
   type GameResult,
 } from "@/catalog";
 import {
@@ -16,6 +15,7 @@ import {
 } from "@/games/dog-lege-dog/game/v13-config";
 import { createRunSeed } from "@/games/dog-lege-dog/levels/level-random";
 import { ResultLoadoutController } from "@/app/app-loadout";
+import { AppGameLaunchCoordinator } from "@/app/app-game-launch";
 import {
   getHistoryRoute,
   replaceHistoryWithCatalog,
@@ -26,6 +26,7 @@ import {
 import {
   renderCatalogView,
   renderGameEntryView,
+  renderGameGenerationError,
   renderGameResultView,
   renderRegistrationView,
   updateSoundButton,
@@ -49,7 +50,7 @@ export class GameboxApp {
   private readonly catalog: readonly GameDefinition[];
   private readonly config: DogV13Config;
   private readonly runSeedFactory: (() => string) | undefined;
-  private activeGame: GameLaunchHandle | null = null;
+  private readonly gameLaunch = new AppGameLaunchCoordinator();
   private activeLevel: ActiveLevel | null = null;
   private nextLevelTarget: ActiveLevel | null = null;
   private pendingCompletion: LevelCompletionResult | null = null;
@@ -82,6 +83,7 @@ export class GameboxApp {
     this.resultState = null;
     this.resultRunSeed = undefined;
     this.resultLoadout.reset();
+    this.gameLaunch.discardPrefetched();
     this.disposeActiveGame();
     const snapshot = this.store.snapshot();
     if (snapshot.state === null) {
@@ -93,6 +95,7 @@ export class GameboxApp {
   }
 
   destroy(): void {
+    this.gameLaunch.discardPrefetched();
     this.disposeActiveGame();
     this.root.removeEventListener("click", this.handleClick);
     window.removeEventListener("popstate", this.handlePopState);
@@ -125,7 +128,7 @@ export class GameboxApp {
 
       const soundEnabled = !state.settings.soundEnabled;
       this.store.setSoundEnabled(soundEnabled);
-      this.activeGame?.setSoundEnabled?.(soundEnabled);
+      this.gameLaunch.setSoundEnabled(soundEnabled);
       updateSoundButton(this.root, soundEnabled, this.config);
       return;
     }
@@ -173,6 +176,15 @@ export class GameboxApp {
       return;
     }
 
+    if (action === "retry-generation") {
+      this.renderGameEntry(
+        actionElement?.dataset.gameId,
+        parseLevelNumber(actionElement?.dataset.levelNumber),
+        this.activeRunSeed,
+      );
+      return;
+    }
+
     if (action === "next-level") {
       this.renderNextLevel(
         actionElement?.dataset.gameId,
@@ -195,7 +207,7 @@ export class GameboxApp {
   };
 
   private readonly handlePopState = (): void => {
-    if (this.activeGame !== null) {
+    if (this.gameLaunch.hasActiveGame()) {
       if (this.confirmLeave()) {
         this.disposeActiveGame();
         replaceHistoryWithCatalog();
@@ -254,18 +266,8 @@ export class GameboxApp {
       return;
     }
 
-    const isSameActiveLevel =
-      this.activeGame !== null &&
-      this.activeLevel?.gameId === game.id &&
-      this.activeLevel?.levelNumber === levelNumber;
-    if (isSameActiveLevel) {
-      return;
-    }
-
-    if (this.activeGame !== null && !this.confirmLeave()) {
-      return;
-    }
-
+    if (this.gameLaunch.isActiveGame(game.id, levelNumber)) return;
+    if (this.gameLaunch.hasActiveGame() && !this.confirmLeave()) return;
     this.disposeActiveGame();
     this.resultState = null;
     this.resultRunSeed = undefined;
@@ -282,29 +284,37 @@ export class GameboxApp {
       return;
     }
 
-    this.activeLevel = { gameId: game.id, levelNumber };
-    this.activeRunSeed = requestedRunSeed ?? this.runSeedFactory?.() ?? createRunSeed();
-    try {
-      this.activeGame = game.launch(gameMount, {
+    this.gameLaunch.start({
+      game,
+      mount: gameMount,
+      levelNumber,
+      requestedRunSeed,
+      getSoundEnabled: () => this.store.snapshot().state?.settings.soundEnabled ?? true,
+      loadout: progress.loadout,
+      config: this.config,
+      createRunSeed: () => this.runSeedFactory?.() ?? createRunSeed(),
+      launchContext: {
         onResult: this.handleGameResult,
         onResultConfirmed: this.handleGameResultConfirmed,
-        onLoadoutConfirmed: (loadout) => this.handleLoadoutConfirmed(game.id, loadout),
-        soundEnabled: state.settings.soundEnabled,
-        levelNumber,
-        runSeed: this.activeRunSeed,
-        loadout: progress.loadout,
-        config: this.config,
-      });
-      this.enableLeaveProtection();
-    } catch {
-      this.disposeActiveGame();
-      replaceHistoryWithCatalog();
-      this.render();
-    }
+        onLoadoutConfirmed: (nextLoadout) => this.handleLoadoutConfirmed(game.id, nextLoadout),
+      },
+      onStarting: (runSeed) => {
+        this.activeLevel = { gameId: game.id, levelNumber };
+        this.activeRunSeed = runSeed;
+      },
+      onLaunched: () => this.enableLeaveProtection(),
+      onFailure: (details) => {
+        gameMount.innerHTML = renderGameGenerationError(details, this.config);
+      },
+      onLaunchFailure: () => {
+        replaceHistoryWithCatalog();
+        this.render();
+      },
+    });
   }
 
   private leaveToCatalog(): void {
-    if (this.activeGame !== null && !this.confirmLeave()) {
+    if (this.gameLaunch.hasActiveGame() && !this.confirmLeave()) {
       return;
     }
 
@@ -322,7 +332,7 @@ export class GameboxApp {
   }
 
   private readonly handleBeforeUnload = (event: BeforeUnloadEvent): void => {
-    if (this.activeGame === null) {
+    if (!this.gameLaunch.hasActiveGame()) {
       return;
     }
 
@@ -333,6 +343,7 @@ export class GameboxApp {
     this.disableLeaveProtection();
     if (result.status === "won") {
       this.pendingCompletion = this.store.recordLevelCompletion(result);
+      this.prepareNextLevel(result);
     }
   };
 
@@ -368,6 +379,7 @@ export class GameboxApp {
   }
 
   private renderLossResult(result: GameResult): void {
+    this.gameLaunch.discardPrefetched();
     this.resultState = { result };
     this.renderGameResult(result, "lost");
     this.nextLevelTarget = null;
@@ -419,12 +431,30 @@ export class GameboxApp {
 
   private disposeActiveGame(): void {
     this.disableLeaveProtection();
-    this.activeGame?.destroy();
-    this.activeGame = null;
+    this.gameLaunch.cancelActive();
     this.activeLevel = null;
     this.activeRunSeed = undefined;
     this.nextLevelTarget = null;
     this.pendingCompletion = null;
+  }
+
+  private prepareNextLevel(result: GameResult): void {
+    this.gameLaunch.discardPrefetched();
+    if (
+      result.isFinal === true ||
+      !this.config.generation.preGenerateNextLevel ||
+      result.levelNumber >= this.config.game.maxLevelNumber
+    ) {
+      return;
+    }
+    const game = this.catalog.find((item) => item.id === result.gameId);
+    if (game?.prepareLaunch === undefined) return;
+    this.gameLaunch.prefetch({
+      game,
+      levelNumber: result.levelNumber + 1,
+      config: this.config,
+      createRunSeed: () => this.runSeedFactory?.() ?? createRunSeed(),
+    });
   }
 
   private readonly handleResultLoadoutApplied = (
@@ -463,9 +493,7 @@ export function mountApp(root: HTMLElement, options: MountAppOptions = {}): Game
 }
 
 function parseLevelNumber(value: string | undefined): number | undefined {
-  if (value === undefined) {
-    return undefined;
-  }
+  if (value === undefined) return undefined;
 
   const levelNumber = Number(value);
   return Number.isSafeInteger(levelNumber) && levelNumber > 0 ? levelNumber : undefined;

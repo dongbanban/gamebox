@@ -11,6 +11,7 @@ import {
   DOG_PATTERN_TYPES,
   DOG_ILLUSION_MECHANISM_TYPE,
   DOG_TWIN_MECHANISM_TYPE,
+  LevelGenerator,
   getDogLogicalBlockCount,
   startDogLegeDogGame,
   type DogBlock,
@@ -32,6 +33,7 @@ import { startTestGame } from "../support/dog-game-fixtures";
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.restoreAllMocks();
 });
 
 describe("狗了个狗测试 · core", () => {
@@ -123,6 +125,29 @@ describe("狗了个狗测试 · core", () => {
 
     firstGame.destroy();
     secondGame.destroy();
+  });
+
+  it("公开直接启动在发布棋盘前执行回放验证", () => {
+    const replay = vi.spyOn(LevelGenerator.prototype, "replay").mockReturnValue({
+      ...TEST_LEVEL,
+      runSeed: "mismatched-replay-seed",
+    });
+    const root = document.createElement("div");
+    let game: ReturnType<typeof startDogLegeDogGame> | undefined;
+    let thrown: unknown;
+
+    try {
+      game = startDogLegeDogGame(root, { runSeed: "direct-launch-verification" });
+    } catch (error) {
+      thrown = error;
+    }
+    game?.destroy();
+
+    expect(replay).toHaveBeenCalledOnce();
+    expect(thrown).toEqual(
+      new Error("LevelGenerator replay verification did not reproduce the generated level"),
+    );
+    expect(root.querySelector('[data-testid="dog-board"]')).toBeNull();
   });
 
   it("保持方块在不规则棋盘内，且同层没有正面积重叠", () => {
