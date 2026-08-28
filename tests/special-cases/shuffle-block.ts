@@ -7,6 +7,7 @@ import {
   GameSession,
   createDogShuffleMechanism,
   getDogShuffleThreshold,
+  getDogV13MechanismPlan,
 } from "@/games/dog-lege-dog";
 import type {
   DogBlock,
@@ -39,6 +40,7 @@ describe("特殊机制测试 · shuffle-block", () => {
     });
     expect([5, 6, 7, 8].map((capacity) => getDogShuffleThreshold(capacity)))
       .toEqual([3, 4, 5, 5]);
+    expect(getDogV13MechanismPlan(90).counts.shuffle).toBe(0);
   });
 
   it("乱序方块首次入槽先按普通三消结算，被移除时不进入待乱序", () => {
@@ -83,6 +85,31 @@ describe("特殊机制测试 · shuffle-block", () => {
       "shuffle",
       "single",
     ]);
+  });
+
+  it("首次入槽结算后立即按有效容量阈值进入可触发状态", () => {
+    const session = new GameSession({
+      level: {
+        ...createLevel([
+          createBlock("shuffle", 0, 0, WORKING_DOG, createDogShuffleMechanism()),
+          createBlock("remaining", 4, 0, "看门狗"),
+        ]),
+        lockedTraySlotCount: 2,
+      },
+      initialTrayBlocks: [
+        createTrayBlock("single", SINGLE_DOG),
+        createTrayBlock("licking", LICKING_DOG),
+      ],
+    });
+
+    const result = session.selectBlock("shuffle");
+
+    expect(result.removedCount).toBe(0);
+    expect(result.snapshot.trayLogicalUnitCount).toBe(3);
+    expect(result.snapshot.shuffle).toMatchObject({
+      status: "triggerable",
+      threshold: 3,
+    });
   });
 
   it("按有效容量使用 3、4、5、5 个逻辑方块进入乱序触发状态", () => {
@@ -198,6 +225,29 @@ describe("特殊机制测试 · shuffle-block", () => {
     expect(result.removedCount).toBe(3);
     expect(result.snapshot.trayBlocks).toEqual([]);
     expect(result.snapshot.shuffle).toBeNull();
+  });
+
+  it("同次结算其他三消降低槽内数量时不触发乱序", () => {
+    const session = new GameSession({
+      level: createLevel([
+        createBlock("single-3", 0, 0, SINGLE_DOG),
+        createBlock("remaining", 4, 0, LICKING_DOG),
+      ]),
+      initialTrayBlocks: [
+        createTrayBlock("shuffle", WORKING_DOG, createDogShuffleMechanism()),
+        createTrayBlock("single-1", SINGLE_DOG),
+        createTrayBlock("single-2", SINGLE_DOG),
+      ],
+    });
+
+    const result = session.selectBlock("single-3");
+
+    expect(result.removedCount).toBe(3);
+    expect(result.snapshot.trayLogicalUnitCount).toBe(1);
+    expect(result.snapshot.shuffle).toMatchObject({
+      status: "armed",
+      threshold: 5,
+    });
   });
 });
 

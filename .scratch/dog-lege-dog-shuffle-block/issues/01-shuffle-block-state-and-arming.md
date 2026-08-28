@@ -18,4 +18,5 @@
 ## Comments
 
 - 2026-08-28：实现 `shuffle` 配置、`dormant → armed → triggerable` 状态、有效容量动态阈值、普通棋盘视觉、槽内持续动效、ARIA/data 状态。正式 v13 机制列表保持四类，shuffle 默认关闭；未进入生成器正式分配。
-- 验证：`pnpm exec vitest run tests/special-mechanism.test.ts tests/special-ui.test.ts`（50 passed）；`pnpm typecheck`（通过）；`pnpm test:qa`（full profile passed：core、worker/fallback、random、Chromium、cross-browser、pages build、diff、file-line）。首次沙箱运行因本地测试服务器绑定权限失败，受控权限重跑通过。
+- 2026-08-28：代码审查后补齐关闭态机制计划 `counts.shuffle = 0`、shuffle 配置开关门禁、必需状态文案、配置驱动动效时长、可触发态 UI、立即达阈值与同动作后续三消边界测试。
+- 验证：`pnpm exec vitest run tests/dog-config.test.ts tests/generation-profile.test.ts tests/v13-level-generation.test.ts tests/special-mechanism.test.ts tests/special-ui.test.ts`（70 passed）；`pnpm typecheck`（通过）；`pnpm test:qa`（full profile passed：core 240、worker/fallback 4、random 3、Chromium 21、cross-browser 9、pages build、diff、file-line）。

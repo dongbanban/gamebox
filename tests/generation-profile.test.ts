@@ -36,7 +36,10 @@ describe(`狗了个狗 ${profileName} generation profile`, () => {
       expect(plan.logicalUnitCount, `level=${levelNumber}`).toBe(budget);
       expect(plan.logicalUnitCount).toBeLessThanOrEqual(logicalBlockCount * 0.3);
       expect(
-        Object.values(plan.counts).every((count) => count > 0),
+        plan.counts.freeze > 0 &&
+          plan.counts.illusion > 0 &&
+          plan.counts.magnetic > 0 &&
+          plan.counts.twin > 0,
         `level=${levelNumber}`,
       ).toBe(true);
       expect(

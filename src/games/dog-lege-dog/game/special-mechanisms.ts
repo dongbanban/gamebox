@@ -1,5 +1,6 @@
 import {
   DOG_V13_CONFIG,
+  getDogV13ActiveMechanismDefinitions,
   getDogV13LogicalBlockCount,
   getDogV13MechanismPlan,
 } from "@/games/dog-lege-dog/game/v13-config";
@@ -75,7 +76,7 @@ export function getDogSpecialMechanismConfigs(
     config,
   );
   return Object.freeze(
-    config.specialMechanisms.mechanisms
+    getDogV13ActiveMechanismDefinitions(config)
       .filter((definition) => SUPPORTED_MECHANISM_TYPES.has(definition.type))
       .map((definition) => {
         const count = plan.counts[definition.type];

@@ -18,6 +18,7 @@ import { TEST_LEVEL, TEST_PATTERN_TYPES } from "../support/dog-level-fixture";
 
 const WORKING_DOG: DogPatternType = "打工狗";
 const SINGLE_DOG: DogPatternType = "单身狗";
+const LICKING_DOG: DogPatternType = "舔狗";
 
 describe("特殊机制测试 · shuffle-ui", () => {
   afterEach(() => {
@@ -67,6 +68,51 @@ describe("特殊机制测试 · shuffle-ui", () => {
     expect(shuffleSlot?.dataset.shuffleState).toBe("armed");
     expect(shuffleSlot?.classList.contains("dog-tray__slot--shuffle-armed")).toBe(true);
     expect(shuffleSlot?.getAttribute("aria-label")).toContain("待乱序");
+    game.destroy();
+  });
+
+  it("达到逻辑阈值后显示可触发乱序状态与可访问反馈", async () => {
+    vi.useFakeTimers();
+    const root = document.createElement("div");
+    const patterns: readonly DogPatternType[] = [
+      WORKING_DOG,
+      SINGLE_DOG,
+      LICKING_DOG,
+      "看门狗",
+      "疯狗",
+    ];
+    const game = startDogLegeDogGame(root, {
+      level: createLevel(patterns.map((patternType, index) =>
+        createBlock(
+          index === 0 ? "shuffle" : `ordinary-${index}`,
+          index * 4,
+          0,
+          patternType,
+          index === 0 ? createDogShuffleMechanism() : undefined,
+        ),
+      )),
+      loadout: ["tray-capacity", "wildcard", "torch"],
+    });
+
+    for (const blockId of ["shuffle", "ordinary-1", "ordinary-2", "ordinary-3", "ordinary-4"]) {
+      game.selectBlock(blockId);
+      await vi.runAllTimersAsync();
+    }
+
+    const shuffleSlot = root.querySelector<HTMLElement>(
+      '[data-testid="dog-tray-slot"][data-block-id="shuffle"]',
+    );
+    expect(game.getState().session.shuffle).toMatchObject({
+      status: "triggerable",
+      threshold: 5,
+    });
+    expect(shuffleSlot?.dataset.shuffleState).toBe("triggerable");
+    expect(shuffleSlot?.classList.contains("dog-tray__slot--shuffle-triggerable")).toBe(true);
+    expect(shuffleSlot?.getAttribute("aria-label")).toContain("可触发乱序");
+    const shuffleStatus = root.querySelector<HTMLElement>('[data-testid="dog-shuffle-status"]');
+    expect(shuffleStatus?.dataset.shuffleState).toBe("triggerable");
+    expect(shuffleStatus?.textContent)
+      .toContain("可触发乱序");
     game.destroy();
   });
 });

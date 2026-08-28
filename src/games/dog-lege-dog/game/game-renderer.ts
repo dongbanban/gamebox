@@ -160,6 +160,8 @@ function updateDogLegeDogGame(
   boardScaler?.style.setProperty("--board-pixel-width", `${boardMetrics.pixelWidth}px`);
   boardScaler?.style.setProperty("--board-pixel-height", `${boardMetrics.pixelHeight}px`);
   if (traySlots !== null && traySlots !== undefined) {
+    tray?.style.setProperty("--dog-shuffle-armed-duration", `${config.animation.shuffleArmedMs}ms`);
+    tray?.style.setProperty("--dog-shuffle-triggerable-duration", `${config.animation.shuffleTriggerableMs}ms`);
     traySlots.style.setProperty("--dog-tray-columns", String(state.session.trayCapacity));
     traySlots.dataset.trayCapacity = String(state.session.trayCapacity);
     traySlots.dataset.effectiveTrayCapacity = String(state.session.effectiveTrayCapacity);

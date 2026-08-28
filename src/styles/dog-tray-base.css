@@ -102,11 +102,11 @@
 }
 
 .dog-tray__slot--shuffle-armed {
-  animation: dog-shuffle-armed 1800ms ease-in-out infinite;
+  animation: dog-shuffle-armed var(--dog-shuffle-armed-duration) ease-in-out infinite;
 }
 
 .dog-tray__slot--shuffle-triggerable {
-  animation: dog-shuffle-triggerable 1200ms ease-in-out infinite;
+  animation: dog-shuffle-triggerable var(--dog-shuffle-triggerable-duration) ease-in-out infinite;
 }
 
 @keyframes dog-shuffle-armed {

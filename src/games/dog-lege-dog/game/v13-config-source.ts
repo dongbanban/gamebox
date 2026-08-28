@@ -169,6 +169,8 @@ export const DOG_V13_CONFIG_SOURCE: DogV13Config = {
     magneticAttractionMs: 360,
     keyDropMs: 360,
     trayUnlockMs: 360,
+    shuffleArmedMs: 1800,
+    shuffleTriggerableMs: 1200,
     inputLockedDuringAnimation: true,
   },
   assets: {

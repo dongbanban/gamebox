@@ -181,11 +181,17 @@ describe("狗了个狗 v13 关卡生成 seam", () => {
 
 function countMechanisms(
   blocks: readonly { readonly specialMechanism?: { readonly type: string } }[],
-): Record<"freeze" | "illusion" | "magnetic" | "twin", number> {
-  const counts = { freeze: 0, illusion: 0, magnetic: 0, twin: 0 };
+): Record<"freeze" | "illusion" | "magnetic" | "twin" | "shuffle", number> {
+  const counts = { freeze: 0, illusion: 0, magnetic: 0, twin: 0, shuffle: 0 };
   for (const block of blocks) {
     const type = block.specialMechanism?.type;
-    if (type === "freeze" || type === "illusion" || type === "magnetic" || type === "twin") {
+    if (
+      type === "freeze" ||
+      type === "illusion" ||
+      type === "magnetic" ||
+      type === "twin" ||
+      type === "shuffle"
+    ) {
       counts[type] += 1;
     }
   }

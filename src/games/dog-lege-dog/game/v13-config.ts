@@ -1,10 +1,12 @@
 import {
+  DOG_V13_MECHANISM_TYPES,
   DOG_V13_SCHEMA_VERSION,
   type DogConfigChangeArea,
   type DogV13Config,
   type DogV13ConfigIssue,
   type DogV13DifficultyTarget,
   type DogV13ItemId,
+  type DogV13MechanismDefinition,
   type DogV13MechanismPlan,
   type DogV13MechanismType,
   type DogV13StructureStage,
@@ -114,14 +116,24 @@ export function getDogShuffleThreshold(
   );
 }
 
+export function getDogV13ActiveMechanismDefinitions(
+  config: DogV13Config = DOG_V13_CONFIG,
+): readonly DogV13MechanismDefinition[] {
+  return Object.freeze(
+    config.specialMechanisms.mechanisms.filter(
+      (definition) => definition.type !== "shuffle" || config.specialMechanisms.shuffle.enabled,
+    ),
+  );
+}
+
 export function getDogV13MechanismPlan(
   logicalBlockCount: number,
   config: DogV13Config = DOG_V13_CONFIG,
 ): DogV13MechanismPlan {
   const budget = getDogV13SpecialMechanismBudget(logicalBlockCount, config);
-  const definitions = config.specialMechanisms.mechanisms;
+  const definitions = getDogV13ActiveMechanismDefinitions(config);
   const counts = Object.fromEntries(
-    definitions.map((definition) => [definition.type, 0]),
+    DOG_V13_MECHANISM_TYPES.map((type) => [type, 0]),
   ) as Record<DogV13MechanismType, number>;
   const requiredLogicalUnits = definitions.reduce((total, definition) => total + definition.logicalUnitWeight, 0);
   if (config.specialMechanisms.requireAllTypes && budget < requiredLogicalUnits) {

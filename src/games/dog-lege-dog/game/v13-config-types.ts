@@ -1,4 +1,7 @@
-import type { DogPatternType } from "@/games/dog-lege-dog/levels/level-types";
+import type {
+  DogPatternType,
+  DogShuffleMechanismStatus,
+} from "@/games/dog-lege-dog/levels/level-types";
 
 export const DOG_V13_SCHEMA_VERSION = 13 as const;
 
@@ -117,6 +120,16 @@ export interface DogV13MechanismPresentation {
   readonly description: string;
   readonly stateLabels?: Readonly<Record<string, string>>;
 }
+
+export interface DogV13ShuffleMechanismPresentation extends DogV13MechanismPresentation {
+  readonly stateLabels: Readonly<Record<DogShuffleMechanismStatus, string>>;
+}
+
+export type DogV13MechanismPresentations = Readonly<
+  Record<Exclude<DogV13MechanismType, "shuffle">, DogV13MechanismPresentation> & {
+    readonly shuffle: DogV13ShuffleMechanismPresentation;
+  }
+>;
 
 export interface DogV13ResultDisplay {
   readonly eyebrow: string;
@@ -294,6 +307,8 @@ export interface DogV13Config {
     readonly magneticAttractionMs: number;
     readonly keyDropMs: number;
     readonly trayUnlockMs: number;
+    readonly shuffleArmedMs: number;
+    readonly shuffleTriggerableMs: number;
     readonly inputLockedDuringAnimation: true;
   };
   readonly assets: {
@@ -337,7 +352,7 @@ export interface DogV13Config {
         readonly empty: string;
         readonly closeLabel: string;
         readonly fallbackDescription: string;
-        readonly presentations: Readonly<Record<DogV13MechanismType, DogV13MechanismPresentation>>;
+        readonly presentations: DogV13MechanismPresentations;
       };
       readonly result: Readonly<Record<"won" | "final" | "lost", DogV13ResultDisplay>>;
     };

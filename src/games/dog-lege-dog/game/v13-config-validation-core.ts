@@ -171,6 +171,13 @@ export function validateSpecialMechanisms(value: unknown, issues: DogV13ConfigIs
   const requiredTypes: readonly DogV13MechanismType[] = ["freeze", "illusion", "magnetic", "twin"];
   const types = mechanisms.map((mechanism) => asRecord(mechanism)?.type);
   validateUnique(types, "specialMechanisms.mechanisms.type", issues);
+  if (asRecord(special.shuffle)?.enabled === false && types.includes("shuffle")) {
+    issues.push({
+      path: "specialMechanisms.mechanisms",
+      code: "relation",
+      message: "shuffle 关闭时不能放入正式机制定义",
+    });
+  }
   for (const type of requiredTypes) {
     if (!types.includes(type)) issues.push({ path: "specialMechanisms.mechanisms", code: "relation", message: `必须包含 ${type}` });
   }
@@ -239,7 +246,7 @@ export function validateDifficulty(value: unknown, maxLevelValue: unknown, issue
 export function validateAnimation(value: unknown, issues: DogV13ConfigIssue[]): void {
   const animation = asRecord(value);
   if (animation === undefined) return;
-  for (const key of ["blockFlightMs", "illusionRevealMs", "itemFeedbackMs", "freezeMeltMs", "twinSplitMs", "magneticAttractionMs", "keyDropMs", "trayUnlockMs"]) {
+  for (const key of ["blockFlightMs", "illusionRevealMs", "itemFeedbackMs", "freezeMeltMs", "twinSplitMs", "magneticAttractionMs", "keyDropMs", "trayUnlockMs", "shuffleArmedMs", "shuffleTriggerableMs"]) {
     validateInteger(animation[key], `animation.${key}`, 1, issues);
   }
   if (animation.inputLockedDuringAnimation !== true) {

@@ -192,14 +192,21 @@ function validatePresentationMap(value: unknown, path: string, keys: readonly st
     }
     validateNonEmptyString(presentation.name, `${path}.${key}.name`, issues);
     validateNonEmptyString(presentation.description, `${path}.${key}.description`, issues);
-    if (presentation.stateLabels !== undefined) {
-      const stateLabels = asRecord(presentation.stateLabels);
-      if (stateLabels === undefined) {
-        issues.push({ path: `${path}.${key}.stateLabels`, code: "type", message: "必须是对象" });
+    const stateLabels = asRecord(presentation.stateLabels);
+    if (key === "shuffle" && stateLabels === undefined) {
+      if (presentation.stateLabels === undefined) {
+        requiredObject(presentation, "stateLabels", issues, `${path}.${key}`);
       } else {
-        for (const [state, label] of Object.entries(stateLabels)) {
-          validateNonEmptyString(label, `${path}.${key}.stateLabels.${state}`, issues);
-        }
+        issues.push({ path: `${path}.${key}.stateLabels`, code: "type", message: "必须是对象" });
+      }
+    } else if (stateLabels === undefined && presentation.stateLabels !== undefined) {
+      issues.push({ path: `${path}.${key}.stateLabels`, code: "type", message: "必须是对象" });
+    } else if (stateLabels !== undefined) {
+      const states = key === "shuffle"
+        ? ["dormant", "armed", "triggerable", "consumed"]
+        : Object.keys(stateLabels);
+      for (const state of states) {
+        validateNonEmptyString(stateLabels[state], `${path}.${key}.stateLabels.${state}`, issues);
       }
     }
   }
