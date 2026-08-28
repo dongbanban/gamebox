@@ -274,6 +274,7 @@ export class GameSessionTrayActions {
         trayCapacity: this.state.getEffectiveTrayCapacity(),
         branchBudget: Math.max(64, this.state.remainingBlocks.size * 2),
         specialMechanismHandlers: [...this.state.specialMechanismHandlers.values()],
+        magneticRandom: this.state.magneticRandom.clone(),
       });
       if (solvability.status !== "solvable") {
         continue;
@@ -356,6 +357,7 @@ export class GameSessionTrayActions {
         trayCapacity: this.state.getEffectiveTrayCapacity(),
         branchBudget: Math.max(64, this.state.remainingBlocks.size * 2),
         specialMechanismHandlers: [...this.state.specialMechanismHandlers.values()],
+        magneticRandom: this.state.magneticRandom.clone(),
       });
       if (solvability.status === "solvable") {
         return Object.freeze({

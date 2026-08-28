@@ -189,6 +189,7 @@ export function findSolvabilityFromState(
 
   const tray = cloneTray(options.initialTray);
   const trayLogicalUnitCount = getDogTrayLogicalUnitCount(tray);
+  const magneticRandom = options.magneticRandom?.clone() ?? createDogMagneticRandom(level);
   const selectable = getSelectableBlocks(level, remainingMask, higherBlockCounts);
   if (isCapacityBlocked(
     level,
@@ -199,7 +200,7 @@ export function findSolvabilityFromState(
     selectable,
     handlers,
     higherBlockCounts,
-    undefined,
+    magneticRandom,
     remainingMask,
     graph,
   )) {
@@ -223,7 +224,7 @@ export function findSolvabilityFromState(
     preferredPath,
     handlers,
     trayCapacity,
-    createDogMagneticRandom(level),
+    magneticRandom,
   );
   if (preferredVerification !== undefined) {
     return preferredVerification;
@@ -240,6 +241,7 @@ export function findSolvabilityFromState(
     [],
     0,
     trayCapacity,
+    magneticRandom,
   );
   if (greedyResult !== undefined) {
     return greedyResult;
@@ -261,6 +263,7 @@ export function findSolvabilityFromState(
     [],
     0,
     trayCapacity,
+    magneticRandom,
   );
 }
 

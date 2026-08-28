@@ -20,12 +20,22 @@ export function createWildcardUiLevel(): DogLegeDogLevel {
     createTestBlock("working-hidden", "打工狗", 0),
     createTestBlock("single-cover", "单身狗", 1),
     createTestBlock("working-target", "打工狗", 0, 8),
+    createTestBlock("working-final", "打工狗", 0, 16),
+    createTestBlock("single-2", "单身狗", 0, 24),
+    createTestBlock("single-3", "单身狗", 0, 32),
   ];
   return {
     ...TEST_LEVEL,
     patternTypes,
     blocks,
-    solutionPath: ["working-target", "single-cover", "working-hidden"],
+    solutionPath: [
+      "working-target",
+      "working-final",
+      "single-cover",
+      "single-2",
+      "single-3",
+      "working-hidden",
+    ],
   };
 }
 
@@ -56,19 +66,28 @@ export function createWildcardMatchUiLevel(): DogLegeDogLevel {
   const patternTypes = ["打工狗", "单身狗"] as const satisfies readonly DogPatternType[];
   const frozenMechanism = {
     type: "freeze",
-    state: { status: "frozen", completedTriples: 0 },
+    state: { status: "frozen", completedTriples: 1 },
   } as const;
   const blocks: readonly DogBlock[] = [
     createTestBlock("working-hidden", "打工狗", 0),
     createTestBlock("single-cover", "单身狗", 1),
     createTestBlock("frozen-working-1", "打工狗", 0, 8, frozenMechanism),
     createTestBlock("frozen-working-2", "打工狗", 0, 16, frozenMechanism),
+    createTestBlock("single-2", "单身狗", 0, 24),
+    createTestBlock("single-3", "单身狗", 0, 32),
   ];
   return {
     ...TEST_LEVEL,
     patternTypes,
     blocks,
-    solutionPath: blocks.map((block) => block.id),
+    solutionPath: [
+      "frozen-working-1",
+      "frozen-working-2",
+      "single-cover",
+      "single-2",
+      "single-3",
+      "working-hidden",
+    ],
   };
 }
 

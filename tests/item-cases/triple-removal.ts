@@ -171,7 +171,6 @@ describe("DogItemRuntime · triple-removal", () => {
         createBlock("working-board", WORKING_DOG),
         createBlock("single-1", SINGLE_DOG, undefined, { x: 4 }),
         createBlock("single-2", SINGLE_DOG, undefined, { x: 8 }),
-        createBlock("single-3", SINGLE_DOG, undefined, { x: 12 }),
         createBlock("licking-1", LICKING_DOG, undefined, { x: 16 }),
         createBlock("licking-2", LICKING_DOG, undefined, { x: 20 }),
         createBlock("licking-3", LICKING_DOG, undefined, { x: 24 }),

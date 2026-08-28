@@ -5,6 +5,7 @@ import type {
   DogSpecialMechanismHandler,
   DogTrayBlock,
 } from "@/games/dog-lege-dog/levels/level-types";
+import type { SeededRandom } from "@/games/dog-lege-dog/levels/level-random";
 
 export const MAX_SOLVABILITY_SEARCH_BRANCHES = 16 as const;
 
@@ -17,6 +18,8 @@ export interface SolvabilityStateOptions extends SolvabilitySearchOptions {
   readonly remainingBlockIds: readonly string[];
   readonly initialTray: readonly DogTrayBlock[];
   readonly trayCapacity?: number;
+  /** Current magnetic RNG position; the solver clones it before exploring. */
+  readonly magneticRandom?: SeededRandom;
 }
 
 export interface PathVerification {

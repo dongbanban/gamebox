@@ -17,6 +17,7 @@ import {
   getDogLogicalBlockCount,
   DOG_REWARD_CONFIG_VERSION,
   getDogTrayLockCount,
+  findSolvabilityFromState,
 } from "@/games/dog-lege-dog";
 
 const MAX_LEVEL_NUMBER = DOG_V13_CONFIG.game.maxLevelNumber;
@@ -123,5 +124,16 @@ describe("LevelGenerator · solvability", () => {
     expect(difficulty.withinTarget).toBe(false);
     expect(directDifficulty.solvabilityStatus).toBe("budget-exhausted");
     expect(directDifficulty.certainty).toBe("uncertain");
+  });
+
+  it("棋盘清空但暂存槽仍有方块时不判定为可解", () => {
+    const level = createLongSearchFixture();
+    const result = findSolvabilityFromState(level, {
+      remainingBlockIds: [],
+      initialTray: [{ id: "leftover", patternType: DOG_PATTERN_TYPES[0]! }],
+      trayCapacity: 7,
+    });
+
+    expect(result.status).toBe("unsolvable");
   });
 });

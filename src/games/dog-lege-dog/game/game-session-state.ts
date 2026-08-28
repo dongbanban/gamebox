@@ -254,12 +254,16 @@ export class GameSessionState {
       return;
     }
 
-    if (
-      this.remainingBlocks.size === 0 &&
-      this.tray.every((block) => block.specialMechanism === undefined)
-    ) {
-      this.status = "won";
-      return;
+    if (this.remainingBlocks.size === 0) {
+      if (this.tray.length === 0) {
+        this.status = "won";
+        return;
+      }
+
+      if (this.tray.every((block) => block.specialMechanism === undefined)) {
+        this.status = "lost";
+        return;
+      }
     }
 
     if (

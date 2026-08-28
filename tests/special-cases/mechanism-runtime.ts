@@ -62,6 +62,10 @@ describe("特殊机制测试 · mechanism-runtime", () => {
         createBlock("working-2", 8, 0, WORKING_DOG),
         createBlock("working-3", 12, 0, WORKING_DOG),
         createBlock("working-4", 16, 0, WORKING_DOG),
+        createBlock("working-5", 20, 0, WORKING_DOG),
+        createBlock("working-6", 24, 0, WORKING_DOG),
+        createBlock("single-2", 28, 0, SINGLE_DOG),
+        createBlock("single-3", 32, 0, SINGLE_DOG),
       ]),
       loadout: ["triple-removal", "tray-capacity", "wildcard"],
     });

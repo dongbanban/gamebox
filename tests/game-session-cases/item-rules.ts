@@ -100,6 +100,9 @@ describe("GameSession · item-rules", () => {
       level: createLevel([
         createBlock("working-hidden", 0, 0, 0, WORKING_DOG),
         createBlock("single-cover", 0, 0, 1, SINGLE_DOG),
+        createBlock("working-final", 8, 0, 0, WORKING_DOG),
+        createBlock("single-2", 16, 0, 0, SINGLE_DOG),
+        createBlock("single-3", 24, 0, 0, SINGLE_DOG),
       ]),
       initialTray: [WORKING_DOG],
     });
@@ -115,6 +118,9 @@ describe("GameSession · item-rules", () => {
     expect(session.getState().remainingBlocks.map((block) => block.id)).toEqual([
       "working-hidden",
       "single-cover",
+      "working-final",
+      "single-2",
+      "single-3",
     ]);
     expect(session.getState().trayBlocks).toEqual([
       { id: "initial-tray-1", patternType: WORKING_DOG },
@@ -133,7 +139,12 @@ describe("GameSession · item-rules", () => {
       tripleCount: 0,
     });
     expect(result.wildcardBlockId).toMatch(/^wildcard-/);
-    expect(result.snapshot.remainingBlocks.map((block) => block.id)).toEqual(["single-cover"]);
+    expect(result.snapshot.remainingBlocks.map((block) => block.id)).toEqual([
+      "single-cover",
+      "working-final",
+      "single-2",
+      "single-3",
+    ]);
     expect(result.snapshot.trayBlocks).toEqual([
       { id: "initial-tray-1", patternType: WORKING_DOG },
       {
@@ -162,6 +173,10 @@ describe("GameSession · item-rules", () => {
       level: createLevel([
         createBlock("working-hidden", 0, 0, 0, WORKING_DOG),
         createBlock("single-cover", 0, 0, 1, SINGLE_DOG),
+        createBlock("single-2", 8, 0, 0, SINGLE_DOG),
+        createBlock("single-3", 16, 0, 0, SINGLE_DOG),
+        createBlock("working-final-1", 24, 0, 0, WORKING_DOG),
+        createBlock("working-final-2", 32, 0, 0, WORKING_DOG),
       ]),
       initialTrayBlocks: [
         { id: "ordinary-working", patternType: WORKING_DOG },
@@ -264,7 +279,6 @@ describe("GameSession · item-rules", () => {
         },
         createBlock("single-cover", 0, 0, 1, SINGLE_DOG),
         createBlock("working-2", 8, 0, 0, WORKING_DOG),
-        createBlock("working-3", 16, 0, 0, WORKING_DOG),
         createBlock("single-2", 8, 8, 0, SINGLE_DOG),
         createBlock("single-3", 16, 8, 0, SINGLE_DOG),
       ]),

@@ -78,6 +78,9 @@ describe("DogItemRuntime · wildcard", () => {
     const level = createLevel([
       createBlock("working-hidden", WORKING_DOG),
       createBlock("single-cover", SINGLE_DOG, undefined, { z: 1 }),
+      createBlock("working-final", WORKING_DOG, undefined, { x: 8 }),
+      createBlock("single-2", SINGLE_DOG, undefined, { x: 16 }),
+      createBlock("single-3", SINGLE_DOG, undefined, { x: 24 }),
     ]);
     const session = new GameSession({
       level,
@@ -134,6 +137,9 @@ describe("DogItemRuntime · wildcard", () => {
     expect(runtime.getState().phase).toBe("idle");
     expect(session.getState().remainingBlocks.map((block) => block.id)).toEqual([
       "single-cover",
+      "working-final",
+      "single-2",
+      "single-3",
     ]);
     expect(session.getState().trayBlocks.find((block) => block.visualMarker === "wildcard"))
       .toMatchObject({
@@ -154,6 +160,7 @@ describe("DogItemRuntime · wildcard", () => {
         createBlock("single-cover-1", SINGLE_DOG, undefined, { z: 1 }),
         createBlock("working-hidden-2", WORKING_DOG, undefined, { x: 8 }),
         createBlock("single-cover-2", SINGLE_DOG, undefined, { x: 8, z: 1 }),
+        createBlock("single-final", SINGLE_DOG, undefined, { x: 16 }),
       ]),
       number: 2,
       generatorVersion: DOG_V13_CONFIG.game.generatorVersion,
@@ -186,14 +193,16 @@ describe("DogItemRuntime · wildcard", () => {
       ...createLevel([
         createBlock("working-hidden", WORKING_DOG),
         createBlock("single-cover", SINGLE_DOG, undefined, { z: 1 }),
+        createBlock("single-2", SINGLE_DOG, undefined, { x: 8 }),
       ]),
       patternTypes: [WORKING_DOG, SINGLE_DOG],
     };
     const session = new GameSession({
       level,
       initialTrayBlocks: [
-        { id: "target-working", patternType: WORKING_DOG },
         { id: "target-single", patternType: SINGLE_DOG },
+        { id: "target-working", patternType: WORKING_DOG },
+        { id: "target-working-2", patternType: WORKING_DOG },
       ],
     });
     const runtime = new DogItemRuntime({ level, session, loadout: ["wildcard"] });

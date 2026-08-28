@@ -253,6 +253,9 @@ describe("狗了个狗测试 · items", () => {
     expect(game.getState().session.remainingBlocks.map((block) => block.id)).toEqual([
       "working-hidden",
       "single-cover",
+      "working-final",
+      "single-2",
+      "single-3",
     ]);
 
     await vi.advanceTimersByTimeAsync(DOG_ITEM_FEEDBACK_DURATION_MS);
@@ -260,6 +263,9 @@ describe("狗了个狗测试 · items", () => {
     expect(game.getState().inputLocked).toBe(false);
     expect(game.getState().session.remainingBlocks.map((block) => block.id)).toEqual([
       "single-cover",
+      "working-final",
+      "single-2",
+      "single-3",
     ]);
     expect(game.getState().items?.items.find((item) => item.id === "wildcard"))
       .toMatchObject({ remainingUses: 0, available: false });

@@ -1,12 +1,24 @@
 import { describe, expect, it } from "vitest";
 import {
+  findSolvabilityFromState,
   GameSession,
-  type DogBlock,
-  type DogLegeDogLevel,
+  LevelGenerator,
   type DogPatternType,
 } from "@/games/dog-lege-dog";
-import { TEST_LEVEL, TEST_PATTERN_TYPES } from "../support/dog-level-fixture";
 import { createBlock, createLevel, createFrozenTrayBlock } from "../support/game-session-fixtures";
+import { createBlockGraph } from "@/games/dog-lege-dog/levels/level-graph";
+import {
+  createDogMagneticRandom,
+  resolveDogSelection,
+} from "@/games/dog-lege-dog/levels/level-mechanism-resolution";
+import {
+  createDogSpecialMechanismHandlerMap,
+  DOG_SPECIAL_MECHANISM_HANDLERS,
+} from "@/games/dog-lege-dog/game/special-mechanisms";
+import {
+  createFullBlockMask,
+} from "@/games/dog-lege-dog/levels/level-solvability-contracts";
+import type { DogTrayBlock } from "@/games/dog-lege-dog/levels/level-types";
 
 const WORKING_DOG: DogPatternType = "打工狗";
 const SINGLE_DOG: DogPatternType = "单身狗";
@@ -70,7 +82,6 @@ describe("GameSession · wildcard-and-terminal", () => {
       level: createLevel([
         createBlock("working-hidden", 0, 0, 0, WORKING_DOG),
         createBlock("working-2", 8, 0, 0, WORKING_DOG),
-        createBlock("working-3", 16, 0, 0, WORKING_DOG),
         {
           ...createBlock("single-cover", 0, 0, 1, SINGLE_DOG),
           specialMechanism: {
@@ -84,12 +95,17 @@ describe("GameSession · wildcard-and-terminal", () => {
       initialTray: [WORKING_DOG],
     });
 
-    expect(session.getWildcardPlan(WORKING_DOG)).toBeNull();
+    const beforeMeltPlan = session.getWildcardPlan(WORKING_DOG);
+    expect(beforeMeltPlan).toMatchObject({
+      compensatedBlockId: "working-hidden",
+    });
     expect(session.meltFrozenBlock("single-cover", "board")).toMatchObject({
       melted: true,
     });
 
-    expect(session.getWildcardPlan(WORKING_DOG)).toMatchObject({
+    const afterMeltPlan = session.getWildcardPlan(WORKING_DOG);
+    expect(afterMeltPlan).not.toBe(beforeMeltPlan);
+    expect(afterMeltPlan).toMatchObject({
       compensatedBlockId: "working-hidden",
     });
     expect(session.useWildcard(WORKING_DOG)).toMatchObject({ used: true });
@@ -113,4 +129,121 @@ describe("GameSession · wildcard-and-terminal", () => {
     expect(state.tray).toEqual([]);
     expect(session.selectBlock("working-1")).toEqual(state);
   });
+
+  it("万能方块后不同图案的终局暂存槽不应直接通关", () => {
+    const session = new GameSession({
+      level: createLevel([
+        createBlock("working-hidden", 0, 0, 0, WORKING_DOG),
+        createBlock("single-cover", 0, 0, 1, SINGLE_DOG),
+        createBlock("single-2", 8, 0, 0, SINGLE_DOG),
+        createBlock("single-3", 16, 0, 0, SINGLE_DOG),
+        createBlock("licking-1", 24, 0, 0, LICKING_DOG),
+        createBlock("licking-2", 32, 0, 0, LICKING_DOG),
+        createBlock("licking-3", 40, 0, 0, LICKING_DOG),
+      ]),
+      initialTrayBlocks: [
+        { id: "ordinary-working-1", patternType: WORKING_DOG },
+        { id: "ordinary-working-2", patternType: WORKING_DOG },
+      ],
+    });
+
+    const wildcard = session.useWildcard(WORKING_DOG);
+    expect(wildcard).toMatchObject({ used: true, removedCount: 3, tripleCount: 1 });
+    expect(wildcard.snapshot.tray).toEqual([]);
+
+    let finalSelection = session.selectBlock("single-cover");
+    for (const blockId of [
+      "licking-1",
+      "single-2",
+      "licking-2",
+      "single-3",
+      "licking-3",
+    ]) {
+      finalSelection = session.selectBlock(blockId);
+    }
+
+    expect(finalSelection.removedCount).toBe(0);
+    expect(finalSelection.snapshot.tray).toEqual([
+      SINGLE_DOG,
+      LICKING_DOG,
+      SINGLE_DOG,
+      LICKING_DOG,
+      SINGLE_DOG,
+      LICKING_DOG,
+    ]);
+    expect(finalSelection.snapshot.status).toBe("lost");
+  });
+
+  it("磁吸随机流已推进时万能方块不应接受过期可解计划", () => {
+    const level = new LevelGenerator().generate({
+      levelNumber: 1,
+      runSeed: "wildcard-magnetic-diagnostic-0",
+    });
+    const session = new GameSession(level);
+    const prefix = [
+      "level-1-block-14",
+      "level-1-block-28",
+      "level-1-block-61",
+      "level-1-block-63",
+      "level-1-block-10",
+    ];
+
+    for (const blockId of prefix) {
+      expect(session.canSelectBlock(blockId)).toBe(true);
+      session.selectBlock(blockId);
+    }
+
+    const liveMagneticRandom = replayMagneticRandom(level, prefix);
+    const wildcard = session.useWildcard(SINGLE_DOG);
+    expect(wildcard).toMatchObject({ used: true, tripleCount: 1 });
+
+    const state = session.getState();
+    const solvability = findSolvabilityFromState(level, {
+      remainingBlockIds: state.remainingBlocks.map((block) => block.id),
+      initialTray: state.trayBlocks,
+      trayCapacity: state.effectiveTrayCapacity,
+      magneticRandom: liveMagneticRandom,
+    });
+    expect(solvability.status).toBe("solvable");
+    for (const blockId of solvability.path) {
+      if (session.canSelectBlock(blockId)) {
+        session.selectBlock(blockId);
+      }
+    }
+    expect(session.getState().status).toBe("won");
+  });
 });
+
+function replayMagneticRandom(
+  level: ReturnType<LevelGenerator["generate"]>,
+  path: readonly string[],
+) {
+  const graph = createBlockGraph(level.blocks);
+  const handlers = createDogSpecialMechanismHandlerMap(DOG_SPECIAL_MECHANISM_HANDLERS);
+  const magneticRandom = createDogMagneticRandom(level);
+  let remainingMask = createFullBlockMask(level.blocks.length);
+  const higherBlockCounts = [...graph.higherBlockCounts];
+  const tray: DogTrayBlock[] = [];
+
+  for (const blockId of path) {
+    const blockIndex = graph.indexById.get(blockId);
+    if (blockIndex === undefined) {
+      throw new Error(`missing diagnostic block ${blockId}`);
+    }
+    const resolution = resolveDogSelection(
+      level,
+      blockIndex,
+      remainingMask,
+      higherBlockCounts,
+      tray,
+      handlers,
+      magneticRandom,
+      graph,
+    );
+    remainingMask = resolution.remainingMask;
+    higherBlockCounts.splice(0, higherBlockCounts.length, ...resolution.higherBlockCounts);
+    tray.splice(0, tray.length, ...resolution.tray);
+  }
+
+  return magneticRandom;
+}

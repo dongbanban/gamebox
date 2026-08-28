@@ -49,6 +49,14 @@ export function searchSolvableContinuation(
         "solvable continuation leaves frozen blocks before natural melting",
       );
     }
+    if (tray.length > 0) {
+      return createSolvabilityResult(
+        "unsolvable",
+        path,
+        getDogTrayLogicalUnitCount(tray),
+        "solvable continuation leaves tray blocks after clearing the board",
+      );
+    }
     context.completedStates.set(stateKeyFor(remainingMask, tray, magneticRandom), {
       status: "solvable",
       path: [],
@@ -277,7 +285,7 @@ export function findGreedyContinuation(
     }
   }
 
-  if (tray.some((block) => block.specialMechanism !== undefined)) {
+  if (tray.length > 0) {
     return undefined;
   }
 
@@ -357,7 +365,7 @@ export function verifyStateContinuation(
     }
   }
 
-  if (remainingMask !== 0n || tray.some((block) => block.specialMechanism !== undefined)) {
+  if (remainingMask !== 0n || tray.length > 0) {
     return undefined;
   }
 

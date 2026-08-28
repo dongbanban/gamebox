@@ -173,6 +173,15 @@ export function verifyRemovalPath(
     );
   }
 
+  if (tray.length > 0) {
+    return createPathVerification(
+      "unsolvable",
+      path,
+      trayPeakPressure,
+      "solvable path leaves tray blocks after clearing the board",
+    );
+  }
+
   return createPathVerification(
     "solvable",
     acceptedPath,
