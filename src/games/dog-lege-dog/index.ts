@@ -13,7 +13,12 @@ export type {
   GameSessionPendingSelectionResult,
   GameSessionSelectionResult,
   GameSessionSnapshot,
+  GameSessionShuffleOutcome,
+  GameSessionShuffleReplayEvent,
+  GameSessionShuffleResolution,
   GameSessionShuffleState,
+  GameSessionShuffleTransaction,
+  GameSessionShuffleTransactionState,
   GameSessionStatus,
   GameSessionTripleRemovalPlan,
   GameSessionTripleRemovalResult,
@@ -103,6 +108,13 @@ export type {
   SolvabilityStateOptions,
 } from "@/games/dog-lege-dog/levels/level-solvability";
 export {
+  resolveDogSafeShuffle,
+} from "@/games/dog-lege-dog/levels/level-shuffle";
+export type {
+  DogShuffleResolutionComputation,
+  DogShuffleResolutionOptions,
+} from "@/games/dog-lege-dog/levels/level-shuffle";
+export {
   calculateDogLevelReward,
   DOG_LEVEL_REWARD_CONFIG,
   DOG_REWARD_CONFIG_VERSION,
@@ -188,7 +200,9 @@ export {
   getDogIllusionDisguisedPattern,
   getDogShuffleMechanismStatus,
   armDogShuffleBlock,
+  consumeDogShuffleBlock,
   triggerDogShuffleBlock,
+  isDogSpecialMechanismResolved,
   getDogSpecialMechanismConfigs,
   selectDogSpecialMechanismCounts,
   validateDogSpecialMechanismComposition,

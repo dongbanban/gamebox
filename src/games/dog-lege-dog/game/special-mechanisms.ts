@@ -35,6 +35,7 @@ export {
   DOG_TWIN_MECHANISM_TYPE,
   DOG_SHUFFLE_TRIGGERABLE_STATUS,
   armDogShuffleBlock,
+  consumeDogShuffleBlock,
   createDogIllusionMechanism,
   createDogShuffleMechanism,
   createDogSpecialMechanism,
@@ -42,6 +43,7 @@ export {
   createDogSpecialMechanismHandlers,
   getDogIllusionDisguisedPattern,
   getDogShuffleMechanismStatus,
+  isDogSpecialMechanismResolved,
   triggerDogShuffleBlock,
 } from "@/games/dog-lege-dog/game/special-mechanism-handlers";
 export type {

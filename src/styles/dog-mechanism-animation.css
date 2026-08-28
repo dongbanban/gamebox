@@ -54,6 +54,78 @@
   }
 }
 
+.dog-shuffle-effect {
+  position: absolute;
+  z-index: 58;
+  inset: 30% 10% auto;
+  display: grid;
+  place-items: center;
+  min-height: 72px;
+  border: 2px solid rgba(255, 122, 89, 0.9);
+  border-radius: 18px;
+  background: rgba(255, 247, 221, 0.9);
+  box-shadow:
+    0 0 0 6px rgba(255, 122, 89, 0.16),
+    0 0 28px rgba(255, 122, 89, 0.72),
+    inset 0 0 18px rgba(255, 255, 255, 0.9);
+  color: #8a3f2e;
+  pointer-events: none;
+  animation: dog-shuffle-resolve var(--dog-animation-duration, 1200ms) ease-out both;
+}
+
+.dog-shuffle-effect--stable {
+  border-color: rgba(22, 145, 137, 0.9);
+  box-shadow:
+    0 0 0 6px rgba(22, 145, 137, 0.14),
+    0 0 24px rgba(22, 145, 137, 0.58),
+    inset 0 0 18px rgba(255, 255, 255, 0.9);
+  color: #176e6a;
+}
+
+.dog-shuffle-effect__ring {
+  position: absolute;
+  inset: 9px;
+  border: 2px dashed currentColor;
+  border-radius: 12px;
+  opacity: 0.58;
+  animation: dog-shuffle-ring var(--dog-animation-duration, 1200ms) linear both;
+}
+
+.dog-shuffle-effect__label {
+  position: relative;
+  z-index: 1;
+  font-size: clamp(18px, 4vw, 28px);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+@keyframes dog-shuffle-resolve {
+  0% {
+    opacity: 0;
+    transform: scale(0.78) rotate(-2deg);
+  }
+
+  28% {
+    opacity: 1;
+    transform: scale(1.03) rotate(1deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.08) rotate(0deg);
+  }
+}
+
+@keyframes dog-shuffle-ring {
+  from {
+    transform: rotate(0deg) scale(0.82);
+  }
+
+  to {
+    transform: rotate(180deg) scale(1.1);
+  }
+}
+
 .dog-block--detector-reveal {
   border-color: rgba(255, 253, 220, 0.98);
   box-shadow:

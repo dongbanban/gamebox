@@ -1,6 +1,7 @@
 import type { BlockGraph } from "@/games/dog-lege-dog/levels/level-graph";
 import {
   getDogTrayLogicalUnitCount,
+  isDogSpecialMechanismResolved,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
 import type {
   DogLevelGeometry,
@@ -41,12 +42,12 @@ export function searchSolvableContinuation(
   magneticRandom: SeededRandom = createDogMagneticRandom(level),
 ): SolvabilityResult {
   if (remainingMask === 0n) {
-    if (tray.some((block) => block.specialMechanism !== undefined)) {
+    if (tray.some((block) => !isDogSpecialMechanismResolved(block.specialMechanism))) {
       return createSolvabilityResult(
         "unsolvable",
         path,
         getDogTrayLogicalUnitCount(tray),
-        "solvable continuation leaves frozen blocks before natural melting",
+        "solvable continuation leaves unresolved special mechanisms",
       );
     }
     if (tray.length > 0) {

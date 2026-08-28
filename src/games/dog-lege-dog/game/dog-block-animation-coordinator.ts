@@ -32,6 +32,7 @@ import {
   findDogTrayTarget,
 } from "@/games/dog-lege-dog/game/dog-game-dom";
 import { DogFeedbackCoordinator } from "@/games/dog-lege-dog/game/dog-feedback-coordinator";
+import { playDogShuffleEffect } from "@/games/dog-lege-dog/game/dog-shuffle-animation-coordinator";
 
 export interface DogBlockAnimationCoordinatorOptions {
   readonly root: HTMLElement;
@@ -190,6 +191,7 @@ export class DogBlockAnimationCoordinator {
       null,
       twinSplit,
       selection.tripleCount,
+      selection.shuffleResolution?.outcome ?? null,
     );
     return nextState;
   }
@@ -285,6 +287,7 @@ export class DogBlockAnimationCoordinator {
     illusionBlockId: string | null = null,
     twinSplit: CancellableAnimation | null = null,
     tripleCount = 0,
+    shuffleOutcome: "reordered" | "stable" | null = null,
   ): Promise<void> {
     const { runtime, root } = this.options;
     await flight.promise;
@@ -312,6 +315,10 @@ export class DogBlockAnimationCoordinator {
       if (runtime.destroyed) {
         return;
       }
+    }
+    await this.playShuffleEffect(runtime.session.getState(), shuffleOutcome);
+    if (runtime.destroyed) {
+      return;
     }
 
     await this.options.feedback.finishResolvedSelection(result, didMatch, tripleCount);
@@ -432,6 +439,10 @@ export class DogBlockAnimationCoordinator {
       soundEffects.play("match");
     }
     this.options.feedback.startMeltAnimations(selection.meltedBlockIds, trayRectsBeforeSelection);
+    await this.playShuffleEffect(selection.snapshot, selection.shuffleResolution?.outcome ?? null);
+    if (runtime.destroyed) {
+      return;
+    }
     await this.options.feedback.finishResolvedSelection(
       result,
       selection.removedCount > 0,
@@ -460,10 +471,30 @@ export class DogBlockAnimationCoordinator {
       runtime.feedback = "match";
       soundEffects.play("match");
     }
+    await this.playShuffleEffect(selection.snapshot, selection.shuffleResolution?.outcome ?? null);
+    if (runtime.destroyed) {
+      return;
+    }
     await this.options.feedback.finishResolvedSelection(
       result,
       selection.removedCount > 0,
       selection.tripleCount,
     );
+  }
+
+  private playShuffleEffect(
+    snapshot: GameSessionSnapshot,
+    outcome: "reordered" | "stable" | null | undefined,
+  ): Promise<void> {
+    return outcome === null || outcome === undefined
+      ? Promise.resolve()
+      : playDogShuffleEffect({
+          activeFlights: this.options.runtime.activeFlights,
+          config: this.options.runtime.config,
+          outcome,
+          render: this.options.render,
+          root: this.options.root,
+          snapshot,
+        });
   }
 }

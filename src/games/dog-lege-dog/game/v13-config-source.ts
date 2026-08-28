@@ -125,6 +125,7 @@ export const DOG_V13_CONFIG_SOURCE: DogV13Config = {
       enabled: false,
       firstLevelNumber: 3,
       maxPerLevel: 1,
+      candidateCount: 8,
       threshold: {
         maxLogicalUnitCount: 5,
         capacityBuffer: 2,

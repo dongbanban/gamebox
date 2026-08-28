@@ -41,6 +41,59 @@ export interface GameSessionShuffleState {
   readonly threshold: number;
 }
 
+export type GameSessionShuffleOutcome = "reordered" | "stable";
+
+export interface GameSessionShuffleTransactionState {
+  readonly status: GameSessionStatus;
+  readonly remainingBlockIds: readonly string[];
+  readonly trayBlocks: readonly DogTrayBlock[];
+  readonly trayCapacity: number;
+  readonly effectiveTrayCapacity: number;
+  readonly lockedTraySlotCount: number;
+}
+
+export interface GameSessionShuffleReplayEvent {
+  readonly type: "shuffle";
+  readonly sequence: number;
+  readonly runSeed: string;
+  readonly generatorVersion: number;
+  readonly randomSeed: string;
+  readonly triggerBlockId: string;
+  readonly candidateCount: number;
+  readonly uniqueCandidateCount: number;
+  readonly safeCandidateCount: number;
+  readonly selectedCandidateIndex: number | null;
+  readonly outcome: GameSessionShuffleOutcome;
+  readonly beforeTrayBlockIds: readonly string[];
+  readonly afterTrayBlockIds: readonly string[];
+  readonly secondaryRemovedBlockIds: readonly string[];
+  readonly secondaryTripleCount: number;
+}
+
+export interface GameSessionShuffleTransaction {
+  readonly outcome: "reordered";
+  readonly before: GameSessionShuffleTransactionState;
+  readonly after: GameSessionShuffleTransactionState;
+  readonly replayEvent: GameSessionShuffleReplayEvent;
+}
+
+export interface GameSessionShuffleResolution {
+  readonly triggered: true;
+  readonly triggerBlockId: string;
+  readonly outcome: GameSessionShuffleOutcome;
+  readonly candidateCount: number;
+  readonly uniqueCandidateCount: number;
+  readonly safeCandidateCount: number;
+  readonly selectedCandidateIndex: number | null;
+  readonly transaction: GameSessionShuffleTransaction | null;
+  readonly replayEvent: GameSessionShuffleReplayEvent;
+  readonly removedCount: number;
+  readonly tripleCount: number;
+  readonly secondaryRemovedBlockIds: readonly string[];
+  readonly secondaryTripleCount: number;
+  readonly meltedBlockIds: readonly string[];
+}
+
 export interface GameSessionUnlockResult extends GameSessionSnapshot {
   readonly unlocked: boolean;
   readonly unlockedSlotIndex: number | null;
@@ -61,6 +114,7 @@ export interface GameSessionMagneticResolution {
 
 export interface GameSessionSelectionResult extends GameSessionSnapshot {
   readonly magneticResolution: GameSessionMagneticResolution | null;
+  readonly shuffleResolution: GameSessionShuffleResolution | null;
   readonly selected: boolean;
   readonly removedCount: number;
   readonly snapshot: GameSessionSnapshot;

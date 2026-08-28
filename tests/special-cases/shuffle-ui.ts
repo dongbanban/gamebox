@@ -94,25 +94,33 @@ describe("特殊机制测试 · shuffle-ui", () => {
       loadout: ["tray-capacity", "wildcard", "torch"],
     });
 
-    for (const blockId of ["shuffle", "ordinary-1", "ordinary-2", "ordinary-3", "ordinary-4"]) {
+    for (const blockId of ["shuffle", "ordinary-1", "ordinary-2", "ordinary-3"]) {
       game.selectBlock(blockId);
       await vi.runAllTimersAsync();
     }
+
+    game.selectBlock("ordinary-4");
+    await vi.advanceTimersByTimeAsync(BLOCK_FLIGHT_DURATION_MS);
 
     const shuffleSlot = root.querySelector<HTMLElement>(
       '[data-testid="dog-tray-slot"][data-block-id="shuffle"]',
     );
     expect(game.getState().session.shuffle).toMatchObject({
-      status: "triggerable",
+      status: "consumed",
       threshold: 5,
     });
-    expect(shuffleSlot?.dataset.shuffleState).toBe("triggerable");
-    expect(shuffleSlot?.classList.contains("dog-tray__slot--shuffle-triggerable")).toBe(true);
-    expect(shuffleSlot?.getAttribute("aria-label")).toContain("可触发乱序");
+    expect(shuffleSlot?.dataset.shuffleState).toBe("consumed");
+    expect(shuffleSlot?.classList.contains("dog-tray__slot--shuffle-triggerable")).toBe(false);
+    expect(shuffleSlot?.getAttribute("aria-label")).toContain("已消耗");
+    const shuffleEffect = root.querySelector<HTMLElement>('[data-testid="dog-shuffle-effect"]');
+    expect(shuffleEffect?.dataset.shuffleOutcome).toBe("stable");
+    expect(game.getState().inputLocked).toBe(true);
     const shuffleStatus = root.querySelector<HTMLElement>('[data-testid="dog-shuffle-status"]');
-    expect(shuffleStatus?.dataset.shuffleState).toBe("triggerable");
+    expect(shuffleStatus?.dataset.shuffleState).toBe("consumed");
     expect(shuffleStatus?.textContent)
-      .toContain("可触发乱序");
+      .toContain("已消耗");
+    await vi.runAllTimersAsync();
+    expect(game.getState().inputLocked).toBe(false);
     game.destroy();
   });
 });

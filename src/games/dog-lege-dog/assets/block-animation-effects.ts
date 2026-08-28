@@ -235,6 +235,47 @@ export function animateDogTwinSplitEffect(
   });
 }
 
+export interface DogShuffleEffectOptions extends DogAnimationTimingOptions {
+  readonly root: HTMLElement;
+  readonly outcome: "reordered" | "stable";
+}
+
+export function animateDogShuffleEffect(
+  options: DogShuffleEffectOptions,
+): CancellableAnimation {
+  const durationMs = resolveAnimationDuration(
+    options.config,
+    "shuffleTriggerableMs",
+    1200,
+  );
+  const layer = options.root.querySelector<HTMLElement>(
+    '[data-testid="dog-animation-layer"]',
+  );
+  if (layer === null) {
+    return createAnimationLifecycle(durationMs, () => undefined);
+  }
+
+  const effect = document.createElement("div");
+  effect.className = `dog-shuffle-effect dog-shuffle-effect--${options.outcome}`;
+  effect.dataset.testid = "dog-shuffle-effect";
+  effect.dataset.shuffleOutcome = options.outcome;
+  effect.setAttribute("role", "status");
+  effect.setAttribute(
+    "aria-label",
+    options.outcome === "stable" ? "乱序已稳定" : "已完成安全乱序",
+  );
+  effect.innerHTML = `
+    <span class="dog-shuffle-effect__ring"></span>
+    <span class="dog-shuffle-effect__label">${options.outcome === "stable" ? "乱序已稳定" : "安全乱序"}</span>
+  `;
+  setDogAnimationDuration(effect, durationMs);
+  layer.append(effect);
+
+  return createAnimationLifecycle(durationMs, () => {
+    effect.remove();
+  });
+}
+
 export interface DogIllusionRevealOptions extends DogAnimationTimingOptions {
   readonly root: HTMLElement;
   readonly blockId: string;

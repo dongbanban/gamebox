@@ -215,6 +215,7 @@ function validateShuffleConfig(value: unknown, issues: DogV13ConfigIssue[]): voi
   }
   validateInteger(shuffle.firstLevelNumber, "specialMechanisms.shuffle.firstLevelNumber", 1, issues, 3);
   validateInteger(shuffle.maxPerLevel, "specialMechanisms.shuffle.maxPerLevel", 1, issues, 1);
+  validateInteger(shuffle.candidateCount, "specialMechanisms.shuffle.candidateCount", 8, issues, 8);
   const threshold = asRecord(shuffle.threshold);
   if (threshold === undefined) {
     requiredObject(shuffle, "threshold", issues, "specialMechanisms.shuffle");

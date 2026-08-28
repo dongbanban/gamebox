@@ -79,14 +79,19 @@ export class GameSessionSelectionRuntime {
       this.state.specialMechanismHandlers,
       { allowFrozenFinalTriple: this.state.remainingBlocks.size === 0 },
     );
-    this.state.updateResult();
+    const shuffleResolution = this.state.updateResult();
 
     return createSelectionResult(
       this.getSnapshot(),
       true,
-      resolution.removedCount,
-      resolution.tripleCount,
-      resolution.meltedBlockIds,
+      resolution.removedCount + (shuffleResolution?.removedCount ?? 0),
+      resolution.tripleCount + (shuffleResolution?.tripleCount ?? 0),
+      [
+        ...resolution.meltedBlockIds,
+        ...(shuffleResolution?.meltedBlockIds ?? []),
+      ],
+      null,
+      shuffleResolution,
     );
   }
 
@@ -117,14 +122,18 @@ export class GameSessionSelectionRuntime {
       this.state.specialMechanismHandlers,
       { allowFrozenFinalTriple: this.state.remainingBlocks.size === 0 },
     );
-    this.state.updateResult();
+    const shuffleResolution = this.state.updateResult();
     return createSelectionResult(
       this.getSnapshot(),
       true,
-      resolution.removedCount,
-      resolution.tripleCount,
-      resolution.meltedBlockIds,
+      resolution.removedCount + (shuffleResolution?.removedCount ?? 0),
+      resolution.tripleCount + (shuffleResolution?.tripleCount ?? 0),
+      [
+        ...resolution.meltedBlockIds,
+        ...(shuffleResolution?.meltedBlockIds ?? []),
+      ],
       magneticResolution,
+      shuffleResolution,
     );
   }
 

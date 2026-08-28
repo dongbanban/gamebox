@@ -148,6 +148,13 @@ describe("狗了个狗 v13 集中配置", () => {
         ...DOG_V13_CONFIG.generation,
         workerTimeoutMs: 0,
       },
+      specialMechanisms: {
+        ...DOG_V13_CONFIG.specialMechanisms,
+        shuffle: {
+          ...DOG_V13_CONFIG.specialMechanisms.shuffle,
+          candidateCount: 7,
+        },
+      },
     };
 
     expect(() => loadDogV13Config(invalid)).toThrow(DogV13ConfigError);
@@ -162,11 +169,13 @@ describe("狗了个狗 v13 集中配置", () => {
           "levels.maxLevelNumber",
           "tray.baseCapacity",
           "generation.workerTimeoutMs",
+          "specialMechanisms.shuffle.candidateCount",
         ]),
       );
       expect(configError.message).toContain("levels.maxLevelNumber");
       expect(configError.message).toContain("tray.baseCapacity");
       expect(configError.message).toContain("generation.workerTimeoutMs");
+      expect(configError.message).toContain("specialMechanisms.shuffle.candidateCount");
     }
   });
 

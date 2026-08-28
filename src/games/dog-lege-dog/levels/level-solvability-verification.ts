@@ -3,6 +3,7 @@ import {
   createDogSpecialMechanismHandlerMap,
   DOG_SPECIAL_MECHANISM_HANDLERS,
   getDogTrayLogicalUnitCount,
+  isDogSpecialMechanismResolved,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
 import type {
   DogLevelGeometry,
@@ -164,12 +165,12 @@ export function verifyRemovalPath(
     );
   }
 
-  if (tray.some((block) => block.specialMechanism !== undefined)) {
+  if (tray.some((block) => !isDogSpecialMechanismResolved(block.specialMechanism))) {
     return createPathVerification(
       "unsolvable",
       path,
       trayPeakPressure,
-      "solvable path leaves frozen blocks before natural melting",
+      "solvable path leaves unresolved special mechanisms",
     );
   }
 

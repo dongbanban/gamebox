@@ -15,6 +15,8 @@ import type {
   GameSessionRevealResult,
   GameSessionSelectionResult,
   GameSessionSnapshot,
+  GameSessionShuffleReplayEvent,
+  GameSessionShuffleTransaction,
   GameSessionShuffleState,
   GameSessionTripleRemovalPlan,
   GameSessionTripleRemovalResult,
@@ -47,6 +49,14 @@ export class GameSession {
 
   getState(): GameSessionSnapshot {
     return this.state.getState();
+  }
+
+  getLastShuffleTransaction(): GameSessionShuffleTransaction | null {
+    return this.state.getLastShuffleTransaction();
+  }
+
+  getShuffleReplayEvents(): readonly GameSessionShuffleReplayEvent[] {
+    return this.state.getShuffleReplayEvents();
   }
 
   canSelectBlock(blockId: string): boolean {
@@ -189,7 +199,12 @@ export type {
   GameSessionPendingSelectionResult,
   GameSessionSelectionResult,
   GameSessionSnapshot,
+  GameSessionShuffleOutcome,
+  GameSessionShuffleReplayEvent,
+  GameSessionShuffleResolution,
   GameSessionShuffleState,
+  GameSessionShuffleTransaction,
+  GameSessionShuffleTransactionState,
   GameSessionStatus,
   GameSessionTripleRemovalPlan,
   GameSessionTripleRemovalResult,

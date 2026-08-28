@@ -5,6 +5,7 @@ import type {
   GameSessionMagneticResolution,
   GameSessionRevealResult,
   GameSessionSelectionResult,
+  GameSessionShuffleResolution,
   GameSessionSnapshot,
   GameSessionTripleRemovalResult,
   GameSessionUnlockResult,
@@ -20,9 +21,11 @@ export function createSelectionResult(
   tripleCount = 0,
   meltedBlockIds: readonly string[] = [],
   magneticResolution: GameSessionMagneticResolution | null = null,
+  shuffleResolution: GameSessionShuffleResolution | null = null,
 ): GameSessionSelectionResult {
   return freezeResult(snapshot, {
     magneticResolution,
+    shuffleResolution,
     selected,
     removedCount,
     tripleCount,

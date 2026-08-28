@@ -27,6 +27,7 @@ describe("特殊机制测试 · shuffle-block", () => {
       enabled: false,
       firstLevelNumber: 3,
       maxPerLevel: 1,
+      candidateCount: 8,
       threshold: { maxLogicalUnitCount: 5, capacityBuffer: 2 },
     });
     expect(DOG_V13_CONFIG.specialMechanisms.mechanisms.map(({ type }) => type))
@@ -87,7 +88,7 @@ describe("特殊机制测试 · shuffle-block", () => {
     ]);
   });
 
-  it("首次入槽结算后立即按有效容量阈值进入可触发状态", () => {
+  it("首次入槽结算后立即按有效容量阈值完成乱序事务", () => {
     const session = new GameSession({
       level: {
         ...createLevel([
@@ -107,12 +108,12 @@ describe("特殊机制测试 · shuffle-block", () => {
     expect(result.removedCount).toBe(0);
     expect(result.snapshot.trayLogicalUnitCount).toBe(3);
     expect(result.snapshot.shuffle).toMatchObject({
-      status: "triggerable",
+      status: "consumed",
       threshold: 3,
     });
   });
 
-  it("按有效容量使用 3、4、5、5 个逻辑方块进入乱序触发状态", () => {
+  it("按有效容量使用 3、4、5、5 个逻辑方块完成乱序触发", () => {
     const cases = [
       { effectiveCapacity: 5, trayCapacity: 7, lockedTraySlotCount: 2, threshold: 3 },
       { effectiveCapacity: 6, trayCapacity: 7, lockedTraySlotCount: 1, threshold: 4 },
@@ -155,14 +156,14 @@ describe("特殊机制测试 · shuffle-block", () => {
         trayLogicalUnitCount: testCase.threshold,
         shuffle: {
           blockId: "shuffle",
-          status: "triggerable",
+          status: "consumed",
           threshold: testCase.threshold,
         },
       });
     }
   });
 
-  it("锁槽解锁与扩容后重算阈值，并在动作结算末尾进入触发状态", () => {
+  it("锁槽解锁与扩容后重算阈值，并在动作结算末尾完成乱序", () => {
     const unlockSession = new GameSession({
       level: {
         ...createLevel([
@@ -183,7 +184,7 @@ describe("特殊机制测试 · shuffle-block", () => {
     });
     unlockSession.selectBlock("licking-1");
     const unlocked = unlockSession.selectBlock("guard-1");
-    expect(unlocked.snapshot.shuffle).toMatchObject({ status: "triggerable", threshold: 4 });
+    expect(unlocked.snapshot.shuffle).toMatchObject({ status: "consumed", threshold: 4 });
 
     const capacitySession = new GameSession({
       level: {
@@ -205,7 +206,7 @@ describe("特殊机制测试 · shuffle-block", () => {
     expect(capacitySession.getState().shuffle).toMatchObject({ status: "armed", threshold: 5 });
     capacitySession.selectBlock("guard-1");
     const expanded = capacitySession.selectBlock("mad-1");
-    expect(expanded.snapshot.shuffle).toMatchObject({ status: "triggerable", threshold: 5 });
+    expect(expanded.snapshot.shuffle).toMatchObject({ status: "consumed", threshold: 5 });
   });
 
   it("待乱序方块在阈值前被后续三消移除时失效", () => {
@@ -248,6 +249,173 @@ describe("特殊机制测试 · shuffle-block", () => {
       status: "armed",
       threshold: 5,
     });
+  });
+
+  it("达到阈值后只提交安全候选，并记录可复现乱序事件", () => {
+    const session = new GameSession({
+      level: createLevel([
+        createBlock("shuffle", 0, 0, WORKING_DOG, createDogShuffleMechanism()),
+        createBlock("single-1", 4, 0, SINGLE_DOG),
+        createBlock("licking-1", 8, 0, LICKING_DOG),
+        createBlock("guard-1", 12, 0, "看门狗"),
+        createBlock("mad-1", 16, 0, "疯狗"),
+        createBlock("working-2", 20, 0, WORKING_DOG),
+        createBlock("working-3", 24, 0, WORKING_DOG),
+        createBlock("single-2", 28, 0, SINGLE_DOG),
+        createBlock("single-3", 32, 0, SINGLE_DOG),
+        createBlock("licking-2", 36, 0, LICKING_DOG),
+        createBlock("licking-3", 40, 0, LICKING_DOG),
+        createBlock("guard-2", 44, 0, "看门狗"),
+        createBlock("guard-3", 48, 0, "看门狗"),
+        createBlock("mad-2", 52, 0, "疯狗"),
+        createBlock("mad-3", 56, 0, "疯狗"),
+      ]),
+    });
+
+    for (const blockId of ["shuffle", "single-1", "licking-1", "guard-1"]) {
+      session.selectBlock(blockId);
+    }
+    const result = session.selectBlock("mad-1");
+
+    expect(result.shuffleResolution).toMatchObject({
+      outcome: "reordered",
+      candidateCount: 8,
+      safeCandidateCount: expect.any(Number),
+      selectedCandidateIndex: expect.any(Number),
+    });
+    expect(result.shuffleResolution?.safeCandidateCount).toBeGreaterThan(0);
+    expect(result.snapshot.shuffle).toMatchObject({
+      blockId: "shuffle",
+      status: "consumed",
+      threshold: 5,
+    });
+    expect(result.snapshot.trayBlocks.map((block) => block.id)).toEqual(
+      result.shuffleResolution?.transaction?.after.trayBlocks.map((block) => block.id),
+    );
+    expect(session.getShuffleReplayEvents()).toEqual([
+      result.shuffleResolution?.replayEvent,
+    ]);
+  });
+
+  it("没有安全候选时保持触发前槽序，不创建复原事务", () => {
+    const session = new GameSession({
+      level: createLevel([
+        createBlock("shuffle", 0, 0, WORKING_DOG, createDogShuffleMechanism()),
+        createBlock("single", 4, 0, SINGLE_DOG),
+        createBlock("licking", 8, 0, LICKING_DOG),
+        createBlock("guard", 12, 0, "看门狗"),
+        createBlock("mad", 16, 0, "疯狗"),
+      ]),
+    });
+
+    for (const blockId of ["shuffle", "single", "licking", "guard"]) {
+      session.selectBlock(blockId);
+    }
+    const result = session.selectBlock("mad");
+
+    expect(result.shuffleResolution).toMatchObject({
+      outcome: "stable",
+      candidateCount: 8,
+      safeCandidateCount: 0,
+      selectedCandidateIndex: null,
+      transaction: null,
+    });
+    expect(result.snapshot.trayBlocks.map((block) => block.id)).toEqual([
+      "shuffle",
+      "single",
+      "licking",
+      "guard",
+      "mad",
+    ]);
+    expect(result.snapshot.trayBlocks.find((block) => block.id === "shuffle")?.specialMechanism)
+      .toMatchObject({ type: DOG_SHUFFLE_MECHANISM_TYPE, state: { status: "consumed" } });
+    expect(session.getLastShuffleTransaction()).toBeNull();
+  });
+
+  it("相同 runSeed 与操作路径复现候选选择、槽序、结算结果", () => {
+    const level = createLevel([
+      createBlock("shuffle", 0, 0, WORKING_DOG, createDogShuffleMechanism()),
+      createBlock("single-1", 4, 0, SINGLE_DOG),
+      createBlock("licking-1", 8, 0, LICKING_DOG),
+      createBlock("guard-1", 12, 0, "看门狗"),
+      createBlock("mad-1", 16, 0, "疯狗"),
+      createBlock("working-2", 20, 0, WORKING_DOG),
+      createBlock("working-3", 24, 0, WORKING_DOG),
+      createBlock("single-2", 28, 0, SINGLE_DOG),
+      createBlock("single-3", 32, 0, SINGLE_DOG),
+      createBlock("licking-2", 36, 0, LICKING_DOG),
+      createBlock("licking-3", 40, 0, LICKING_DOG),
+      createBlock("guard-2", 44, 0, "看门狗"),
+      createBlock("guard-3", 48, 0, "看门狗"),
+      createBlock("mad-2", 52, 0, "疯狗"),
+      createBlock("mad-3", 56, 0, "疯狗"),
+    ]);
+    const play = () => {
+      const session = new GameSession({ level });
+      for (const blockId of ["shuffle", "single-1", "licking-1", "guard-1", "mad-1"]) {
+        session.selectBlock(blockId);
+      }
+      const result = session.getState();
+      return {
+        replayEvent: session.getShuffleReplayEvents()[0],
+        trayBlocks: result.trayBlocks,
+        status: result.status,
+      };
+    };
+
+    expect(play()).toEqual(play());
+  });
+
+  it("安全候选按完整条目移动，并自动结算新形成的相邻三消", () => {
+    const session = new GameSession({
+      level: {
+        ...createLevel([
+          createBlock("working-1", 0, 0, WORKING_DOG),
+          createBlock("single-1", 4, 0, SINGLE_DOG),
+          createBlock("working-2", 8, 0, WORKING_DOG),
+          createBlock("licking-1", 12, 0, LICKING_DOG),
+          createBlock("shuffle", 16, 0, WORKING_DOG, createDogShuffleMechanism()),
+          createBlock("single-2", 20, 0, SINGLE_DOG),
+          createBlock("single-3", 24, 0, SINGLE_DOG),
+          createBlock("licking-2", 28, 0, LICKING_DOG),
+          createBlock("licking-3", 32, 0, LICKING_DOG),
+          createBlock("guard-2", 36, 0, "看门狗"),
+          createBlock("guard-3", 40, 0, "看门狗"),
+        ]),
+        runSeed: "secondary-0",
+      },
+      initialTrayBlocks: [
+        createTrayBlock("frozen", "看门狗", {
+          type: "freeze",
+          state: { status: "frozen", completedTriples: 0 },
+        }),
+      ],
+    });
+
+    for (const blockId of ["working-1", "single-1", "working-2", "licking-1"]) {
+      session.selectBlock(blockId);
+    }
+    const result = session.selectBlock("shuffle");
+    expect(result.shuffleResolution?.outcome).toBe("reordered");
+    expect(result.shuffleResolution?.tripleCount).toBeGreaterThan(0);
+    expect(result.shuffleResolution?.secondaryTripleCount).toBe(1);
+    expect(result.shuffleResolution?.secondaryRemovedBlockIds.length).toBeGreaterThan(0);
+    expect(result.shuffleResolution?.transaction?.before.trayBlocks.find(
+      (block) => block.id === "shuffle",
+    )).toMatchObject({
+      id: "shuffle",
+      patternType: WORKING_DOG,
+      specialMechanism: { type: DOG_SHUFFLE_MECHANISM_TYPE, state: { status: "armed" } },
+    });
+    expect(result.snapshot.trayBlocks.some((block) => block.id === "frozen")).toBe(true);
+    expect(result.snapshot.trayBlocks.find((block) => block.id === "frozen")?.specialMechanism)
+      .toMatchObject({ type: "freeze", state: { completedTriples: 1 } });
+    for (const block of result.snapshot.trayBlocks) {
+      if (block.id === "shuffle") {
+        expect(block.patternType).toBe(WORKING_DOG);
+        expect(block.specialMechanism?.state.status).toBe("consumed");
+      }
+    }
   });
 });
 

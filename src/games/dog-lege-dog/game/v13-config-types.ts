@@ -68,6 +68,7 @@ export interface DogV13ShuffleConfig {
   readonly enabled: boolean;
   readonly firstLevelNumber: number;
   readonly maxPerLevel: 1;
+  readonly candidateCount: number;
   readonly threshold: {
     readonly maxLogicalUnitCount: number;
     readonly capacityBuffer: number;

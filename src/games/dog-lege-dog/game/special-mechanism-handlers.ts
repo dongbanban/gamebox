@@ -134,6 +134,30 @@ export function triggerDogShuffleBlock(block: DogTrayBlock): DogTrayBlock {
   return withDogShuffleStatus(block, DOG_SHUFFLE_ARMED_STATUS, DOG_SHUFFLE_TRIGGERABLE_STATUS);
 }
 
+export function consumeDogShuffleBlock(block: DogTrayBlock): DogTrayBlock {
+  const status = getDogShuffleMechanismStatus(block.specialMechanism);
+  if (status !== DOG_SHUFFLE_ARMED_STATUS && status !== DOG_SHUFFLE_TRIGGERABLE_STATUS) {
+    return block;
+  }
+
+  return {
+    ...block,
+    specialMechanism: {
+      ...block.specialMechanism!,
+      state: { ...block.specialMechanism!.state, status: DOG_SHUFFLE_CONSUMED_STATUS },
+    },
+  };
+}
+
+export function isDogSpecialMechanismResolved(
+  mechanism: DogSpecialMechanism | undefined,
+): boolean {
+  return mechanism === undefined || (
+    mechanism.type === DOG_SHUFFLE_MECHANISM_TYPE &&
+    getDogShuffleMechanismStatus(mechanism) === DOG_SHUFFLE_CONSUMED_STATUS
+  );
+}
+
 export function createDogIllusionMechanism(
   realPatternType: DogPatternType,
   random: SeededRandom,

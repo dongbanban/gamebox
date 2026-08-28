@@ -11,20 +11,21 @@ import {
   resolveDogTrayMatches,
 } from "@/games/dog-lege-dog/levels/level-rules";
 import { findSolvabilityFromState } from "@/games/dog-lege-dog/levels/level-solvability";
+import { GameSessionShuffleRuntime } from "@/games/dog-lege-dog/game/game-session-shuffle";
 import { resolveDogSelection } from "@/games/dog-lege-dog/levels/level-mechanism-resolution";
 import {
   createDogSpecialMechanismHandlerMap,
   createDogSpecialMechanismHandlers,
   DOG_SPECIAL_MECHANISM_HANDLERS,
-  armDogShuffleBlock,
   DOG_SHUFFLE_MECHANISM_TYPE,
   DOG_TWIN_MECHANISM_TYPE,
   getDogLogicalBlockCount,
   getDogShuffleMechanismStatus,
   getDogTrayLogicalUnitCount,
-  triggerDogShuffleBlock,
+  isDogSpecialMechanismResolved,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
 import { SeededRandom } from "@/games/dog-lege-dog/levels/level-random";
+import { cloneDogTrayBlock } from "@/games/dog-lege-dog/levels/level-tray-block";
 import {
   DOG_V13_CONFIG,
   getDogShuffleThreshold,
@@ -52,6 +53,7 @@ export class GameSessionState {
   trayCapacity: number;
   lockedTraySlotCount: number;
   status: GameSessionStatus = "playing";
+  private readonly shuffleRuntime: GameSessionShuffleRuntime;
 
   constructor(options: GameSessionOptions) {
     this.config = options.config ?? DOG_V13_CONFIG;
@@ -116,6 +118,23 @@ export class GameSessionState {
         `GameSession tray cannot contain more than ${effectiveTrayCapacity} unlocked slots`,
       );
     }
+    this.shuffleRuntime = new GameSessionShuffleRuntime({
+      config: this.config,
+      level: this.level,
+      remainingBlocks: this.remainingBlocks,
+      specialMechanismHandlers: this.specialMechanismHandlers,
+      magneticRandom: this.magneticRandom,
+      tray: this.tray,
+      getEffectiveTrayCapacity: () => this.getEffectiveTrayCapacity(),
+      getLockedTraySlotCount: () => this.lockedTraySlotCount,
+      getStatus: () => this.status,
+      getTrayCapacity: () => this.trayCapacity,
+      isSelectionPending: () => this.isSelectionPending(),
+      setStatus: (status) => {
+        this.status = status;
+      },
+      updateTerminalStatus: () => this.updateTerminalStatus(),
+    });
     this.updateResult();
   }
 
@@ -248,13 +267,19 @@ export class GameSessionState {
     return remainingMask;
   }
 
-  updateResult(): void {
-    if (this.isSelectionPending()) {
-      this.status = "playing";
-      return;
-    }
+  updateResult() {
+    return this.shuffleRuntime.updateResult();
+  }
 
-    this.updateShuffleState();
+  getLastShuffleTransaction() {
+    return this.shuffleRuntime.getLastShuffleTransaction();
+  }
+
+  getShuffleReplayEvents() {
+    return this.shuffleRuntime.getShuffleReplayEvents();
+  }
+
+  private updateTerminalStatus(): void {
     const trayLogicalUnitCount = getDogTrayLogicalUnitCount(this.tray);
     const effectiveTrayCapacity = this.getEffectiveTrayCapacity();
     if (trayLogicalUnitCount > effectiveTrayCapacity) {
@@ -268,7 +293,7 @@ export class GameSessionState {
         return;
       }
 
-      if (this.tray.every((block) => block.specialMechanism === undefined)) {
+      if (this.tray.every((block) => isDogSpecialMechanismResolved(block.specialMechanism))) {
         this.status = "lost";
         return;
       }
@@ -279,23 +304,6 @@ export class GameSessionState {
       !this.hasCapacityRelievingSelection(effectiveTrayCapacity)
     ) {
       this.status = "lost";
-    }
-  }
-
-  private updateShuffleState(): void {
-    const threshold = this.getShuffleThreshold();
-    const trayLogicalUnitCount = getDogTrayLogicalUnitCount(this.tray);
-    for (let index = 0; index < this.tray.length; index += 1) {
-      const block = this.tray[index];
-      if (block === undefined) {
-        continue;
-      }
-
-      const armedBlock = armDogShuffleBlock(block);
-      const nextBlock = trayLogicalUnitCount >= threshold
-        ? triggerDogShuffleBlock(armedBlock)
-        : armedBlock;
-      this.tray[index] = nextBlock;
     }
   }
 
@@ -370,19 +378,7 @@ export class GameSessionState {
   }
 }
 
-export function cloneTrayBlock(block: DogTrayBlock): DogTrayBlock {
-  if (block.specialMechanism === undefined) {
-    return Object.freeze({ ...block });
-  }
-
-  return Object.freeze({
-    ...block,
-    specialMechanism: Object.freeze({
-      ...block.specialMechanism,
-      state: Object.freeze({ ...block.specialMechanism.state }),
-    }),
-  });
-}
+export const cloneTrayBlock = cloneDogTrayBlock;
 
 export function toTrayBlock(block: DogBlock): DogTrayBlock {
   return {
