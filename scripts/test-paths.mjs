@@ -28,11 +28,11 @@ const VITEST_CASE_RULES = [
   },
   {
     entry: "tests/special-mechanism.test.ts",
-    patterns: [/^tests\/special-cases\/(?:core|mechanism-runtime|selection-runtime)\.ts$/],
+    patterns: [/^tests\/special-cases\/(?:core|mechanism-runtime|selection-runtime|shuffle-block)\.ts$/],
   },
   {
     entry: "tests/special-ui.test.ts",
-    patterns: [/^tests\/special-cases\/(?:board-ui|torch-ui|visual-protocol)\.ts$/],
+    patterns: [/^tests\/special-cases\/(?:board-ui|torch-ui|visual-protocol|shuffle-ui)\.ts$/],
   },
 ];
 
@@ -61,7 +61,7 @@ const UI_TEST_PATTERNS = [
   /^tests\/(?:app|dog-lege-dog|dog-loadout|sound-effects|game-runtime-modules|ui-rendering-modules|special-ui)\.test\.ts$/,
   /^tests\/app-cases\//,
   /^tests\/dog-cases\//,
-  /^tests\/special-cases\/(?:board-ui|torch-ui|visual-protocol)\.ts$/,
+  /^tests\/special-cases\/(?:board-ui|torch-ui|visual-protocol|shuffle-ui)\.ts$/,
   /^tests\/support\/(?:app-fixtures|dog-game-fixtures|dog-level-fixture)\.ts$/,
 ];
 
@@ -69,7 +69,7 @@ const HIGH_RISK_TEST_PATTERNS = [
   /^tests\/(?:difficulty-curve|dog-config|generation-failure|generation-lifecycle|generation-profile|level-generator|special-mechanism|v13-level-generation)\.test\.ts$/,
   /^tests\/level-generator-cases\//,
   /^tests\/support\/level-generator-fixtures\.ts$/,
-  /^tests\/special-cases\/(?:core|mechanism-runtime|selection-runtime)\.ts$/,
+  /^tests\/special-cases\/(?:core|mechanism-runtime|selection-runtime|shuffle-block)\.ts$/,
 ];
 
 export function getVitestEntriesForFiles(files) {

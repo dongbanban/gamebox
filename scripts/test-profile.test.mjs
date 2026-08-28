@@ -68,6 +68,8 @@ test("nested Vitest cases resolve to their root entries", () => {
       "tests/support/level-generator-fixtures.ts",
       "tests/special-cases/board-ui.ts",
       "tests/special-cases/mechanism-runtime.ts",
+      "tests/special-cases/shuffle-block.ts",
+      "tests/special-cases/shuffle-ui.ts",
     ]),
     [
       "tests/app.test.ts",
@@ -95,8 +97,13 @@ test("nested E2E cases resolve to their Playwright specs", () => {
 test("nested test paths retain UI and high-risk profile classification", () => {
   assert.equal(isUiOnlyTestFile("tests/app-cases/app-results.ts"), true);
   assert.equal(isUiOnlyTestFile("tests/special-cases/board-ui.ts"), true);
+  assert.equal(isUiOnlyTestFile("tests/special-cases/shuffle-ui.ts"), true);
   assert.deepEqual(
     classifyChangedFiles(["tests/level-generator-cases/solvability.ts"]),
+    ["generator"],
+  );
+  assert.deepEqual(
+    classifyChangedFiles(["tests/special-cases/shuffle-block.ts"]),
     ["generator"],
   );
   assert.equal(
