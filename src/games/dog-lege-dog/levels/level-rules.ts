@@ -126,8 +126,9 @@ export function resolveDogTrayMatches(
   let removedCount = 0;
   let tripleCount = 0;
   const meltedBlockIds: string[] = [];
-  const allowFrozenMatches =
-    options.allowFrozenFinalTriple === true && canResolveAllTrayBlocks(tray, handlers);
+  // The caller sets this only after the board is empty. Resolve every legal
+  // tray group so a frozen group cannot strand the terminal state.
+  const allowFrozenMatches = options.allowFrozenFinalTriple === true;
 
   while (true) {
     const groups = getAdjacentMatchGroups(
@@ -186,34 +187,6 @@ export function isDogTrayBlockMatchable(
   }
 
   return getHandler(block, handlers).isMatchable(block.specialMechanism);
-}
-
-function canResolveAllTrayBlocks(
-  tray: readonly DogTrayBlock[],
-  handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
-): boolean {
-  if (tray.length === 0) {
-    return false;
-  }
-
-  const simulatedTray = [...tray];
-  while (simulatedTray.length > 0) {
-    const removalIndexes = getAdjacentMatchGroups(
-      simulatedTray,
-      (block) => isDogTrayBlockMatchable(block, handlers, true)
-        ? block.patternType
-        : undefined,
-    ).flatMap(({ indexes }) =>
-      indexes.slice(0, Math.floor(indexes.length / 3) * 3),
-    );
-    if (removalIndexes.length === 0) {
-      return false;
-    }
-
-    removeItemsAtIndexes(simulatedTray, removalIndexes);
-  }
-
-  return true;
 }
 
 function getAdjacentTripleRemovalIndexes<T>(

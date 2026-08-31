@@ -177,6 +177,26 @@ describe("特殊机制测试 · core", () => {
     expect(tray.map((block) => block.id)).toEqual(["freeze", "single", "working-1"]);
   });
 
+  it("终局结算先移除包含冻结方块的合法相邻三连", () => {
+    const handlers = createDogSpecialMechanismHandlerMap();
+    const tray = [
+      createTrayBlock("freeze", WORKING_DOG, {
+        type: DOG_FREEZE_MECHANISM_TYPE,
+        state: { status: "frozen", completedTriples: 0 },
+      }),
+      createTrayBlock("working-1", WORKING_DOG),
+      createTrayBlock("working-2", WORKING_DOG),
+      createTrayBlock("single", SINGLE_DOG),
+    ];
+
+    const resolution = resolveDogTrayMatches(tray, handlers, {
+      allowFrozenFinalTriple: true,
+    });
+
+    expect(resolution).toMatchObject({ removedCount: 3, tripleCount: 1 });
+    expect(tray.map((block) => block.id)).toEqual(["single"]);
+  });
+
   it("终局冻结三消允许先消除其他组再级联覆盖全部相邻方块", () => {
     const handlers = createDogSpecialMechanismHandlerMap();
     const tray = [

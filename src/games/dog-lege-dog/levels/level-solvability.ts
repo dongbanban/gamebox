@@ -27,6 +27,7 @@ import {
   getSelectableBlocks,
   isCapacityBlocked,
 } from "@/games/dog-lege-dog/levels/level-solvability-simulation";
+import { resolveDogTrayMatches } from "@/games/dog-lege-dog/levels/level-rules";
 import {
   createPreferredRank,
   findGreedyContinuation,
@@ -188,6 +189,9 @@ export function findSolvabilityFromState(
   }
 
   const tray = cloneTray(options.initialTray);
+  resolveDogTrayMatches(tray, handlers, {
+    allowFrozenFinalTriple: remainingMask === 0n,
+  });
   const trayLogicalUnitCount = getDogTrayLogicalUnitCount(tray);
   const magneticRandom = options.magneticRandom?.clone() ?? createDogMagneticRandom(level);
   const selectable = getSelectableBlocks(level, remainingMask, higherBlockCounts);

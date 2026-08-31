@@ -267,6 +267,29 @@ describe("GameSession · item-rules", () => {
     )).toHaveProperty("specialMechanism.type", "freeze");
   });
 
+  it("万能方块不把双生方块按单个逻辑单位补偿删除", () => {
+    const session = new GameSession({
+      level: createLevel([
+        {
+          ...createBlock("twin-hidden", 0, 0, 0, WORKING_DOG),
+          specialMechanism: {
+            type: "twin",
+            state: { status: "twin" },
+          },
+        },
+        createBlock("single-cover", 0, 0, 1, SINGLE_DOG),
+        createBlock("working-2", 8, 0, 0, WORKING_DOG),
+        createBlock("working-3", 16, 0, 0, WORKING_DOG),
+      ]),
+      initialTray: [WORKING_DOG, WORKING_DOG],
+    });
+
+    expect(session.getWildcardPlan(WORKING_DOG)).toBeNull();
+    expect(session.useWildcard(WORKING_DOG)).toMatchObject({ used: false });
+    expect(session.getState().remainingBlocks.find((block) => block.id === "twin-hidden"))
+      .toHaveProperty("specialMechanism.type", "twin");
+  });
+
   it("万能方块可以把被遮挡幻化同款作为棋盘补偿", () => {
     const session = new GameSession({
       level: createLevel([
@@ -289,5 +312,33 @@ describe("GameSession · item-rules", () => {
       compensatedBlockId: "working-hidden",
     });
     expect(session.useWildcard(WORKING_DOG)).toMatchObject({ used: true });
+  });
+
+  it("三消移除后最后一组三消包含冻结方块时直接完成", () => {
+    const session = new GameSession({
+      level: createLevel([createBlock("working-board", 0, 0, 0, WORKING_DOG)]),
+      initialTrayBlocks: [
+        { id: "working-1", patternType: WORKING_DOG },
+        { id: "working-2", patternType: WORKING_DOG },
+        createFrozenTrayBlock("frozen-single", SINGLE_DOG),
+        { id: "single-1", patternType: SINGLE_DOG },
+        { id: "single-2", patternType: SINGLE_DOG },
+      ],
+    });
+
+    expect(session.getTripleRemovalPlan(WORKING_DOG)).toMatchObject({
+      patternType: WORKING_DOG,
+      tripleCount: 1,
+    });
+
+    const result = session.removeTriple(WORKING_DOG);
+
+    expect(result).toMatchObject({
+      removed: true,
+      removedCount: 6,
+      tripleCount: 2,
+    });
+    expect(result.snapshot.trayBlocks).toEqual([]);
+    expect(result.snapshot.status).toBe("won");
   });
 });

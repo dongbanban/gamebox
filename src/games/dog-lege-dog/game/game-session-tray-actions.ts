@@ -1,4 +1,5 @@
 import type {
+  DogBlock,
   DogSpecialMechanismHandler,
   DogPatternType,
   DogTrayBlock,
@@ -11,6 +12,7 @@ import {
 import { findSolvabilityFromState } from "@/games/dog-lege-dog/levels/level-solvability";
 import {
   DOG_FREEZE_MECHANISM_TYPE,
+  getDogBlockLogicalUnitCount,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
 import type {
   GameSessionTripleRemovalPlan,
@@ -83,9 +85,21 @@ export class GameSessionTrayActions {
       compensatedBlock === undefined ||
       compensatedBlockIndex === undefined ||
       compensatedBlock.patternType !== patternType ||
+      getDogBlockLogicalUnitCount(compensatedBlock) !== 1 ||
       compensatedBlock.specialMechanism?.type === DOG_FREEZE_MECHANISM_TYPE ||
       this.state.canSelectBlock(plan.compensatedBlockId)
     ) {
+      this.clearCaches();
+      return createFailedWildcardResult(this.state.getState(), patternType);
+    }
+
+    if (!preservesPatternQuotas(
+      this.state.level.patternTypes,
+      [...this.state.remainingBlocks.values()].filter(
+        (block) => block.id !== plan.compensatedBlockId,
+      ),
+      plan.nextTray,
+    )) {
       this.clearCaches();
       return createFailedWildcardResult(this.state.getState(), patternType);
     }
@@ -222,6 +236,11 @@ export class GameSessionTrayActions {
       plan.tripleCount,
       [plan.patternType],
     );
+    const cascaded = resolveDogTrayMatches(
+      this.state.tray,
+      this.state.specialMechanismHandlers,
+      { allowFrozenFinalTriple: this.state.remainingBlocks.size === 0 },
+    );
 
     this.clearCaches();
     this.state.updateResult();
@@ -230,9 +249,12 @@ export class GameSessionTrayActions {
       true,
       plan.patternType,
       plan.blockIds,
-      plan.removedCount,
-      plan.tripleCount,
-      meltedBlockIds,
+      plan.removedCount + cascaded.removedCount,
+      plan.tripleCount + cascaded.tripleCount,
+      Object.freeze([
+        ...meltedBlockIds,
+        ...cascaded.meltedBlockIds,
+      ]),
       plan.trayBlockIds,
     );
   }
@@ -254,6 +276,7 @@ export class GameSessionTrayActions {
     const compensatedCandidates = [...this.state.remainingBlocks.values()].filter(
       (block) =>
         block.patternType === patternType &&
+        getDogBlockLogicalUnitCount(block) === 1 &&
         block.specialMechanism?.type !== DOG_FREEZE_MECHANISM_TYPE &&
         !this.state.canSelectBlock(block.id),
     );
@@ -266,6 +289,12 @@ export class GameSessionTrayActions {
         { id: wildcardIdentity.id, patternType, visualMarker: "wildcard" },
         this.state.specialMechanismHandlers,
       );
+      const nextRemainingBlocks = [...this.state.remainingBlocks.values()].filter(
+        (block) => block.id !== compensatedBlock.id,
+      );
+      if (!preservesPatternQuotas(this.state.level.patternTypes, nextRemainingBlocks, nextTray)) {
+        continue;
+      }
       const solvability = findSolvabilityFromState(solvabilityLevel, {
         remainingBlockIds: [...this.state.remainingBlocks.keys()].filter(
           (blockId) => blockId !== compensatedBlock.id,
@@ -434,4 +463,26 @@ function isOrdinaryMatchingPair(
     first.specialMechanism === undefined &&
     second.specialMechanism === undefined &&
     first.patternType === second.patternType;
+}
+
+function preservesPatternQuotas(
+  patternTypes: readonly DogPatternType[],
+  remainingBlocks: readonly DogBlock[],
+  tray: readonly DogTrayBlock[],
+): boolean {
+  const counts = new Map<DogPatternType, number>();
+  for (const block of [...remainingBlocks, ...tray]) {
+    counts.set(
+      block.patternType,
+      (counts.get(block.patternType) ?? 0) + getDogBlockLogicalUnitCount(block),
+    );
+  }
+
+  for (const [patternType, count] of counts) {
+    if (!patternTypes.includes(patternType) || count % 3 !== 0) {
+      return false;
+    }
+  }
+
+  return true;
 }

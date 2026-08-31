@@ -106,3 +106,5 @@
 - 2026-08-24 — 按最新需求重新认领：三消道具只接受暂存槽内相邻普通同图案对，不再支持自动补两个；目标选择统一高亮合法槽内方块、置灰其他已填槽位与棋盘非目标方块。
 - 2026-08-24 — 完成最新目标交互：三消移除改为点击合法槽内方块对；棋盘只自动补一个当前可点击普通同图案方块；火把、检测仪、三消移除统一高亮合法目标，其他已填槽位与棋盘非目标置灰。冻结方块成功三消计数同步保留。
 - 2026-08-24 — 验证通过：`pnpm test:focused`（8 files / 127 tests）、`pnpm test:ui`（3 files / 45 tests）、定向 Vitest（4 files / 64 tests）、`pnpm typecheck`、核心 Vitest 排除 E2E/随机（10 files / 150 tests）、`DOG_RANDOM_LEVEL_COUNT=1 DOG_RANDOM_LEVEL_NUMBER=1 DOG_STRESS_LEVEL_COUNT=100 pnpm exec vitest run tests/random-regression.test.ts --reporter dot`（3 tests）、`pnpm test:e2e`（19/19）、`pnpm test:e2e:cross-browser`（9/9）、`pnpm build`、`git diff --check`。Code review P1/P2 已修复。
+- 2026-08-31 — 修复终局三消的级联边界：终局上下文允许先结算合法冻结三连，不再因暂存槽存在其他残留而阻断；求解器初始槽态与三消移除道具同步使用该规则，确保最后冻结三连直接移除并正确判定通关/失败。
+- 2026-08-31 — 验证通过：受影响核心 93/93；完整核心 247/247；随机回归 3/3；Chromium E2E 21/21；跨浏览器 9/9；`pnpm build:pages`、`git diff --check`、文件行数检查通过。首次 `pnpm test:qa` 的 Chromium 步骤受沙箱监听权限阻断，提升权限后单独重跑通过。

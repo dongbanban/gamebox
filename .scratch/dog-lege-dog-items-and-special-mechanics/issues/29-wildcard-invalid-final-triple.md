@@ -30,3 +30,5 @@
 - 2026-08-28：验证通过：`pnpm exec vitest run tests/game-session.test.ts tests/item-runtime.test.ts --reporter dot`（50/50）；`pnpm exec vitest run tests/level-generator.test.ts --reporter dot`（25/25）；`pnpm test:qa`（core 219/219、fallback 1/1、随机回归 3/3、Chromium 19/19、跨浏览器 9/9、页面构建、diff 检查、文件行数检查）。
 - 2026-08-28：补充确认万能方块计划的第二个根因：已有磁吸操作后，可解性搜索错误重置磁吸随机流，计划态与实际态可能吸取不同目标，进而留下死局。`findSolvabilityFromState` 现接收当前磁吸随机流副本，万能方块与道具三消计划均按实时流验证；新增固定关卡回归。
 - 2026-08-28：再次验证通过：核心 220/220、fallback 1/1、随机回归 3/3、Chromium 19/19、跨浏览器 9/9、页面构建、diff 检查、文件行数检查。
+- 2026-08-31：补充万能方块提交前的图案逻辑单位守门；双生方块不再被当作单个补偿单位，且提交态必须保持每种图案的 3 单位配额，避免道具使用后出现无法完成三消的残留图案。幻化/磁吸仍按 1 个逻辑单位保留既有补偿规则。
+- 2026-08-31：验证通过：受影响核心 93/93；完整核心 247/247；随机回归 3/3；Chromium E2E 21/21；跨浏览器 9/9；`pnpm build:pages`、`git diff --check`、文件行数检查通过。首次 `pnpm test:qa` 的 Chromium 步骤受沙箱监听权限阻断，提升权限后单独重跑通过。
