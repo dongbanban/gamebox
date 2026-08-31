@@ -186,6 +186,7 @@ export interface DogLevelGeometry {
   readonly patternTypes: readonly DogPatternType[];
   readonly blocks: readonly DogBlock[];
   readonly specialMechanisms?: readonly DogSpecialMechanismConfig[];
+  readonly solutionPath?: readonly string[];
 }
 
 export interface DogLegeDogLevel {

@@ -7,6 +7,7 @@ import {
 } from "@/games/dog-lege-dog/levels/level-shapes";
 import { createSolvableBlockPlacements } from "@/games/dog-lege-dog/levels/level-placement";
 import {
+  findShuffleTriggerPath,
   findSolvability,
   type SolvabilitySearchOptions,
   type SolvabilityResult,
@@ -98,6 +99,19 @@ export class LevelGenerator {
           candidate.difficulty.solvabilityStatus === "solvable" &&
           this.candidateFilter(candidate.difficulty, candidate.difficulty.target, attempt)
         ) {
+          if (!hasShuffleTriggerPath(candidate, this.config)) {
+            failures.push(
+              createGenerationFailure(
+                normalizedRequest,
+                levelSeed,
+                testSeed,
+                attempt,
+                "shuffle trigger path is unavailable",
+                getCandidateRandomSeed(this.gameId, levelSeed, attempt),
+              ),
+            );
+            continue;
+          }
           return finalizeCandidate(
             candidate,
             attempt,
@@ -149,7 +163,7 @@ export class LevelGenerator {
     level: DogLevelGeometry,
     options?: SolvabilitySearchOptions,
   ): SolvabilityResult {
-    return findSolvability(level, options);
+    return findSolvability(level, { ...options, config: this.config });
   }
 
   isSolvable(level: DogLevelGeometry): boolean {
@@ -246,7 +260,11 @@ export class LevelGenerator {
     closestCandidate: GeneratedLevelCandidate | undefined,
     failures: DogLevelGenerationFailure[],
   ): GeneratedLevelCandidate {
-    if (closestCandidate !== undefined && meetsFallbackRequirements(closestCandidate.difficulty)) {
+    if (
+      closestCandidate !== undefined &&
+      meetsFallbackRequirements(closestCandidate.difficulty) &&
+      hasShuffleTriggerPath(closestCandidate, this.config)
+    ) {
       return closestCandidate;
     }
 
@@ -258,7 +276,10 @@ export class LevelGenerator {
         MAX_LEVEL_GENERATION_ATTEMPTS,
         getFallbackTemplate(),
       );
-      if (!meetsFallbackRequirements(fallback.difficulty)) {
+      if (
+        !meetsFallbackRequirements(fallback.difficulty) ||
+        !hasShuffleTriggerPath(fallback, this.config)
+      ) {
         throw new Error("fallback candidate is below the current difficulty minimum");
       }
       return fallback;
@@ -283,11 +304,22 @@ export class LevelGenerator {
       DOG_SHAPE_TEMPLATES[0],
       getCandidateRandomSeed(this.gameId, levelSeed, MAX_LEVEL_GENERATION_ATTEMPTS + 1),
     );
-    if (!meetsFallbackRequirements(lastResort.difficulty)) {
+    if (
+      !meetsFallbackRequirements(lastResort.difficulty) ||
+      !hasShuffleTriggerPath(lastResort, this.config)
+    ) {
       throw new Error("LevelGenerator fallback did not satisfy the current difficulty minimum");
     }
     return lastResort;
   }
+}
+
+function hasShuffleTriggerPath(
+  level: GeneratedLevelCandidate,
+  config: DogV13Config,
+): boolean {
+  return !level.specialMechanisms.some(({ type }) => type === "shuffle") ||
+    findShuffleTriggerPath(level, config) !== undefined;
 }
 
 const defaultLevelGenerator = new LevelGenerator();

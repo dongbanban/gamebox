@@ -118,10 +118,18 @@ export function getDogShuffleThreshold(
 
 export function getDogV13ActiveMechanismDefinitions(
   config: DogV13Config = DOG_V13_CONFIG,
+  levelNumber?: number,
 ): readonly DogV13MechanismDefinition[] {
+  if (levelNumber !== undefined) {
+    validateLevelNumber(levelNumber, config);
+  }
   return Object.freeze(
     config.specialMechanisms.mechanisms.filter(
-      (definition) => definition.type !== "shuffle" || config.specialMechanisms.shuffle.enabled,
+      (definition) => definition.type !== "shuffle" || (
+        config.specialMechanisms.shuffle.enabled &&
+        (levelNumber === undefined ||
+          levelNumber >= config.specialMechanisms.shuffle.firstLevelNumber)
+      ),
     ),
   );
 }
@@ -129,9 +137,10 @@ export function getDogV13ActiveMechanismDefinitions(
 export function getDogV13MechanismPlan(
   logicalBlockCount: number,
   config: DogV13Config = DOG_V13_CONFIG,
+  levelNumber: number = config.game.firstLevelNumber,
 ): DogV13MechanismPlan {
   const budget = getDogV13SpecialMechanismBudget(logicalBlockCount, config);
-  const definitions = getDogV13ActiveMechanismDefinitions(config);
+  const definitions = getDogV13ActiveMechanismDefinitions(config, levelNumber);
   const counts = Object.fromEntries(
     DOG_V13_MECHANISM_TYPES.map((type) => [type, 0]),
   ) as Record<DogV13MechanismType, number>;
@@ -146,7 +155,13 @@ export function getDogV13MechanismPlan(
   while (remaining > 0 && skippedThisRound < definitions.length) {
     const definition = definitions[cursor % definitions.length];
     cursor += 1;
-    if (definition.logicalUnitWeight > remaining) {
+    const maxCount = definition.type === "shuffle"
+      ? config.specialMechanisms.shuffle.maxPerLevel
+      : Number.MAX_SAFE_INTEGER;
+    if (
+      definition.logicalUnitWeight > remaining ||
+      counts[definition.type] >= maxCount
+    ) {
       skippedThisRound += 1;
       continue;
     }

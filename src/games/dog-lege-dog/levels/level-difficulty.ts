@@ -83,17 +83,18 @@ export function calculateDifficultyMetrics(
   searchOptions: SolvabilitySearchOptions = {},
   config: DogV13Config = DOG_V13_CONFIG,
 ): DogLevelDifficulty {
+  const solverOptions: SolvabilitySearchOptions = { ...searchOptions, config };
   const discoveredSolvability =
     knownSolvability ??
-    (solutionPath === undefined ? findSolvability(level, searchOptions) : undefined);
+    (solutionPath === undefined ? findSolvability(level, solverOptions) : undefined);
   const path = solutionPath ??
     (discoveredSolvability?.status === "solvable" ? discoveredSolvability.path : []);
   const verification =
     knownVerification ??
     (discoveredSolvability?.status === "solvable"
-      ? verifyRemovalPath(level, path)
+      ? verifyRemovalPath(level, path, undefined, undefined, undefined, config)
       : discoveredSolvability === undefined
-        ? verifyRemovalPath(level, path)
+        ? verifyRemovalPath(level, path, undefined, undefined, undefined, config)
         : toPathVerification(discoveredSolvability));
   const graph = createBlockGraph(level.blocks);
   const initialSelectable = graph.higherBlockCounts.filter((count) => count === 0).length;
@@ -102,7 +103,7 @@ export function calculateDifficultyMetrics(
     discoveredSolvability?.status ?? verification.status;
   const safeChoiceMetrics =
     solvabilityStatus === "solvable" && path.length > 0
-      ? countSafeChoiceMetrics(level, path, graph, searchOptions)
+      ? countSafeChoiceMetrics(level, path, graph, solverOptions)
       : {
           safeChoiceCount: 0,
           searchStatus: solvabilityStatus === "budget-exhausted"

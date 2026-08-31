@@ -27,7 +27,7 @@ describe(`狗了个狗 ${profileName} generation profile`, () => {
     for (const [index, levelNumber] of profile.levelNumbers.entries()) {
       const logicalBlockCount = getDogV13LogicalBlockCount(levelNumber);
       const budget = getDogV13SpecialMechanismBudget(logicalBlockCount);
-      const plan = getDogV13MechanismPlan(logicalBlockCount);
+      const plan = getDogV13MechanismPlan(logicalBlockCount, DOG_V13_CONFIG, levelNumber);
       const expectedBudget = expectedBudgets.get(levelNumber);
 
       if (expectedBudget !== undefined) {
@@ -46,7 +46,8 @@ describe(`狗了个狗 ${profileName} generation profile`, () => {
         plan.counts.twin * 2 +
           plan.counts.freeze +
           plan.counts.illusion +
-          plan.counts.magnetic,
+          plan.counts.magnetic +
+          plan.counts.shuffle,
         `level=${levelNumber}`,
       ).toBe(plan.logicalUnitCount);
 
@@ -55,7 +56,11 @@ describe(`狗了个狗 ${profileName} generation profile`, () => {
     }
 
     const boundaryPlans = [1, 6, 16, 31].map((levelNumber) =>
-      getDogV13MechanismPlan(getDogV13LogicalBlockCount(levelNumber)),
+      getDogV13MechanismPlan(
+        getDogV13LogicalBlockCount(levelNumber),
+        DOG_V13_CONFIG,
+        levelNumber,
+      ),
     );
     for (const type of ["freeze", "illusion", "magnetic", "twin"] as const) {
       const counts = boundaryPlans.map((plan) => plan.counts[type]);

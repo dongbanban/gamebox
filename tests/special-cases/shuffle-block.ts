@@ -22,16 +22,16 @@ const SINGLE_DOG: DogPatternType = "单身狗";
 const LICKING_DOG: DogPatternType = "舔狗";
 
 describe("特殊机制测试 · shuffle-block", () => {
-  it("新增乱序机制公共契约，正式 v13 配置默认关闭", () => {
+  it("新增乱序机制公共契约，正式 v13 配置从第 3 关启用", () => {
     expect(DOG_V13_CONFIG.specialMechanisms.shuffle).toMatchObject({
-      enabled: false,
+      enabled: true,
       firstLevelNumber: 3,
       maxPerLevel: 1,
       candidateCount: 8,
       threshold: { maxLogicalUnitCount: 5, capacityBuffer: 2 },
     });
     expect(DOG_V13_CONFIG.specialMechanisms.mechanisms.map(({ type }) => type))
-      .not.toContain(DOG_SHUFFLE_MECHANISM_TYPE);
+      .toContain(DOG_SHUFFLE_MECHANISM_TYPE);
     expect(DOG_V13_CONFIG.ui.copy.specialMechanisms.presentations.shuffle).toMatchObject({
       name: "乱序方块",
     });
@@ -42,6 +42,7 @@ describe("特殊机制测试 · shuffle-block", () => {
     expect([5, 6, 7, 8].map((capacity) => getDogShuffleThreshold(capacity)))
       .toEqual([3, 4, 5, 5]);
     expect(getDogV13MechanismPlan(90).counts.shuffle).toBe(0);
+    expect(getDogV13MechanismPlan(90, DOG_V13_CONFIG, 3).counts.shuffle).toBe(1);
   });
 
   it("乱序方块首次入槽先按普通三消结算，被移除时不进入待乱序", () => {

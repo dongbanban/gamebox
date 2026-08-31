@@ -33,7 +33,7 @@
     },
     "smoke": {
       "name": "smoke",
-      "levelNumbers": [1, 6, 16, 31, 99],
+      "levelNumbers": [1, 2, 3, 6, 16, 31, 99],
       "fixedSeeds": ["v13-smoke-a", "v13-smoke-b"],
       "randomLevelPrefix": 5,
       "stressLevelCount": 5,
@@ -50,7 +50,7 @@
     },
     "full": {
       "name": "full",
-      "levelNumbers": [1, 6, 16, 31, 99],
+      "levelNumbers": [1, 2, 3, 6, 16, 31, 99],
       "fixedSeeds": ["v13-full-a", "v13-full-b"],
       "randomLevelPrefix": 99,
       "stressLevelCount": 99,

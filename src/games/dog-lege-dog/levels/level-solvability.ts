@@ -5,6 +5,10 @@ import {
   getDogBlockLogicalUnitCount,
   getDogTrayLogicalUnitCount,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
+import {
+  DOG_V13_CONFIG,
+  type DogV13Config,
+} from "@/games/dog-lege-dog/game/v13-config";
 import type {
   DogLevelGeometry,
   DogSafeChoiceSearchStatus,
@@ -26,6 +30,7 @@ import {
   cloneTray,
   getSelectableBlocks,
   isCapacityBlocked,
+  resolveDogShuffleAfterSelection,
 } from "@/games/dog-lege-dog/levels/level-solvability-simulation";
 import { resolveDogTrayMatches } from "@/games/dog-lege-dog/levels/level-rules";
 import {
@@ -34,7 +39,9 @@ import {
   searchSolvableContinuation,
   verifyStateContinuation,
 } from "@/games/dog-lege-dog/levels/level-solvability-search";
-import { createDogMagneticRandom } from "@/games/dog-lege-dog/levels/level-mechanism-resolution";
+import {
+  createDogMagneticRandom,
+} from "@/games/dog-lege-dog/levels/level-mechanism-resolution";
 import {
   normalizeSolvabilityResult,
   resolveLevelTrayCapacity,
@@ -57,11 +64,14 @@ export type {
   SolvabilityStateOptions,
 } from "@/games/dog-lege-dog/levels/level-solvability-contracts";
 export { verifyRemovalPath } from "@/games/dog-lege-dog/levels/level-solvability-verification";
+export { findShuffleTriggerPath } from "@/games/dog-lege-dog/levels/level-shuffle";
 
 export function findSolvability(
   level: DogLevelGeometry & { readonly solutionPath?: readonly string[] },
   options: SolvabilitySearchOptions = {},
 ): SolvabilityResult {
+  const config = options.config ?? DOG_V13_CONFIG;
+  const requireShuffleTrigger = options.requireShuffleTrigger === true;
   const handlers = createDogSpecialMechanismHandlerMap(
     options.specialMechanismHandlers ?? DOG_SPECIAL_MECHANISM_HANDLERS,
   );
@@ -74,8 +84,11 @@ export function findSolvability(
       undefined,
       handlers,
       trayCapacity,
+      config,
     );
-    if (storedVerification.solvable) {
+    if (storedVerification.solvable && (
+      !requireShuffleTrigger || (storedVerification.simulation?.shuffleTriggerCount ?? 0) > 0
+    )) {
       return toSolvabilityResult(storedVerification);
     }
   }
@@ -89,8 +102,11 @@ export function findSolvability(
     undefined,
     handlers,
     trayCapacity,
+    config,
   );
-  if (descendingVerification.solvable) {
+  if (descendingVerification.solvable && (
+    !requireShuffleTrigger || (descendingVerification.simulation?.shuffleTriggerCount ?? 0) > 0
+  )) {
     return toSolvabilityResult(descendingVerification);
   }
 
@@ -108,9 +124,12 @@ export function findSolvability(
     [],
     0,
     trayCapacity,
+    undefined,
+    config,
+    requireShuffleTrigger,
   );
   if (greedyResult !== undefined) {
-    return normalizeSolvabilityResult(level, greedyResult, handlers);
+    return normalizeSolvabilityResult(level, greedyResult, handlers, config);
   }
 
   const searchResult = searchSolvableContinuation(
@@ -125,18 +144,23 @@ export function findSolvability(
       completedStates: new Map(),
       branchAttempts: 0,
       branchBudget: resolveBranchBudget(options),
+      config,
+      requireShuffleTrigger,
     },
     [],
     0,
     trayCapacity,
+    createDogMagneticRandom(level),
   );
-  return normalizeSolvabilityResult(level, searchResult, handlers);
+  return normalizeSolvabilityResult(level, searchResult, handlers, config);
 }
 
 export function findSolvabilityFromState(
   level: DogLevelGeometry & { readonly solutionPath?: readonly string[] },
   options: SolvabilityStateOptions,
 ): SolvabilityResult {
+  const config = options.config ?? DOG_V13_CONFIG;
+  const requireShuffleTrigger = options.requireShuffleTrigger === true;
   const handlers = createDogSpecialMechanismHandlerMap(
     options.specialMechanismHandlers ?? DOG_SPECIAL_MECHANISM_HANDLERS,
   );
@@ -192,8 +216,19 @@ export function findSolvabilityFromState(
   resolveDogTrayMatches(tray, handlers, {
     allowFrozenFinalTriple: remainingMask === 0n,
   });
-  const trayLogicalUnitCount = getDogTrayLogicalUnitCount(tray);
   const magneticRandom = options.magneticRandom?.clone() ?? createDogMagneticRandom(level);
+  const shuffleResolution = resolveDogShuffleAfterSelection({
+    level,
+    tray,
+    remainingMask,
+    effectiveTrayCapacity: trayCapacity,
+    handlers,
+    magneticRandom,
+    config,
+  });
+  tray.splice(0, tray.length, ...shuffleResolution.tray);
+  const trayLogicalUnitCount = getDogTrayLogicalUnitCount(tray);
+  const initialShuffleTriggered = shuffleResolution.computation !== null;
   const selectable = getSelectableBlocks(level, remainingMask, higherBlockCounts);
   if (isCapacityBlocked(
     level,
@@ -203,6 +238,7 @@ export function findSolvabilityFromState(
     remainingMask !== 0n,
     selectable,
     handlers,
+    config,
     higherBlockCounts,
     magneticRandom,
     remainingMask,
@@ -229,6 +265,9 @@ export function findSolvabilityFromState(
     handlers,
     trayCapacity,
     magneticRandom,
+    config,
+    requireShuffleTrigger,
+    initialShuffleTriggered,
   );
   if (preferredVerification !== undefined) {
     return preferredVerification;
@@ -246,6 +285,9 @@ export function findSolvabilityFromState(
     0,
     trayCapacity,
     magneticRandom,
+    config,
+    requireShuffleTrigger,
+    initialShuffleTriggered,
   );
   if (greedyResult !== undefined) {
     return greedyResult;
@@ -260,9 +302,11 @@ export function findSolvabilityFromState(
     handlers,
     preferredRank,
     {
-      completedStates: new Map(),
+      completedStates: options.completedStates ?? new Map(),
       branchAttempts: 0,
       branchBudget: resolveBranchBudget(options),
+      config,
+      requireShuffleTrigger,
     },
     [],
     0,
@@ -294,6 +338,7 @@ export function countSafeChoiceMetrics(
 
   let safeChoiceCount = 0;
   let searchStatus: DogSafeChoiceSearchStatus = "complete";
+  const config = options.config ?? DOG_V13_CONFIG;
   const handlers = createDogSpecialMechanismHandlerMap(
     options.specialMechanismHandlers ?? DOG_SPECIAL_MECHANISM_HANDLERS,
   );
@@ -312,6 +357,8 @@ export function countSafeChoiceMetrics(
       candidatePath,
       graph,
       handlers,
+      undefined,
+      config,
     );
     if (candidateVerification.solvable) {
       safeChoiceCount += getDogBlockLogicalUnitCount(level.blocks[index]);

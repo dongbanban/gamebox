@@ -2,6 +2,7 @@ import {
   createDogIllusionMechanism,
   createDogSpecialMechanism,
   DOG_SPECIAL_MECHANISM_MIDDLE_LAYER_RATIO,
+  DOG_SHUFFLE_MECHANISM_TYPE,
   DOG_TWIN_MECHANISM_TYPE,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
 import type {
@@ -71,6 +72,15 @@ export function assignDogV13SpecialMechanisms(
   );
   assignRemainingMechanisms(
     blocks,
+    requestedCounts.get(DOG_SHUFFLE_MECHANISM_TYPE) ?? 0,
+    DOG_SHUFFLE_MECHANISM_TYPE,
+    usedIndices,
+    assignments,
+    random,
+    true,
+  );
+  assignRemainingMechanisms(
+    blocks,
     requestedCounts.get("illusion") ?? 0,
     "illusion",
     usedIndices,
@@ -103,8 +113,8 @@ function validateRequestedCounts(
   configurations: readonly DogSpecialMechanismConfig[],
   requestedCounts: ReadonlyMap<string, number>,
 ): void {
-  if (configurations.length !== 4) {
-    throw new Error("狗了个狗 v13 mechanism plan must contain four types");
+  if (configurations.length < 4 || configurations.length > 5) {
+    throw new Error("狗了个狗 v13 mechanism plan must contain four or five types");
   }
   const seen = new Set<string>();
   for (const configuration of configurations) {
@@ -112,6 +122,15 @@ function validateRequestedCounts(
       throw new Error(`狗了个狗 duplicate v13 mechanism plan: ${configuration.type}`);
     }
     seen.add(configuration.type);
+    if (
+      configuration.type !== "freeze" &&
+      configuration.type !== "illusion" &&
+      configuration.type !== "magnetic" &&
+      configuration.type !== "twin" &&
+      configuration.type !== DOG_SHUFFLE_MECHANISM_TYPE
+    ) {
+      throw new Error(`狗了个狗 unsupported v13 mechanism plan: ${configuration.type}`);
+    }
     const count = requestedCounts.get(configuration.type);
     if (
       count === undefined ||
@@ -120,6 +139,14 @@ function validateRequestedCounts(
       configuration.max !== count
     ) {
       throw new Error(`狗了个狗 v13 mechanism count is not fixed: ${configuration.type}`);
+    }
+    if (configuration.type === DOG_SHUFFLE_MECHANISM_TYPE && count > 1) {
+      throw new Error("狗了个狗 v13 shuffle mechanism count exceeds one per level");
+    }
+  }
+  for (const type of ["freeze", "illusion", "magnetic", "twin"]) {
+    if (!seen.has(type)) {
+      throw new Error(`狗了个狗 v13 mechanism plan is missing: ${type}`);
     }
   }
 }
@@ -226,11 +253,24 @@ function assignRemainingMechanisms(
   usedIndices: Set<number>,
   assignments: Map<number, string>,
   random: SeededRandom,
+  preferTopLayer = false,
 ): void {
+  if (count <= 0) {
+    return;
+  }
   const candidates = blocks
     .map((block, index) => index)
     .filter((index) => isEligibleHighLayerBlock(blocks[index], index, usedIndices));
-  assignFromCandidates(candidates, count, type, blocks, usedIndices, assignments, random);
+  assignFromCandidates(
+    candidates,
+    count,
+    type,
+    blocks,
+    usedIndices,
+    assignments,
+    random,
+    preferTopLayer,
+  );
 }
 
 function assignFromCandidates(
@@ -241,8 +281,12 @@ function assignFromCandidates(
   usedIndices: Set<number>,
   assignments: Map<number, string>,
   random: SeededRandom,
+  preferTopLayer = false,
 ): void {
-  const selected = prioritizeMiddleLayer(candidates, blocks, random).slice(0, count);
+  const selected = (preferTopLayer
+    ? prioritizeTopLayer(candidates, blocks, random)
+    : prioritizeMiddleLayer(candidates, blocks, random)
+  ).slice(0, count);
   if (selected.length !== count) {
     throw new Error(`狗了个狗 v13 mechanism ${type} has no legal placement capacity`);
   }
@@ -297,6 +341,16 @@ function prioritizeMiddleLayer(
     (first, second) =>
       Number(isMiddleLayer(blocks[second], maxLayerIndex(blocks))) -
       Number(isMiddleLayer(blocks[first], maxLayerIndex(blocks))),
+  );
+}
+
+function prioritizeTopLayer(
+  candidates: readonly number[],
+  blocks: readonly DogBlock[],
+  random: SeededRandom,
+): number[] {
+  return random.shuffle([...candidates]).sort(
+    (first, second) => blocks[second].z - blocks[first].z,
   );
 }
 

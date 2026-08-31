@@ -3,6 +3,7 @@ import { createBlockGraph, type BlockGraph } from "@/games/dog-lege-dog/levels/l
 import {
   getDogTrayLogicalUnitCount,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
+import type { DogV13Config } from "@/games/dog-lege-dog/game/v13-config";
 import type {
   DogLevelGeometry,
   DogSpecialMechanismHandler,
@@ -16,6 +17,10 @@ import {
   createDogMagneticRandom,
   resolveDogSelection,
 } from "@/games/dog-lege-dog/levels/level-mechanism-resolution";
+import {
+  resolveDogShuffleState,
+  type DogShuffleStateResolution,
+} from "@/games/dog-lege-dog/levels/level-shuffle";
 import { SeededRandom } from "@/games/dog-lege-dog/levels/level-random";
 
 export function getSelectableBlocks(
@@ -43,6 +48,7 @@ export function isCapacityBlocked(
   hasRemainingBlocks: boolean,
   selectableIndices: readonly number[],
   handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
+  config: DogV13Config,
   currentHigherBlockCounts?: readonly number[],
   magneticRandom?: SeededRandom,
   remainingMask = createFullBlockMask(level.blocks.length),
@@ -61,6 +67,7 @@ export function isCapacityBlocked(
       return false;
     }
 
+    const selectionRandom = magneticRandom?.clone() ?? createDogMagneticRandom(level);
     const simulated = resolveDogSelection(
       level,
       index,
@@ -68,10 +75,47 @@ export function isCapacityBlocked(
       currentHigherBlockCounts ?? createBlockGraph(level.blocks).higherBlockCounts,
       tray,
       handlers,
-      magneticRandom?.clone() ?? createDogMagneticRandom(level),
+      selectionRandom,
       knownGraph,
     );
-    return getDogTrayLogicalUnitCount(simulated.tray) <= trayCapacity;
+    const shuffled = resolveDogShuffleAfterSelection({
+      level,
+      tray: simulated.tray,
+      remainingMask: simulated.remainingMask,
+      effectiveTrayCapacity: trayCapacity,
+      handlers,
+      magneticRandom: selectionRandom,
+      config,
+    });
+    return getDogTrayLogicalUnitCount(shuffled.tray) <= trayCapacity;
+  });
+}
+
+export interface DogShuffleAfterSelectionOptions {
+  readonly level: DogLevelGeometry;
+  readonly tray: readonly DogTrayBlock[];
+  readonly remainingMask: bigint;
+  readonly effectiveTrayCapacity: number;
+  readonly handlers: ReadonlyMap<string, DogSpecialMechanismHandler>;
+  readonly magneticRandom: SeededRandom;
+  readonly config: DogV13Config;
+  readonly sequence?: number;
+}
+
+export function resolveDogShuffleAfterSelection(
+  options: DogShuffleAfterSelectionOptions,
+): DogShuffleStateResolution {
+  return resolveDogShuffleState({
+    level: options.level,
+    config: options.config,
+    tray: options.tray,
+    remainingBlockIds: options.level.blocks
+      .filter((_, index) => (options.remainingMask & blockMask(index)) !== 0n)
+      .map((block) => block.id),
+    effectiveTrayCapacity: options.effectiveTrayCapacity,
+    handlers: options.handlers,
+    magneticRandom: options.magneticRandom,
+    sequence: options.sequence ?? 1,
   });
 }
 
@@ -122,6 +166,7 @@ export function trayPeakPressureForPath(
   path: readonly string[],
   graph: BlockGraph,
   handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
+  config: DogV13Config,
   initialRemainingMask = createFullBlockMask(level.blocks.length),
   initialHigherBlockCounts: readonly number[] = graph.higherBlockCounts,
   magneticRandom: SeededRandom = createDogMagneticRandom(level),
@@ -157,7 +202,16 @@ export function trayPeakPressureForPath(
     );
     remainingMask = resolution.remainingMask;
     higherBlockCounts.splice(0, higherBlockCounts.length, ...resolution.higherBlockCounts);
-    tray.splice(0, tray.length, ...resolution.tray);
+    const shuffled = resolveDogShuffleAfterSelection({
+      level,
+      tray: resolution.tray,
+      remainingMask,
+      effectiveTrayCapacity: config.tray.baseCapacity - (level.lockedTraySlotCount ?? 0),
+      handlers,
+      magneticRandom: selectionRandom,
+      config,
+    });
+    tray.splice(0, tray.length, ...shuffled.tray);
     for (const consumedIndex of resolution.consumedBlockIndices) {
       if (consumedIndex !== blockIndex) {
         autoConsumedIndices.add(consumedIndex);

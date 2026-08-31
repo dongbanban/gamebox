@@ -2,14 +2,43 @@ import { describe, expect, it } from "vitest";
 import {
   DOG_V13_CONFIG,
   GameSession,
+  findShuffleTriggerPath,
   getDogV13LogicalBlockCount,
   getDogV13MechanismPlan,
+  getDogSpecialMechanismConfigs,
   getDogLogicalBlockCount,
   isDifficultyWithinTarget,
   LevelGenerator,
 } from "@/games/dog-lege-dog";
 
 describe("狗了个狗 v13 关卡生成 seam", () => {
+  it("正式生成在第 3 关启用乱序且每关最多一个", () => {
+    const generator = new LevelGenerator({ candidateFilter: () => true });
+
+    for (const levelNumber of [1, 2, 3, 99]) {
+      const level = generator.generate({
+        levelNumber,
+        runSeed: `v13-shuffle-boundary-${levelNumber}`,
+        generatorVersion: DOG_V13_CONFIG.game.generatorVersion,
+      });
+      const shuffleBlocks = level.blocks.filter(
+        (block) => block.specialMechanism?.type === "shuffle",
+      );
+      const plan = getDogV13MechanismPlan(
+        getDogV13LogicalBlockCount(levelNumber),
+        DOG_V13_CONFIG,
+        levelNumber,
+      );
+
+      expect(shuffleBlocks).toHaveLength(levelNumber >= 3 ? 1 : 0);
+      expect(plan.counts.shuffle).toBe(levelNumber >= 3 ? 1 : 0);
+      expect(getDogSpecialMechanismConfigs(levelNumber).some(
+        (configuration) => configuration.type === "shuffle",
+      )).toBe(levelNumber >= 3);
+      expect(level.difficulty.solvabilityStatus).toBe("solvable");
+    }
+  });
+
   it("默认生成器使用集中配置版本并兑现首关机制预算", () => {
     const generator = new LevelGenerator();
     const level = generator.generate({
@@ -17,7 +46,11 @@ describe("狗了个狗 v13 关卡生成 seam", () => {
       runSeed: "v13-generation-red-test",
       generatorVersion: DOG_V13_CONFIG.game.generatorVersion,
     });
-    const plan = getDogV13MechanismPlan(getDogV13LogicalBlockCount(level.number));
+    const plan = getDogV13MechanismPlan(
+      getDogV13LogicalBlockCount(level.number),
+      DOG_V13_CONFIG,
+      level.number,
+    );
     const counts = countMechanisms(level.blocks);
 
     expect(level.generatorVersion).toBe(DOG_V13_CONFIG.game.generatorVersion);
@@ -87,7 +120,11 @@ describe("狗了个狗 v13 关卡生成 seam", () => {
         runSeed: `v13-boundary-${levelNumber}`,
         generatorVersion: DOG_V13_CONFIG.game.generatorVersion,
       });
-      const plan = getDogV13MechanismPlan(getDogV13LogicalBlockCount(levelNumber));
+      const plan = getDogV13MechanismPlan(
+        getDogV13LogicalBlockCount(levelNumber),
+        DOG_V13_CONFIG,
+        levelNumber,
+      );
       expect(level.generatorVersion).toBe(DOG_V13_CONFIG.game.generatorVersion);
       expect(countMechanisms(level.blocks)).toEqual(plan.counts);
       expect(getDogLogicalBlockCount(level.blocks, level.specialMechanisms)).toBe(
@@ -175,6 +212,47 @@ describe("狗了个狗 v13 关卡生成 seam", () => {
     const replayedTargets = collectMagneticTargets(replayed);
     expect(firstTargets.length).toBeGreaterThan(0);
     expect(replayedTargets).toEqual(firstTargets);
+  });
+
+  it("正式乱序关卡的棋盘、回放与乱序事件可按 runSeed 重现", () => {
+    const generator = new LevelGenerator({ candidateFilter: () => true });
+    const request = {
+      levelNumber: 3,
+      runSeed: "v13-shuffle-replay-boundary",
+      generatorVersion: DOG_V13_CONFIG.game.generatorVersion,
+    } as const;
+    const level = generator.generate(request);
+    const replayed = generator.replay(level.generation.replay);
+    const different = generator.generate({
+      ...request,
+      runSeed: "v13-shuffle-replay-boundary-other",
+    });
+
+    const play = (candidate: typeof level, path: readonly string[]) => {
+      const session = new GameSession(candidate);
+      let state = session.getState();
+      for (const blockId of path) {
+        state = session.selectBlock(blockId);
+      }
+      return {
+        events: session.getShuffleReplayEvents(),
+        status: state.status,
+      };
+    };
+
+    const triggerPath = findShuffleTriggerPath(level, DOG_V13_CONFIG);
+    if (triggerPath === undefined) {
+      throw new Error("Expected generated level to expose a shuffle trigger path");
+    }
+    const firstPlay = play(level, triggerPath);
+    const replayedPlay = play(replayed, triggerPath);
+    const completedPlay = play(level, level.solutionPath);
+
+    expect(replayed).toEqual(level);
+    expect(different).not.toEqual(level);
+    expect(firstPlay).toEqual(replayedPlay);
+    expect(firstPlay.events).toHaveLength(1);
+    expect(completedPlay.status).toBe("won");
   });
 
 });

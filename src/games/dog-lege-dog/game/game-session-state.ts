@@ -13,6 +13,7 @@ import {
 import { findSolvabilityFromState } from "@/games/dog-lege-dog/levels/level-solvability";
 import { GameSessionShuffleRuntime } from "@/games/dog-lege-dog/game/game-session-shuffle";
 import { resolveDogSelection } from "@/games/dog-lege-dog/levels/level-mechanism-resolution";
+import { resolveDogShuffleState } from "@/games/dog-lege-dog/levels/level-shuffle";
 import {
   createDogSpecialMechanismHandlerMap,
   createDogSpecialMechanismHandlers,
@@ -363,6 +364,7 @@ export class GameSessionState {
         return false;
       }
 
+      const magneticRandom = this.magneticRandom.clone();
       const resolution = resolveDogSelection(
         this.level,
         blockIndex,
@@ -370,10 +372,22 @@ export class GameSessionState {
         this.higherBlockCounts,
         this.tray,
         this.specialMechanismHandlers,
-        this.magneticRandom.clone(),
+        magneticRandom,
         this.graph,
       );
-      return getDogTrayLogicalUnitCount(resolution.tray) <= effectiveTrayCapacity;
+      const shuffleResolution = resolveDogShuffleState({
+        config: this.config,
+        level: this.level,
+        tray: resolution.tray,
+        remainingBlockIds: this.level.blocks
+          .filter((_, index) => (resolution.remainingMask & (1n << BigInt(index))) !== 0n)
+          .map((block) => block.id),
+        effectiveTrayCapacity,
+        handlers: this.specialMechanismHandlers,
+        magneticRandom,
+        sequence: 1,
+      });
+      return getDogTrayLogicalUnitCount(shuffleResolution.tray) <= effectiveTrayCapacity;
     });
   }
 }

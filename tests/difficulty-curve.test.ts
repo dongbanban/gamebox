@@ -28,7 +28,7 @@ describe("狗了个狗难度曲线", () => {
     ]);
     expect(targets.every((target) => Number.isFinite(target.safeChoiceCount.max))).toBe(true);
     expect(targets.map((target) => target.safeChoiceRate?.min)).toEqual([
-      0.18, 0.18, 0.18, 0.18, 0.16,
+      0.18, 0.18, 0.1, 0.1, 0.08,
     ]);
     expect(targets.map((target) => target.durationMinutes.min)).toEqual([
       9, 9, 9, 9, 9.8,

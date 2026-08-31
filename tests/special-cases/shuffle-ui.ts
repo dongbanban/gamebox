@@ -6,6 +6,7 @@ import {
   BLOCK_HEIGHT,
   BLOCK_WIDTH,
   DOG_SHUFFLE_MECHANISM_TYPE,
+  LevelGenerator,
   createDogShuffleMechanism,
   startDogLegeDogGame,
 } from "@/games/dog-lege-dog";
@@ -68,6 +69,22 @@ describe("特殊机制测试 · shuffle-ui", () => {
     expect(shuffleSlot?.dataset.shuffleState).toBe("armed");
     expect(shuffleSlot?.classList.contains("dog-tray__slot--shuffle-armed")).toBe(true);
     expect(shuffleSlot?.getAttribute("aria-label")).toContain("待乱序");
+    game.destroy();
+  });
+
+  it("正式第 3 关在机制说明中展示乱序规则", () => {
+    const level = new LevelGenerator({ candidateFilter: () => true }).generate({
+      levelNumber: 3,
+      runSeed: "shuffle-ui-level-three",
+    });
+    const root = document.createElement("div");
+    const game = startDogLegeDogGame(root, { level, loadout: ["tray-capacity", "wildcard", "torch"] });
+    root.querySelector<HTMLButtonElement>('[data-testid="dog-special-mechanism-button"]')?.click();
+
+    expect(root.querySelector('[data-testid="dog-special-mechanism"][data-special-mechanism="shuffle"]'))
+      .not.toBeNull();
+    expect(root.querySelector('[data-testid="dog-special-mechanism"][data-special-mechanism="shuffle"]')?.textContent)
+      .toContain("乱序方块");
     game.destroy();
   });
 

@@ -11,7 +11,10 @@ import type {
   DogSolvabilityStatus,
   DogTrayBlock,
 } from "@/games/dog-lege-dog/levels/level-types";
-import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
+import {
+  DOG_V13_CONFIG,
+  type DogV13Config,
+} from "@/games/dog-lege-dog/game/v13-config";
 
 const DOG_BASE_TRAY_CAPACITY = DOG_V13_CONFIG.tray.baseCapacity;
 const DOG_MAX_LOCKED_TRAY_SLOTS = DOG_V13_CONFIG.tray.maxLockedSlotCount;
@@ -30,6 +33,7 @@ import {
 import {
   getSelectableBlocks,
   isCapacityBlocked,
+  resolveDogShuffleAfterSelection,
 } from "@/games/dog-lege-dog/levels/level-solvability-simulation";
 
 const DEFAULT_SPECIAL_MECHANISM_HANDLER_MAP = createDogSpecialMechanismHandlerMap();
@@ -41,6 +45,7 @@ export function verifyRemovalPath(
   specialMechanismHandlers: ReadonlyMap<string, DogSpecialMechanismHandler> =
     DEFAULT_SPECIAL_MECHANISM_HANDLER_MAP,
   trayCapacity = resolveLevelTrayCapacity(level),
+  config: DogV13Config = DOG_V13_CONFIG,
 ): PathVerification {
   if (path.length === 0 || path.length > level.blocks.length) {
     return createPathVerification(
@@ -62,6 +67,7 @@ export function verifyRemovalPath(
   const mechanismEntryCounts = new Map<string, number>();
   let selectedBlockCount = 0;
   let magneticTargetCount = 0;
+  let shuffleTriggerCount = 0;
   let trayPeakPressure = 0;
 
   for (const blockId of path) {
@@ -128,7 +134,19 @@ export function verifyRemovalPath(
       }
     }
     higherBlockCounts.splice(0, higherBlockCounts.length, ...resolution.higherBlockCounts);
-    tray.splice(0, tray.length, ...resolution.tray);
+    const shuffleResolution = resolveDogShuffleAfterSelection({
+      level,
+      tray: resolution.tray,
+      remainingMask,
+      effectiveTrayCapacity: trayCapacity,
+      handlers: specialMechanismHandlers,
+      magneticRandom,
+      config,
+    });
+    if (shuffleResolution.computation !== null) {
+      shuffleTriggerCount += 1;
+    }
+    tray.splice(0, tray.length, ...shuffleResolution.tray);
     seenPathIndices.add(blockIndex);
     acceptedPath.push(blockId);
     const trayLogicalUnitCount = getDogTrayLogicalUnitCount(tray);
@@ -142,6 +160,7 @@ export function verifyRemovalPath(
       remainingMask !== 0n,
       selectable,
       specialMechanismHandlers,
+      config,
       higherBlockCounts,
       magneticRandom,
       remainingMask,
@@ -192,6 +211,7 @@ export function verifyRemovalPath(
       selectedBlockCount,
       mechanismEntryCounts,
       magneticTargetCount,
+      shuffleTriggerCount,
     ),
   );
 }
@@ -200,11 +220,19 @@ export function normalizeSolvabilityResult(
   level: DogLevelGeometry,
   result: SolvabilityResult,
   handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
+  config: DogV13Config = DOG_V13_CONFIG,
 ): SolvabilityResult {
   if (result.status !== "solvable") {
     return result;
   }
-  const verification = verifyRemovalPath(level, result.path, undefined, handlers);
+  const verification = verifyRemovalPath(
+    level,
+    result.path,
+    undefined,
+    handlers,
+    undefined,
+    config,
+  );
   if (!verification.solvable) {
     return result;
   }
@@ -270,10 +298,12 @@ function createPathSimulationMetrics(
   selectedBlockCount: number,
   mechanismEntryCounts: ReadonlyMap<string, number>,
   magneticTargetCount: number,
+  shuffleTriggerCount: number,
 ): PathSimulationMetrics {
   return {
     selectedBlockCount,
     mechanismEntryCounts: Object.freeze(Object.fromEntries(mechanismEntryCounts)),
     magneticTargetCount,
+    shuffleTriggerCount,
   };
 }

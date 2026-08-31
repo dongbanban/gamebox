@@ -5,16 +5,10 @@ import type {
   DogTrayBlock,
 } from "@/games/dog-lege-dog/levels/level-types";
 import {
-  resolveDogSafeShuffle,
+  resolveDogShuffleState,
   type DogShuffleResolutionComputation,
 } from "@/games/dog-lege-dog/levels/level-shuffle";
 import {
-  armDogShuffleBlock,
-  getDogShuffleMechanismStatus,
-  getDogTrayLogicalUnitCount,
-} from "@/games/dog-lege-dog/game/special-mechanisms";
-import {
-  getDogShuffleThreshold,
   type DogV13Config,
 } from "@/games/dog-lege-dog/game/v13-config";
 import type { SeededRandom } from "@/games/dog-lege-dog/levels/level-random";
@@ -107,41 +101,24 @@ export class GameSessionShuffleRuntime {
   }
 
   private updateShuffleState(): PendingShuffleResolution | null {
-    const threshold = getDogShuffleThreshold(
-      this.context.getEffectiveTrayCapacity(),
-      this.context.config,
-    );
-    const trayLogicalUnitCount = getDogTrayLogicalUnitCount(this.context.tray);
-    const armedTray = this.context.tray.map((block) => armDogShuffleBlock(block));
-    const triggerIndex = armedTray.findIndex((block) =>
-      block !== undefined &&
-      trayLogicalUnitCount >= threshold &&
-      ["armed", "triggerable"].includes(getDogShuffleMechanismStatus(block.specialMechanism)),
-    );
-
-    if (triggerIndex < 0) {
-      this.context.tray.splice(0, this.context.tray.length, ...armedTray);
-      return null;
-    }
-
-    const triggerBlock = armedTray[triggerIndex];
-    if (triggerBlock === undefined) {
-      return null;
-    }
-    const before = this.createShuffleTransactionState(armedTray);
-    const computation = resolveDogSafeShuffle({
-      level: this.context.level,
+    const state = resolveDogShuffleState({
       config: this.context.config,
-      tray: armedTray,
-      triggerBlockId: triggerBlock.id,
+      level: this.context.level,
       remainingBlockIds: [...this.context.remainingBlocks.keys()],
+      tray: this.context.tray,
       effectiveTrayCapacity: this.context.getEffectiveTrayCapacity(),
       handlers: this.context.specialMechanismHandlers,
       magneticRandom: this.context.magneticRandom,
       sequence: this.shuffleSequence + 1,
     });
-    this.context.tray.splice(0, this.context.tray.length, ...computation.afterTrayBlocks);
-    return { before, computation };
+    if (state.computation === null) {
+      this.context.tray.splice(0, this.context.tray.length, ...state.tray);
+      return null;
+    }
+
+    const before = this.createShuffleTransactionState(state.computation.beforeTrayBlocks);
+    this.context.tray.splice(0, this.context.tray.length, ...state.tray);
+    return { before, computation: state.computation };
   }
 
   private createShuffleTransactionState(

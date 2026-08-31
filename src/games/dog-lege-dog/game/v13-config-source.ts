@@ -37,15 +37,16 @@ const ITEM_ASSET_PATHS: Readonly<Record<DogV13ItemId, string>> = {
 export const SUPPORTED_ITEM_IDS: readonly DogV13ItemId[] = DOG_V13_ITEM_COPY_KEYS;
 
 const DIFFICULTY_TARGETS: readonly DogV13DifficultyTarget[] = [
-  createDifficultyTarget(1, 4, [0.18, 0.28], [9, 10], [0.78, 0.98]),
-  createDifficultyTarget(5, 5, [0.16, 0.24], [9.8, 10.8], [0.8, 0.99]),
-  createDifficultyTarget(6, 6, [0.15, 0.23], [10, 11.2], [0.82, 0.99]),
-  createDifficultyTarget(7, 14, [0.14, 0.22], [10.3, 11.6], [0.83, 0.99]),
-  createDifficultyTarget(15, 15, [0.14, 0.22], [10.5, 11.8], [0.84, 0.99]),
-  createDifficultyTarget(16, 16, [0.13, 0.21], [11, 12.5], [0.85, 0.99]),
-  createDifficultyTarget(17, 29, [0.12, 0.2], [11.5, 13.5], [0.86, 0.99]),
-  createDifficultyTarget(30, 30, [0.11, 0.19], [12, 14], [0.87, 0.99]),
-  createDifficultyTarget(31, 99, [0.09, 0.18], [13, 16], [0.88, 0.99]),
+  createDifficultyTarget(1, 2, [0.18, 0.28], [9, 10], [0.78, 0.98]),
+  createDifficultyTarget(3, 4, [0.1, 0.28], [9, 10], [0.78, 1]),
+  createDifficultyTarget(5, 5, [0.08, 0.24], [9.8, 10.8], [0.8, 1]),
+  createDifficultyTarget(6, 6, [0.06, 0.23], [10, 11.2], [0.82, 1]),
+  createDifficultyTarget(7, 14, [0.05, 0.22], [10.3, 11.6], [0.83, 1]),
+  createDifficultyTarget(15, 15, [0.04, 0.22], [10.5, 11.8], [0.84, 1]),
+  createDifficultyTarget(16, 16, [0.02, 0.21], [11, 12.5], [0.85, 1]),
+  createDifficultyTarget(17, 29, [0.015, 0.2], [11.5, 13.5], [0.86, 1]),
+  createDifficultyTarget(30, 30, [0.01, 0.19], [12, 14], [0.87, 1]),
+  createDifficultyTarget(31, 99, [0.01, 0.18], [13, 16], [0.88, 1]),
 ];
 
 const DOG_V13_TEST_PROFILES_SOURCE =
@@ -122,7 +123,7 @@ export const DOG_V13_CONFIG_SOURCE: DogV13Config = {
     requireAllTypes: true,
     freezeMeltTripleCount: 2,
     shuffle: {
-      enabled: false,
+      enabled: true,
       firstLevelNumber: 3,
       maxPerLevel: 1,
       candidateCount: 8,
@@ -136,6 +137,7 @@ export const DOG_V13_CONFIG_SOURCE: DogV13Config = {
       { type: "illusion", logicalUnitWeight: 1, operationCost: 1 },
       { type: "magnetic", logicalUnitWeight: 1, operationCost: 1 },
       { type: "twin", logicalUnitWeight: 2, operationCost: 1 },
+      { type: "shuffle", logicalUnitWeight: 1, operationCost: 1 },
     ],
   },
   difficulty: {

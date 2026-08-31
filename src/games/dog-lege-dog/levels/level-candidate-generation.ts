@@ -221,6 +221,9 @@ function createCandidateLevel(
     patternTypes,
     blocks,
     specialMechanisms,
+    ...(specialMechanisms.some(({ type }) => type === "shuffle")
+      ? { solutionPath }
+      : {}),
   };
   const geometryError = validatePlacementGeometry(board, blocks);
   if (geometryError !== undefined) {
@@ -246,7 +249,14 @@ function createCandidateLevel(
   }
 
   let acceptedSolutionPath = solutionPath;
-  let verification = verifyRemovalPath(geometry, acceptedSolutionPath);
+  let verification = verifyRemovalPath(
+    geometry,
+    acceptedSolutionPath,
+    undefined,
+    undefined,
+    undefined,
+    config,
+  );
   const initialVerificationReason = verification.reason;
   if (verification.solvable) {
     acceptedSolutionPath = verification.path;
@@ -255,8 +265,11 @@ function createCandidateLevel(
     const alternative = findSolvability(
       geometry,
       lockedTraySlotCount > 0
-        ? { branchBudget: LOCK_AWARE_SOLVABILITY_BRANCH_BUDGET }
-        : undefined,
+        ? {
+            branchBudget: LOCK_AWARE_SOLVABILITY_BRANCH_BUDGET,
+            config,
+          }
+        : { config },
     );
     if (alternative.status !== "solvable") {
       if (spatialValidation === "diagnostic") {
@@ -266,7 +279,18 @@ function createCandidateLevel(
       }
     } else {
       acceptedSolutionPath = alternative.path;
-      verification = verifyRemovalPath(geometry, acceptedSolutionPath);
+      const acceptedGeometry: DogLevelGeometry = {
+        ...geometry,
+        solutionPath: acceptedSolutionPath,
+      };
+      verification = verifyRemovalPath(
+        acceptedGeometry,
+        acceptedSolutionPath,
+        undefined,
+        undefined,
+        undefined,
+        config,
+      );
       if (!verification.solvable) {
         if (spatialValidation === "diagnostic") {
           verification = createDiagnosticVerification(acceptedSolutionPath, alternative);
@@ -283,14 +307,19 @@ function createCandidateLevel(
     }
   }
 
+  const acceptedGeometry: DogLevelGeometry = {
+    ...geometry,
+    solutionPath: acceptedSolutionPath,
+  };
+
   const difficulty = calculateDifficultyMetrics(
-    geometry,
+    acceptedGeometry,
     acceptedSolutionPath,
     verification,
     undefined,
     lockedTraySlotCount > 0
-      ? { branchBudget: LOCK_AWARE_SOLVABILITY_BRANCH_BUDGET }
-      : undefined,
+      ? { branchBudget: LOCK_AWARE_SOLVABILITY_BRANCH_BUDGET, config }
+      : { config },
     config,
   );
 

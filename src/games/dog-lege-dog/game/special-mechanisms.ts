@@ -76,9 +76,10 @@ export function getDogSpecialMechanismConfigs(
   const plan = getDogV13MechanismPlan(
     getDogV13LogicalBlockCount(levelNumber, config),
     config,
+    levelNumber,
   );
   return Object.freeze(
-    getDogV13ActiveMechanismDefinitions(config)
+    getDogV13ActiveMechanismDefinitions(config, levelNumber)
       .filter((definition) => SUPPORTED_MECHANISM_TYPES.has(definition.type))
       .map((definition) => {
         const count = plan.counts[definition.type];

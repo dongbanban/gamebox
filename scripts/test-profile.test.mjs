@@ -18,7 +18,7 @@ test("profile plan uses smoke boundaries and one Chromium flow", () => {
   const profile = getProfile("smoke");
   const steps = buildProfilePlan("smoke");
 
-  assert.deepEqual(profile.levelNumbers, [1, 6, 16, 31, 99]);
+  assert.deepEqual(profile.levelNumbers, [1, 2, 3, 6, 16, 31, 99]);
   assert.deepEqual(profile.fixedSeeds, ["v13-smoke-a", "v13-smoke-b"]);
   assert.equal(
     steps.find((step) => step.name === "chromium-smoke")?.args.includes("--project=chromium"),
@@ -134,7 +134,7 @@ test("profile report exposes seeds, boundaries and ordered steps", () => {
   const report = formatProfileReport("full", buildProfilePlan("full"));
 
   assert.match(report, /profile=full/);
-  assert.match(report, /levels=1,6,16,31,99/);
+  assert.match(report, /levels=1,2,3,6,16,31,99/);
   assert.match(report, /testSeeds=v13-full-a,v13-full-b/);
   assert.match(report, /steps=core,worker-fallback,random-regression,chromium,cross-browser,pages-build,diff-check,file-line-check/);
 });

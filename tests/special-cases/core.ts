@@ -52,15 +52,22 @@ describe("特殊机制测试 · core", () => {
     vi.useRealTimers();
   });
 
-  it("按 v13 逻辑预算解析四种机制的固定数量", () => {
+  it("按 v13 逻辑预算解析正式关卡的固定机制数量", () => {
     for (const levelNumber of [1, 5, 6, 15, 16, 30, 31, 99]) {
-      const plan = getDogV13MechanismPlan(getDogV13LogicalBlockCount(levelNumber));
+      const plan = getDogV13MechanismPlan(
+        getDogV13LogicalBlockCount(levelNumber),
+        undefined,
+        levelNumber,
+      );
       const configs = getDogSpecialMechanismConfigs(levelNumber);
       expect(configs.map(({ type, min, max }) => [type, min, max])).toEqual([
         ["freeze", plan.counts.freeze, plan.counts.freeze],
         ["illusion", plan.counts.illusion, plan.counts.illusion],
         ["magnetic", plan.counts.magnetic, plan.counts.magnetic],
         ["twin", plan.counts.twin, plan.counts.twin],
+        ...(levelNumber >= 3
+          ? [["shuffle", plan.counts.shuffle, plan.counts.shuffle]]
+          : []),
       ]);
     }
 

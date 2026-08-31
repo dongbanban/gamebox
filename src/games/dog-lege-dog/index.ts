@@ -99,6 +99,7 @@ export {
   getPatternTypeCount,
 } from "@/games/dog-lege-dog/levels/level-progression";
 export {
+  findShuffleTriggerPath,
   findSolvability,
   findSolvabilityFromState,
 } from "@/games/dog-lege-dog/levels/level-solvability";
@@ -109,10 +110,13 @@ export type {
 } from "@/games/dog-lege-dog/levels/level-solvability";
 export {
   resolveDogSafeShuffle,
+  resolveDogShuffleState,
 } from "@/games/dog-lege-dog/levels/level-shuffle";
 export type {
   DogShuffleResolutionComputation,
   DogShuffleResolutionOptions,
+  DogShuffleStateResolution,
+  DogShuffleStateResolutionOptions,
 } from "@/games/dog-lege-dog/levels/level-shuffle";
 export {
   calculateDogLevelReward,

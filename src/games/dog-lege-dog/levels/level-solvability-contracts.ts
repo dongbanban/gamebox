@@ -5,6 +5,7 @@ import type {
   DogSpecialMechanismHandler,
   DogTrayBlock,
 } from "@/games/dog-lege-dog/levels/level-types";
+import type { DogV13Config } from "@/games/dog-lege-dog/game/v13-config";
 import type { SeededRandom } from "@/games/dog-lege-dog/levels/level-random";
 
 export const MAX_SOLVABILITY_SEARCH_BRANCHES = 16 as const;
@@ -12,6 +13,8 @@ export const MAX_SOLVABILITY_SEARCH_BRANCHES = 16 as const;
 export interface SolvabilitySearchOptions {
   readonly branchBudget?: number;
   readonly specialMechanismHandlers?: readonly DogSpecialMechanismHandler[];
+  readonly config?: DogV13Config;
+  readonly requireShuffleTrigger?: boolean;
 }
 
 export interface SolvabilityStateOptions extends SolvabilitySearchOptions {
@@ -20,6 +23,8 @@ export interface SolvabilityStateOptions extends SolvabilitySearchOptions {
   readonly trayCapacity?: number;
   /** Current magnetic RNG position; the solver clones it before exploring. */
   readonly magneticRandom?: SeededRandom;
+  /** Optional memo shared by equivalent shuffle candidates. */
+  readonly completedStates?: Map<string, SolvabilityMemoEntry>;
 }
 
 export interface PathVerification {
@@ -35,6 +40,7 @@ export interface PathSimulationMetrics {
   readonly selectedBlockCount: number;
   readonly mechanismEntryCounts: Readonly<Record<string, number>>;
   readonly magneticTargetCount: number;
+  readonly shuffleTriggerCount: number;
 }
 
 export interface SolvabilityResult {
@@ -52,6 +58,8 @@ export interface SafeChoiceMetrics {
 export interface SolvabilitySearchContext {
   readonly completedStates: Map<string, SolvabilityMemoEntry>;
   readonly branchBudget: number;
+  readonly config: DogV13Config;
+  readonly requireShuffleTrigger: boolean;
   branchAttempts: number;
 }
 

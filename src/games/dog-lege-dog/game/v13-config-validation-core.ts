@@ -178,6 +178,13 @@ export function validateSpecialMechanisms(value: unknown, issues: DogV13ConfigIs
       message: "shuffle 关闭时不能放入正式机制定义",
     });
   }
+  if (asRecord(special.shuffle)?.enabled === true && !types.includes("shuffle")) {
+    issues.push({
+      path: "specialMechanisms.mechanisms",
+      code: "relation",
+      message: "shuffle 开启时必须放入正式机制定义",
+    });
+  }
   for (const type of requiredTypes) {
     if (!types.includes(type)) issues.push({ path: "specialMechanisms.mechanisms", code: "relation", message: `必须包含 ${type}` });
   }

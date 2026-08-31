@@ -8,7 +8,10 @@ import type {
   DogSpecialMechanismHandler,
   DogTrayBlock,
 } from "@/games/dog-lege-dog/levels/level-types";
-import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
+import {
+  DOG_V13_CONFIG,
+  type DogV13Config,
+} from "@/games/dog-lege-dog/game/v13-config";
 import {
   blockMask,
   createSolvabilityResult,
@@ -20,6 +23,7 @@ import {
   cloneTray,
   getSelectableBlocks,
   isCapacityBlocked,
+  resolveDogShuffleAfterSelection,
   sortSelectableBlocks,
   stateKeyFor,
   trayPeakPressureForPath,
@@ -40,8 +44,20 @@ export function searchSolvableContinuation(
   pathDepth: number,
   trayCapacity: number = DOG_V13_CONFIG.tray.baseCapacity,
   magneticRandom: SeededRandom = createDogMagneticRandom(level),
+  shuffleTriggered = false,
 ): SolvabilityResult {
+  const stateKey = `${stateKeyFor(remainingMask, tray, magneticRandom)}:${
+    shuffleTriggered ? "shuffle" : "no-shuffle"
+  }`;
   if (remainingMask === 0n) {
+    if (context.requireShuffleTrigger && !shuffleTriggered) {
+      return createSolvabilityResult(
+        "unsolvable",
+        path,
+        getDogTrayLogicalUnitCount(tray),
+        "solvability path never triggers shuffle",
+      );
+    }
     if (tray.some((block) => !isDogSpecialMechanismResolved(block.specialMechanism))) {
       return createSolvabilityResult(
         "unsolvable",
@@ -58,7 +74,7 @@ export function searchSolvableContinuation(
         "solvable continuation leaves tray blocks after clearing the board",
       );
     }
-    context.completedStates.set(stateKeyFor(remainingMask, tray, magneticRandom), {
+    context.completedStates.set(stateKey, {
       status: "solvable",
       path: [],
       trayPeakPressure: getDogTrayLogicalUnitCount(tray),
@@ -75,7 +91,6 @@ export function searchSolvableContinuation(
     );
   }
 
-  const stateKey = stateKeyFor(remainingMask, tray, magneticRandom);
   const completedState = context.completedStates.get(stateKey);
   if (completedState !== undefined) {
     if (completedState.status === "solvable") {
@@ -138,7 +153,17 @@ export function searchSolvableContinuation(
       graph,
     );
     const nextRemainingMask = resolution.remainingMask;
-    const nextTray = [...resolution.tray];
+    const shuffleResolution = resolveDogShuffleAfterSelection({
+      level,
+      tray: resolution.tray,
+      remainingMask: nextRemainingMask,
+      effectiveTrayCapacity: trayCapacity,
+      handlers,
+      magneticRandom: nextMagneticRandom,
+      config: context.config,
+    });
+    const nextShuffleTriggered = shuffleTriggered || shuffleResolution.computation !== null;
+    const nextTray = [...shuffleResolution.tray];
     const nextTrayLogicalUnitCount = getDogTrayLogicalUnitCount(nextTray);
     trayPeakPressure = Math.max(trayPeakPressure, nextTrayLogicalUnitCount);
     const nextHigherBlockCounts = [...higherBlockCounts];
@@ -156,6 +181,7 @@ export function searchSolvableContinuation(
       nextRemainingMask !== 0n,
       nextSelectable,
       handlers,
+      context.config,
       nextHigherBlockCounts,
       nextMagneticRandom,
       nextRemainingMask,
@@ -176,6 +202,7 @@ export function searchSolvableContinuation(
       pathDepth + 1,
       trayCapacity,
       nextMagneticRandom,
+      nextShuffleTriggered,
     );
     trayPeakPressure = Math.max(trayPeakPressure, result.trayPeakPressure);
     if (result.status !== "unsolvable") {
@@ -190,6 +217,7 @@ export function searchSolvableContinuation(
             continuationPath,
             graph,
             handlers,
+            context.config,
             remainingMask,
             higherBlockCounts,
             magneticRandom,
@@ -230,6 +258,9 @@ export function findGreedyContinuation(
   initialPathDepth: number,
   trayCapacity: number = DOG_V13_CONFIG.tray.baseCapacity,
   magneticRandom: SeededRandom = createDogMagneticRandom(level),
+  config: DogV13Config = DOG_V13_CONFIG,
+  requireShuffleTrigger = false,
+  shuffleTriggered = false,
 ): SolvabilityResult | undefined {
   let remainingMask = initialRemainingMask;
   const higherBlockCounts = [...initialHigherBlockCounts];
@@ -262,7 +293,17 @@ export function findGreedyContinuation(
       graph,
     );
     remainingMask = resolution.remainingMask;
-    tray.splice(0, tray.length, ...resolution.tray);
+    const shuffleResolution = resolveDogShuffleAfterSelection({
+      level,
+      tray: resolution.tray,
+      remainingMask,
+      effectiveTrayCapacity: trayCapacity,
+      handlers,
+      magneticRandom: selectionRandom,
+      config,
+    });
+    shuffleTriggered ||= shuffleResolution.computation !== null;
+    tray.splice(0, tray.length, ...shuffleResolution.tray);
     higherBlockCounts.splice(0, higherBlockCounts.length, ...resolution.higherBlockCounts);
     const trayLogicalUnitCount = getDogTrayLogicalUnitCount(tray);
     trayPeakPressure = Math.max(trayPeakPressure, trayLogicalUnitCount);
@@ -277,6 +318,7 @@ export function findGreedyContinuation(
       remainingMask !== 0n,
       nextSelectable,
       handlers,
+      config,
       higherBlockCounts,
       selectionRandom,
       remainingMask,
@@ -286,6 +328,9 @@ export function findGreedyContinuation(
     }
   }
 
+  if (requireShuffleTrigger && !shuffleTriggered) {
+    return undefined;
+  }
   if (tray.length > 0) {
     return undefined;
   }
@@ -303,6 +348,9 @@ export function verifyStateContinuation(
   handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
   trayCapacity: number,
   magneticRandom: SeededRandom = createDogMagneticRandom(level),
+  config: DogV13Config = DOG_V13_CONFIG,
+  requireShuffleTrigger = false,
+  shuffleTriggered = false,
 ): SolvabilityResult | undefined {
   let remainingMask = initialRemainingMask;
   const higherBlockCounts = [...initialHigherBlockCounts];
@@ -340,7 +388,17 @@ export function verifyStateContinuation(
     );
     remainingMask = resolution.remainingMask;
     higherBlockCounts.splice(0, higherBlockCounts.length, ...resolution.higherBlockCounts);
-    tray.splice(0, tray.length, ...resolution.tray);
+    const shuffleResolution = resolveDogShuffleAfterSelection({
+      level,
+      tray: resolution.tray,
+      remainingMask,
+      effectiveTrayCapacity: trayCapacity,
+      handlers,
+      magneticRandom: selectionRandom,
+      config,
+    });
+    shuffleTriggered ||= shuffleResolution.computation !== null;
+    tray.splice(0, tray.length, ...shuffleResolution.tray);
     for (const consumedIndex of resolution.consumedBlockIndices) {
       if (consumedIndex !== blockIndex) {
         autoConsumedIndices.add(consumedIndex);
@@ -357,6 +415,7 @@ export function verifyStateContinuation(
       remainingMask !== 0n,
       nextSelectable,
       handlers,
+      config,
       higherBlockCounts,
       selectionRandom,
       remainingMask,
@@ -366,7 +425,8 @@ export function verifyStateContinuation(
     }
   }
 
-  if (remainingMask !== 0n || tray.length > 0) {
+  if (remainingMask !== 0n || tray.length > 0 ||
+    (requireShuffleTrigger && !shuffleTriggered)) {
     return undefined;
   }
 

@@ -131,7 +131,7 @@ function getRunSeed(testSeed: string): string {
 
 function assertV13MechanismPlan(levelNumber: number, level?: DogLegeDogLevel): void {
   const logicalBlockCount = getDogV13LogicalBlockCount(levelNumber);
-  const plan = getDogV13MechanismPlan(logicalBlockCount);
+  const plan = getDogV13MechanismPlan(logicalBlockCount, DOG_V13_CONFIG, levelNumber);
   expect(plan.logicalUnitCount).toBe(getDogV13SpecialMechanismBudget(logicalBlockCount));
   expect(plan.logicalUnitCount).toBeLessThanOrEqual(logicalBlockCount * 0.3);
   expect(
@@ -144,7 +144,8 @@ function assertV13MechanismPlan(levelNumber: number, level?: DogLegeDogLevel): v
     plan.counts.freeze +
       plan.counts.illusion +
       plan.counts.magnetic +
-      plan.counts.twin * 2,
+      plan.counts.twin * 2 +
+      plan.counts.shuffle,
   ).toBe(plan.logicalUnitCount);
 
   if (level?.generatorVersion !== undefined &&
@@ -160,11 +161,15 @@ function assertV13MechanismPlan(levelNumber: number, level?: DogLegeDogLevel): v
     expect(actualCounts.get("illusion")).toBeGreaterThan(0);
     expect(actualCounts.get("magnetic")).toBeGreaterThan(0);
     expect(actualCounts.get("twin")).toBeGreaterThan(0);
+    expect(actualCounts.get("shuffle") ?? 0).toBe(
+      levelNumber >= DOG_V13_CONFIG.specialMechanisms.shuffle.firstLevelNumber ? 1 : 0,
+    );
     const actualLogicalUnitCount =
       (actualCounts.get("freeze") ?? 0) +
       (actualCounts.get("illusion") ?? 0) +
       (actualCounts.get("magnetic") ?? 0) +
-      (actualCounts.get("twin") ?? 0) * 2;
+      (actualCounts.get("twin") ?? 0) * 2 +
+      (actualCounts.get("shuffle") ?? 0);
     expect(actualLogicalUnitCount).toBe(plan.logicalUnitCount);
     expect(level.difficulty.specialMechanismDensity).toBeLessThanOrEqual(0.3);
   }
