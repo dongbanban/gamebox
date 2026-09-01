@@ -33,11 +33,10 @@ describe("DogItemRuntime · restore-whistle", () => {
     });
     expect(runtime.begin("restore-whistle")).toMatchObject({ accepted: false, success: false });
 
-    triggerShuffle(session);
+    const selection = triggerShuffle(session);
     const shuffled = session.getState();
-    expect(runtime.settleSuccessfulTriples(
-      session.getLastShuffleTransaction()?.replayEvent.secondaryTripleCount ?? 0,
-    )).toMatchObject({ dropped: true, remainingUses: 1 });
+    expect(runtime.settleSuccessfulTriples(selection.tripleCount + 1))
+      .toMatchObject({ dropped: true, remainingUses: 1 });
     expect(runtime.getState().items[0]).toMatchObject({ available: true, remainingUses: 1 });
 
     expect(runtime.begin("restore-whistle")).toMatchObject({
@@ -126,9 +125,11 @@ function createRestoreFixture(loadout: readonly DogItemId[]) {
   };
 }
 
-function triggerShuffle(session: GameSession): void {
-  for (const blockId of ["working-1", "single-1", "working-2", "licking-1", "shuffle"]) {
-    session.selectBlock(blockId);
+function triggerShuffle(session: GameSession): ReturnType<GameSession["selectBlock"]> {
+  let result = session.selectBlock("working-1");
+  for (const blockId of ["single-1", "working-2", "licking-1", "shuffle"]) {
+    result = session.selectBlock(blockId);
   }
   expect(session.getLastShuffleTransaction()).not.toBeNull();
+  return result;
 }

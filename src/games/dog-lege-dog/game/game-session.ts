@@ -76,12 +76,13 @@ export class GameSession {
   }
 
   increaseTrayCapacity(): boolean {
-    const previousShuffle = this.getLastShuffleTransaction();
-    const increased = this.state.increaseTrayCapacity();
+    const increased = this.runPlayerAction(
+      () => this.state.increaseTrayCapacity(),
+      (result) => result,
+    );
     if (increased) {
       this.trayActions.clearCaches();
     }
-    this.expirePreviousShuffle(previousShuffle, increased);
     return increased;
   }
 
@@ -90,13 +91,14 @@ export class GameSession {
   }
 
   unlockTraySlot(): GameSessionUnlockResult {
-    const previousShuffle = this.getLastShuffleTransaction();
-    const unlockedSlotIndex = this.state.unlockTraySlot();
+    const unlockedSlotIndex = this.runPlayerAction(
+      () => this.state.unlockTraySlot(),
+      (result) => result !== null,
+    );
     if (unlockedSlotIndex === null) {
       return createUnlockResult(this.state.getState(), false, null);
     }
 
-    this.expirePreviousShuffle(previousShuffle, true);
     this.trayActions.clearCaches();
     return createUnlockResult(this.state.getState(), true, unlockedSlotIndex);
   }
@@ -110,10 +112,10 @@ export class GameSession {
   }
 
   useWildcard(patternType: DogPatternType): GameSessionWildcardResult {
-    const previousShuffle = this.getLastShuffleTransaction();
-    const result = this.trayActions.useWildcard(patternType);
-    this.expirePreviousShuffle(previousShuffle, result.used);
-    return result;
+    return this.runPlayerAction(
+      () => this.trayActions.useWildcard(patternType),
+      (result) => result.used,
+    );
   }
 
   getTripleRemovalTargetBlockIds(): readonly string[] {
@@ -137,17 +139,17 @@ export class GameSession {
   }
 
   removeTriple(patternType: DogPatternType): GameSessionTripleRemovalResult {
-    const previousShuffle = this.getLastShuffleTransaction();
-    const result = this.trayActions.removeTriple(patternType);
-    this.expirePreviousShuffle(previousShuffle, result.removed);
-    return result;
+    return this.runPlayerAction(
+      () => this.trayActions.removeTriple(patternType),
+      (result) => result.removed,
+    );
   }
 
   removeTripleForTrayBlock(blockId: string): GameSessionTripleRemovalResult {
-    const previousShuffle = this.getLastShuffleTransaction();
-    const result = this.trayActions.removeTripleForTrayBlock(blockId);
-    this.expirePreviousShuffle(previousShuffle, result.removed);
-    return result;
+    return this.runPlayerAction(
+      () => this.trayActions.removeTripleForTrayBlock(blockId),
+      (result) => result.removed,
+    );
   }
 
   canMeltFrozenBlock(blockId: string, location: GameSessionMeltLocation): boolean {
@@ -155,9 +157,10 @@ export class GameSession {
   }
 
   meltFrozenBlock(blockId: string, location: GameSessionMeltLocation): GameSessionMeltResult {
-    const previousShuffle = this.getLastShuffleTransaction();
-    const result = this.mechanismActions.meltFrozenBlock(blockId, location);
-    this.expirePreviousShuffle(previousShuffle, result.melted);
+    const result = this.runPlayerAction(
+      () => this.mechanismActions.meltFrozenBlock(blockId, location),
+      (completed) => completed.melted,
+    );
     this.trayActions.clearCaches();
     return result;
   }
@@ -167,9 +170,10 @@ export class GameSession {
   }
 
   revealIllusionBlock(blockId: string): GameSessionRevealResult {
-    const previousShuffle = this.getLastShuffleTransaction();
-    const result = this.mechanismActions.revealIllusionBlock(blockId);
-    this.expirePreviousShuffle(previousShuffle, result.revealed);
+    const result = this.runPlayerAction(
+      () => this.mechanismActions.revealIllusionBlock(blockId),
+      (completed) => completed.revealed,
+    );
     this.trayActions.clearCaches();
     return result;
   }
@@ -183,25 +187,28 @@ export class GameSession {
   }
 
   demagnetizeMagneticBlock(blockId: string): GameSessionDemagnetizeResult {
-    const previousShuffle = this.getLastShuffleTransaction();
-    const result = this.mechanismActions.demagnetizeMagneticBlock(blockId);
-    this.expirePreviousShuffle(previousShuffle, result.demagnetized);
+    const result = this.runPlayerAction(
+      () => this.mechanismActions.demagnetizeMagneticBlock(blockId),
+      (completed) => completed.demagnetized,
+    );
     this.trayActions.clearCaches();
     return result;
   }
 
   selectBlock(blockId: string): GameSessionSelectionResult {
-    const previousShuffle = this.getLastShuffleTransaction();
-    const result = this.selection.selectBlock(blockId);
-    this.expirePreviousShuffle(previousShuffle, result.selected);
+    const result = this.runPlayerAction(
+      () => this.selection.selectBlock(blockId),
+      (selection) => selection.selected,
+    );
     this.trayActions.clearCaches();
     return result;
   }
 
   beginBlockSelection(blockId: string): GameSessionPendingSelectionResult {
-    const previousShuffle = this.getLastShuffleTransaction();
-    const result = this.selection.beginBlockSelection(blockId);
-    this.expirePreviousShuffle(previousShuffle, result.selected);
+    const result = this.runPlayerAction(
+      () => this.selection.beginBlockSelection(blockId),
+      (selection) => selection.selected,
+    );
     this.trayActions.clearCaches();
     return result;
   }
@@ -224,13 +231,16 @@ export class GameSession {
     return result;
   }
 
-  private expirePreviousShuffle(
-    transaction: GameSessionShuffleTransaction | null,
-    changed: boolean,
-  ): void {
-    if (changed) {
-      this.state.expireLastShuffleTransaction(transaction);
+  private runPlayerAction<Result>(
+    action: () => Result,
+    succeeded: (result: Result) => boolean,
+  ): Result {
+    const previousShuffle = this.getLastShuffleTransaction();
+    const result = action();
+    if (succeeded(result)) {
+      this.state.expireLastShuffleTransaction(previousShuffle);
     }
+    return result;
   }
 }
 

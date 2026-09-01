@@ -20,4 +20,5 @@
 - 2026-09-01：成功安全乱序保存短生命周期完整暂存槽事务；复原恢复方块 ID/数量、二次三消内容、冻结等机制进度与乱序相关钥匙掉落随机状态。触发方块恢复为普通方块，哨次数不返还。
 - 2026-09-01：成功棋盘选择或其他道具提交会使旧快照失效；稳定原序、未触发、次数用尽和终局均不可复原。乱序与复原动画期间沿用统一输入锁。
 - 聚焦验证：`pnpm exec vitest run tests/game-session.test.ts tests/item-runtime.test.ts tests/special-mechanism.test.ts tests/special-ui.test.ts --reporter=dot`（116 passed）；`pnpm typecheck`；`pnpm build:pages`；`git diff --check`；`node scripts/check-file-lines.mjs --changed --max-lines 500`（23 files passed）。
-- 批量 QA：`pnpm test:qa` 的 full profile 通过 core（254）、Worker/fallback（4）、随机 1–99 回归（3）与 Chromium（21）；长时间并发后的 cross-browser 发生既有 smoke 超时，重跑 `pnpm test:e2e:cross-browser` 通过 8/9，唯一 Chromium 超时项用 `pnpm exec playwright test tests/e2e/cross-browser.spec.ts:92 --project=chromium` 通过；Safari、移动 Chromium 与该 Chromium 项合计 9/9。Pages build、diff、file-line 门禁随后全部通过。
+- 批量 QA：`pnpm test:qa` 的 full profile 通过 core（254）、Worker/fallback（4）、随机 1–99 回归（3）与 Chromium（21）；长时间并发后的 cross-browser 发生既有 smoke 超时，失败批次最终用 `CI=1 pnpm test:e2e:cross-browser` 完整重跑通过（9/9）。Pages build、diff、file-line 门禁随后全部通过。
+- 代码审查修复：玩家动作的快照过期收拢到 `GameSession.runPlayerAction`；钥匙 checkpoint 改为接收生产路径传入的首次/二次总三消数，覆盖混合结算并回滚整次乱序原子操作的钥匙次数与随机状态。

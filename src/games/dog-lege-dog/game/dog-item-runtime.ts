@@ -257,7 +257,6 @@ export class DogItemRuntime {
     if (
       restoreTransaction !== null &&
       tripleCount > 0 &&
-      tripleCount === restoreTransaction.replayEvent.secondaryTripleCount &&
       this.restoreCheckpoint?.transaction !== restoreTransaction
     ) {
       this.restoreCheckpoint = {
