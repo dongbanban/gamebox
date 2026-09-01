@@ -82,6 +82,10 @@
   color: #176e6a;
 }
 
+.dog-shuffle-effect--restored .dog-shuffle-effect__ring {
+  animation-direction: reverse;
+}
+
 .dog-shuffle-effect__ring {
   position: absolute;
   inset: 9px;

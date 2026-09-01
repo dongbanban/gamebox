@@ -296,6 +296,11 @@ describe("特殊机制测试 · shuffle-block", () => {
     expect(session.getShuffleReplayEvents()).toEqual([
       result.shuffleResolution?.replayEvent,
     ]);
+
+    expect(session.canRestoreLastShuffle()).toBe(true);
+    session.selectBlock("working-2");
+    expect(session.canRestoreLastShuffle()).toBe(false);
+    expect(session.restoreLastShuffle()).toBe(false);
   });
 
   it("没有安全候选时保持触发前槽序，不创建复原事务", () => {
@@ -417,6 +422,25 @@ describe("特殊机制测试 · shuffle-block", () => {
         expect(block.specialMechanism?.state.status).toBe("consumed");
       }
     }
+
+    expect(session.canRestoreLastShuffle()).toBe(true);
+    expect(session.restoreLastShuffle()).toBe(true);
+    expect(session.getState().trayBlocks).toEqual([
+      createTrayBlock("frozen", "看门狗", {
+        type: "freeze",
+        state: { status: "frozen", completedTriples: 0 },
+      }),
+      createTrayBlock("working-1", WORKING_DOG),
+      createTrayBlock("single-1", SINGLE_DOG),
+      createTrayBlock("working-2", WORKING_DOG),
+      createTrayBlock("licking-1", LICKING_DOG),
+      createTrayBlock("shuffle", WORKING_DOG),
+    ]);
+    expect(session.getLastShuffleTransaction()).toBeNull();
+    expect(session.canRestoreLastShuffle()).toBe(false);
+
+    const next = session.selectBlock("single-2");
+    expect(next.shuffleResolution).toBeNull();
   });
 });
 

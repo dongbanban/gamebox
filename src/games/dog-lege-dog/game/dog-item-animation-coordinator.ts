@@ -2,6 +2,7 @@ import {
   animateDogDemagnetizerEffect,
   animateDogDetectorReveal,
   animateDogItemEffect,
+  animateDogShuffleEffect,
   animateDogTorchMeltEffect,
   animateDogTripleRemovalEffect,
   animateDogUnlockTrayEffect,
@@ -58,7 +59,13 @@ export class DogItemAnimationCoordinator {
       return;
     }
 
-    const animation = effect?.type === "triple-removal"
+    const animation = effect?.type === "restore-shuffle"
+      ? animateDogShuffleEffect({
+          root: this.options.root,
+          config: runtime.config,
+          outcome: "restored",
+        })
+      : effect?.type === "triple-removal"
       ? animateDogTripleRemovalEffect({
           root: this.options.root,
           config: runtime.config,

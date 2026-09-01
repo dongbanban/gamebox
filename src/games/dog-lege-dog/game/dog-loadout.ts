@@ -35,6 +35,7 @@ const DOG_ITEM_RULES: readonly Pick<DogItemDefinition, "id" | "targetType" | "vi
   { id: "detector", targetType: "block", visualFeedback: "detector" },
   { id: "demagnetizer", targetType: "block", visualFeedback: "demagnetizer" },
   { id: "key", targetType: "none", visualFeedback: "key" },
+  { id: "restore-whistle", targetType: "none", visualFeedback: "restore-whistle" },
 ];
 
 export const DOG_ITEM_DEFINITIONS: readonly DogItemDefinition[] = Object.freeze(

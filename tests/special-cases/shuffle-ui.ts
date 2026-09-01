@@ -140,7 +140,79 @@ describe("特殊机制测试 · shuffle-ui", () => {
     expect(game.getState().inputLocked).toBe(false);
     game.destroy();
   });
+
+  it("复原哨在乱序动画后开放，反向反馈期间锁定输入并在结束后复原", async () => {
+    vi.useFakeTimers();
+    const root = document.createElement("div");
+    const game = startDogLegeDogGame(root, {
+      level: createRestoreUiLevel(),
+      loadout: ["restore-whistle", "tray-capacity", "torch"],
+    });
+
+    for (const blockId of ["shuffle", "single-1", "licking-1", "guard-1"]) {
+      game.selectBlock(blockId);
+      await vi.runAllTimersAsync();
+    }
+    game.selectBlock("mad-1");
+
+    expect(game.getState().inputLocked).toBe(true);
+    expect(root.querySelector<HTMLButtonElement>('[data-item-id="restore-whistle"]')?.disabled)
+      .toBe(true);
+    await vi.runAllTimersAsync();
+
+    const shuffledIds = game.getState().session.trayBlocks.map((block) => block.id);
+    expect(game.getState().items?.items.find((item) => item.id === "restore-whistle"))
+      .toMatchObject({ available: true, remainingUses: 1, targetType: "none" });
+    const whistle = root.querySelector<HTMLButtonElement>('[data-item-id="restore-whistle"]');
+    expect(whistle?.disabled).toBe(false);
+    expect(whistle?.getAttribute("aria-label")).toContain("复原哨");
+
+    whistle?.click();
+
+    expect(game.getState().inputLocked).toBe(true);
+    expect(game.getState().session.trayBlocks.map((block) => block.id)).toEqual(shuffledIds);
+    expect(root.querySelector<HTMLElement>('[data-testid="dog-shuffle-effect"]')?.dataset.shuffleOutcome)
+      .toBe("restored");
+
+    await vi.runAllTimersAsync();
+
+    expect(game.getState().inputLocked).toBe(false);
+    expect(game.getState().session.trayBlocks.map((block) => block.id)).toEqual([
+      "shuffle",
+      "single-1",
+      "licking-1",
+      "guard-1",
+      "mad-1",
+    ]);
+    expect(game.getState().session.trayBlocks[0]?.specialMechanism).toBeUndefined();
+    expect(game.getState().items?.items.find((item) => item.id === "restore-whistle"))
+      .toMatchObject({ available: false, remainingUses: 0 });
+    game.destroy();
+  });
 });
+
+function createRestoreUiLevel(): DogLegeDogLevel {
+  return {
+    ...createLevel([
+      createBlock("shuffle", 0, 0, WORKING_DOG, createDogShuffleMechanism()),
+      createBlock("single-1", 4, 0, SINGLE_DOG),
+      createBlock("licking-1", 8, 0, LICKING_DOG),
+      createBlock("guard-1", 12, 0, "看门狗"),
+      createBlock("mad-1", 16, 0, "疯狗"),
+      createBlock("working-2", 20, 0, WORKING_DOG),
+      createBlock("working-3", 24, 0, WORKING_DOG),
+      createBlock("single-2", 28, 0, SINGLE_DOG),
+      createBlock("single-3", 32, 0, SINGLE_DOG),
+      createBlock("licking-2", 36, 0, LICKING_DOG),
+      createBlock("licking-3", 40, 0, LICKING_DOG),
+      createBlock("guard-2", 44, 0, "看门狗"),
+      createBlock("guard-3", 48, 0, "看门狗"),
+      createBlock("mad-2", 52, 0, "疯狗"),
+      createBlock("mad-3", 56, 0, "疯狗"),
+    ]),
+    runSeed: "restore-whistle-ui",
+  };
+}
 
 function createLevel(blocks: readonly DogBlock[]): DogLegeDogLevel {
   return {

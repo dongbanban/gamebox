@@ -12,7 +12,7 @@ import {
 } from "@/games/dog-lege-dog/game/dog-loadout";
 
 describe("狗了个狗道具组", () => {
-  it("固定提供七种可展示道具，并要求选择三个不同 ID", () => {
+  it("固定提供八种可展示道具，并要求选择三个不同 ID", () => {
     expect(DOG_ITEM_IDS).toEqual([
       "triple-removal",
       "tray-capacity",
@@ -21,8 +21,9 @@ describe("狗了个狗道具组", () => {
       "detector",
       "demagnetizer",
       "key",
+      "restore-whistle",
     ]);
-    expect(DOG_ITEM_DEFINITIONS).toHaveLength(7);
+    expect(DOG_ITEM_DEFINITIONS).toHaveLength(8);
     expect(DOG_ITEM_DEFINITIONS.every((item) => item.name && item.description && item.icon)).toBe(true);
     expect(DOG_ITEM_DEFINITIONS.map((item) => item.targetType)).toEqual([
       "tray-block",
@@ -31,6 +32,7 @@ describe("狗了个狗道具组", () => {
       "block",
       "block",
       "block",
+      "none",
       "none",
     ]);
     expect(DOG_LOADOUT_SIZE).toBe(3);
@@ -97,6 +99,8 @@ describe("狗了个狗道具组", () => {
     expect(editor).toContain('src="assets/dog-item-icons/triple-removal.svg"');
     expect(editor).toContain('src="assets/dog-item-icons/demagnetizer.svg"');
     expect(editor).toContain('src="assets/dog-item-icons/key.svg"');
+    expect(editor).toContain('src="assets/dog-item-icons/restore-whistle.svg"');
+    expect(editor).toContain("复原哨");
     expect(editor).toContain("本关 1 次");
     expect(editor).toContain("本关 0 次");
     expect(editor).not.toContain("DOG · LOADOUT");

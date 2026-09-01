@@ -81,7 +81,7 @@ describe("注册与游戏目录 UI", () => {
     for (const text of ["狗了个狗", "游戏入口已打开", "固定首关", "稳定关卡", "选择没有遮挡的方块，凑齐三个相同图案。", "剩余方块", "层数"]) expect(root.textContent).not.toContain(text);
     expect(root.querySelector('.game-entry-view__brand [data-action="catalog"]')).not.toBeNull();
     expect(root.querySelector('[data-testid="dog-game"] h2')).toBeNull();
-    expect(root.querySelectorAll('[data-testid="dog-loadout-option"]')).toHaveLength(7);
+    expect(root.querySelectorAll('[data-testid="dog-loadout-option"]')).toHaveLength(8);
     expect(root.querySelector('[data-testid="dog-tray"]')).not.toBeNull();
     app.destroy();
   });

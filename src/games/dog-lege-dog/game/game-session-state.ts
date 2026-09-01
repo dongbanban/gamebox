@@ -131,8 +131,14 @@ export class GameSessionState {
       getStatus: () => this.status,
       getTrayCapacity: () => this.trayCapacity,
       isSelectionPending: () => this.isSelectionPending(),
+      setLockedTraySlotCount: (count) => {
+        this.lockedTraySlotCount = count;
+      },
       setStatus: (status) => {
         this.status = status;
+      },
+      setTrayCapacity: (capacity) => {
+        this.trayCapacity = capacity;
       },
       updateTerminalStatus: () => this.updateTerminalStatus(),
     });
@@ -274,6 +280,18 @@ export class GameSessionState {
 
   getLastShuffleTransaction() {
     return this.shuffleRuntime.getLastShuffleTransaction();
+  }
+
+  canRestoreLastShuffle(): boolean {
+    return this.shuffleRuntime.canRestoreLastShuffle();
+  }
+
+  restoreLastShuffle(): boolean {
+    return this.shuffleRuntime.restoreLastShuffle();
+  }
+
+  expireLastShuffleTransaction(transaction = this.getLastShuffleTransaction()): void {
+    this.shuffleRuntime.expireLastShuffleTransaction(transaction);
   }
 
   getShuffleReplayEvents() {

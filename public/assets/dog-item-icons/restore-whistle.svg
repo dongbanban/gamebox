@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 329 402" width="329" height="402" role="img" aria-labelledby="title desc">
+  <title id="title">复原哨</title>
+  <desc id="desc">复原最近一次安全乱序的口哨道具图标</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5cc8c0" />
+      <stop offset="1" stop-color="#3677b5" />
+    </linearGradient>
+    <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff8d8" />
+      <stop offset="1" stop-color="#f2c35b" />
+    </linearGradient>
+  </defs>
+  <rect width="329" height="402" fill="url(#bg)" />
+  <path d="M74 181h124l51 39-25 78H92c-38 0-62-23-62-58s19-59 44-59z" fill="url(#metal)" stroke="#07191e" stroke-width="12" stroke-linejoin="round" />
+  <circle cx="95" cy="240" r="34" fill="#5cc8c0" stroke="#07191e" stroke-width="10" />
+  <path d="M198 181h69l34 31-52 8z" fill="#fff4b5" stroke="#07191e" stroke-width="12" stroke-linejoin="round" />
+  <path d="M102 137c34-38 91-44 132-12" fill="none" stroke="#fff8d8" stroke-width="11" stroke-linecap="round" />
+  <path d="m218 91 18 34-36 11" fill="none" stroke="#fff8d8" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M78 332c50 24 112 19 157-14" fill="none" stroke="#fff8d8" stroke-width="9" stroke-linecap="round" />
+  <path d="m222 301 14 18-21 12" fill="none" stroke="#fff8d8" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

@@ -32,6 +32,7 @@ const ITEM_ASSET_PATHS: Readonly<Record<DogV13ItemId, string>> = {
   detector: "assets/dog-item-icons/detector.svg",
   demagnetizer: "assets/dog-item-icons/demagnetizer.svg",
   key: "assets/dog-item-icons/key.svg",
+  "restore-whistle": "assets/dog-item-icons/restore-whistle.svg",
 };
 
 export const SUPPORTED_ITEM_IDS: readonly DogV13ItemId[] = DOG_V13_ITEM_COPY_KEYS;
@@ -105,6 +106,7 @@ export const DOG_V13_CONFIG_SOURCE: DogV13Config = {
       "detector",
       "demagnetizer",
       "key",
+      "restore-whistle",
     ],
     loadoutSize: 3,
     defaultUsesPerLevel: 1,
@@ -343,6 +345,11 @@ export const DOG_V13_CONFIG_SOURCE: DogV13Config = {
           name: "钥匙",
           icon: "⚿",
           description: "解锁一个暂存槽",
+        },
+        "restore-whistle": {
+          name: "复原哨",
+          icon: "哨",
+          description: "复原最近一次安全乱序",
         },
       },
       specialMechanisms: {

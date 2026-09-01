@@ -38,6 +38,7 @@ export type DogItemEffect =
   | { readonly type: "demagnetize"; readonly blockId: string }
   | { readonly type: "reveal"; readonly blockId: string }
   | { readonly type: "unlock"; readonly unlockedSlotIndex: number }
+  | { readonly type: "restore-shuffle" }
   | ({ readonly type: "wildcard" } & GameSessionWildcardResolution);
 
 export interface DogItemAnimationCompletion {

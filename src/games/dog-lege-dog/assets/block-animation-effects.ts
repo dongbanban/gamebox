@@ -237,7 +237,7 @@ export function animateDogTwinSplitEffect(
 
 export interface DogShuffleEffectOptions extends DogAnimationTimingOptions {
   readonly root: HTMLElement;
-  readonly outcome: "reordered" | "stable";
+  readonly outcome: "reordered" | "restored" | "stable";
 }
 
 export function animateDogShuffleEffect(
@@ -256,17 +256,19 @@ export function animateDogShuffleEffect(
   }
 
   const effect = document.createElement("div");
+  const label = options.outcome === "stable"
+    ? "乱序已稳定"
+    : options.outcome === "restored"
+      ? "复原乱序"
+      : "安全乱序";
   effect.className = `dog-shuffle-effect dog-shuffle-effect--${options.outcome}`;
   effect.dataset.testid = "dog-shuffle-effect";
   effect.dataset.shuffleOutcome = options.outcome;
   effect.setAttribute("role", "status");
-  effect.setAttribute(
-    "aria-label",
-    options.outcome === "stable" ? "乱序已稳定" : "已完成安全乱序",
-  );
+  effect.setAttribute("aria-label", label);
   effect.innerHTML = `
     <span class="dog-shuffle-effect__ring"></span>
-    <span class="dog-shuffle-effect__label">${options.outcome === "stable" ? "乱序已稳定" : "安全乱序"}</span>
+    <span class="dog-shuffle-effect__label">${label}</span>
   `;
   setDogAnimationDuration(effect, durationMs);
   layer.append(effect);

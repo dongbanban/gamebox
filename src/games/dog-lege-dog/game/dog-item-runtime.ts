@@ -1,5 +1,6 @@
 import {
   GameSession,
+  type GameSessionShuffleTransaction,
 } from "@/games/dog-lege-dog/game/game-session";
 import type {
   DogLegeDogLevel,
@@ -39,7 +40,7 @@ export class DogItemRuntime {
   private readonly session: GameSession;
   private readonly loadout: readonly DogItemId[];
   private readonly definitions: ReadonlyMap<DogItemId, DogItemRuntimeDefinition>;
-  private readonly keyDropRandom: SeededRandom;
+  private keyDropRandom: SeededRandom;
   private readonly maxUses = new Map<DogItemId, number>();
   private readonly remainingUses = new Map<DogItemId, number>();
   private phase: DogItemRuntimePhase = "idle";
@@ -48,6 +49,7 @@ export class DogItemRuntime {
   private pendingAnimationCommit: (() => DogItemAnimationCompletion) | null = null;
   private pendingAnimationItemId: DogItemId | null = null;
   private completedEffect: DogItemEffect | null = null;
+  private restoreCheckpoint: RestoreCheckpoint | null = null;
 
   constructor(options: DogItemRuntimeOptions) {
     this.config = options.config ?? DOG_V13_CONFIG;
@@ -205,6 +207,9 @@ export class DogItemRuntime {
 
     const pendingAnimationCommit = this.pendingAnimationCommit;
     const pendingAnimationItemId = this.pendingAnimationItemId;
+    const restoreTransaction = pendingAnimationItemId === "restore-whistle"
+      ? this.session.getLastShuffleTransaction()
+      : null;
     this.pendingAnimationCommit = null;
     this.pendingAnimationItemId = null;
     this.completedEffect = null;
@@ -215,6 +220,14 @@ export class DogItemRuntime {
         commitSucceeded = completion.success;
         if (completion.success) {
           this.completedEffect = completion.effect ?? null;
+          if (
+            restoreTransaction !== null &&
+            this.restoreCheckpoint?.transaction === restoreTransaction
+          ) {
+            this.remainingUses.set("key", this.restoreCheckpoint.keyUses);
+            this.keyDropRandom = this.restoreCheckpoint.keyDropRandom.clone();
+            this.restoreCheckpoint = null;
+          }
         }
       } catch {
         commitSucceeded = false;
@@ -240,6 +253,19 @@ export class DogItemRuntime {
   settleSuccessfulTriples(tripleCount: number): DogKeyDropResult {
     const maxUses = this.maxUses.get("key") ?? 0;
     const currentUses = this.remainingUses.get("key") ?? 0;
+    const restoreTransaction = this.session.getLastShuffleTransaction();
+    if (
+      restoreTransaction !== null &&
+      tripleCount > 0 &&
+      tripleCount === restoreTransaction.replayEvent.secondaryTripleCount &&
+      this.restoreCheckpoint?.transaction !== restoreTransaction
+    ) {
+      this.restoreCheckpoint = {
+        transaction: restoreTransaction,
+        keyUses: currentUses,
+        keyDropRandom: this.keyDropRandom.clone(),
+      };
+    }
     const state = this.session.getState();
     const eligible = this.loadout.includes("key") &&
       Number.isSafeInteger(tripleCount) &&
@@ -355,6 +381,12 @@ export class DogItemRuntime {
       snapshot: this.getState(),
     });
   }
+}
+
+interface RestoreCheckpoint {
+  readonly transaction: GameSessionShuffleTransaction;
+  readonly keyUses: number;
+  readonly keyDropRandom: SeededRandom;
 }
 
 export {

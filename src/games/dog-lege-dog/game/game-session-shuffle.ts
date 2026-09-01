@@ -33,7 +33,9 @@ export interface GameSessionShuffleRuntimeContext {
   readonly getTrayCapacity: () => number;
   readonly getStatus: () => GameSessionStatus;
   readonly isSelectionPending: () => boolean;
+  readonly setLockedTraySlotCount: (count: number) => void;
   readonly setStatus: (status: GameSessionStatus) => void;
+  readonly setTrayCapacity: (capacity: number) => void;
   readonly updateTerminalStatus: () => void;
 }
 
@@ -53,6 +55,9 @@ export class GameSessionShuffleRuntime {
     const pendingShuffle = this.updateShuffleState();
     this.context.updateTerminalStatus();
     if (pendingShuffle === null) {
+      if (this.context.getStatus() !== "playing") {
+        this.lastShuffleTransaction = null;
+      }
       return null;
     }
 
@@ -70,7 +75,7 @@ export class GameSessionShuffleRuntime {
           replayEvent,
         })
       : null;
-    this.lastShuffleTransaction = transaction;
+    this.lastShuffleTransaction = after.status === "playing" ? transaction : null;
     this.shuffleReplayEvents.push(replayEvent);
     return Object.freeze({
       triggered: true as const,
@@ -94,6 +99,42 @@ export class GameSessionShuffleRuntime {
 
   getLastShuffleTransaction(): GameSessionShuffleTransaction | null {
     return this.lastShuffleTransaction;
+  }
+
+  canRestoreLastShuffle(): boolean {
+    return this.lastShuffleTransaction !== null &&
+      this.context.getStatus() === "playing" &&
+      !this.context.isSelectionPending();
+  }
+
+  restoreLastShuffle(): boolean {
+    const transaction = this.lastShuffleTransaction;
+    if (transaction === null || !this.canRestoreLastShuffle()) {
+      return false;
+    }
+
+    this.context.tray.splice(
+      0,
+      this.context.tray.length,
+      ...transaction.before.trayBlocks.map((block) =>
+        block.id === transaction.replayEvent.triggerBlockId
+          ? removeDogTrayBlockMechanism(block)
+          : cloneDogTrayBlock(block),
+      ),
+    );
+    this.context.setTrayCapacity(transaction.before.trayCapacity);
+    this.context.setLockedTraySlotCount(transaction.before.lockedTraySlotCount);
+    this.context.setStatus(transaction.before.status);
+    this.lastShuffleTransaction = null;
+    return true;
+  }
+
+  expireLastShuffleTransaction(
+    transaction: GameSessionShuffleTransaction | null = this.lastShuffleTransaction,
+  ): void {
+    if (transaction !== null && this.lastShuffleTransaction === transaction) {
+      this.lastShuffleTransaction = null;
+    }
   }
 
   getShuffleReplayEvents(): readonly GameSessionShuffleReplayEvent[] {
@@ -133,6 +174,11 @@ export class GameSessionShuffleRuntime {
       lockedTraySlotCount: this.context.getLockedTraySlotCount(),
     });
   }
+}
+
+function removeDogTrayBlockMechanism(block: DogTrayBlock): DogTrayBlock {
+  const { specialMechanism: _specialMechanism, ...ordinaryBlock } = cloneDogTrayBlock(block);
+  return ordinaryBlock;
 }
 
 interface PendingShuffleResolution {

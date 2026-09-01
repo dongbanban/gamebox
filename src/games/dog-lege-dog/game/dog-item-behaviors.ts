@@ -241,6 +241,18 @@ const DOG_ITEM_BEHAVIORS: Readonly<Record<DogItemId, DogItemBehavior>> = {
       };
     },
   },
+  "restore-whistle": {
+    canUse: ({ session }) => session.canRestoreLastShuffle(),
+    execute: ({ session }) => ({
+      success: session.canRestoreLastShuffle(),
+      visualFeedback: "restore-whistle",
+      effect: { type: "restore-shuffle" },
+      commitAfterAnimation: () => ({
+        success: session.restoreLastShuffle(),
+        effect: { type: "restore-shuffle" },
+      }),
+    }),
+  },
 };
 
 export function createDogItemRuntimeDefinitions(

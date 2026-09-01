@@ -12,7 +12,7 @@ afterEach(() => {
 });
 
 describe("狗了个狗道具组选择", () => {
-  it("首次进入同时展示本关棋盘与七种道具，确认三个后才建立道具组", () => {
+  it("首次进入同时展示本关棋盘与八种道具，确认三个后才建立道具组", () => {
     const storage = new MemoryStorage();
     const store = new ProgressStore({
       storage,
@@ -31,7 +31,7 @@ describe("狗了个狗道具组选择", () => {
     expect(root.querySelector('[data-action="cancel-loadout"]')?.textContent).toBe("清空");
     expect(root.querySelector('[data-action="confirm-loadout"]')?.textContent).toContain("确认");
     expect(root.querySelector('[data-testid="dog-loadout-panel"]')).not.toBeNull();
-    expect(root.querySelectorAll('[data-testid="dog-loadout-option"]')).toHaveLength(7);
+    expect(root.querySelectorAll('[data-testid="dog-loadout-option"]')).toHaveLength(8);
     expect(root.querySelector('[data-testid="dog-block"]:not([disabled])')).toBeNull();
     expect(store.snapshot().state?.games[GAME_ID].loadout).toBeNull();
 

@@ -388,4 +388,5 @@ describe("DogItemRuntime · basic", () => {
     expect(runtime.getState().phase).toBe("idle");
     expect(runtime.getState().items[0]?.available).toBe(false);
   });
+
 });

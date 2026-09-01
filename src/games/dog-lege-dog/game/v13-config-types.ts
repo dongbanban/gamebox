@@ -21,7 +21,8 @@ export type DogV13ItemId =
   | "torch"
   | "detector"
   | "demagnetizer"
-  | "key";
+  | "key"
+  | "restore-whistle";
 export const DOG_V13_ITEM_COPY_KEYS: readonly DogV13ItemId[] = [
   "triple-removal",
   "tray-capacity",
@@ -30,6 +31,7 @@ export const DOG_V13_ITEM_COPY_KEYS: readonly DogV13ItemId[] = [
   "detector",
   "demagnetizer",
   "key",
+  "restore-whistle",
 ];
 
 export type DogV13TestProfileName = "focused" | "smoke" | "full";
