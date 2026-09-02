@@ -26,7 +26,7 @@ describe("特殊机制测试 · shuffle-ui", () => {
     vi.useRealTimers();
   });
 
-  it("已确认道具组后在关卡行显示重玩按钮，输入锁定时隐藏", async () => {
+  it("已确认道具组后在关卡行显示蓝底白字重玩按钮，输入锁定时禁用", async () => {
     vi.useFakeTimers();
     const root = document.createElement("div");
     const game = startDogLegeDogGame(root, {
@@ -49,6 +49,8 @@ describe("特殊机制测试 · shuffle-ui", () => {
       '[data-testid="dog-replay-current-level"]',
     );
     expect(replayButton?.disabled).toBe(false);
+    expect(replayButton?.classList.contains("primary-button")).toBe(true);
+    expect(replayButton?.classList.contains("text-button")).toBe(false);
     expect(replayButton?.textContent?.trim()).toBe("重玩本关");
     expect(replayButton?.getAttribute("aria-label")).toBe("重玩本关");
     expect(replayButton?.closest(".dog-game__level-tools")).not.toBeNull();

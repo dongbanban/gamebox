@@ -219,5 +219,5 @@ function renderReplayCurrentLevelButton(
   const disabled = state.inputLocked || state.loadoutEditor !== null
     ? ' disabled aria-disabled="true"'
     : "";
-  return `<button class="text-button dog-game__replay-button" type="button" data-action="replay-current-level" data-testid="dog-replay-current-level" data-game-id="${state.gameId}" data-level-number="${state.level.number}" aria-label="${label}"${disabled}>${label}</button>`;
+  return `<button class="primary-button dog-game__replay-button" type="button" data-action="replay-current-level" data-testid="dog-replay-current-level" data-game-id="${state.gameId}" data-level-number="${state.level.number}" aria-label="${label}"${disabled}>${label}</button>`;
 }

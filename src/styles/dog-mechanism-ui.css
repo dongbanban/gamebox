@@ -9,13 +9,16 @@
 
 .dog-game__level-tools {
   display: flex;
+  flex: 1 1 auto;
   align-items: center;
   gap: 10px;
+  min-width: 0;
 }
 
 .dog-game__replay-button {
+  margin-left: auto;
   min-height: 44px;
-  padding: 8px 4px;
+  padding: 8px 16px;
   white-space: nowrap;
 }
 
