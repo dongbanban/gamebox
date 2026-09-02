@@ -163,7 +163,7 @@ export class GameboxApp {
     if (action === "replay-current-level") {
       const replayNow = Date.now();
       const replayLevelNumber = parseLevelNumber(actionElement?.dataset.levelNumber);
-      if (replayNow < this.replayCooldownUntil || !this.gameLaunch.isActiveGame(actionElement?.dataset.gameId ?? "", replayLevelNumber ?? 0) || event instanceof MouseEvent && event.detail > 1) return;
+      if (replayNow < this.replayCooldownUntil || !this.gameLaunch.isActiveGame(actionElement?.dataset.gameId ?? "", replayLevelNumber ?? 0) || actionElement?.getAttribute("aria-disabled") === "true" || actionElement instanceof HTMLButtonElement && actionElement.disabled || event instanceof MouseEvent && event.detail > 1) return;
       this.replayCooldownUntil = replayNow + 300;
       this.disposeActiveGame();
       this.renderGameEntry(actionElement?.dataset.gameId, replayLevelNumber);

@@ -342,6 +342,7 @@ export function createDogLegeDogGame(
       runtime.activeFlights.clear();
       runtime.itemAnimation?.cancel();
       runtime.itemAnimation = null;
+      feedback.destroy();
       particleEffects.destroy();
       soundEffects.destroy();
       window.removeEventListener("resize", handleViewportResize);

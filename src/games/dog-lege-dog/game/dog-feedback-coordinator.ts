@@ -32,6 +32,7 @@ export interface DogFeedbackCoordinatorOptions {
 
 export class DogFeedbackCoordinator {
   private readonly options: DogFeedbackCoordinatorOptions;
+  private meltAnimationCancel: (() => void) | null = null;
 
   constructor(options: DogFeedbackCoordinatorOptions) {
     this.options = options;
@@ -55,18 +56,29 @@ export class DogFeedbackCoordinator {
     }
 
     const animation = this.playMeltAnimations(meltedBlockIds, fallbackRects);
+    const cancel = animation.cancel;
+    this.meltAnimationCancel = cancel;
     let trackedAnimation: Promise<void>;
-    trackedAnimation = animation.then(() => {
+    trackedAnimation = animation.promise.then(() => {
       if (this.options.runtime.meltAnimation !== trackedAnimation) {
         return;
       }
 
       this.options.runtime.meltAnimation = null;
+      if (this.meltAnimationCancel === cancel) {
+        this.meltAnimationCancel = null;
+      }
       if (!this.options.runtime.destroyed) {
         this.options.render();
       }
     });
     this.options.runtime.meltAnimation = trackedAnimation;
+  }
+
+  destroy(): void {
+    this.meltAnimationCancel?.();
+    this.meltAnimationCancel = null;
+    this.options.runtime.meltAnimation = null;
   }
 
   async finishResolvedSelection(
@@ -199,6 +211,9 @@ export class DogFeedbackCoordinator {
 
   async settleKeyDrop(tripleCount: number, animate = true): Promise<void> {
     const { runtime, root } = this.options;
+    if (runtime.destroyed) {
+      return;
+    }
     const itemRuntime = runtime.itemRuntime;
     if (itemRuntime === null) {
       return;
@@ -208,7 +223,7 @@ export class DogFeedbackCoordinator {
     if (!drop.dropped) {
       return;
     }
-    if (!animate || !runtime.started || runtime.destroyed) {
+    if (!animate || !runtime.started) {
       this.options.render();
       return;
     }
@@ -236,12 +251,13 @@ export class DogFeedbackCoordinator {
   private playMeltAnimations(
     meltedBlockIds: readonly string[],
     fallbackRects: ReadonlyMap<string, DOMRect>,
-  ): Promise<void> {
+  ): { readonly promise: Promise<void>; readonly cancel: () => void } {
     const { root, runtime } = this.options;
     const traySlots = [...root.querySelectorAll<HTMLElement>(
       '[data-testid="dog-tray-slot"][data-block-id]',
     )];
     const animations: Promise<void>[] = [];
+    const finishers: (() => void)[] = [];
     for (const blockId of meltedBlockIds) {
       const target = traySlots.find((slot) => slot.dataset.blockId === blockId);
       const targetRect = target?.getBoundingClientRect() ?? fallbackRects.get(blockId);
@@ -278,9 +294,17 @@ export class DogFeedbackCoordinator {
         };
         const timer = window.setTimeout(finish, runtime.config.animation.freezeMeltMs);
         effect.addEventListener("animationend", handleAnimationEnd);
+        finishers.push(finish);
       }));
     }
 
-    return Promise.all(animations).then(() => undefined);
+    return {
+      promise: Promise.all(animations).then(() => undefined),
+      cancel: () => {
+        for (const finish of finishers) {
+          finish();
+        }
+      },
+    };
   }
 }

@@ -52,6 +52,28 @@ describe("特殊机制测试 · torch-ui", () => {
     vi.useRealTimers();
   });
 
+  it("销毁关卡尝试时清理冻结融化计时器", async () => {
+    vi.useFakeTimers();
+    const root = document.createElement("div");
+    const game = startDogLegeDogGame(root, {
+      runSeed: "freeze-melt-ui-seed",
+      loadout: ["triple-removal", "tray-capacity", "wildcard"],
+    });
+
+    for (const blockId of game.getState().level.solutionPath) {
+      game.selectBlock(blockId);
+      if (root.querySelector(".dog-melt-effect") !== null) {
+        break;
+      }
+      await vi.runAllTimersAsync();
+    }
+
+    expect(root.querySelector(".dog-melt-effect")).not.toBeNull();
+    expect(vi.getTimerCount()).toBeGreaterThan(0);
+    game.destroy();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it("冻结方块融化时在 UI 动画层显示冰壳消散效果", async () => {
     vi.useFakeTimers();
     const root = document.createElement("div");

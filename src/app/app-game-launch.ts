@@ -167,7 +167,10 @@ export class AppGameLaunchCoordinator {
     if (this.active !== active) return;
     try {
       const handle = request.game.launch(request.mount, {
-        ...request.launchContext,
+        onResult: this.guardActiveLaunchCallback(active, request.launchContext.onResult),
+        onResultConfirmed: this.guardActiveLaunchCallback(active, request.launchContext.onResultConfirmed),
+        onLoadoutConfirmed: this.guardActiveLaunchCallback(active, request.launchContext.onLoadoutConfirmed),
+        onSoundToggle: this.guardActiveLaunchCallback(active, request.launchContext.onSoundToggle),
         soundEnabled: request.getSoundEnabled(),
         levelNumber: request.levelNumber,
         runSeed: active.runSeed,
@@ -184,6 +187,17 @@ export class AppGameLaunchCoordinator {
     } catch {
       if (this.active === active) request.onLaunchFailure();
     }
+  }
+
+  private guardActiveLaunchCallback<Argument>(
+    active: ActiveLaunch,
+    callback: ((argument: Argument) => void) | undefined,
+  ): ((argument: Argument) => void) | undefined {
+    return callback === undefined
+      ? undefined
+      : (argument) => {
+          if (this.active === active) callback(argument);
+        };
   }
 
   private fail(

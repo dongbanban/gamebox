@@ -186,8 +186,19 @@ describe("关卡加载与预生成生命周期", () => {
     expect(store.snapshot().state?.games[game.id]).toEqual(progressBefore);
 
     await new Promise((resolve) => setTimeout(resolve, 301));
+    const replayBeforePending = root.querySelector<HTMLButtonElement>(
+      '[data-action="replay-current-level"]',
+    );
     root.querySelector<HTMLButtonElement>('[data-action="replay-current-level"]')?.click();
     expect(root.querySelector('[data-testid="game-generation-loading"]')).not.toBeNull();
+    expect(root.querySelector('[data-action="replay-current-level"]')).toBeNull();
+    replayBeforePending?.remove();
+    if (replayBeforePending !== null) {
+      root.append(replayBeforePending);
+      replayBeforePending.click();
+      replayBeforePending.click();
+      replayBeforePending.remove();
+    }
     expect(launches).toHaveLength(2);
 
     thirdPreparation.resolve(createPreparation(game.id, 1, "replay-seed-3"));
@@ -196,6 +207,101 @@ describe("关卡加载与预生成生命周期", () => {
     expect(launches[2]?.runSeed).toBe("replay-seed-3");
     expect(launches[2]?.loadout).toEqual(["one", "two", "three"]);
     expect(store.snapshot().state?.games[game.id]).toEqual(progressBefore);
+    app.destroy();
+  });
+
+  it("活动关卡重玩后忽略旧关卡尝试结果回调，不覆盖新尝试或进度", () => {
+    const launches: GameLaunchContext[] = [];
+    const game = createPreparedGame({
+      prepare: (context) => createPreparation(context.gameId, context.levelNumber, context.runSeed),
+      launch: (mount, context) => {
+        launches.push(context);
+        mount.innerHTML = `<button type="button" data-action="replay-current-level" data-game-id="prepared-game" data-level-number="${context.levelNumber ?? 1}">重玩本关</button>`;
+      },
+    });
+    const store = createStore();
+    store.register();
+    const root = document.createElement("div");
+    const app = mountApp(root, {
+      store,
+      catalog: [game],
+      runSeedFactory: (() => {
+        let index = 0;
+        return () => `stale-callback-seed-${++index}`;
+      })(),
+    });
+
+    registerAndEnter(root);
+    const progressBefore = store.snapshot().state?.games[game.id];
+    const staleContext = launches[0];
+    root.querySelector<HTMLButtonElement>('[data-action="replay-current-level"]')?.click();
+
+    staleContext?.onResultConfirmed?.(createWinResult(game.id, 1));
+    staleContext?.onResult?.(createWinResult(game.id, 1));
+
+    expect(launches).toHaveLength(2);
+    expect(root.querySelector('[data-view="game-entry"]')).not.toBeNull();
+    expect(root.querySelector('[data-view="game-result"]')).toBeNull();
+    expect(store.snapshot().state?.games[game.id]).toEqual(progressBefore);
+    app.destroy();
+  });
+
+  it("活动关卡重玩生成失败后按相同 runSeed 重试并发布新尝试", async () => {
+    const retryPreparation = createDeferred<GameLaunchPreparation>();
+    const preparations: GamePreparationContext[] = [];
+    const launches: GameLaunchContext[] = [];
+    const game = createPreparedGame({
+      prepare: (context) => {
+        preparations.push(context);
+        if (preparations.length === 1) {
+          return createPreparation(context.gameId, context.levelNumber, context.runSeed);
+        }
+        if (preparations.length === 2) {
+          throw new GamePreparationError({
+            gameId: context.gameId,
+            levelNumber: context.levelNumber,
+            runSeed: context.runSeed,
+            generatorVersion: 13,
+            workerFailure: "worker failed",
+            fallbackFailure: "sync failed",
+          });
+        }
+        return retryPreparation.promise;
+      },
+      launch: (mount, context) => {
+        launches.push(context);
+        mount.innerHTML = `<button type="button" data-action="replay-current-level" data-game-id="prepared-game" data-level-number="${context.levelNumber ?? 1}">重玩本关</button>`;
+      },
+    });
+    const root = document.createElement("div");
+    const app = mountApp(root, {
+      store: createStore(),
+      catalog: [game],
+      runSeedFactory: (() => {
+        let index = 0;
+        return () => `replay-failure-seed-${++index}`;
+      })(),
+    });
+
+    registerAndEnter(root);
+    root.querySelector<HTMLButtonElement>('[data-action="replay-current-level"]')?.click();
+
+    expect(root.querySelector('[data-testid="game-generation-error"]')?.textContent)
+      .toContain("replay-failure-seed-2");
+    expect(launches).toHaveLength(1);
+
+    root.querySelector<HTMLButtonElement>('[data-action="retry-generation"]')?.click();
+
+    expect(root.querySelector('[data-testid="game-generation-loading"]')).not.toBeNull();
+    expect(preparations.map(({ runSeed }) => runSeed)).toEqual([
+      "replay-failure-seed-1",
+      "replay-failure-seed-2",
+      "replay-failure-seed-2",
+    ]);
+    retryPreparation.resolve(createPreparation(game.id, 1, "replay-failure-seed-2"));
+    await vi.waitFor(() => expect(launches).toHaveLength(2));
+    expect(launches[1]?.runSeed).toBe("replay-failure-seed-2");
+    expect(root.querySelector('[data-testid="game-generation-error"]')).toBeNull();
     app.destroy();
   });
 

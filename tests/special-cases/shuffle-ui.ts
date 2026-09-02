@@ -87,6 +87,8 @@ describe("特殊机制测试 · shuffle-ui", () => {
     game.selectBlock("shuffle");
 
     expect(game.getState().inputLocked).toBe(true);
+    expect(root.querySelector<HTMLButtonElement>('[data-testid="dog-replay-current-level"]')?.disabled)
+      .toBe(true);
     expect(root.querySelector('[data-testid="dog-tray-slot"][data-block-id="shuffle"]'))
       .not.toBeNull();
 
@@ -170,6 +172,8 @@ describe("特殊机制测试 · shuffle-ui", () => {
     const shuffleEffect = root.querySelector<HTMLElement>('[data-testid="dog-shuffle-effect"]');
     expect(shuffleEffect?.dataset.shuffleOutcome).toBe("stable");
     expect(game.getState().inputLocked).toBe(true);
+    expect(root.querySelector<HTMLButtonElement>('[data-testid="dog-replay-current-level"]')?.disabled ?? true)
+      .toBe(true);
     const shuffleStatus = root.querySelector<HTMLElement>('[data-testid="dog-shuffle-status"]');
     expect(shuffleStatus?.dataset.shuffleState).toBe("consumed");
     expect(shuffleStatus?.textContent)
@@ -194,6 +198,8 @@ describe("特殊机制测试 · shuffle-ui", () => {
     game.selectBlock("mad-1");
 
     expect(game.getState().inputLocked).toBe(true);
+    expect(root.querySelector<HTMLButtonElement>('[data-testid="dog-replay-current-level"]')?.disabled)
+      .toBe(true);
     expect(root.querySelector<HTMLButtonElement>('[data-item-id="restore-whistle"]')?.disabled)
       .toBe(true);
     await vi.runAllTimersAsync();
@@ -215,6 +221,8 @@ describe("特殊机制测试 · shuffle-ui", () => {
     await vi.runAllTimersAsync();
 
     expect(game.getState().inputLocked).toBe(false);
+    expect(root.querySelector<HTMLButtonElement>('[data-testid="dog-replay-current-level"]')?.disabled)
+      .toBe(false);
     expect(game.getState().session.trayBlocks.map((block) => block.id)).toEqual([
       "shuffle",
       "single-1",
