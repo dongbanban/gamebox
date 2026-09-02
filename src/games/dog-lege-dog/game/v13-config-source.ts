@@ -272,6 +272,7 @@ export const DOG_V13_CONFIG_SOURCE: DogV13Config = {
           loadout: "更换道具组",
           nextLevel: "进入下一关",
           retry: "重新挑战",
+          replayCurrentLevel: "重玩本关",
         },
       },
       labels: {

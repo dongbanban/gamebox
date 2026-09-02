@@ -68,6 +68,7 @@ export function renderDogLegeDogGame(
           <button class="dog-special-mechanism-button" type="button" data-action="open-special-mechanisms" data-testid="dog-special-mechanism-button" aria-haspopup="dialog" aria-label="${labels.specialMechanism}">
             <span aria-hidden="true">?</span>
           </button>
+          <span data-testid="dog-replay-current-level-slot">${renderReplayCurrentLevelButton(state, config)}</span>
         </div>
       </header>
       <div class="dog-board-frame">
@@ -126,6 +127,7 @@ function updateDogLegeDogGame(
   const traySlots = tray?.querySelector<HTMLOListElement>('[data-testid="dog-tray"]');
   const shuffleStatusElement = tray?.querySelector<HTMLElement>('[data-testid="dog-shuffle-status"]') ?? null;
   const loadoutSlot = gameRoot.querySelector<HTMLElement>('[data-testid="dog-loadout-slot"]');
+  const replaySlot = gameRoot.querySelector<HTMLElement>('[data-testid="dog-replay-current-level-slot"]');
   const itemTargetBlockIds = getActiveItemTargetBlockIds(state);
 
   gameRoot.dataset.inputLocked = String(state.inputLocked);
@@ -182,6 +184,9 @@ function updateDogLegeDogGame(
   if (loadoutSlot !== null) {
     updateDogLoadoutArea(loadoutSlot, state, config);
   }
+  if (replaySlot !== null) {
+    replaySlot.innerHTML = renderReplayCurrentLevelButton(state, config);
+  }
   const matchEffect = tray?.querySelector<HTMLElement>('[data-testid="dog-match-effect"]');
   if (state.feedback === "match") {
     if (matchEffect === null && tray !== null && tray !== undefined) {
@@ -197,4 +202,22 @@ function getDogBoardLabel(state: DogLegeDogGameState, config: DogV13Config): str
   return config.ui.copy.labels.board
     .replace("{level}", String(state.level.number))
     .replace("{blockCount}", String(state.session.remainingBlocks.length));
+}
+
+function renderReplayCurrentLevelButton(
+  state: DogLegeDogGameState,
+  config: DogV13Config,
+): string {
+  if (
+    state.status !== "ready" &&
+    state.status !== "playing"
+  ) {
+    return "";
+  }
+
+  const label = config.ui.copy.app.actions.replayCurrentLevel;
+  const disabled = state.inputLocked || state.loadoutEditor !== null
+    ? ' disabled aria-disabled="true"'
+    : "";
+  return `<button class="text-button dog-game__replay-button" type="button" data-action="replay-current-level" data-testid="dog-replay-current-level" data-game-id="${state.gameId}" data-level-number="${state.level.number}" aria-label="${label}"${disabled}>${label}</button>`;
 }

@@ -143,6 +143,62 @@ describe("关卡加载与预生成生命周期", () => {
     app.destroy();
   });
 
+  it("活动关卡重玩只启动一次新尝试，保留道具组与进度并等待新验证", async () => {
+    const thirdPreparation = createDeferred<GameLaunchPreparation>();
+    const launches: GameLaunchContext[] = [];
+    let prepareCount = 0;
+    const game = createPreparedGame({
+      prepare: (context) => {
+        prepareCount += 1;
+        return prepareCount < 3
+          ? createPreparation(context.gameId, context.levelNumber, context.runSeed)
+          : thirdPreparation.promise;
+      },
+      launch: (mount, context) => {
+        launches.push(context);
+        mount.innerHTML = `<button type="button" data-action="replay-current-level" data-game-id="prepared-game" data-level-number="${context.levelNumber ?? 1}">重玩本关</button>`;
+      },
+    });
+    const store = createStore();
+    store.register();
+    store.setGameLoadout(game.id, ["one", "two", "three"]);
+    const root = document.createElement("div");
+    const app = mountApp(root, {
+      store,
+      catalog: [game],
+      runSeedFactory: (() => {
+        let index = 0;
+        return () => `replay-seed-${++index}`;
+      })(),
+    });
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+
+    root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
+    const progressBefore = store.snapshot().state?.games[game.id];
+    root.querySelector<HTMLButtonElement>('[data-action="replay-current-level"]')?.click();
+    root.querySelector<HTMLButtonElement>('[data-action="replay-current-level"]')?.click();
+
+    expect(confirm).not.toHaveBeenCalled();
+    expect(launches).toHaveLength(2);
+    expect(launches[0]?.runSeed).toBe("replay-seed-1");
+    expect(launches[1]?.runSeed).toBe("replay-seed-2");
+    expect(launches[0]?.loadout).toEqual(["one", "two", "three"]);
+    expect(store.snapshot().state?.games[game.id]).toEqual(progressBefore);
+
+    await new Promise((resolve) => setTimeout(resolve, 301));
+    root.querySelector<HTMLButtonElement>('[data-action="replay-current-level"]')?.click();
+    expect(root.querySelector('[data-testid="game-generation-loading"]')).not.toBeNull();
+    expect(launches).toHaveLength(2);
+
+    thirdPreparation.resolve(createPreparation(game.id, 1, "replay-seed-3"));
+    await vi.waitFor(() => expect(launches).toHaveLength(3));
+    expect(launches[2]?.levelNumber).toBe(1);
+    expect(launches[2]?.runSeed).toBe("replay-seed-3");
+    expect(launches[2]?.loadout).toEqual(["one", "two", "three"]);
+    expect(store.snapshot().state?.games[game.id]).toEqual(progressBefore);
+    app.destroy();
+  });
+
   it("当前关卡完成后预生成下一关，进入时等待并复用已验证候选", async () => {
     const nextPreparation = createDeferred<GameLaunchPreparation>();
     const preparations: GamePreparationContext[] = [];

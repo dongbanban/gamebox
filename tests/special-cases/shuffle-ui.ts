@@ -26,6 +26,42 @@ describe("特殊机制测试 · shuffle-ui", () => {
     vi.useRealTimers();
   });
 
+  it("已确认道具组后在关卡行显示重玩按钮，输入锁定时隐藏", async () => {
+    vi.useFakeTimers();
+    const root = document.createElement("div");
+    const game = startDogLegeDogGame(root, {
+      level: createLevel([
+        createBlock("single-1", 0, 0, SINGLE_DOG),
+        createBlock("licking-1", 4, 0, LICKING_DOG),
+      ]),
+      onLoadoutConfirmed: vi.fn(),
+    });
+
+    expect(root.querySelector<HTMLButtonElement>('[data-testid="dog-replay-current-level"]')?.disabled)
+      .toBe(true);
+
+    for (const itemId of ["tray-capacity", "wildcard", "torch"]) {
+      root.querySelector<HTMLButtonElement>(`[data-loadout-id="${itemId}"]`)?.click();
+    }
+    root.querySelector<HTMLButtonElement>('[data-action="confirm-loadout"]')?.click();
+
+    const replayButton = root.querySelector<HTMLButtonElement>(
+      '[data-testid="dog-replay-current-level"]',
+    );
+    expect(replayButton?.disabled).toBe(false);
+    expect(replayButton?.textContent?.trim()).toBe("重玩本关");
+    expect(replayButton?.getAttribute("aria-label")).toBe("重玩本关");
+    expect(replayButton?.closest(".dog-game__level-tools")).not.toBeNull();
+
+    game.selectBlock("single-1");
+    expect(root.querySelector<HTMLButtonElement>('[data-testid="dog-replay-current-level"]')?.disabled)
+      .toBe(true);
+    await vi.runAllTimersAsync();
+    expect(root.querySelector<HTMLButtonElement>('[data-testid="dog-replay-current-level"]')?.disabled)
+      .toBe(false);
+    game.destroy();
+  });
+
   it("乱序方块棋盘保持普通视觉，入槽后显示待乱序状态并保留输入锁", async () => {
     vi.useFakeTimers();
     const root = document.createElement("div");

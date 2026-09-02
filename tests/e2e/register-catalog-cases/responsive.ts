@@ -47,6 +47,9 @@ test.describe("注册与游戏目录 · responsive", () => {
       "assets/dog-item-icons/triple-removal.svg",
     );
     await expect(page.getByRole("button", { name: "变更" })).toBeVisible();
+    const replayButton = page.getByRole("button", { name: "重玩本关" });
+    await expect(replayButton).toBeVisible();
+    await expect(replayButton).toHaveAttribute("aria-label", "重玩本关");
 
     const layout = await page.evaluate(() => {
       const serializeRect = (element: Element) => {
@@ -115,6 +118,7 @@ test.describe("注册与游戏目录 · responsive", () => {
         soundButton: getRect('[data-view="game-entry"] [data-action="toggle-sound"]'),
         catalogButton: getRect('[data-view="game-entry"] [data-action="catalog"]'),
         brandLogo: getRect('[data-view="game-entry"] .brand-lockup'),
+        replayButton: getRect('[data-testid="dog-replay-current-level"]'),
         selectableBlock:
           selectableBlock === null
             ? null
@@ -171,6 +175,9 @@ test.describe("注册与游戏目录 · responsive", () => {
     expect(layout.soundButton).not.toBeNull();
     expect(layout.soundButton?.top).toBeGreaterThanOrEqual(0);
     expect(layout.soundButton?.bottom).toBeLessThanOrEqual(layout.boardTop);
+    expect(layout.replayButton).not.toBeNull();
+    expect(layout.replayButton?.left).toBeGreaterThanOrEqual(0);
+    expect(layout.replayButton?.right).toBeLessThanOrEqual(layout.viewportWidth);
     expect(layout.selectableBlock).not.toBeNull();
     expect(layout.selectableBlock?.width).toBeGreaterThan(18);
     expect(layout.selectableBlock?.height).toBeGreaterThan(18);
@@ -272,6 +279,9 @@ test.describe("注册与游戏目录 · responsive", () => {
         trayBottom:
           document.querySelector<HTMLElement>('[data-testid="dog-tray"]')?.getBoundingClientRect()
             .bottom ?? 0,
+        replayButtonRight:
+          document.querySelector<HTMLElement>('[data-testid="dog-replay-current-level"]')
+            ?.getBoundingClientRect().right ?? 0,
       };
     });
     expect(tinyLayout.scrollHeight).toBeLessThanOrEqual(568);
@@ -283,6 +293,8 @@ test.describe("注册与游戏目录 · responsive", () => {
     expect(tinyLayout.selectableBlockHeight).toBeGreaterThan(14);
     expect(tinyLayout.boardBottom).toBeLessThanOrEqual(568);
     expect(tinyLayout.trayBottom).toBeLessThanOrEqual(568);
+    expect(tinyLayout.replayButtonRight).toBeLessThanOrEqual(320);
+    await expect(page.getByRole("button", { name: "重玩本关" })).toHaveText("重玩本关");
 
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.evaluate(

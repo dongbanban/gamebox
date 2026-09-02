@@ -58,6 +58,7 @@ export class GameboxApp {
   private activeRunSeed: string | undefined;
   private resultRunSeed: string | undefined;
   private resultState: ResultViewState | null = null;
+  private replayCooldownUntil = 0;
   private readonly resultLoadout: ResultLoadoutController;
 
   constructor(root: HTMLElement, options: MountAppOptions = {}) {
@@ -80,6 +81,7 @@ export class GameboxApp {
   }
 
   render(): void {
+    this.replayCooldownUntil = 0;
     this.resultState = null;
     this.resultRunSeed = undefined;
     this.resultLoadout.reset();
@@ -114,12 +116,10 @@ export class GameboxApp {
       this.render();
       return;
     }
-
     if (action === "reset") {
       this.resetWithConfirmation();
       return;
     }
-
     if (action === "toggle-sound") {
       const state = this.store.snapshot().state;
       if (state === null) {
@@ -132,42 +132,43 @@ export class GameboxApp {
       updateSoundButton(this.root, soundEnabled, this.config);
       return;
     }
-
     if (action === "edit-loadout") {
       this.resultLoadout.open();
       return;
     }
-
     if (action === "toggle-loadout") {
       this.resultLoadout.toggle(actionElement?.dataset.loadoutId);
       return;
     }
-
     if (action === "cancel-loadout") {
       this.resultLoadout.close();
       return;
     }
-
     if (action === "confirm-loadout") {
       this.resultLoadout.requestConfirmation();
       return;
     }
-
     if (action === "cancel-loadout-confirmation") {
       this.resultLoadout.cancelConfirmation();
       return;
     }
-
     if (action === "apply-loadout-change") {
       this.resultLoadout.apply();
       return;
     }
-
     if (action === "enter-game") {
       this.renderGameEntry(actionElement?.dataset.gameId);
       return;
     }
-
+    if (action === "replay-current-level") {
+      const replayNow = Date.now();
+      const replayLevelNumber = parseLevelNumber(actionElement?.dataset.levelNumber);
+      if (replayNow < this.replayCooldownUntil || !this.gameLaunch.isActiveGame(actionElement?.dataset.gameId ?? "", replayLevelNumber ?? 0) || event instanceof MouseEvent && event.detail > 1) return;
+      this.replayCooldownUntil = replayNow + 300;
+      this.disposeActiveGame();
+      this.renderGameEntry(actionElement?.dataset.gameId, replayLevelNumber);
+      return;
+    }
     if (action === "retry") {
       this.renderGameEntry(
         actionElement?.dataset.gameId,
@@ -175,7 +176,6 @@ export class GameboxApp {
       );
       return;
     }
-
     if (action === "retry-generation") {
       this.renderGameEntry(
         actionElement?.dataset.gameId,

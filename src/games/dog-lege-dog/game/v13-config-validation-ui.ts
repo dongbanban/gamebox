@@ -104,7 +104,7 @@ function validateAppCopy(value: unknown, path: string, issues: DogV13ConfigIssue
   if (actions === undefined) {
     requiredObject(app, "actions", issues, path);
   } else {
-    for (const key of ["loadout", "nextLevel", "retry"]) {
+    for (const key of ["loadout", "nextLevel", "retry", "replayCurrentLevel"]) {
       validateNonEmptyString(actions[key], `${path}.actions.${key}`, issues);
     }
   }

@@ -196,6 +196,7 @@ export interface DogV13AppCopy {
     readonly loadout: string;
     readonly nextLevel: string;
     readonly retry: string;
+    readonly replayCurrentLevel: string;
   };
 }
 
