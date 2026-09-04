@@ -96,9 +96,9 @@ export function getDogV13SpecialMechanismBudget(
   if (!Number.isSafeInteger(logicalBlockCount) || logicalBlockCount < 0) {
     throw new Error("狗了个狗 v13 logical block count must be a non-negative integer");
   }
-  const { logicalBudgetRatio, budgetRounding } = config.specialMechanisms;
+  const { logicalBudgetRatio } = config.specialMechanisms;
   const budget = logicalBlockCount * logicalBudgetRatio;
-  return budgetRounding === "floor" ? Math.floor(budget + Number.EPSILON) : budget;
+  return Math.floor(budget + Number.EPSILON);
 }
 
 export function getDogShuffleThreshold(

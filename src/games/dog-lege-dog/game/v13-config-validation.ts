@@ -32,6 +32,7 @@ export function collectConfigIssues(input: unknown): DogV13ConfigIssue[] {
   }
 
   const issues: DogV13ConfigIssue[] = [];
+  const gameMaxLevelNumber = asRecord(input.game)?.maxLevelNumber;
   for (const key of ["game", "generation", "board", "levels", "tray", "items", "specialMechanisms", "difficulty", "animation", "assets", "audio", "ui", "testProfiles"]) {
     requiredObject(input, key, issues);
   }
@@ -44,15 +45,15 @@ export function collectConfigIssues(input: unknown): DogV13ConfigIssue[] {
   validateGame(input.game, issues);
   validateGeneration(input.generation, issues);
   validateBoard(input.board, issues);
-  validateLevels(input.levels, issues);
+  validateLevels(input.levels, gameMaxLevelNumber, issues);
   validateTray(input.tray, issues);
   validateItems(input.items, issues);
   validateSpecialMechanisms(input.specialMechanisms, issues);
-  validateDifficulty(input.difficulty, asRecord(input.levels)?.maxLevelNumber, issues);
+  validateDifficulty(input.difficulty, gameMaxLevelNumber, issues);
   validateAnimation(input.animation, issues);
   validateAssets(input.assets, input.items, issues);
   validateAudio(input.audio, issues);
   validateUiConfig(input.ui, "ui", issues);
-  validateTestProfiles(input.testProfiles, asRecord(input.levels)?.maxLevelNumber, issues);
+  validateTestProfiles(input.testProfiles, gameMaxLevelNumber, issues);
   return issues;
 }

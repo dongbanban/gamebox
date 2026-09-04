@@ -20,7 +20,7 @@ describe("狗了个狗 v13 集中配置", () => {
     expect(DOG_V13_CONFIG.schemaVersion).toBe(13);
     expect(Object.isFrozen(DOG_V13_CONFIG)).toBe(true);
     expect(Object.isFrozen(DOG_V13_CONFIG.specialMechanisms.mechanisms)).toBe(true);
-    expect(DOG_V13_CONFIG.levels.maxLevelNumber).toBe(99);
+    expect(DOG_V13_CONFIG.game.maxLevelNumber).toBe(99);
     expect([1, 5, 6, 15, 16, 30, 31, 99].map((levelNumber) => getDogV13LogicalBlockCount(levelNumber))).toEqual([
       90,
       90,
@@ -52,7 +52,6 @@ describe("狗了个狗 v13 集中配置", () => {
       plan.counts.twin > 0,
     )).toBe(true);
     expect(plans.map((plan) => plan.physicalBlockCount)).toEqual([22, 26, 30, 35, 39, 44]);
-    expect(DOG_V13_CONFIG.specialMechanisms.remainderStrategy).toBe("stable-round-robin");
     expect(DOG_V13_CONFIG.specialMechanisms.mechanisms.map(({ type, logicalUnitWeight }) => [
       type,
       logicalUnitWeight,
@@ -91,11 +90,21 @@ describe("狗了个狗 v13 集中配置", () => {
       maxCapacity: 8,
       maxLockedSlotCount: 2,
     });
+    expect(DOG_V13_CONFIG.board).not.toHaveProperty("logicalCellSize");
+    expect(DOG_V13_CONFIG.board).not.toHaveProperty("maxMechanismsPerBlock");
+    expect(DOG_V13_CONFIG.levels).not.toHaveProperty("firstLevelNumber");
+    expect(DOG_V13_CONFIG.levels).not.toHaveProperty("maxLevelNumber");
+    expect(DOG_V13_CONFIG.tray).not.toHaveProperty("lockedSlotPlacement");
     expect(DOG_V13_CONFIG.items).toMatchObject({
       loadoutSize: 3,
       maxSuccessfulUsesPerLevel: 1,
-      key: { initialUses: 0, usesCappedByLockedSlots: true },
+      key: { initialUses: 0 },
     });
+    expect(DOG_V13_CONFIG.items).not.toHaveProperty("defaultUsesPerLevel");
+    expect(DOG_V13_CONFIG.items.key).not.toHaveProperty("usesCappedByLockedSlots");
+    expect(DOG_V13_CONFIG.specialMechanisms).not.toHaveProperty("budgetRounding");
+    expect(DOG_V13_CONFIG.specialMechanisms).not.toHaveProperty("remainderStrategy");
+    expect(DOG_V13_CONFIG.assets).not.toHaveProperty("music");
     expect(DOG_V13_CONFIG.animation.blockFlightMs).toBeGreaterThan(0);
     expect(DOG_V13_CONFIG.generation).toMatchObject({
       preferWorker: true,
@@ -119,6 +128,7 @@ describe("狗了个狗 v13 集中配置", () => {
       runFileLineCheck: true,
       maxChangedFileLines: 500,
     });
+    expect(getDogTestProfile("full")).not.toHaveProperty("runUI");
     expect(DOG_V13_CONFIG.testProfiles.selection.fullAreas).toContain("generator");
     expect(DOG_V13_CONFIG.testProfiles.selection.smokeAreas).toEqual(["random-regression"]);
     expect(getDogV13DifficultyTarget(1)).toMatchObject({
@@ -141,8 +151,8 @@ describe("狗了个狗 v13 集中配置", () => {
   it("配置错误提供路径、类别与消息，并阻止配置加载", () => {
     const invalid = {
       ...DOG_V13_CONFIG,
-      levels: {
-        ...DOG_V13_CONFIG.levels,
+      game: {
+        ...DOG_V13_CONFIG.game,
         maxLevelNumber: 0,
       },
       tray: {
@@ -171,13 +181,13 @@ describe("狗了个狗 v13 集中配置", () => {
       const configError = error as DogV13ConfigError;
       expect(configError.issues.map((issue) => issue.path)).toEqual(
         expect.arrayContaining([
-          "levels.maxLevelNumber",
+          "game.maxLevelNumber",
           "tray.baseCapacity",
           "generation.workerTimeoutMs",
           "specialMechanisms.shuffle.candidateCount",
         ]),
       );
-      expect(configError.message).toContain("levels.maxLevelNumber");
+      expect(configError.message).toContain("game.maxLevelNumber");
       expect(configError.message).toContain("tray.baseCapacity");
       expect(configError.message).toContain("generation.workerTimeoutMs");
       expect(configError.message).toContain("specialMechanisms.shuffle.candidateCount");

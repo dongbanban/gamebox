@@ -226,7 +226,6 @@ export interface DogV13TestProfile {
   readonly fixedSeeds: readonly string[];
   readonly randomLevelPrefix: number;
   readonly stressLevelCount: number;
-  readonly runUI: boolean;
   readonly runCore: boolean;
   readonly runRandomRegression: boolean;
   readonly runE2E: boolean;
@@ -255,14 +254,10 @@ export interface DogV13Config {
   };
   readonly board: {
     readonly shape: "irregular";
-    readonly logicalCellSize: 4;
     readonly blockWidth: 4;
     readonly blockHeight: 4;
-    readonly maxMechanismsPerBlock: 1;
   };
   readonly levels: {
-    readonly firstLevelNumber: 1;
-    readonly maxLevelNumber: 99;
     readonly logicalBlockCount: {
       readonly start: 90;
       readonly increment: 18;
@@ -275,24 +270,19 @@ export interface DogV13Config {
     readonly baseCapacity: 7;
     readonly maxCapacity: 8;
     readonly maxLockedSlotCount: 2;
-    readonly lockedSlotPlacement: "right";
   };
   readonly items: {
     readonly ids: readonly DogV13ItemId[];
     readonly loadoutSize: 3;
-    readonly defaultUsesPerLevel: 1;
     readonly maxSuccessfulUsesPerLevel: 1;
     readonly key: {
       readonly id: "key";
       readonly initialUses: 0;
-      readonly usesCappedByLockedSlots: true;
       readonly dropRate: number;
     };
   };
   readonly specialMechanisms: {
     readonly logicalBudgetRatio: 0.3;
-    readonly budgetRounding: "floor";
-    readonly remainderStrategy: "stable-round-robin";
     readonly requireAllTypes: true;
     readonly freezeMeltTripleCount: number;
     readonly shuffle: DogV13ShuffleConfig;
@@ -318,7 +308,6 @@ export interface DogV13Config {
   readonly assets: {
     readonly patterns: Readonly<Record<DogPatternType, string>>;
     readonly items: Readonly<Record<DogV13ItemId, string>>;
-    readonly music: string;
   };
   readonly audio: {
     readonly music: { readonly path: string; readonly volume: number };

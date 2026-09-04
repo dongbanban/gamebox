@@ -6,7 +6,6 @@ import { classifyTestFile } from "./test-paths.mjs";
 const root = fileURLToPath(new URL("../", import.meta.url));
 const PROFILE_NAMES = ["focused", "smoke", "full"];
 const PROFILE_BOOLEAN_KEYS = [
-  "runUI",
   "runCore",
   "runRandomRegression",
   "runE2E",

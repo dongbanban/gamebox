@@ -70,14 +70,10 @@ export const DOG_V13_CONFIG_SOURCE: DogV13Config = {
   },
   board: {
     shape: "irregular",
-    logicalCellSize: 4,
     blockWidth: 4,
     blockHeight: 4,
-    maxMechanismsPerBlock: 1,
   },
   levels: {
-    firstLevelNumber: 1,
-    maxLevelNumber: 99,
     logicalBlockCount: {
       start: 90,
       increment: 18,
@@ -95,7 +91,6 @@ export const DOG_V13_CONFIG_SOURCE: DogV13Config = {
     baseCapacity: 7,
     maxCapacity: 8,
     maxLockedSlotCount: 2,
-    lockedSlotPlacement: "right",
   },
   items: {
     ids: [
@@ -109,19 +104,15 @@ export const DOG_V13_CONFIG_SOURCE: DogV13Config = {
       "restore-whistle",
     ],
     loadoutSize: 3,
-    defaultUsesPerLevel: 1,
     maxSuccessfulUsesPerLevel: 1,
     key: {
       id: "key",
       initialUses: 0,
-      usesCappedByLockedSlots: true,
       dropRate: 0.3,
     },
   },
   specialMechanisms: {
     logicalBudgetRatio: 0.3,
-    budgetRounding: "floor",
-    remainderStrategy: "stable-round-robin",
     requireAllTypes: true,
     freezeMeltTripleCount: 2,
     shuffle: {
@@ -181,7 +172,6 @@ export const DOG_V13_CONFIG_SOURCE: DogV13Config = {
   assets: {
     patterns: PATTERN_ASSET_PATHS,
     items: ITEM_ASSET_PATHS,
-    music: "audio/levelmusicloop-tigrun.ogg",
   },
   audio: {
     music: {

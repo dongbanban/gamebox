@@ -66,23 +66,13 @@ export function validateBoard(value: unknown, issues: DogV13ConfigIssue[]): void
   if (board.shape !== "irregular") {
     issues.push({ path: "board.shape", code: "value", message: "必须是 irregular" });
   }
-  validateInteger(board.logicalCellSize, "board.logicalCellSize", 1, issues);
   validateInteger(board.blockWidth, "board.blockWidth", 1, issues);
   validateInteger(board.blockHeight, "board.blockHeight", 1, issues);
-  validateInteger(board.maxMechanismsPerBlock, "board.maxMechanismsPerBlock", 1, issues, 1);
 }
 
-export function validateLevels(value: unknown, issues: DogV13ConfigIssue[]): void {
+export function validateLevels(value: unknown, gameMaxLevelNumber: unknown, issues: DogV13ConfigIssue[]): void {
   const levels = asRecord(value);
   if (levels === undefined) return;
-  validateInteger(levels.firstLevelNumber, "levels.firstLevelNumber", 1, issues);
-  validateInteger(levels.maxLevelNumber, "levels.maxLevelNumber", 1, issues);
-  if (levels.firstLevelNumber !== 1) {
-    issues.push({ path: "levels.firstLevelNumber", code: "value", message: "v13 必须是 1" });
-  }
-  if (levels.maxLevelNumber !== 99) {
-    issues.push({ path: "levels.maxLevelNumber", code: "value", message: "v13 必须是 99" });
-  }
   const progression = asRecord(levels.logicalBlockCount);
   if (progression === undefined) {
     requiredObject(levels, "logicalBlockCount", issues, "levels");
@@ -95,7 +85,7 @@ export function validateLevels(value: unknown, issues: DogV13ConfigIssue[]): voi
       issues.push({ path: "levels.logicalBlockCount.cap", code: "relation", message: "不能小于 start" });
     }
   }
-  validateStructureStages(levels.structureStages, "levels.structureStages", levels.maxLevelNumber, issues);
+  validateStructureStages(levels.structureStages, "levels.structureStages", gameMaxLevelNumber, issues);
 }
 
 export function validateTray(value: unknown, issues: DogV13ConfigIssue[]): void {
@@ -104,9 +94,6 @@ export function validateTray(value: unknown, issues: DogV13ConfigIssue[]): void 
   validateInteger(tray.baseCapacity, "tray.baseCapacity", 1, issues);
   validateInteger(tray.maxCapacity, "tray.maxCapacity", 1, issues);
   validateInteger(tray.maxLockedSlotCount, "tray.maxLockedSlotCount", 0, issues);
-  if (tray.lockedSlotPlacement !== "right") {
-    issues.push({ path: "tray.lockedSlotPlacement", code: "value", message: "必须是 right" });
-  }
   if (isFiniteNumber(tray.baseCapacity) && isFiniteNumber(tray.maxCapacity) && tray.maxCapacity < tray.baseCapacity) {
     issues.push({ path: "tray.maxCapacity", code: "relation", message: "不能小于 baseCapacity" });
   }
@@ -135,7 +122,6 @@ export function validateItems(value: unknown, issues: DogV13ConfigIssue[]): void
   if (isFiniteNumber(items.loadoutSize) && Array.isArray(ids) && items.loadoutSize > ids.length) {
     issues.push({ path: "items.loadoutSize", code: "relation", message: "不能大于道具数量" });
   }
-  validateInteger(items.defaultUsesPerLevel, "items.defaultUsesPerLevel", 1, issues, 1);
   validateInteger(items.maxSuccessfulUsesPerLevel, "items.maxSuccessfulUsesPerLevel", 1, issues, 1);
   const key = asRecord(items.key);
   if (key === undefined) {
@@ -144,9 +130,6 @@ export function validateItems(value: unknown, issues: DogV13ConfigIssue[]): void
   }
   if (key.id !== "key") issues.push({ path: "items.key.id", code: "value", message: "必须是 key" });
   validateInteger(key.initialUses, "items.key.initialUses", 0, issues, 0);
-  if (key.usesCappedByLockedSlots !== true) {
-    issues.push({ path: "items.key.usesCappedByLockedSlots", code: "value", message: "必须为 true" });
-  }
   validateRange(key.dropRate, "items.key.dropRate", 0, 1, issues);
   if (Array.isArray(items.ids) && !items.ids.includes("key")) {
     issues.push({ path: "items.ids", code: "relation", message: "必须包含 key" });
@@ -158,8 +141,6 @@ export function validateSpecialMechanisms(value: unknown, issues: DogV13ConfigIs
   if (special === undefined) return;
   validateRange(special.logicalBudgetRatio, "specialMechanisms.logicalBudgetRatio", 0, 1, issues, false);
   if (special.logicalBudgetRatio !== 0.3) issues.push({ path: "specialMechanisms.logicalBudgetRatio", code: "value", message: "v13 必须是 0.3" });
-  if (special.budgetRounding !== "floor") issues.push({ path: "specialMechanisms.budgetRounding", code: "value", message: "必须是 floor" });
-  if (special.remainderStrategy !== "stable-round-robin") issues.push({ path: "specialMechanisms.remainderStrategy", code: "value", message: "必须是 stable-round-robin" });
   if (special.requireAllTypes !== true) issues.push({ path: "specialMechanisms.requireAllTypes", code: "value", message: "必须为 true" });
   validateInteger(special.freezeMeltTripleCount, "specialMechanisms.freezeMeltTripleCount", 1, issues);
   validateShuffleConfig(special.shuffle, issues);
@@ -244,10 +225,10 @@ function validateShuffleConfig(value: unknown, issues: DogV13ConfigIssue[]): voi
   );
 }
 
-export function validateDifficulty(value: unknown, maxLevelValue: unknown, issues: DogV13ConfigIssue[]): void {
+export function validateDifficulty(value: unknown, gameMaxLevelNumber: unknown, issues: DogV13ConfigIssue[]): void {
   const difficulty = asRecord(value);
   if (difficulty === undefined) return;
-  validateDifficultyTargets(difficulty.targets, "difficulty.targets", maxLevelValue, issues);
+  validateDifficultyTargets(difficulty.targets, "difficulty.targets", gameMaxLevelNumber, issues);
   validateDifficultyScoring(difficulty.scoring, "difficulty.scoring", issues);
 }
 
@@ -267,7 +248,6 @@ export function validateAssets(value: unknown, itemsValue: unknown, issues: DogV
   if (assets === undefined) return;
   validateAssetMap(assets.patterns, "assets.patterns", DOG_PATTERN_TYPES, issues);
   validateAssetMap(assets.items, "assets.items", asRecord(itemsValue)?.ids, issues);
-  validateNonEmptyString(assets.music, "assets.music", issues);
 }
 
 export function validateAudio(value: unknown, issues: DogV13ConfigIssue[]): void {
@@ -290,7 +270,7 @@ export function validateAudio(value: unknown, issues: DogV13ConfigIssue[]): void
   for (const [name, effect] of Object.entries(effects)) validateAudioEffect(effect, `audio.effects.${name}`, issues);
 }
 
-export function validateTestProfiles(value: unknown, maxLevelValue: unknown, issues: DogV13ConfigIssue[]): void {
+export function validateTestProfiles(value: unknown, gameMaxLevelNumber: unknown, issues: DogV13ConfigIssue[]): void {
   const testProfiles = asRecord(value);
   if (testProfiles === undefined) return;
   if (!["focused", "smoke", "full"].includes(String(testProfiles.default))) {
@@ -304,15 +284,15 @@ export function validateTestProfiles(value: unknown, maxLevelValue: unknown, iss
     requiredObject(testProfiles, "profiles", issues, "testProfiles");
     return;
   }
-  for (const name of ["focused", "smoke", "full"] as const) validateProfile(profiles[name], name, maxLevelValue, issues);
+  for (const name of ["focused", "smoke", "full"] as const) validateProfile(profiles[name], name, gameMaxLevelNumber, issues);
 }
 
-function validateDifficultyTargets(value: unknown, path: string, maxLevelValue: unknown, issues: DogV13ConfigIssue[]): void {
+function validateDifficultyTargets(value: unknown, path: string, gameMaxLevelNumber: unknown, issues: DogV13ConfigIssue[]): void {
   if (!Array.isArray(value) || value.length === 0) {
     issues.push({ path, code: "required", message: "必须包含难度目标" });
     return;
   }
-  const maxLevel = asNumber(maxLevelValue);
+  const maxLevel = asNumber(gameMaxLevelNumber);
   let previousMaxLevel = 0;
   for (const [index, target] of value.entries()) {
     const record = asRecord(target);
@@ -363,7 +343,7 @@ function validateDifficultyScoring(value: unknown, path: string, issues: DogV13C
   }
 }
 
-function validateStructureStages(value: unknown, path: string, maxLevelValue: unknown, issues: DogV13ConfigIssue[]): void {
+function validateStructureStages(value: unknown, path: string, gameMaxLevelNumber: unknown, issues: DogV13ConfigIssue[]): void {
   if (!Array.isArray(value) || value.length === 0) {
     issues.push({ path, code: "required", message: "必须包含关卡结构阶段" });
     return;
@@ -380,7 +360,7 @@ function validateStructureStages(value: unknown, path: string, maxLevelValue: un
     if (asNumber(record.minLevel) !== undefined && asNumber(record.minLevel) !== previousMaxLevel + 1) issues.push({ path: `${path}[${index}].minLevel`, code: "relation", message: "阶段区间必须连续" });
     previousMaxLevel = asNumber(record.maxLevel) ?? previousMaxLevel;
   }
-  const maxLevel = asNumber(maxLevelValue);
+  const maxLevel = asNumber(gameMaxLevelNumber);
   if (maxLevel !== undefined && previousMaxLevel !== maxLevel) issues.push({ path, code: "relation", message: "阶段必须覆盖全部关卡" });
 }
 
@@ -413,7 +393,7 @@ function validateProfileAreas(selection: Record<string, unknown>, issues: DogV13
   }
 }
 
-function validateProfile(value: unknown, name: string, maxLevelValue: unknown, issues: DogV13ConfigIssue[]): void {
+function validateProfile(value: unknown, name: string, gameMaxLevelNumber: unknown, issues: DogV13ConfigIssue[]): void {
   const profile = asRecord(value);
   if (profile === undefined) {
     issues.push({ path: `testProfiles.profiles.${name}`, code: "required", message: "必须是对象" });
@@ -421,11 +401,11 @@ function validateProfile(value: unknown, name: string, maxLevelValue: unknown, i
   }
   const path = `testProfiles.profiles.${name}`;
   if (profile.name !== name) issues.push({ path: `${path}.name`, code: "value", message: `必须是 ${name}` });
-  validateLevelNumberArray(profile.levelNumbers, `${path}.levelNumbers`, asNumber(maxLevelValue), issues);
+  validateLevelNumberArray(profile.levelNumbers, `${path}.levelNumbers`, asNumber(gameMaxLevelNumber), issues);
   validateStringArray(profile.fixedSeeds, `${path}.fixedSeeds`, issues);
-  validateInteger(profile.randomLevelPrefix, `${path}.randomLevelPrefix`, 0, issues, asNumber(maxLevelValue));
-  validateInteger(profile.stressLevelCount, `${path}.stressLevelCount`, 0, issues, asNumber(maxLevelValue));
-  for (const key of ["runUI", "runCore", "runRandomRegression", "runE2E", "runCrossBrowser", "runWorkerFallback", "runBuild", "runDiffCheck", "runFileLineCheck"]) if (typeof profile[key] !== "boolean") issues.push({ path: `${path}.${key}`, code: "type", message: "必须是布尔值" });
+  validateInteger(profile.randomLevelPrefix, `${path}.randomLevelPrefix`, 0, issues, asNumber(gameMaxLevelNumber));
+  validateInteger(profile.stressLevelCount, `${path}.stressLevelCount`, 0, issues, asNumber(gameMaxLevelNumber));
+  for (const key of ["runCore", "runRandomRegression", "runE2E", "runCrossBrowser", "runWorkerFallback", "runBuild", "runDiffCheck", "runFileLineCheck"]) if (typeof profile[key] !== "boolean") issues.push({ path: `${path}.${key}`, code: "type", message: "必须是布尔值" });
   validateInteger(profile.maxChangedFileLines, `${path}.maxChangedFileLines`, 1, issues);
 }
 
