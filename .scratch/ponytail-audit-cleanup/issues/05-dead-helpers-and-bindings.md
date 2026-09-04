@@ -6,9 +6,8 @@
 
 **Status:** ready-for-agent
 
-- [ ] 删除无调用的随机选择、进度阶段、可解性和配置诊断 helper。
+- [ ] 删除无调用的加权随机选择、进度阶段、安全选择计数和配置诊断 helper。
 - [ ] 删除不再需要的转发 re-export，并保留仍由游戏目录、测试和运行时使用的入口。
 - [ ] 清理源码和测试中的无效 import、参数与局部绑定，不改变测试 oracle 的独立性或测试意图。
-- [ ] `pnpm exec tsc --noEmit --noUnusedLocals --noUnusedParameters` 不再报告本次审计范围内的无效绑定。
+- [ ] `pnpm exec tsc --noEmit --noUnusedLocals --noUnusedParameters` 从基线的 322 个诊断（32 个源码、290 个测试）降为零。
 - [ ] 代码库中不再存在被删除 API 的仓内调用或仅为旧路径保留的兼容分支。
-
