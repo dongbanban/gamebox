@@ -22,11 +22,6 @@ import {
   getDogPatternClassName,
   renderDogPatternAsset,
 } from "@/games/dog-lege-dog/assets/game-assets";
-import {
-  DOG_BLOCK_VISUAL_SIZE_PX,
-  DOG_BOARD_SAFE_MARGIN_PX,
-  DOG_LOGICAL_UNIT_VISUAL_WIDTH_PX,
-} from "@/games/dog-lege-dog/game/game-renderer";
 import { TEST_LEVEL, TEST_RUN_SEED } from "../support/dog-level-fixture";
 import { startTestGame } from "../support/dog-game-fixtures";
 

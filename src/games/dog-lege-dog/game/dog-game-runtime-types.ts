@@ -21,8 +21,6 @@ export interface DogGameRuntime {
   soundEnabled: boolean;
   resultConfirmed: boolean;
   resultPresented: boolean;
-  startedAt: number | null;
-  endedAt: number | null;
   activeFlights: Set<CancellableAnimation>;
   matchFeedbackActive: boolean;
   matchAnimation: Promise<void> | null;

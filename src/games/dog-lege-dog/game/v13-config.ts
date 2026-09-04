@@ -1,6 +1,5 @@
 import {
   DOG_V13_MECHANISM_TYPES,
-  DOG_V13_SCHEMA_VERSION,
   type DogConfigChangeArea,
   type DogV13Config,
   type DogV13ConfigIssue,
@@ -223,5 +222,3 @@ function validateLevelNumber(levelNumber: number, config: DogV13Config): void {
     throw new Error(`狗了个狗 v13 level number must be an integer from ${config.game.firstLevelNumber} to ${config.game.maxLevelNumber}`);
   }
 }
-
-void DOG_V13_SCHEMA_VERSION;

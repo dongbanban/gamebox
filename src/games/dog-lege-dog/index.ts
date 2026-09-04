@@ -221,7 +221,6 @@ export type { DogSelectionResolution } from "@/games/dog-lege-dog/levels/level-m
 export {
   DOG_ITEM_DEFINITIONS,
   DOG_ITEM_IDS,
-  DOG_LOADOUT_SIZE,
   areDogLoadoutsEqual,
   getDogItemDefinition,
   isDogItemId,
@@ -233,7 +232,6 @@ export type {
   DogItemId,
   DogLoadoutSummaryItemState,
   DogItemTargetType,
-  DogItemVisualFeedback,
 } from "@/games/dog-lege-dog/game/dog-loadout";
 export {
   DogItemRuntime,

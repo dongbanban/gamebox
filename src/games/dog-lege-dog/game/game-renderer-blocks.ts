@@ -25,11 +25,6 @@ import type {
   DogItemTargetType,
 } from "@/games/dog-lege-dog/game/dog-loadout";
 
-export const DOG_BLOCK_VISUAL_SIZE_PX = DOG_V13_CONFIG.ui.visual.blockSizePx;
-export const DOG_LOGICAL_UNIT_VISUAL_WIDTH_PX = DOG_BLOCK_VISUAL_SIZE_PX / BLOCK_WIDTH;
-export const DOG_LOGICAL_UNIT_VISUAL_HEIGHT_PX = DOG_BLOCK_VISUAL_SIZE_PX / BLOCK_HEIGHT;
-export const DOG_BOARD_SAFE_MARGIN_PX = DOG_V13_CONFIG.ui.visual.boardSafeMarginPx;
-
 export {
   getDogBlockVisualMetrics,
   type DogBlockVisualConfig,

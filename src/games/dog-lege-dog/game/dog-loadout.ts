@@ -5,8 +5,6 @@ import {
   type DogV13ItemId,
 } from "@/games/dog-lege-dog/game/v13-config";
 
-export const DOG_LOADOUT_SIZE = DOG_V13_CONFIG.items.loadoutSize;
-
 export const DOG_ITEM_IDS = DOG_V13_CONFIG.items.ids;
 
 export type DogItemId = DogV13ItemId;
@@ -15,8 +13,6 @@ export type DogItemTargetType =
   | "none"
   | "tray-block"
   | "block";
-
-export type DogItemVisualFeedback = DogItemId;
 
 export interface DogItemDefinition {
   readonly id: DogItemId;
@@ -53,7 +49,7 @@ export function isDogItemId(value: string): value is DogItemId {
 
 export function isValidDogLoadout(
   value: readonly string[] | null | undefined,
-  loadoutSize: number = DOG_LOADOUT_SIZE,
+  loadoutSize: number = DOG_V13_CONFIG.items.loadoutSize,
 ): value is readonly DogItemId[] {
   return (
     value !== null &&
@@ -66,7 +62,7 @@ export function isValidDogLoadout(
 
 export function normalizeDogLoadout(
   value: readonly string[] | null | undefined,
-  loadoutSize: number = DOG_LOADOUT_SIZE,
+  loadoutSize: number = DOG_V13_CONFIG.items.loadoutSize,
 ): readonly DogItemId[] | null {
   return isValidDogLoadout(value, loadoutSize) ? [...value] : null;
 }
@@ -74,7 +70,7 @@ export function normalizeDogLoadout(
 export function areDogLoadoutsEqual(
   first: readonly string[] | null | undefined,
   second: readonly string[] | null | undefined,
-  loadoutSize: number = DOG_LOADOUT_SIZE,
+  loadoutSize: number = DOG_V13_CONFIG.items.loadoutSize,
 ): boolean {
   if (!isValidDogLoadout(first, loadoutSize) || !isValidDogLoadout(second, loadoutSize)) {
     return first === second;

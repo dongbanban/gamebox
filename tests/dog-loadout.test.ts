@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   DOG_ITEM_DEFINITIONS,
   DOG_ITEM_IDS,
-  DOG_LOADOUT_SIZE,
+  DOG_V13_CONFIG,
   areDogLoadoutsEqual,
   isValidDogLoadout,
 } from "@/games/dog-lege-dog";
@@ -35,7 +35,7 @@ describe("狗了个狗道具组", () => {
       "none",
       "none",
     ]);
-    expect(DOG_LOADOUT_SIZE).toBe(3);
+    expect(DOG_V13_CONFIG.items.loadoutSize).toBe(3);
     expect(isValidDogLoadout(["triple-removal", "tray-capacity", "wildcard"])).toBe(true);
     expect(isValidDogLoadout(["triple-removal", "tray-capacity"])).toBe(false);
     expect(isValidDogLoadout(["triple-removal", "triple-removal", "wildcard"])).toBe(false);

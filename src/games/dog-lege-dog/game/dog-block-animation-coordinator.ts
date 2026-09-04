@@ -41,7 +41,6 @@ export interface DogBlockAnimationCoordinatorOptions {
     | "activeFlights"
     | "config"
     | "destroyed"
-    | "endedAt"
     | "feedback"
     | "hasInteracted"
     | "inputLocked"
@@ -118,7 +117,6 @@ export class DogBlockAnimationCoordinator {
     const didMatch = selection.removedCount > 0;
     const result = this.options.createResult(nextState.status);
     if (result !== null) {
-      runtime.endedAt = Date.now();
       this.options.confirmResult(result, !shouldAnimate || !runtime.started);
     }
 
@@ -430,7 +428,6 @@ export class DogBlockAnimationCoordinator {
     const selection = runtime.session.resolveMagneticEntry();
     const result = this.options.createResult(selection.snapshot.status);
     if (result !== null) {
-      runtime.endedAt = Date.now();
       this.options.confirmResult(result, false);
     }
     if (selection.removedCount > 0) {
@@ -463,7 +460,6 @@ export class DogBlockAnimationCoordinator {
 
     const result = this.options.createResult(selection.snapshot.status);
     if (result !== null) {
-      runtime.endedAt = Date.now();
       this.options.confirmResult(result, false);
     }
     if (selection.removedCount > 0) {

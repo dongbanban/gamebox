@@ -11,6 +11,7 @@ import {
   DOG_PATTERN_TYPES,
   DOG_ILLUSION_MECHANISM_TYPE,
   DOG_TWIN_MECHANISM_TYPE,
+  DOG_V13_CONFIG,
   LevelGenerator,
   getDogLogicalBlockCount,
   startDogLegeDogGame,
@@ -23,11 +24,6 @@ import {
   getDogPatternClassName,
   renderDogPatternAsset,
 } from "@/games/dog-lege-dog/assets/game-assets";
-import {
-  DOG_BLOCK_VISUAL_SIZE_PX,
-  DOG_BOARD_SAFE_MARGIN_PX,
-  DOG_LOGICAL_UNIT_VISUAL_WIDTH_PX,
-} from "@/games/dog-lege-dog/game/game-renderer";
 import { TEST_LEVEL, TEST_RUN_SEED } from "../support/dog-level-fixture";
 import { startTestGame } from "../support/dog-game-fixtures";
 
@@ -192,8 +188,7 @@ describe("狗了个狗测试 · core", () => {
     expect(board?.style.clipPath).toBe("");
     expect(board?.style.getPropertyValue("--board-pixel-width")).toBe("432px");
     expect(board?.style.getPropertyValue("--board-pixel-height")).toBe("576px");
-    expect(DOG_BLOCK_VISUAL_SIZE_PX).toBe(48);
-    expect(DOG_LOGICAL_UNIT_VISUAL_WIDTH_PX).toBe(12);
+    expect(DOG_V13_CONFIG.ui.visual.blockSizePx).toBe(48);
     expect(firstBlock?.style.getPropertyValue("--block-width")).toBe("48px");
     expect(firstBlock?.style.getPropertyValue("--block-height")).toBe("48px");
     expect(root.querySelectorAll('[data-testid="dog-block"]')).toHaveLength(TEST_LEVEL.blocks.length);
@@ -217,6 +212,10 @@ describe("狗了个狗测试 · core", () => {
     const root = document.createElement("div");
     const game = startTestGame(root);
     const { board, blocks } = game.getState().level;
+    const visualUnitWidthPx = DOG_V13_CONFIG.ui.visual.blockSizePx / DOG_V13_CONFIG.board.blockWidth;
+    const visualUnitHeightPx = DOG_V13_CONFIG.ui.visual.blockSizePx / DOG_V13_CONFIG.board.blockHeight;
+    const boardSafeMarginPx = DOG_V13_CONFIG.ui.visual.boardSafeMarginPx;
+    expect(visualUnitWidthPx).toBe(12);
 
     for (const block of blocks) {
       const element = root.querySelector<HTMLElement>(
@@ -225,24 +224,24 @@ describe("狗了个狗测试 · core", () => {
       expect(element).not.toBeNull();
       const left = Number.parseFloat(element?.style.getPropertyValue("--block-left") ?? "NaN");
       const top = Number.parseFloat(element?.style.getPropertyValue("--block-top") ?? "NaN");
-      const blockWidth = block.width * DOG_LOGICAL_UNIT_VISUAL_WIDTH_PX;
-      const blockHeight = block.height * DOG_LOGICAL_UNIT_VISUAL_WIDTH_PX;
+      const blockWidth = block.width * visualUnitWidthPx;
+      const blockHeight = block.height * visualUnitHeightPx;
       expect(left).toBe(
         Math.min(
-          Math.max(block.x * DOG_LOGICAL_UNIT_VISUAL_WIDTH_PX, DOG_BOARD_SAFE_MARGIN_PX),
-          board.width * DOG_LOGICAL_UNIT_VISUAL_WIDTH_PX - blockWidth - DOG_BOARD_SAFE_MARGIN_PX,
+          Math.max(block.x * visualUnitWidthPx, boardSafeMarginPx),
+          board.width * visualUnitWidthPx - blockWidth - boardSafeMarginPx,
         ),
       );
       expect(top).toBe(
         Math.min(
-          Math.max(block.y * DOG_LOGICAL_UNIT_VISUAL_WIDTH_PX, DOG_BOARD_SAFE_MARGIN_PX),
-          board.height * DOG_LOGICAL_UNIT_VISUAL_WIDTH_PX - blockHeight - DOG_BOARD_SAFE_MARGIN_PX,
+          Math.max(block.y * visualUnitHeightPx, boardSafeMarginPx),
+          board.height * visualUnitHeightPx - blockHeight - boardSafeMarginPx,
         ),
       );
     }
 
-    expect(board.width * DOG_LOGICAL_UNIT_VISUAL_WIDTH_PX).toBe(432);
-    expect(board.height * DOG_LOGICAL_UNIT_VISUAL_WIDTH_PX).toBe(576);
+    expect(board.width * visualUnitWidthPx).toBe(432);
+    expect(board.height * visualUnitHeightPx).toBe(576);
     game.destroy();
   });
 

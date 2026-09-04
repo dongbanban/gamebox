@@ -77,8 +77,6 @@ export function createDogLegeDogGame(
     soundEnabled: options.soundEnabled ?? true,
     resultConfirmed: false,
     resultPresented: false,
-    startedAt: null,
-    endedAt: null,
     activeFlights: new Set(),
     matchFeedbackActive: false,
     matchAnimation: null,
@@ -301,7 +299,6 @@ export function createDogLegeDogGame(
         throw new Error("Cannot start a destroyed 狗了个狗 game");
       }
       if (!runtime.started) {
-        runtime.startedAt = Date.now();
         renderDogLegeDogGame(root, createDogGameState(runtime), runtime.config);
         runtime.started = true;
         if (runtime.soundEnabled) {

@@ -1,10 +1,6 @@
 import { DOG_V13_CONFIG, type DogV13Config } from "@/games/dog-lege-dog/game/v13-config";
 import type { DogLegeDogGameState } from "@/games/dog-lege-dog/game/game-types";
 import {
-  DOG_BLOCK_VISUAL_SIZE_PX,
-  DOG_BOARD_SAFE_MARGIN_PX,
-  DOG_LOGICAL_UNIT_VISUAL_HEIGHT_PX,
-  DOG_LOGICAL_UNIT_VISUAL_WIDTH_PX,
   getDogBlockVisualMetrics,
   renderDogBlock,
 } from "@/games/dog-lege-dog/game/game-renderer-blocks";
@@ -25,10 +21,6 @@ import {
 } from "@/games/dog-lege-dog/game/game-renderer-tray";
 
 export {
-  DOG_BLOCK_VISUAL_SIZE_PX,
-  DOG_BOARD_SAFE_MARGIN_PX,
-  DOG_LOGICAL_UNIT_VISUAL_HEIGHT_PX,
-  DOG_LOGICAL_UNIT_VISUAL_WIDTH_PX,
   fitDogBoardToFrame,
   getDogBlockVisualMetrics,
   renderDogBlock,

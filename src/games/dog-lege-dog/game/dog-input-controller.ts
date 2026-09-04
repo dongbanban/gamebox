@@ -19,13 +19,9 @@ export interface DogInputControllerOptions {
   readonly toggleSound: () => void;
 }
 
-export interface DogInputController {
-  destroy(): void;
-}
-
 export function bindDogInputController(
   options: DogInputControllerOptions,
-): DogInputController {
+) {
   const { root, runtime } = options;
 
   const handlePointerUp = (event: Event): void => {

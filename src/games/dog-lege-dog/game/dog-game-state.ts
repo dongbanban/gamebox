@@ -44,7 +44,6 @@ export function createDogGameState(
             ...runtime.loadoutEditor,
             draft: Object.freeze([...runtime.loadoutEditor.draft]),
           }),
-    debug: { elapsedMs: getElapsedMs(runtime.startedAt, runtime.endedAt) },
   };
 }
 
@@ -99,12 +98,4 @@ export function getItemEffectTripleCount(
   }
 
   return effect.tripleCount;
-}
-
-function getElapsedMs(startedAt: number | null, endedAt: number | null): number {
-  if (startedAt === null || endedAt === null) {
-    return 0;
-  }
-
-  return Math.max(0, endedAt - startedAt);
 }

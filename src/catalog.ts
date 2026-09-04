@@ -10,7 +10,6 @@ import type {
 } from "@/game-contracts";
 
 export type {
-  GameCatalogItem,
   GameDefinition,
   GameLaunchContext,
   GameLaunchHandle,

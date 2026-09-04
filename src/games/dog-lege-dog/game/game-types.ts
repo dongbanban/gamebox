@@ -17,9 +17,6 @@ export interface DogLegeDogGameState {
   readonly loadout: readonly DogItemId[] | null;
   readonly items: DogItemRuntimeSnapshot | null;
   readonly loadoutEditor: DogLoadoutEditorState | null;
-  readonly debug: {
-    readonly elapsedMs: number;
-  };
 }
 
 export type DogLoadoutEditorMode = "initial" | "change";

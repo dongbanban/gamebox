@@ -27,7 +27,6 @@ export interface DogItemAnimationCoordinatorOptions {
     DogGameRuntime,
     | "config"
     | "destroyed"
-    | "endedAt"
     | "inputLocked"
     | "itemAnimation"
     | "itemRuntime"
@@ -130,7 +129,6 @@ export class DogItemAnimationCoordinator {
     const completedEffect = itemRuntime?.getLastCompletedEffect();
     const result = this.options.createResult(runtime.session.getState().status);
     if (result !== null) {
-      runtime.endedAt = Date.now();
       runtime.inputLocked = true;
       this.options.confirmResult(result, false);
     }

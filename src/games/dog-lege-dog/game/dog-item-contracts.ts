@@ -13,7 +13,6 @@ import type {
   DogItemDefinition,
   DogItemId,
   DogItemTargetType,
-  DogItemVisualFeedback,
 } from "@/games/dog-lege-dog/game/dog-loadout";
 import type { DogV13Config } from "@/games/dog-lege-dog/game/v13-config";
 
@@ -58,7 +57,7 @@ export type DogItemExecutionContext = DogItemAvailabilityContext;
 
 export interface DogItemExecutionResult {
   readonly success: boolean;
-  readonly visualFeedback: DogItemVisualFeedback;
+  readonly visualFeedback: DogItemId;
   readonly commit?: () => boolean;
   readonly commitAfterAnimation?: () => DogItemAnimationCompletion;
   readonly effect?: DogItemEffect;
@@ -84,7 +83,7 @@ export interface DogItemRuntimeSnapshot {
   readonly phase: DogItemRuntimePhase;
   readonly selectedItemId: DogItemId | null;
   readonly selectedItemTargetType: DogItemTargetType | null;
-  readonly visualFeedback: DogItemVisualFeedback | null;
+  readonly visualFeedback: DogItemId | null;
   readonly tripleRemovalTargetBlockIds: readonly string[];
   readonly wildcardTargetBlockIds: readonly string[];
   readonly demagnetizerTargetBlockIds: readonly string[];

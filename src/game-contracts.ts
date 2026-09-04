@@ -101,5 +101,3 @@ export interface GameDefinition {
   readonly launch: GameLauncher;
   readonly resultDisplay: GameResultDisplayMetadata;
 }
-
-export type GameCatalogItem = GameDefinition;
