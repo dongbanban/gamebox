@@ -220,14 +220,14 @@ describe("DogItemRuntime · wildcard", () => {
   it("关卡失败后道具不可用且不扣次数", () => {
     const session = new GameSession({
       level: createLevel([createBlock("remaining", WORKING_DOG)]),
-      initialTray: [
-        WORKING_DOG,
-        SINGLE_DOG,
-        LICKING_DOG,
-        GUARD_DOG,
-        "拆家狗",
-        "龇牙狗",
-        "社恐狗",
+      initialTrayBlocks: [
+        { id: "initial-tray-1", patternType: WORKING_DOG },
+        { id: "initial-tray-2", patternType: SINGLE_DOG },
+        { id: "initial-tray-3", patternType: LICKING_DOG },
+        { id: "initial-tray-4", patternType: GUARD_DOG },
+        { id: "initial-tray-5", patternType: "拆家狗" },
+        { id: "initial-tray-6", patternType: "龇牙狗" },
+        { id: "initial-tray-7", patternType: "社恐狗" },
       ],
     });
     const runtime = new DogItemRuntime({

@@ -86,11 +86,11 @@ describe("特殊机制测试 · board-ui", () => {
     expect(boardBlock?.querySelector(".dog-block__mechanism-icon")).toBeNull();
     expect(boardBlock?.style.getPropertyValue("--dog-illusion-image")).toBe("");
 
-    const beforeTrayLength = game.getState().session.tray.length;
+    const beforeTrayLength = game.getState().session.trayBlocks.length;
     game.selectBlock(illusion.id);
 
     expect(game.getState().inputLocked).toBe(true);
-    expect(game.getState().session.tray).toHaveLength(beforeTrayLength + 1);
+    expect(game.getState().session.trayBlocks).toHaveLength(beforeTrayLength + 1);
     expect(
       root.querySelectorAll('[data-testid="dog-tray-slot"][data-pattern-type]'),
     ).toHaveLength(beforeTrayLength + 1);
@@ -121,7 +121,7 @@ describe("特殊机制测试 · board-ui", () => {
     );
     if (secondBlockId !== undefined) {
       game.selectBlock(secondBlockId);
-      expect(game.getState().session.tray).toHaveLength(beforeTrayLength + 1);
+      expect(game.getState().session.trayBlocks).toHaveLength(beforeTrayLength + 1);
     }
 
     await vi.advanceTimersByTimeAsync(BLOCK_FLIGHT_DURATION_MS);
@@ -241,7 +241,7 @@ describe("特殊机制测试 · board-ui", () => {
       await vi.runAllTimersAsync();
     }
 
-    const beforeTrayLength = game.getState().session.tray.length;
+    const beforeTrayLength = game.getState().session.trayBlocks.length;
     const ordinary = game.getState().session.remainingBlocks.find(
       (block) => block.specialMechanism === undefined,
     );
@@ -315,7 +315,7 @@ describe("特殊机制测试 · board-ui", () => {
       phase: "animating",
       selectedItemId: "detector",
     });
-    expect(game.getState().session.tray).toHaveLength(beforeTrayLength);
+    expect(game.getState().session.trayBlocks).toHaveLength(beforeTrayLength);
     expect(game.getState().session.remainingBlocks.find((block) => block.id === illusion.id))
       .toHaveProperty("specialMechanism.type", DOG_ILLUSION_MECHANISM_TYPE);
     const detectorReveal = root.querySelector<HTMLElement>('[data-testid="dog-detector-reveal"]');
@@ -333,7 +333,7 @@ describe("特殊机制测试 · board-ui", () => {
 
     await vi.advanceTimersByTimeAsync(DOG_DETECTOR_REVEAL_DURATION_MS - 1);
     expect(game.getState().inputLocked).toBe(true);
-    expect(game.getState().session.tray).toHaveLength(beforeTrayLength);
+    expect(game.getState().session.trayBlocks).toHaveLength(beforeTrayLength);
     expect(game.getState().session.remainingBlocks.find((block) => block.id === illusion.id))
       .toHaveProperty("specialMechanism.type", DOG_ILLUSION_MECHANISM_TYPE);
 
@@ -342,7 +342,7 @@ describe("特殊机制测试 · board-ui", () => {
 
     expect(game.getState().inputLocked).toBe(false);
     expect(game.getState().items?.phase).toBe("idle");
-    expect(game.getState().session.tray).toHaveLength(beforeTrayLength);
+    expect(game.getState().session.trayBlocks).toHaveLength(beforeTrayLength);
     expect(game.getState().session.remainingBlocks.find((block) => block.id === illusion.id))
       .not.toHaveProperty("specialMechanism");
     expect(

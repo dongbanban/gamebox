@@ -5,7 +5,11 @@ import {
   LevelGenerator,
   type DogPatternType,
 } from "@/games/dog-lege-dog";
-import { createBlock, createLevel, createFrozenTrayBlock } from "../support/game-session-fixtures";
+import {
+  createBlock,
+  createLevel,
+  createFrozenTrayBlock,
+} from "../support/game-session-fixtures";
 import { createBlockGraph } from "@/games/dog-lege-dog/levels/level-graph";
 import {
   createDogMagneticRandom,
@@ -61,13 +65,13 @@ describe("GameSession · wildcard-and-terminal", () => {
         createBlock("working-hidden", 0, 0, 0, WORKING_DOG),
         createBlock("single-cover", 0, 0, 1, SINGLE_DOG),
       ]),
-      initialTray: [
-        WORKING_DOG,
-        LICKING_DOG,
-        GUARD_DOG,
-        "拆家狗",
-        "龇牙狗",
-        "社恐狗",
+      initialTrayBlocks: [
+        { id: "initial-tray-1", patternType: WORKING_DOG },
+        { id: "initial-tray-2", patternType: LICKING_DOG },
+        { id: "initial-tray-3", patternType: GUARD_DOG },
+        { id: "initial-tray-4", patternType: "拆家狗" },
+        { id: "initial-tray-5", patternType: "龇牙狗" },
+        { id: "initial-tray-6", patternType: "社恐狗" },
       ],
     });
     const initial = session.getState();
@@ -92,7 +96,7 @@ describe("GameSession · wildcard-and-terminal", () => {
         createBlock("single-2", 8, 8, 0, SINGLE_DOG),
         createBlock("single-3", 16, 8, 0, SINGLE_DOG),
       ]),
-      initialTray: [WORKING_DOG],
+      initialTrayBlocks: [{ id: "initial-tray-1", patternType: WORKING_DOG }],
     });
 
     const beforeMeltPlan = session.getWildcardPlan(WORKING_DOG);
@@ -126,7 +130,7 @@ describe("GameSession · wildcard-and-terminal", () => {
 
     expect(state.status).toBe("won");
     expect(state.remainingBlocks).toEqual([]);
-    expect(state.tray).toEqual([]);
+    expect(state.trayBlocks).toEqual([]);
     expect(session.selectBlock("working-1")).toEqual(state);
   });
 
@@ -149,7 +153,7 @@ describe("GameSession · wildcard-and-terminal", () => {
 
     const wildcard = session.useWildcard(WORKING_DOG);
     expect(wildcard).toMatchObject({ used: true, removedCount: 3, tripleCount: 1 });
-    expect(wildcard.snapshot.tray).toEqual([]);
+    expect(wildcard.snapshot.trayBlocks).toEqual([]);
 
     let finalSelection = session.selectBlock("single-cover");
     for (const blockId of [
@@ -163,7 +167,7 @@ describe("GameSession · wildcard-and-terminal", () => {
     }
 
     expect(finalSelection.removedCount).toBe(0);
-    expect(finalSelection.snapshot.tray).toEqual([
+    expect(finalSelection.snapshot.trayBlocks.map((block) => block.patternType)).toEqual([
       SINGLE_DOG,
       LICKING_DOG,
       SINGLE_DOG,

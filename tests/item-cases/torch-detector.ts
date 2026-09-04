@@ -53,7 +53,7 @@ describe("DogItemRuntime · torch-detector", () => {
     expect(action).toMatchObject({ accepted: false, success: false });
     expect(runtime.getState().phase).toBe("targeting");
     expect(runtime.getState().items[0]?.remainingUses).toBe(1);
-    expect(session.getState().tray).toEqual([]);
+    expect(session.getState().trayBlocks).toEqual([]);
   });
 
   it("动画后原子提交失败时恢复次数且不留下完成效果", () => {

@@ -3,7 +3,6 @@ import {
 } from "@/games/dog-lege-dog/game/special-mechanisms";
 import {
   insertDogBlockIntoTray,
-  insertDogTrayBlock,
   prepareDogTrayBlocks,
   resolveDogTrayMatches,
 } from "@/games/dog-lege-dog/levels/level-rules";
@@ -112,7 +111,7 @@ export function insertDogMagneticBlocks(
   handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
 ): readonly string[] {
   for (const block of prepareDogTrayBlocks(sourceBlock, handlers)) {
-    insertDogTrayBlock(tray, block);
+    tray.push(block);
   }
 
   if (targetBlock === undefined) {
@@ -121,7 +120,7 @@ export function insertDogMagneticBlocks(
 
   const targetTrayBlockIds: string[] = [];
   for (const block of prepareDogTrayBlocks(targetBlock, handlers)) {
-    insertDogTrayBlock(tray, block);
+    tray.push(block);
     targetTrayBlockIds.push(block.id);
   }
   return Object.freeze(targetTrayBlockIds);

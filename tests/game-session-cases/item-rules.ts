@@ -6,7 +6,11 @@ import {
   type DogPatternType,
 } from "@/games/dog-lege-dog";
 import { TEST_LEVEL, TEST_PATTERN_TYPES } from "../support/dog-level-fixture";
-import { createBlock, createLevel, createFrozenTrayBlock } from "../support/game-session-fixtures";
+import {
+  createBlock,
+  createLevel,
+  createFrozenTrayBlock,
+} from "../support/game-session-fixtures";
 
 const WORKING_DOG: DogPatternType = "打工狗";
 const SINGLE_DOG: DogPatternType = "单身狗";
@@ -79,11 +83,11 @@ describe("GameSession · item-rules", () => {
         ]),
         lockedTraySlotCount: 2,
       },
-      initialTray: [
-        WORKING_DOG,
-        SINGLE_DOG,
-        LICKING_DOG,
-        GUARD_DOG,
+      initialTrayBlocks: [
+        { id: "initial-tray-1", patternType: WORKING_DOG },
+        { id: "initial-tray-2", patternType: SINGLE_DOG },
+        { id: "initial-tray-3", patternType: LICKING_DOG },
+        { id: "initial-tray-4", patternType: GUARD_DOG },
       ],
     });
 
@@ -104,7 +108,7 @@ describe("GameSession · item-rules", () => {
         createBlock("single-2", 16, 0, 0, SINGLE_DOG),
         createBlock("single-3", 24, 0, 0, SINGLE_DOG),
       ]),
-      initialTray: [WORKING_DOG],
+      initialTrayBlocks: [{ id: "initial-tray-1", patternType: WORKING_DOG }],
     });
 
     const plan = session.getWildcardPlan(WORKING_DOG);
@@ -254,7 +258,7 @@ describe("GameSession · item-rules", () => {
         createBlock("single-2", 8, 8, 0, SINGLE_DOG),
         createBlock("single-3", 16, 8, 0, SINGLE_DOG),
       ]),
-      initialTray: [WORKING_DOG],
+      initialTrayBlocks: [{ id: "initial-tray-1", patternType: WORKING_DOG }],
     });
 
     expect(session.getWildcardPlan(WORKING_DOG)).toBeNull();
@@ -281,7 +285,10 @@ describe("GameSession · item-rules", () => {
         createBlock("working-2", 8, 0, 0, WORKING_DOG),
         createBlock("working-3", 16, 0, 0, WORKING_DOG),
       ]),
-      initialTray: [WORKING_DOG, WORKING_DOG],
+      initialTrayBlocks: [
+        { id: "initial-tray-1", patternType: WORKING_DOG },
+        { id: "initial-tray-2", patternType: WORKING_DOG },
+      ],
     });
 
     expect(session.getWildcardPlan(WORKING_DOG)).toBeNull();
@@ -305,7 +312,7 @@ describe("GameSession · item-rules", () => {
         createBlock("single-2", 8, 8, 0, SINGLE_DOG),
         createBlock("single-3", 16, 8, 0, SINGLE_DOG),
       ]),
-      initialTray: [WORKING_DOG],
+      initialTrayBlocks: [{ id: "initial-tray-1", patternType: WORKING_DOG }],
     });
 
     expect(session.getWildcardPlan(WORKING_DOG)).toMatchObject({
@@ -326,12 +333,12 @@ describe("GameSession · item-rules", () => {
       ],
     });
 
-    expect(session.getTripleRemovalPlan(WORKING_DOG)).toMatchObject({
+    expect(session.getTripleRemovalPlanForTrayBlock("working-1")).toMatchObject({
       patternType: WORKING_DOG,
       tripleCount: 1,
     });
 
-    const result = session.removeTriple(WORKING_DOG);
+    const result = session.removeTripleForTrayBlock("working-1");
 
     expect(result).toMatchObject({
       removed: true,

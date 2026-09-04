@@ -102,7 +102,11 @@ describe("特殊机制测试 · core", () => {
     const beforeMatch = session.selectBlock("working-2");
 
     expect(beforeMatch.removedCount).toBe(0);
-    expect(beforeMatch.snapshot.tray).toEqual([WORKING_DOG, WORKING_DOG, WORKING_DOG]);
+    expect(beforeMatch.snapshot.trayBlocks.map((block) => block.patternType)).toEqual([
+      WORKING_DOG,
+      WORKING_DOG,
+      WORKING_DOG,
+    ]);
     expect(beforeMatch.snapshot.trayBlocks[0]?.specialMechanism?.type).toBe(
       DOG_FREEZE_MECHANISM_TYPE,
     );
@@ -118,11 +122,11 @@ describe("特殊机制测试 · core", () => {
     const secondTriple = selectAll(session, ["licking-1", "licking-2", "licking-3"]);
     expect(secondTriple.removedCount).toBe(3);
     expect(secondTriple.meltedBlockIds).toEqual([]);
-    expect(secondTriple.snapshot.tray).toEqual([WORKING_DOG]);
+    expect(secondTriple.snapshot.trayBlocks.map((block) => block.patternType)).toEqual([WORKING_DOG]);
 
     const finalTriple = selectAll(session, ["working-4", "working-5"]);
     expect(finalTriple.removedCount).toBe(3);
-    expect(finalTriple.snapshot.tray).toEqual([]);
+    expect(finalTriple.snapshot.trayBlocks).toEqual([]);
     expect(finalTriple.snapshot.status).toBe("won");
   });
 
@@ -275,7 +279,7 @@ describe("特殊机制测试 · core", () => {
     expect(result.removedCount).toBe(6);
     expect(result.tripleCount).toBe(2);
     expect(result.meltedBlockIds).toEqual(["freeze"]);
-    expect(result.snapshot.tray).toEqual([]);
+    expect(result.snapshot.trayBlocks).toEqual([]);
     expect(result.snapshot.status).toBe("playing");
   });
 

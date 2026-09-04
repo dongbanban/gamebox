@@ -267,9 +267,9 @@ describe("狗了个狗测试 · core", () => {
     expect(blockedBlock?.disabled).toBe(true);
     let matched = false;
     for (const blockId of level.solutionPath) {
-      const beforeTrayLength = game.getState().session.tray.length;
+      const beforeTrayLength = game.getState().session.trayBlocks.length;
       clickBlock(blockId);
-      const afterTrayLength = game.getState().session.tray.length;
+      const afterTrayLength = game.getState().session.trayBlocks.length;
       if (afterTrayLength < beforeTrayLength + 1) {
         matched = true;
         break;
@@ -278,7 +278,7 @@ describe("狗了个狗测试 · core", () => {
 
     expect(matched).toBe(true);
     expect(root.querySelectorAll('[data-testid="dog-tray-slot"][data-pattern-type]')).toHaveLength(
-      game.getState().session.tray.length,
+      game.getState().session.trayBlocks.length,
     );
     expect(
       [...root.querySelectorAll<HTMLElement>('[data-testid="dog-tray-slot"][data-pattern-type]')].every(

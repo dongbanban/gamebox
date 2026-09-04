@@ -2,7 +2,6 @@ import {
   type DogLegeDogLevel,
   type DogPatternType,
 } from "@/games/dog-lege-dog/levels/level-types";
-import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
 import { GameSessionMechanismActions } from "@/games/dog-lege-dog/game/game-session-mechanism-actions";
 import { GameSessionSelectionRuntime } from "@/games/dog-lege-dog/game/game-session-selection";
 import { GameSessionState } from "@/games/dog-lege-dog/game/game-session-state";
@@ -26,10 +25,6 @@ import type {
   GameSessionOptions,
 } from "@/games/dog-lege-dog/game/game-session-contracts";
 import { createUnlockResult } from "@/games/dog-lege-dog/game/game-session-results";
-
-export const GAME_SESSION_BASE_TRAY_CAPACITY = DOG_V13_CONFIG.tray.baseCapacity;
-export const GAME_SESSION_TRAY_CAPACITY = GAME_SESSION_BASE_TRAY_CAPACITY;
-export const GAME_SESSION_MAX_TRAY_CAPACITY = DOG_V13_CONFIG.tray.maxCapacity;
 
 export class GameSession {
   private readonly state: GameSessionState;
@@ -122,27 +117,8 @@ export class GameSession {
     return this.trayActions.getTripleRemovalTargetBlockIds();
   }
 
-  getTripleRemovalTargetPatterns(): readonly DogPatternType[] {
-    return this.trayActions.getTripleRemovalTargetPatterns();
-  }
-
-  getTripleRemovalPlan(patternType: DogPatternType): GameSessionTripleRemovalPlan | null {
-    return this.trayActions.getTripleRemovalPlan(patternType);
-  }
-
   getTripleRemovalPlanForTrayBlock(blockId: string): GameSessionTripleRemovalPlan | null {
     return this.trayActions.getTripleRemovalPlanForTrayBlock(blockId);
-  }
-
-  canRemoveTriple(patternType: DogPatternType): boolean {
-    return this.getTripleRemovalPlan(patternType) !== null;
-  }
-
-  removeTriple(patternType: DogPatternType): GameSessionTripleRemovalResult {
-    return this.runPlayerAction(
-      () => this.trayActions.removeTriple(patternType),
-      (result) => result.removed,
-    );
   }
 
   removeTripleForTrayBlock(blockId: string): GameSessionTripleRemovalResult {

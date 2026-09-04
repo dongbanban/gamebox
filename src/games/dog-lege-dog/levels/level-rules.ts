@@ -13,27 +13,6 @@ export interface DogRectangle {
   readonly height: number;
 }
 
-export function insertPatternIntoTray(
-  tray: DogPatternType[],
-  patternType: DogPatternType,
-): number {
-  tray.push(patternType);
-
-  return resolvePatternMatches(tray);
-}
-
-export function resolvePatternMatches(tray: DogPatternType[]): number {
-  let removedCount = 0;
-  while (true) {
-    const removalIndexes = getAdjacentTripleRemovalIndexes(tray, (patternType) => patternType);
-    if (removalIndexes.length === 0) {
-      return removedCount;
-    }
-
-    removedCount += removeItemsAtIndexes(tray, removalIndexes);
-  }
-}
-
 export interface DogTrayMatchResolution {
   readonly removedCount: number;
   readonly tripleCount: number;
@@ -51,24 +30,10 @@ export function insertDogBlockIntoTray(
   options: DogTrayMatchResolutionOptions = {},
 ): DogTrayMatchResolution {
   for (const trayBlock of prepareDogTrayBlocks(block, handlers)) {
-    insertDogTrayBlock(tray, trayBlock);
+    tray.push(trayBlock);
   }
 
   return resolveDogTrayMatches(tray, handlers, options);
-}
-
-export function insertDogTrayBlock(
-  tray: DogTrayBlock[],
-  block: DogTrayBlock,
-): void {
-  tray.push(block);
-}
-
-export function prepareDogTrayBlock(
-  block: DogTrayBlock,
-  handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
-): DogTrayBlock {
-  return prepareDogTrayBlocks(block, handlers)[0] ?? block;
 }
 
 export function prepareDogTrayBlocks(
@@ -187,15 +152,6 @@ export function isDogTrayBlockMatchable(
   }
 
   return getHandler(block, handlers).isMatchable(block.specialMechanism);
-}
-
-function getAdjacentTripleRemovalIndexes<T>(
-  items: readonly T[],
-  getMatchKey: (item: T) => string | undefined,
-): readonly number[] {
-  return getAdjacentMatchGroups(items, getMatchKey).flatMap(({ indexes }) =>
-    indexes.slice(0, Math.floor(indexes.length / 3) * 3),
-  );
 }
 
 function getAdjacentMatchGroups<T, K>(

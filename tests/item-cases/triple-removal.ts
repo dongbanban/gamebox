@@ -73,7 +73,7 @@ describe("DogItemRuntime · triple-removal", () => {
       loadout: ["triple-removal"],
     });
 
-    expect(session.getTripleRemovalTargetPatterns()).toEqual([]);
+    expect(runtime.getState().tripleRemovalTargetBlockIds).toEqual([]);
     expect(runtime.getState().items[0]).toMatchObject({
       available: false,
       remainingUses: 1,
@@ -94,7 +94,7 @@ describe("DogItemRuntime · triple-removal", () => {
         createBlock("working-1", WORKING_DOG),
         createBlock("working-2", WORKING_DOG),
       ]),
-      initialTray: [WORKING_DOG],
+      initialTrayBlocks: [{ id: "initial-tray-1", patternType: WORKING_DOG }],
     });
     const runtime = new DogItemRuntime({
       level: session.getState().level,
@@ -116,7 +116,7 @@ describe("DogItemRuntime · triple-removal", () => {
       "working-1",
       "working-2",
     ]);
-    expect(session.getState().tray).toEqual([WORKING_DOG]);
+    expect(session.getState().trayBlocks.map((block) => block.patternType)).toEqual([WORKING_DOG]);
   });
 
   it("道具选择暂存槽内任意位置的相邻图案对，并自动补 1 个棋盘方块", () => {
@@ -126,7 +126,11 @@ describe("DogItemRuntime · triple-removal", () => {
         createBlock("single-1", SINGLE_DOG),
         createBlock("single-2", SINGLE_DOG),
       ]),
-      initialTray: [WORKING_DOG, WORKING_DOG, SINGLE_DOG],
+      initialTrayBlocks: [
+        { id: "initial-tray-1", patternType: WORKING_DOG },
+        { id: "initial-tray-2", patternType: WORKING_DOG },
+        { id: "initial-tray-3", patternType: SINGLE_DOG },
+      ],
     });
     const runtime = new DogItemRuntime({
       level: session.getState().level,
@@ -218,7 +222,11 @@ describe("DogItemRuntime · triple-removal", () => {
         createBlock("single-1", SINGLE_DOG),
         createBlock("single-2", SINGLE_DOG),
       ]),
-      initialTray: [WORKING_DOG, SINGLE_DOG, WORKING_DOG],
+      initialTrayBlocks: [
+        { id: "initial-tray-1", patternType: WORKING_DOG },
+        { id: "initial-tray-2", patternType: SINGLE_DOG },
+        { id: "initial-tray-3", patternType: WORKING_DOG },
+      ],
     });
     const runtime = new DogItemRuntime({
       level: session.getState().level,
@@ -226,13 +234,17 @@ describe("DogItemRuntime · triple-removal", () => {
       loadout: ["triple-removal"],
     });
 
-    expect(session.getTripleRemovalTargetPatterns()).toEqual([]);
+    expect(runtime.getState().tripleRemovalTargetBlockIds).toEqual([]);
     expect(runtime.getState().items[0]).toMatchObject({ available: false, remainingUses: 1 });
     expect(runtime.begin("triple-removal")).toMatchObject({
       accepted: false,
       success: false,
     });
-    expect(session.getState().tray).toEqual([WORKING_DOG, SINGLE_DOG, WORKING_DOG]);
+    expect(session.getState().trayBlocks.map((block) => block.patternType)).toEqual([
+      WORKING_DOG,
+      SINGLE_DOG,
+      WORKING_DOG,
+    ]);
     expect(session.getState().remainingBlocks.map((block) => block.id)).toEqual([
       "working-board",
       "single-1",
@@ -251,7 +263,10 @@ describe("DogItemRuntime · triple-removal", () => {
         createBlock("single-1", SINGLE_DOG),
         createBlock("single-2", SINGLE_DOG),
       ]),
-      initialTray: [WORKING_DOG, WORKING_DOG],
+      initialTrayBlocks: [
+        { id: "initial-tray-1", patternType: WORKING_DOG },
+        { id: "initial-tray-2", patternType: WORKING_DOG },
+      ],
     });
     const runtime = new DogItemRuntime({
       level: session.getState().level,
@@ -278,13 +293,13 @@ describe("DogItemRuntime · triple-removal", () => {
         createBlock("orphan-2", SINGLE_DOG),
         createBlock("orphan-3", SINGLE_DOG),
       ]),
-      initialTray: [
-        WORKING_DOG,
-        LICKING_DOG,
-        GUARD_DOG,
-        "拆家狗",
-        "龇牙狗",
-        "社恐狗",
+      initialTrayBlocks: [
+        { id: "initial-tray-1", patternType: WORKING_DOG },
+        { id: "initial-tray-2", patternType: LICKING_DOG },
+        { id: "initial-tray-3", patternType: GUARD_DOG },
+        { id: "initial-tray-4", patternType: "拆家狗" },
+        { id: "initial-tray-5", patternType: "龇牙狗" },
+        { id: "initial-tray-6", patternType: "社恐狗" },
       ],
     });
     const runtime = new DogItemRuntime({

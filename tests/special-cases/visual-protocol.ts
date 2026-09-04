@@ -60,14 +60,21 @@ describe("特殊机制测试 · visual-protocol", () => {
           state: { status: "masked", disguisedPatternType: SINGLE_DOG },
         }),
       ]),
-      initialTray: [WORKING_DOG, WORKING_DOG],
+      initialTrayBlocks: [
+        { id: "initial-tray-1", patternType: WORKING_DOG },
+        { id: "initial-tray-2", patternType: WORKING_DOG },
+      ],
     });
 
     const pending = session.beginBlockSelection("illusion");
 
     expect(pending.selected).toBe(true);
     expect(pending.snapshot.status).toBe("playing");
-    expect(pending.snapshot.tray).toEqual([WORKING_DOG, WORKING_DOG, WORKING_DOG]);
+    expect(pending.snapshot.trayBlocks.map((block) => block.patternType)).toEqual([
+      WORKING_DOG,
+      WORKING_DOG,
+      WORKING_DOG,
+    ]);
     expect(pending.snapshot.trayBlocks[2]).toMatchObject({
       id: "illusion",
       patternType: WORKING_DOG,
@@ -79,7 +86,7 @@ describe("特殊机制测试 · visual-protocol", () => {
     const completed = session.completeBlockSelection();
 
     expect(completed.removedCount).toBe(3);
-    expect(completed.snapshot.tray).toEqual([]);
+    expect(completed.snapshot.trayBlocks).toEqual([]);
     expect(completed.snapshot.status).toBe("won");
   });
 

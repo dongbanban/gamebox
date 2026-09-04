@@ -163,7 +163,7 @@ describe("狗了个狗测试 · runtime", () => {
 
     let matched = false;
     for (const blockId of game.getState().level.solutionPath) {
-      const beforeTrayLength = game.getState().session.tray.length;
+      const beforeTrayLength = game.getState().session.trayBlocks.length;
       const loadoutThumbnailBeforeMatch = root.querySelector<HTMLElement>(
         '[data-testid="dog-loadout-thumbnail"][data-loadout-id="tray-capacity"]',
       );
@@ -176,7 +176,7 @@ describe("狗了个狗测试 · runtime", () => {
           `[data-testid="dog-block"][data-block-id="${blockId}"]`,
         )
         ?.dispatchEvent(new Event("pointerup", { bubbles: true, cancelable: true }));
-      const afterTrayLength = game.getState().session.tray.length;
+      const afterTrayLength = game.getState().session.trayBlocks.length;
       if (afterTrayLength < beforeTrayLength + 1) {
         matched = true;
         const loadoutThumbnailDuringMatch = root.querySelector<HTMLButtonElement>(
@@ -208,7 +208,7 @@ describe("狗了个狗测试 · runtime", () => {
     expect(root.querySelector('.dog-board-frame [data-testid="dog-match-effect"]')).toBeNull();
     expect(root.querySelectorAll('.dog-match-effect__spark')).toHaveLength(8);
     expect(root.textContent).not.toContain("三消");
-    expect(game.getState().session.tray.length).toBeLessThan(7);
+    expect(game.getState().session.trayBlocks.length).toBeLessThan(7);
 
     await vi.advanceTimersByTimeAsync(BLOCK_FLIGHT_DURATION_MS);
     expect(root.querySelector('[data-testid="dog-match-effect"]')).toBe(matchEffect);

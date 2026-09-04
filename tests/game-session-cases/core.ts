@@ -6,7 +6,11 @@ import {
   type DogPatternType,
 } from "@/games/dog-lege-dog";
 import { TEST_LEVEL, TEST_PATTERN_TYPES } from "../support/dog-level-fixture";
-import { createBlock, createLevel, createFrozenTrayBlock } from "../support/game-session-fixtures";
+import {
+  createBlock,
+  createLevel,
+  createFrozenTrayBlock,
+} from "../support/game-session-fixtures";
 
 const WORKING_DOG: DogPatternType = "打工狗";
 const SINGLE_DOG: DogPatternType = "单身狗";
@@ -33,7 +37,7 @@ describe("GameSession · core", () => {
     expect(selected.removedCount).toBe(0);
     expect(selected.status).toBe("playing");
     expect(selected.snapshot.level).toBe(level);
-    expect(selected.snapshot.tray).toEqual([WORKING_DOG]);
+    expect(selected.snapshot.trayBlocks.map((block) => block.patternType)).toEqual([WORKING_DOG]);
 
     const rejected = session.selectBlock("missing");
 
@@ -102,7 +106,11 @@ describe("GameSession · core", () => {
     const state = session.selectBlock("working-2");
 
     expect(state.removedCount).toBe(0);
-    expect(state.tray).toEqual([WORKING_DOG, SINGLE_DOG, WORKING_DOG]);
+    expect(state.trayBlocks.map((block) => block.patternType)).toEqual([
+      WORKING_DOG,
+      SINGLE_DOG,
+      WORKING_DOG,
+    ]);
     expect(state.remainingBlocks.map((block) => block.id)).toEqual(["remaining"]);
     expect(state.status).toBe("playing");
   });
@@ -122,7 +130,7 @@ describe("GameSession · core", () => {
     const state = session.selectBlock("working-3");
 
     expect(state.removedCount).toBe(3);
-    expect(state.tray).toEqual([]);
+    expect(state.trayBlocks).toEqual([]);
     expect(state.remainingBlocks.map((block) => block.id)).toEqual(["remaining"]);
     expect(state.status).toBe("playing");
     expect(state.selectableBlockIds).toEqual(["remaining"]);
@@ -134,19 +142,19 @@ describe("GameSession · core", () => {
         createBlock("remaining-1", 0, 0, 0, LICKING_DOG),
         createBlock("remaining-2", 2, 0, 0, GUARD_DOG),
       ]),
-      initialTray: [
-        WORKING_DOG,
-        WORKING_DOG,
-        WORKING_DOG,
-        SINGLE_DOG,
-        SINGLE_DOG,
-        SINGLE_DOG,
+      initialTrayBlocks: [
+        { id: "initial-tray-1", patternType: WORKING_DOG },
+        { id: "initial-tray-2", patternType: WORKING_DOG },
+        { id: "initial-tray-3", patternType: WORKING_DOG },
+        { id: "initial-tray-4", patternType: SINGLE_DOG },
+        { id: "initial-tray-5", patternType: SINGLE_DOG },
+        { id: "initial-tray-6", patternType: SINGLE_DOG },
       ],
     });
 
     const state = session.getState();
 
-    expect(state.tray).toEqual([]);
+    expect(state.trayBlocks).toEqual([]);
     expect(state.status).toBe("playing");
     expect(state.selectableBlockIds).toEqual(["remaining-1", "remaining-2"]);
   });
@@ -174,8 +182,13 @@ describe("GameSession · core", () => {
     const state = session.selectBlock("working-3");
 
     expect(state.status).toBe("playing");
-    expect(state.tray).toEqual([SINGLE_DOG, SINGLE_DOG, LICKING_DOG, GUARD_DOG]);
-    expect(state.tray).toHaveLength(4);
+    expect(state.trayBlocks.map((block) => block.patternType)).toEqual([
+      SINGLE_DOG,
+      SINGLE_DOG,
+      LICKING_DOG,
+      GUARD_DOG,
+    ]);
+    expect(state.trayBlocks).toHaveLength(4);
   });
 
   it("暂存槽满且无法三消时失败", () => {
@@ -206,7 +219,7 @@ describe("GameSession · core", () => {
     const state = session.selectBlock("licking-2");
 
     expect(state.status).toBe("lost");
-    expect(state.tray).toHaveLength(7);
+    expect(state.trayBlocks).toHaveLength(7);
     expect(state.remainingBlocks.map((block) => block.id)).toEqual(["remaining"]);
     expect(session.canSelectBlock("remaining")).toBe(false);
   });

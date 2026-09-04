@@ -13,7 +13,6 @@ export type GameSessionStatus = "playing" | "won" | "lost";
 export interface GameSessionOptions {
   readonly level: DogLegeDogLevel;
   readonly config?: DogV13Config;
-  readonly initialTray?: readonly DogPatternType[];
   readonly initialTrayBlocks?: readonly DogTrayBlock[];
   readonly initialTrayCapacity?: number;
   readonly specialMechanismHandlers?: readonly DogSpecialMechanismHandler[];
@@ -23,7 +22,6 @@ export interface GameSessionSnapshot {
   readonly status: GameSessionStatus;
   readonly level: DogLegeDogLevel;
   readonly remainingBlocks: readonly DogBlock[];
-  readonly tray: readonly DogPatternType[];
   readonly trayBlocks: readonly DogTrayBlock[];
   readonly trayCapacity: number;
   readonly effectiveTrayCapacity: number;

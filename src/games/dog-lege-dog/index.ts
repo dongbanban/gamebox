@@ -1,7 +1,4 @@
 export {
-  GAME_SESSION_BASE_TRAY_CAPACITY,
-  GAME_SESSION_MAX_TRAY_CAPACITY,
-  GAME_SESSION_TRAY_CAPACITY,
   GameSession,
 } from "@/games/dog-lege-dog/game/game-session";
 export type {

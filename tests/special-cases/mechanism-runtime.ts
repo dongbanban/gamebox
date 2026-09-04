@@ -75,7 +75,11 @@ describe("特殊机制测试 · mechanism-runtime", () => {
       await vi.runAllTimersAsync();
     }
 
-    expect(game.getState().session.tray).toEqual([WORKING_DOG, WORKING_DOG, SINGLE_DOG]);
+    expect(game.getState().session.trayBlocks.map((block) => block.patternType)).toEqual([
+      WORKING_DOG,
+      WORKING_DOG,
+      SINGLE_DOG,
+    ]);
     expect(
       root.querySelector<HTMLButtonElement>('[data-action="use-item"][data-item-id="triple-removal"]')
         ?.disabled,
@@ -166,7 +170,6 @@ describe("特殊机制测试 · mechanism-runtime", () => {
       removedCount: 3,
       tripleCount: 1,
     });
-    expect(result.snapshot.tray).toEqual([]);
     expect(result.snapshot.trayBlocks).toEqual([]);
   });
 

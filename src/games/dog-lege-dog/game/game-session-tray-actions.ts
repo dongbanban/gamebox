@@ -26,11 +26,8 @@ import {
   createTripleRemovalResult,
   createWildcardResult,
 } from "@/games/dog-lege-dog/game/game-session-results";
-import {
-  cloneTrayBlock,
-  toTrayBlock,
-  type GameSessionState,
-} from "@/games/dog-lege-dog/game/game-session-state";
+import type { GameSessionState } from "@/games/dog-lege-dog/game/game-session-state";
+import { cloneDogTrayBlock } from "@/games/dog-lege-dog/levels/level-tray-block";
 
 interface InternalWildcardPlan extends GameSessionWildcardPlan {
   readonly nextTray: readonly DogTrayBlock[];
@@ -108,7 +105,7 @@ export class GameSessionTrayActions {
       this.clearCaches();
       return createFailedWildcardResult(this.state.getState(), patternType);
     }
-    this.state.tray.splice(0, this.state.tray.length, ...plan.nextTray.map(cloneTrayBlock));
+    this.state.tray.splice(0, this.state.tray.length, ...plan.nextTray.map(cloneDogTrayBlock));
     this.wildcardSequence = plan.wildcardSequence;
     this.clearCaches();
     this.state.updateResult();
@@ -132,40 +129,6 @@ export class GameSessionTrayActions {
     return Object.freeze(targetBlockIds);
   }
 
-  getTripleRemovalTargetPatterns(): readonly DogPatternType[] {
-    const patterns: DogPatternType[] = [];
-    for (let index = 0; index < this.state.tray.length - 1; index += 1) {
-      const first = this.state.tray[index];
-      const second = this.state.tray[index + 1];
-      if (
-        !isOrdinaryMatchingPair(first, second) ||
-        patterns.includes(first.patternType) ||
-        this.getTripleRemovalPlanForTrayBlock(first.id) === null
-      ) {
-        continue;
-      }
-      patterns.push(first.patternType);
-    }
-    return Object.freeze(patterns);
-  }
-
-  getTripleRemovalPlan(patternType: DogPatternType): GameSessionTripleRemovalPlan | null {
-    for (let index = 0; index < this.state.tray.length - 1; index += 1) {
-      const first = this.state.tray[index];
-      const second = this.state.tray[index + 1];
-      if (
-        first?.patternType === patternType &&
-        isOrdinaryMatchingPair(first, second)
-      ) {
-        const plan = this.getTripleRemovalPlanForTrayBlock(first.id);
-        if (plan !== null) {
-          return plan;
-        }
-      }
-    }
-    return null;
-  }
-
   getTripleRemovalPlanForTrayBlock(blockId: string): GameSessionTripleRemovalPlan | null {
     let index = this.state.tray.findIndex((block) => block.id === blockId);
     let first = this.state.tray[index];
@@ -187,14 +150,6 @@ export class GameSessionTrayActions {
     const plan = this.findTripleRemovalPlan([first.id, second.id]);
     this.tripleRemovalPlanCache.set(cacheKey, plan);
     return plan;
-  }
-
-  removeTriple(patternType: DogPatternType): GameSessionTripleRemovalResult {
-    const plan = this.getTripleRemovalPlan(patternType);
-    if (plan === null) {
-      return this.failedTripleRemoval(patternType);
-    }
-    return this.removeTripleForTrayBlock(plan.trayBlockIds[0] ?? "");
   }
 
   removeTripleForTrayBlock(blockId: string): GameSessionTripleRemovalResult {
@@ -283,7 +238,7 @@ export class GameSessionTrayActions {
     const solvabilityLevel = this.state.getCurrentSolvabilityLevel();
     const wildcardIdentity = this.getNextWildcardIdentity();
     for (const compensatedBlock of compensatedCandidates) {
-      const nextTray = this.state.tray.map(cloneTrayBlock);
+      const nextTray = this.state.tray.map(cloneDogTrayBlock);
       const resolution = resolveWildcardTrayInsertion(
         nextTray,
         { id: wildcardIdentity.id, patternType, visualMarker: "wildcard" },
@@ -317,7 +272,7 @@ export class GameSessionTrayActions {
         removedCount: resolution.removedCount,
         tripleCount: resolution.tripleCount,
         meltedBlockIds: Object.freeze([...resolution.meltedBlockIds]),
-        nextTray: Object.freeze(nextTray.map(cloneTrayBlock)),
+        nextTray: Object.freeze(nextTray.map(cloneDogTrayBlock)),
         wildcardSequence: wildcardIdentity.sequence,
       });
     }
@@ -378,7 +333,7 @@ export class GameSessionTrayActions {
     for (const candidate of candidates) {
       const simulatedTray = this.state.tray
         .filter((block) => !trayBlockIds.includes(block.id))
-        .map(cloneTrayBlock);
+        .map(cloneDogTrayBlock);
       const solvability = findSolvabilityFromState(solvabilityLevel, {
         remainingBlockIds: [...this.state.remainingBlocks.keys()].filter(
           (blockId) => blockId !== candidate.id,

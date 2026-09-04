@@ -86,7 +86,6 @@ export class DogItemRuntime {
   }
 
   getState(): DogItemRuntimeSnapshot {
-    const tripleRemovalTargetPatterns = this.session.getTripleRemovalTargetPatterns();
     const tripleRemovalTargetBlockIds = this.session.getTripleRemovalTargetBlockIds();
     const wildcardTargetBlockIds = this.selectedItemId === "wildcard"
       ? this.session.getWildcardTargetBlockIds()
@@ -126,7 +125,6 @@ export class DogItemRuntime {
         ? null
         : this.getDefinition(this.selectedItemId).definition.targetType,
       visualFeedback: this.visualFeedback,
-      tripleRemovalTargetPatterns,
       tripleRemovalTargetBlockIds,
       wildcardTargetBlockIds,
       demagnetizerTargetBlockIds,

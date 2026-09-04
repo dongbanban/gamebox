@@ -91,7 +91,7 @@ describe("DogItemRuntime · basic", () => {
       accepted: false,
       success: false,
     });
-    expect(session.getState().tray).toEqual([]);
+    expect(session.getState().trayBlocks).toEqual([]);
   });
 
   it("钥匙在合格三消后按独立随机流掉落并逐格解锁", () => {

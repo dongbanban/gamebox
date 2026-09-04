@@ -86,9 +86,6 @@ export class GameSessionState {
       throw new Error("GameSession locked tray slots cannot exceed tray capacity");
     }
     validateMechanismHandlers(this.level.blocks, this.specialMechanismHandlers);
-    if (options.initialTray !== undefined && options.initialTrayBlocks !== undefined) {
-      throw new Error("GameSession cannot receive both initialTray and initialTrayBlocks");
-    }
     if (
       options.initialTrayBlocks?.some(
         (block) => block.specialMechanism?.type === "illusion",
@@ -96,14 +93,9 @@ export class GameSessionState {
     ) {
       throw new Error("GameSession illusion blocks cannot start in the tray");
     }
-    this.tray = options.initialTrayBlocks === undefined
-      ? (options.initialTray ?? []).map((patternType, index) => ({
-          id: `initial-tray-${index + 1}`,
-          patternType,
-        }))
-      : options.initialTrayBlocks.flatMap((block) =>
-          prepareDogTrayBlocks({ ...block }, this.specialMechanismHandlers),
-        );
+    this.tray = options.initialTrayBlocks?.flatMap((block) =>
+      prepareDogTrayBlocks({ ...block }, this.specialMechanismHandlers),
+    ) ?? [];
 
     for (const block of this.level.blocks) {
       if (this.remainingBlocks.has(block.id)) {
@@ -147,14 +139,13 @@ export class GameSessionState {
 
   getState(): GameSessionSnapshot {
     const remainingBlocks = Object.freeze([...this.remainingBlocks.values()]);
-    const trayBlocks = Object.freeze(this.getVisibleTrayBlocks().map(cloneTrayBlock));
+    const trayBlocks = Object.freeze(this.getVisibleTrayBlocks().map(cloneDogTrayBlock));
     const effectiveTrayCapacity = this.getEffectiveTrayCapacity();
 
     return Object.freeze({
       status: this.status,
       level: this.level,
       remainingBlocks,
-      tray: Object.freeze(trayBlocks.map((block) => block.patternType)),
       trayBlocks,
       trayCapacity: this.trayCapacity,
       effectiveTrayCapacity,
@@ -409,8 +400,6 @@ export class GameSessionState {
     });
   }
 }
-
-export const cloneTrayBlock = cloneDogTrayBlock;
 
 export function toTrayBlock(block: DogBlock): DogTrayBlock {
   return {

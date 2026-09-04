@@ -78,7 +78,7 @@ describe("特殊机制测试 · selection-runtime", () => {
     const triple = session.selectBlock("working-2");
 
     expect(triple.removedCount).toBe(3);
-    expect(triple.snapshot.tray).toEqual([]);
+    expect(triple.snapshot.trayBlocks).toEqual([]);
   });
 
   it("特殊方块入槽追加并保持点击相对顺序", () => {
@@ -154,17 +154,17 @@ describe("特殊机制测试 · selection-runtime", () => {
           state: { status: "twin" },
         }),
       ]),
-      initialTray: [
-        WORKING_DOG,
-        SINGLE_DOG,
-        LICKING_DOG,
-        "看门狗",
-        WORKING_DOG,
-        SINGLE_DOG,
+      initialTrayBlocks: [
+        { id: "initial-tray-1", patternType: WORKING_DOG },
+        { id: "initial-tray-2", patternType: SINGLE_DOG },
+        { id: "initial-tray-3", patternType: LICKING_DOG },
+        { id: "initial-tray-4", patternType: "看门狗" },
+        { id: "initial-tray-5", patternType: WORKING_DOG },
+        { id: "initial-tray-6", patternType: SINGLE_DOG },
       ],
     });
 
-    expect(session.getState().tray).toHaveLength(6);
+    expect(session.getState().trayBlocks).toHaveLength(6);
     expect(session.canSelectBlock("twin")).toBe(true);
 
     const result = session.selectBlock("twin");
@@ -241,7 +241,10 @@ describe("特殊机制测试 · selection-runtime", () => {
     });
     const session = new GameSession({
       level: createLevel([source, target, createBlock("remaining", 8, 0, LICKING_DOG)]),
-      initialTray: [WORKING_DOG, WORKING_DOG],
+      initialTrayBlocks: [
+        { id: "initial-tray-1", patternType: WORKING_DOG },
+        { id: "initial-tray-2", patternType: WORKING_DOG },
+      ],
     });
 
     const pending = session.beginBlockSelection(source.id);
@@ -386,13 +389,13 @@ describe("特殊机制测试 · selection-runtime", () => {
 
     const failureSession = new GameSession({
       level: createMagneticLevel("magnetic-failure-seed"),
-      initialTray: [
-        WORKING_DOG,
-        SINGLE_DOG,
-        LICKING_DOG,
-        "看门狗",
-        "疯狗",
-        "拆家狗",
+      initialTrayBlocks: [
+        { id: "initial-tray-1", patternType: WORKING_DOG },
+        { id: "initial-tray-2", patternType: SINGLE_DOG },
+        { id: "initial-tray-3", patternType: LICKING_DOG },
+        { id: "initial-tray-4", patternType: "看门狗" },
+        { id: "initial-tray-5", patternType: "疯狗" },
+        { id: "initial-tray-6", patternType: "拆家狗" },
       ],
     });
     const failure = failureSession.selectBlock("magnetic");

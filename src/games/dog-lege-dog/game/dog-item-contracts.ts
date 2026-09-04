@@ -90,7 +90,6 @@ export interface DogItemRuntimeSnapshot {
   readonly selectedItemId: DogItemId | null;
   readonly selectedItemTargetType: DogItemTargetType | null;
   readonly visualFeedback: DogItemVisualFeedback | null;
-  readonly tripleRemovalTargetPatterns: readonly DogPatternType[];
   readonly tripleRemovalTargetBlockIds: readonly string[];
   readonly wildcardTargetBlockIds: readonly string[];
   readonly demagnetizerTargetBlockIds: readonly string[];
