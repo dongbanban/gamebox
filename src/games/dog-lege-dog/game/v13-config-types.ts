@@ -148,7 +148,6 @@ export interface DogV13ParticleEffectProfile {
 
 export interface DogV13ItemCopy {
   readonly name: string;
-  readonly icon: string;
   readonly description: string;
 }
 

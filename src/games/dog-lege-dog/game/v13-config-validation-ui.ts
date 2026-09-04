@@ -173,7 +173,6 @@ function validateItemCopyMap(
       continue;
     }
     validateNonEmptyString(item.name, `${path}.${key}.name`, issues);
-    validateNonEmptyString(item.icon, `${path}.${key}.icon`, issues);
     validateNonEmptyString(item.description, `${path}.${key}.description`, issues);
   }
 }

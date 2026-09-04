@@ -19,7 +19,6 @@ import {
 } from "@/games/dog-lege-dog/game/dog-loadout";
 import {
   DogItemRuntime,
-  getDogItemUses,
   type DogItemRuntimeDefinition,
   type DogItemTarget,
 } from "@/games/dog-lege-dog/game/dog-item-runtime";
@@ -95,7 +94,6 @@ describe("DogItemRuntime · wildcard", () => {
 
     expect(runtime.getState().items[0]).toMatchObject({
       id: "wildcard",
-      targetType: "tray-block",
       remainingUses: 1,
       available: true,
     });

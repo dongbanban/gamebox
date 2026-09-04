@@ -206,7 +206,7 @@ describe("特殊机制测试 · shuffle-ui", () => {
 
     const shuffledIds = game.getState().session.trayBlocks.map((block) => block.id);
     expect(game.getState().items?.items.find((item) => item.id === "restore-whistle"))
-      .toMatchObject({ available: true, remainingUses: 1, targetType: "none" });
+      .toMatchObject({ available: true, remainingUses: 1 });
     const whistle = root.querySelector<HTMLButtonElement>('[data-item-id="restore-whistle"]');
     expect(whistle?.disabled).toBe(false);
     expect(whistle?.getAttribute("aria-label")).toContain("复原哨");

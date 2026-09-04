@@ -3,6 +3,7 @@ import {
   DOG_FREEZE_MECHANISM_TYPE,
   DOG_ILLUSION_MECHANISM_TYPE,
   DOG_MAGNETIC_MECHANISM_TYPE,
+  getDogV13ItemUses,
   GameSession,
   type DogBlock,
   type DogLegeDogLevel,
@@ -19,7 +20,6 @@ import {
 } from "@/games/dog-lege-dog/game/dog-loadout";
 import {
   DogItemRuntime,
-  getDogItemUses,
   type DogItemRuntimeDefinition,
   type DogItemTarget,
 } from "@/games/dog-lege-dog/game/dog-item-runtime";
@@ -43,8 +43,8 @@ describe("DogItemRuntime · basic", () => {
     } satisfies DogLegeDogLevel;
 
     const nonKeyItemIds = DOG_ITEM_IDS.filter((itemId) => itemId !== "key");
-    expect(nonKeyItemIds.every((itemId) => getDogItemUses(level, itemId) === 1)).toBe(true);
-    expect(getDogItemUses(level, "key")).toBe(0);
+    expect(nonKeyItemIds.every((itemId) => getDogV13ItemUses(itemId) === 1)).toBe(true);
+    expect(getDogV13ItemUses("key")).toBe(0);
 
     const session = new GameSession(level);
     const runtime = new DogItemRuntime({
@@ -54,7 +54,7 @@ describe("DogItemRuntime · basic", () => {
     });
     expect(runtime.getState().items).toEqual(
       expect.arrayContaining(
-        nonKeyItemIds.map((id) => expect.objectContaining({ id, maxUses: 1, remainingUses: 1 })),
+        nonKeyItemIds.map((id) => expect.objectContaining({ id, remainingUses: 1 })),
       ),
     );
   });
@@ -71,14 +71,11 @@ describe("DogItemRuntime · basic", () => {
     expect(runtime.getState().items).toEqual([
       expect.objectContaining({
         id: "key",
-        targetType: "none",
-        maxUses: 0,
         remainingUses: 0,
         available: false,
       }),
       expect.objectContaining({
         id: "demagnetizer",
-        targetType: "block",
         remainingUses: 1,
         available: false,
       }),
@@ -115,7 +112,6 @@ describe("DogItemRuntime · basic", () => {
     });
 
     expect(runtime.getState().items.find((item) => item.id === "key")).toMatchObject({
-      maxUses: 2,
       remainingUses: 0,
       available: false,
     });
@@ -360,7 +356,6 @@ describe("DogItemRuntime · basic", () => {
 
     expect(runtime.getState().items[0]).toMatchObject({
       id: "tray-capacity",
-      targetType: "none",
       remainingUses: 1,
       available: true,
     });

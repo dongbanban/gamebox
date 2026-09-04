@@ -15,6 +15,7 @@ import {
 } from "@/games/dog-lege-dog/assets/game-assets";
 import {
   DOG_V13_CONFIG,
+  getDogV13ItemUses,
   type DogV13Config,
 } from "@/games/dog-lege-dog/game/v13-config";
 import {
@@ -22,7 +23,6 @@ import {
   renderDogLoadoutEditor,
   type DogItemId,
 } from "@/games/dog-lege-dog/game/dog-loadout";
-import { getDogItemUses } from "@/games/dog-lege-dog/game/dog-item-runtime";
 
 export function renderRegistrationView(
   snapshot: StoreSnapshot,
@@ -249,7 +249,7 @@ export function renderResultLoadoutEditor({
     itemUses: Object.fromEntries(
       DOG_ITEM_DEFINITIONS.map((item) => [
         item.id,
-        getDogItemUses({ number: levelNumber }, item.id, config),
+        getDogV13ItemUses(item.id, config),
       ]),
     ),
   });

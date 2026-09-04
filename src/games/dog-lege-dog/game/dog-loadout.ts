@@ -21,21 +21,19 @@ export type DogItemVisualFeedback = DogItemId;
 export interface DogItemDefinition {
   readonly id: DogItemId;
   readonly name: string;
-  readonly icon: string;
   readonly description: string;
   readonly targetType: DogItemTargetType;
-  readonly visualFeedback: DogItemVisualFeedback;
 }
 
-const DOG_ITEM_RULES: readonly Pick<DogItemDefinition, "id" | "targetType" | "visualFeedback">[] = [
-  { id: "triple-removal", targetType: "tray-block", visualFeedback: "triple-removal" },
-  { id: "tray-capacity", targetType: "none", visualFeedback: "tray-capacity" },
-  { id: "wildcard", targetType: "tray-block", visualFeedback: "wildcard" },
-  { id: "torch", targetType: "block", visualFeedback: "torch" },
-  { id: "detector", targetType: "block", visualFeedback: "detector" },
-  { id: "demagnetizer", targetType: "block", visualFeedback: "demagnetizer" },
-  { id: "key", targetType: "none", visualFeedback: "key" },
-  { id: "restore-whistle", targetType: "none", visualFeedback: "restore-whistle" },
+const DOG_ITEM_RULES: readonly Pick<DogItemDefinition, "id" | "targetType">[] = [
+  { id: "triple-removal", targetType: "tray-block" },
+  { id: "tray-capacity", targetType: "none" },
+  { id: "wildcard", targetType: "tray-block" },
+  { id: "torch", targetType: "block" },
+  { id: "detector", targetType: "block" },
+  { id: "demagnetizer", targetType: "block" },
+  { id: "key", targetType: "none" },
+  { id: "restore-whistle", targetType: "none" },
 ];
 
 export const DOG_ITEM_DEFINITIONS: readonly DogItemDefinition[] = Object.freeze(
@@ -256,8 +254,6 @@ export function renderDogLoadoutSummary(
             type="button"
             data-action="use-item"
             data-item-id="${itemId}"
-            data-item-target-type="${item.targetType}"
-            data-item-feedback="${item.visualFeedback}"
             data-testid="dog-loadout-thumbnail"
             data-loadout-id="${itemId}"
             data-item-available="${available}"

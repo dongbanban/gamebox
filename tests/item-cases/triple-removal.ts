@@ -19,7 +19,6 @@ import {
 } from "@/games/dog-lege-dog/game/dog-loadout";
 import {
   DogItemRuntime,
-  getDogItemUses,
   type DogItemRuntimeDefinition,
   type DogItemTarget,
 } from "@/games/dog-lege-dog/game/dog-item-runtime";
@@ -139,7 +138,6 @@ describe("DogItemRuntime · triple-removal", () => {
     });
 
     expect(runtime.getState().items[0]).toMatchObject({
-      targetType: "tray-block",
       available: true,
     });
     expect(runtime.getState().tripleRemovalTargetBlockIds).toEqual([

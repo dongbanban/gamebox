@@ -4,9 +4,9 @@ import {
   renderDogLoadoutSummary,
   type DogItemId,
 } from "@/games/dog-lege-dog/game/dog-loadout";
-import { getDogItemUses } from "@/games/dog-lege-dog/game/dog-item-runtime";
 import {
   DOG_V13_CONFIG,
+  getDogV13ItemUses,
   type DogV13Config,
 } from "@/games/dog-lege-dog/game/v13-config";
 import type { DogLegeDogGameState } from "@/games/dog-lege-dog/game/game-types";
@@ -25,7 +25,7 @@ export function renderDogLoadoutArea(
       config,
       loadoutSize: config.items.loadoutSize,
       itemUses: Object.fromEntries(
-        DOG_ITEM_DEFINITIONS.map((item) => [item.id, getDogItemUses(state.level, item.id, config)]),
+        DOG_ITEM_DEFINITIONS.map((item) => [item.id, getDogV13ItemUses(item.id, config)]),
       ),
     });
   }

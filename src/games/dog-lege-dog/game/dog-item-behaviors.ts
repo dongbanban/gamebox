@@ -1,7 +1,4 @@
-import type {
-  DogLegeDogLevel,
-  DogPatternType,
-} from "@/games/dog-lege-dog/levels/level-types";
+import type { DogPatternType } from "@/games/dog-lege-dog/levels/level-types";
 import type {
   GameSession,
   GameSessionMeltLocation,
@@ -11,16 +8,12 @@ import type {
 import {
   DOG_ITEM_DEFINITIONS,
   getDogItemDefinition,
-  type DogItemDefinition,
   type DogItemId,
 } from "@/games/dog-lege-dog/game/dog-loadout";
 import {
   DOG_V13_CONFIG,
   type DogV13Config,
 } from "@/games/dog-lege-dog/game/v13-config";
-import {
-  getDogItemUses,
-} from "@/games/dog-lege-dog/game/dog-item-quota";
 import type {
   DogItemAnimationCompletion,
   DogItemAvailabilityContext,
@@ -263,15 +256,11 @@ export function createDogItemRuntimeDefinitions(
       const definition = getDogItemDefinition(baseDefinition.id, config);
       return Object.freeze({
         definition,
-        getUses: (level: DogLegeDogLevel, runtimeConfig = config) =>
-          getDogItemUses(level, definition.id, runtimeConfig),
         ...DOG_ITEM_BEHAVIORS[definition.id],
       });
     }),
   );
 }
-
-export const DOG_ITEM_RUNTIME_DEFINITIONS = createDogItemRuntimeDefinitions();
 
 function toWildcardEffect(
   resolution: GameSessionWildcardResolution,

@@ -27,7 +27,6 @@ describe("DogItemRuntime · restore-whistle", () => {
 
     expect(runtime.getState().items[0]).toMatchObject({
       id: "restore-whistle",
-      targetType: "none",
       remainingUses: 1,
       available: false,
     });

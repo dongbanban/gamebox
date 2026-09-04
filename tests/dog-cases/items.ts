@@ -180,7 +180,6 @@ describe("狗了个狗测试 · items", () => {
     }
 
     expect(game.getState().items?.items.find((item) => item.id === "key")).toMatchObject({
-      maxUses: 2,
       remainingUses: 1,
       available: true,
     });

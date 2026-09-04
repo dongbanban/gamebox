@@ -236,9 +236,7 @@ export type {
   DogItemVisualFeedback,
 } from "@/games/dog-lege-dog/game/dog-loadout";
 export {
-  DOG_ITEM_RUNTIME_DEFINITIONS,
   DogItemRuntime,
-  getDogItemUses,
 } from "@/games/dog-lege-dog/game/dog-item-runtime";
 export type {
   DogItemAnimationCompletion,

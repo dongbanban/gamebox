@@ -24,7 +24,7 @@ describe("狗了个狗道具组", () => {
       "restore-whistle",
     ]);
     expect(DOG_ITEM_DEFINITIONS).toHaveLength(8);
-    expect(DOG_ITEM_DEFINITIONS.every((item) => item.name && item.description && item.icon)).toBe(true);
+    expect(DOG_ITEM_DEFINITIONS.every((item) => item.name && item.description)).toBe(true);
     expect(DOG_ITEM_DEFINITIONS.map((item) => item.targetType)).toEqual([
       "tray-block",
       "none",

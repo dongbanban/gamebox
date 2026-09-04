@@ -66,7 +66,7 @@ export interface DogItemExecutionResult {
 
 export interface DogItemRuntimeDefinition {
   readonly definition: DogItemDefinition;
-  readonly getUses: (level: DogLegeDogLevel, config?: DogV13Config) => number;
+  readonly getUses?: (level: DogLegeDogLevel, config?: DogV13Config) => number;
   readonly canUse: (context: DogItemAvailabilityContext) => boolean;
   readonly execute: (context: DogItemExecutionContext) => DogItemExecutionResult;
 }
@@ -76,11 +76,6 @@ export type DogItemRuntimePhase = "idle" | "targeting" | "animating";
 export interface DogItemState {
   readonly id: DogItemId;
   readonly name: string;
-  readonly icon: string;
-  readonly description: string;
-  readonly targetType: DogItemTargetType;
-  readonly visualFeedback: DogItemVisualFeedback;
-  readonly maxUses: number;
   readonly remainingUses: number;
   readonly available: boolean;
 }

@@ -16,18 +16,15 @@ import {
 import { SeededRandom } from "@/games/dog-lege-dog/levels/level-random";
 import {
   createDogItemRuntimeDefinitions,
-  DOG_ITEM_RUNTIME_DEFINITIONS,
 } from "@/games/dog-lege-dog/game/dog-item-behaviors";
-import { getDogItemUses, normalizeDogItemUses } from "@/games/dog-lege-dog/game/dog-item-quota";
+import { normalizeDogItemUses } from "@/games/dog-lege-dog/game/dog-item-quota";
 import type {
   DogItemActionResult,
-  DogItemAvailabilityContext,
   DogItemExecutionResult,
   DogItemRuntimeDefinition,
   DogItemRuntimeOptions,
   DogItemRuntimePhase,
   DogItemRuntimeSnapshot,
-  DogItemState,
   DogItemTarget,
   DogKeyDropResult,
   DogItemEffect,
@@ -45,7 +42,7 @@ export class DogItemRuntime {
   private readonly remainingUses = new Map<DogItemId, number>();
   private phase: DogItemRuntimePhase = "idle";
   private selectedItemId: DogItemId | null = null;
-  private visualFeedback: DogItemState["visualFeedback"] | null = null;
+  private visualFeedback: DogItemRuntimeSnapshot["visualFeedback"] = null;
   private pendingAnimationCommit: (() => DogItemAnimationCompletion) | null = null;
   private pendingAnimationItemId: DogItemId | null = null;
   private completedEffect: DogItemEffect | null = null;
@@ -76,7 +73,9 @@ export class DogItemRuntime {
 
       const maxUses = itemId === "key"
         ? this.session.getState().lockedTraySlotCount
-        : normalizeDogItemUses(definition.getUses(this.level, this.config));
+        : definition.getUses === undefined
+          ? getDogV13ItemUses(itemId, this.config)
+          : normalizeDogItemUses(definition.getUses(this.level, this.config));
       this.maxUses.set(itemId, maxUses);
       this.remainingUses.set(
         itemId,
@@ -98,7 +97,6 @@ export class DogItemRuntime {
     const items = this.loadout.map((itemId) => {
       const runtimeDefinition = this.getDefinition(itemId);
       const { definition } = runtimeDefinition;
-      const maxUses = this.maxUses.get(itemId) ?? 0;
       const remainingUses = this.remainingUses.get(itemId) ?? 0;
       const available = this.phase === "idle" &&
         sessionState.status === "playing" &&
@@ -108,11 +106,6 @@ export class DogItemRuntime {
       return Object.freeze({
         id: itemId,
         name: definition.name,
-        icon: definition.icon,
-        description: definition.description,
-        targetType: definition.targetType,
-        visualFeedback: definition.visualFeedback,
-        maxUses,
         remainingUses,
         available,
       });
@@ -385,12 +378,6 @@ interface RestoreCheckpoint {
   readonly keyUses: number;
   readonly keyDropRandom: SeededRandom;
 }
-
-export {
-  DOG_ITEM_RUNTIME_DEFINITIONS,
-  getDogItemUses,
-  getDogV13ItemUses,
-};
 
 export type {
   DogItemActionResult,

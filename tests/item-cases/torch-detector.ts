@@ -19,7 +19,6 @@ import {
 } from "@/games/dog-lege-dog/game/dog-loadout";
 import {
   DogItemRuntime,
-  getDogItemUses,
   type DogItemRuntimeDefinition,
   type DogItemTarget,
 } from "@/games/dog-lege-dog/game/dog-item-runtime";
@@ -114,7 +113,6 @@ describe("DogItemRuntime · torch-detector", () => {
 
     expect(runtime.getState().items[0]).toMatchObject({
       id: "torch",
-      targetType: "block",
       available: true,
       remainingUses: 1,
     });

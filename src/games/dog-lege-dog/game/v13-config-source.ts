@@ -304,42 +304,34 @@ export const DOG_V13_CONFIG_SOURCE: DogV13Config = {
       items: {
         "triple-removal": {
           name: "道具三消移除",
-          icon: "✦",
           description: "选择槽内相邻方块并一次移除",
         },
         "tray-capacity": {
           name: "暂存槽容量提升",
-          icon: "+1",
           description: "当前关卡暂存槽增加 1 格",
         },
         wildcard: {
           name: "万能方块",
-          icon: "◇",
           description: "点击槽内方块复制其图案",
         },
         torch: {
           name: "火把",
-          icon: "火",
           description: "融化一个冻结方块",
         },
         detector: {
           name: "检测仪",
-          icon: "⌕",
           description: "揭示一个幻化方块",
         },
         demagnetizer: {
           name: "消磁仪",
-          icon: "⊖",
           description: "移除一个磁吸方块的磁性",
         },
         key: {
           name: "钥匙",
-          icon: "⚿",
           description: "解锁一个暂存槽",
         },
         "restore-whistle": {
           name: "复原哨",
-          icon: "哨",
           description: "复原最近一次安全乱序",
         },
       },
