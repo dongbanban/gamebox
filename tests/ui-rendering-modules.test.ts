@@ -46,13 +46,13 @@ describe("狗了个狗 UI rendering seams", () => {
     expect(illusion).toContain("data-disguised-pattern-type=\"打工狗\"");
     expect(illusion).toContain("dog-block--board");
     expect(illusion).toContain("dog-block--working-dog");
-    expect(illusion).not.toContain("dog-block--special-illusion");
-    expect(illusion).not.toContain("dog-block__glyph--fuzzy");
-    expect(illusion).not.toContain("--dog-illusion-image");
+    expect(illusion).toContain("dog-block--special-illusion");
+    expect(illusion).toContain("dog-block__glyph--fuzzy");
+    expect(illusion).toContain("--dog-illusion-image");
     expect(twin).toContain('data-special-mechanism="twin"');
     expect(twin).toContain("dog-block--board");
     expect(twin).toContain("dog-block--silly-dog");
-    expect(twin).not.toContain("dog-block--special-twin");
+    expect(twin).toContain("dog-block--special-twin");
     expect(twin).not.toContain("dog-block__mechanism-icon");
   });
 
@@ -78,14 +78,14 @@ describe("狗了个狗 UI rendering seams", () => {
     expect(thumbnail).toContain('data-testid="dog-special-mechanism-thumbnail"');
     expect(thumbnail).toContain('data-special-mechanism="twin"');
     expect(thumbnail).toContain("dog-block--single-dog");
-    expect(thumbnail).not.toContain("dog-block--special-twin");
+    expect(thumbnail).toContain("dog-block--special-twin");
     expect(thumbnail).toContain("dog-block--mechanism-preview");
     expect(illusionThumbnail).toContain('data-special-mechanism="illusion"');
-    expect(illusionThumbnail).toContain("dog-block--silly-dog");
-    expect(illusionThumbnail).not.toContain("dog-block--working-dog");
-    expect(illusionThumbnail).not.toContain("dog-block--special-illusion");
-    expect(illusionThumbnail).not.toContain("dog-block__glyph--fuzzy");
-    expect(illusionThumbnail).not.toContain("--dog-illusion-image");
+    expect(illusionThumbnail).toContain("dog-block--working-dog");
+    expect(illusionThumbnail).not.toContain("dog-block--silly-dog");
+    expect(illusionThumbnail).toContain("dog-block--special-illusion");
+    expect(illusionThumbnail).toContain("dog-block__glyph--fuzzy");
+    expect(illusionThumbnail).toContain("--dog-illusion-image");
 
     game.destroy();
   });

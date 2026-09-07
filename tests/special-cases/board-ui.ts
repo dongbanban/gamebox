@@ -59,11 +59,13 @@ describe("特殊机制测试 · board-ui", () => {
     expect(boardBlock?.dataset.patternType).toBe(illusion.patternType);
     expect(boardBlock?.dataset.disguisedPatternType).toBe(disguisedPatternType);
     expect(boardBlock?.dataset.specialMechanismState).toBe("masked");
-    expect(boardBlock?.classList.contains("dog-block--special-illusion")).toBe(false);
-    expect(boardBlock?.classList.contains("dog-block--special")).toBe(false);
-    expect(boardBlock?.querySelector(".dog-block__glyph--fuzzy")).toBeNull();
+    expect(boardBlock?.classList.contains("dog-block--special-illusion")).toBe(true);
+    expect(boardBlock?.classList.contains("dog-block--special")).toBe(true);
+    expect(boardBlock?.querySelector(".dog-block__glyph--fuzzy")).not.toBeNull();
     expect(boardBlock?.querySelector(".dog-block__mechanism-icon")).toBeNull();
-    expect(boardBlock?.style.getPropertyValue("--dog-illusion-image")).toBe("");
+    expect(boardBlock?.style.getPropertyValue("--dog-illusion-image")).toContain(
+      getDogPatternAssetUrl(disguisedPatternType as DogPatternType),
+    );
 
     const beforeTrayLength = game.getState().session.trayBlocks.length;
     game.selectBlock(illusion.id);
@@ -135,7 +137,7 @@ describe("特殊机制测试 · board-ui", () => {
     game.destroy();
   });
 
-  it("双生方块棋盘使用普通视觉，分裂期间锁定输入并完成分裂反馈", async () => {
+  it("双生方块棋盘显示持续识别视觉，分裂期间锁定输入并完成分裂反馈", async () => {
     vi.useFakeTimers();
     const root = document.createElement("div");
     const game = startDogLegeDogGame(root, {
@@ -156,8 +158,8 @@ describe("特殊机制测试 · board-ui", () => {
     const boardBlock = root.querySelector<HTMLElement>(
       `[data-testid="dog-block"][data-block-id="${twin.id}"]`,
     );
-    expect(boardBlock?.classList.contains("dog-block--special-twin")).toBe(false);
-    expect(boardBlock?.classList.contains("dog-block--special")).toBe(false);
+    expect(boardBlock?.classList.contains("dog-block--special-twin")).toBe(true);
+    expect(boardBlock?.classList.contains("dog-block--special")).toBe(true);
     expect(boardBlock?.querySelector(".dog-block__mechanism-icon")).toBeNull();
     expect(boardBlock?.dataset.specialMechanismState).toBe(DOG_TWIN_MECHANISM_TYPE);
 

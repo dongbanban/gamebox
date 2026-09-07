@@ -6,9 +6,13 @@ import {
 import { getDogBlockVisualMetrics } from "@/games/dog-lege-dog/visual-metrics";
 import {
   getDogPatternClassName,
+  getDogPatternAssetUrl,
   renderDogPatternAsset,
 } from "@/games/dog-lege-dog/assets/game-assets";
-import { getDogIllusionDisguisedPattern } from "@/games/dog-lege-dog/game/special-mechanisms";
+import {
+  DOG_ILLUSION_MECHANISM_TYPE,
+  getDogIllusionDisguisedPattern,
+} from "@/games/dog-lege-dog/game/special-mechanisms";
 import {
   DOG_V13_CONFIG,
   type DogV13Config,
@@ -57,6 +61,13 @@ export function renderDogBlock(
     : mechanismType;
   const mechanismClass = getSpecialMechanismClass(boardMechanismType);
   const mechanismAttributes = renderSpecialMechanismAttributes(block.specialMechanism);
+  const isIllusion = boardMechanismType === DOG_ILLUSION_MECHANISM_TYPE;
+  const glyphClass = isIllusion
+    ? "dog-block__glyph dog-block__glyph--fuzzy"
+    : "dog-block__glyph";
+  const illusionStyle = isIllusion
+    ? ` --dog-illusion-image: url(${getDogPatternAssetUrl(displayPatternType, config)});`
+    : "";
   const blockWidth = BLOCK_WIDTH * visual.unitWidthPx;
   const blockHeight = BLOCK_HEIGHT * visual.unitHeightPx;
   const left = clampVisualBlockPosition(
@@ -98,8 +109,8 @@ export function renderDogBlock(
       data-z="${block.z}"
       aria-label="${selectingBlockTarget ? labels.itemTarget : labels.blockSelectable}"
       ${selectable ? "" : "disabled"}
-      style="--block-left: ${left}px; --block-top: ${top}px; --block-width: ${blockWidth}px; --block-height: ${blockHeight}px; --block-z: ${block.z};"
-    ><span class="dog-block__glyph">${renderDogPatternAsset(displayPatternType, config)}</span>${renderSpecialMechanismIcon(boardMechanismType)}</button>
+      style="--block-left: ${left}px; --block-top: ${top}px; --block-width: ${blockWidth}px; --block-height: ${blockHeight}px; --block-z: ${block.z};${illusionStyle}"
+    ><span class="${glyphClass}">${renderDogPatternAsset(displayPatternType, config)}</span>${renderSpecialMechanismIcon(boardMechanismType)}</button>
   `;
 }
 

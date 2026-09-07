@@ -1,13 +1,13 @@
 import type { DogLegeDogLevel } from "@/games/dog-lege-dog/levels/level-types";
 import {
   getDogPatternClassName,
+  getDogPatternAssetUrl,
   renderDogPatternAsset,
 } from "@/games/dog-lege-dog/assets/game-assets";
 import {
   DOG_ILLUSION_MECHANISM_TYPE,
   DOG_MAGNETIC_MECHANISM_TYPE,
   DOG_SHUFFLE_MECHANISM_TYPE,
-  DOG_TWIN_MECHANISM_TYPE,
   getDogIllusionDisguisedPattern,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
 import {
@@ -76,21 +76,26 @@ export function renderDogSpecialMechanismThumbnail(
     ? block.patternType
     : getDogIllusionDisguisedPattern(block);
   const previewMechanismType = ordinaryVisual ? undefined : mechanismType;
+  const isIllusion = previewMechanismType === DOG_ILLUSION_MECHANISM_TYPE;
+  const glyphClass = isIllusion
+    ? "dog-block__glyph dog-block__glyph--fuzzy"
+    : "dog-block__glyph";
+  const illusionStyle = isIllusion
+    ? ` style="--dog-illusion-image: url(${getDogPatternAssetUrl(displayPatternType, config)});"`
+    : "";
 
   return `
     <span
       class="dog-special-mechanism-card__thumbnail dog-block dog-block--${getDogPatternClassName(displayPatternType)}${getSpecialMechanismClass(previewMechanismType)} dog-block--mechanism-preview"
       data-testid="dog-special-mechanism-thumbnail"
       ${renderSpecialMechanismAttributes(block.specialMechanism)}
-      aria-hidden="true"
-    ><span class="dog-block__glyph">${renderDogPatternAsset(displayPatternType, config)}</span>${renderSpecialMechanismIcon(previewMechanismType)}</span>
+      aria-hidden="true"${illusionStyle}
+    ><span class="${glyphClass}">${renderDogPatternAsset(displayPatternType, config)}</span>${renderSpecialMechanismIcon(previewMechanismType)}</span>
   `;
 }
 
 export function isDogBoardOrdinaryVisual(type: string | undefined): boolean {
-  return type === DOG_ILLUSION_MECHANISM_TYPE ||
-    type === DOG_SHUFFLE_MECHANISM_TYPE ||
-    type === DOG_TWIN_MECHANISM_TYPE;
+  return type === DOG_SHUFFLE_MECHANISM_TYPE;
 }
 
 export function getSpecialMechanismClass(type: string | undefined): string {

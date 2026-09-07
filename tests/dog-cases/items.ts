@@ -12,6 +12,7 @@ import {
 import {
   getDogPatternClassName,
 } from "@/games/dog-lege-dog/assets/game-assets";
+import { getDogIllusionDisguisedPattern } from "@/games/dog-lege-dog/game/special-mechanisms";
 import {
   createKeyUiLevel,
   createWildcardMatchUiLevel,
@@ -76,6 +77,9 @@ describe("狗了个狗测试 · items", () => {
     const illusionBlock = game.getState().level.blocks.find(
       (block) => block.specialMechanism?.type === DOG_ILLUSION_MECHANISM_TYPE,
     );
+    if (illusionBlock === undefined) {
+      throw new Error("Expected illusion mechanism thumbnail");
+    }
     const twinThumbnail = root.querySelector<HTMLElement>(
       `[data-testid="dog-special-mechanism-thumbnail"][data-special-mechanism="${DOG_TWIN_MECHANISM_TYPE}"]`,
     );
@@ -83,15 +87,14 @@ describe("狗了个狗测试 · items", () => {
     expect(freezeThumbnail?.classList.contains("dog-block--special-freeze")).toBe(true);
     expect(freezeThumbnail?.querySelector("img")).not.toBeNull();
     expect(illusionThumbnail?.classList.contains("dog-block--mechanism-preview")).toBe(true);
-    expect(illusionThumbnail?.classList.contains("dog-block--special-illusion")).toBe(false);
-    expect(illusionBlock).not.toBeUndefined();
+    expect(illusionThumbnail?.classList.contains("dog-block--special-illusion")).toBe(true);
     expect(
       illusionThumbnail?.classList.contains(
-        `dog-block--${getDogPatternClassName(illusionBlock?.patternType ?? "傻狗")}`,
+        `dog-block--${getDogPatternClassName(getDogIllusionDisguisedPattern(illusionBlock))}`,
       ),
     ).toBe(true);
-    expect(illusionThumbnail?.querySelector(".dog-block__glyph--fuzzy")).toBeNull();
-    expect(twinThumbnail?.classList.contains("dog-block--special-twin")).toBe(false);
+    expect(illusionThumbnail?.querySelector(".dog-block__glyph--fuzzy")).not.toBeNull();
+    expect(twinThumbnail?.classList.contains("dog-block--special-twin")).toBe(true);
     expect(twinThumbnail?.querySelector(".dog-block__glyph")).not.toBeNull();
     expect(root.querySelectorAll(".dog-special-mechanism-card__icon")).toHaveLength(0);
     expect(root.querySelector('[data-testid="dog-special-mechanism-modal"]')?.textContent).toContain(
