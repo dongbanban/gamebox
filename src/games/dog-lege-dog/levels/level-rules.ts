@@ -1,8 +1,15 @@
 import type {
-  DogPatternType,
-  DogSpecialMechanismHandler,
   DogTrayBlock,
 } from "@/games/dog-lege-dog/levels/level-types";
+import {
+  applyDogSpecialMechanismSuccessfulTripleEffects,
+  isDogSpecialMechanismMatchable,
+  prepareDogTrayBlocks,
+} from "@/games/dog-lege-dog/game/special-mechanisms";
+import {
+  DOG_V13_CONFIG,
+  type DogV13Config,
+} from "@/games/dog-lege-dog/game/v13-config";
 
 export { getPositiveOverlapArea, hasPositiveAreaOverlap } from "@/games/dog-lege-dog/levels/level-graph";
 
@@ -14,41 +21,25 @@ export interface DogTrayMatchResolution {
 
 export interface DogTrayMatchResolutionOptions {
   readonly allowFrozenFinalTriple?: boolean;
+  readonly config?: DogV13Config;
 }
 
 export function insertDogBlockIntoTray(
   tray: DogTrayBlock[],
   block: DogTrayBlock,
-  handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
   options: DogTrayMatchResolutionOptions = {},
 ): DogTrayMatchResolution {
-  for (const trayBlock of prepareDogTrayBlocks(block, handlers)) {
+  for (const trayBlock of prepareDogTrayBlocks(block)) {
     tray.push(trayBlock);
   }
 
-  return resolveDogTrayMatches(tray, handlers, options);
-}
-
-export function prepareDogTrayBlocks(
-  block: DogTrayBlock,
-  handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
-): readonly DogTrayBlock[] {
-  if (block.specialMechanism === undefined) {
-    return [block];
-  }
-
-  const prepared = getHandler(block, handlers).onEnterTray?.(block) ?? block;
-  if (Array.isArray(prepared)) {
-    return prepared as readonly DogTrayBlock[];
-  }
-  return [prepared as DogTrayBlock];
+  return resolveDogTrayMatches(tray, options);
 }
 
 export function applyDogTraySuccessfulTripleEffects(
   tray: DogTrayBlock[],
-  handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
   tripleCount: number,
-  triplePatterns: readonly DogPatternType[],
+  config: DogV13Config = DOG_V13_CONFIG,
 ): readonly string[] {
   if (tripleCount <= 0) {
     return [];
@@ -61,11 +52,10 @@ export function applyDogTraySuccessfulTripleEffects(
       continue;
     }
 
-    const handler = getHandler(block, handlers);
-    const nextBlock = handler.onSuccessfulTriples(
+    const nextBlock = applyDogSpecialMechanismSuccessfulTripleEffects(
       block,
       tripleCount,
-      triplePatterns,
+      config,
     );
     if (nextBlock.specialMechanism === undefined) {
       meltedBlockIds.push(block.id);
@@ -78,7 +68,6 @@ export function applyDogTraySuccessfulTripleEffects(
 
 export function resolveDogTrayMatches(
   tray: DogTrayBlock[],
-  handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
   options: DogTrayMatchResolutionOptions = {},
 ): DogTrayMatchResolution {
   let removedCount = 0;
@@ -91,7 +80,7 @@ export function resolveDogTrayMatches(
   while (true) {
     const groups = getAdjacentMatchGroups(
       tray,
-      (block) => isDogTrayBlockMatchable(block, handlers, allowFrozenMatches)
+      (block) => isDogTrayBlockMatchable(block, allowFrozenMatches)
         ? block.patternType
         : undefined,
     );
@@ -102,12 +91,9 @@ export function resolveDogTrayMatches(
       break;
     }
 
-    const roundTriplePatterns = groups.flatMap(({ key, indexes }) =>
-      Array.from({ length: Math.floor(indexes.length / 3) }, () => key),
-    );
     const roundRemovedCount = removeItemsAtIndexes(tray, removalIndexes);
 
-    const roundTripleCount = roundTriplePatterns.length;
+    const roundTripleCount = removalIndexes.length / 3;
     removedCount += roundRemovedCount;
     tripleCount += roundTripleCount;
     if (roundTripleCount === 0) {
@@ -117,9 +103,8 @@ export function resolveDogTrayMatches(
     meltedBlockIds.push(
       ...applyDogTraySuccessfulTripleEffects(
         tray,
-        handlers,
         roundTripleCount,
-        roundTriplePatterns,
+        options.config,
       ),
     );
   }
@@ -133,18 +118,13 @@ export function resolveDogTrayMatches(
 
 export function isDogTrayBlockMatchable(
   block: DogTrayBlock,
-  handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
   allowFrozenMatches = false,
 ): boolean {
   if (block.specialMechanism === undefined) {
     return true;
   }
 
-  if (allowFrozenMatches && block.specialMechanism.type === "freeze") {
-    return true;
-  }
-
-  return getHandler(block, handlers).isMatchable(block.specialMechanism);
+  return isDogSpecialMechanismMatchable(block.specialMechanism, allowFrozenMatches);
 }
 
 function getAdjacentMatchGroups<T, K>(
@@ -185,20 +165,4 @@ function removeItemsAtIndexes<T>(items: T[], indexes: readonly number[]): number
   const removedCount = items.length - remainingItems.length;
   items.splice(0, items.length, ...remainingItems);
   return removedCount;
-}
-
-function getHandler(
-  block: DogTrayBlock,
-  handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
-): DogSpecialMechanismHandler {
-  const mechanismType = block.specialMechanism?.type;
-  if (mechanismType === undefined) {
-    throw new Error(`狗了个狗 block ${block.id} has no special mechanism type`);
-  }
-
-  const handler = handlers.get(mechanismType);
-  if (handler === undefined) {
-    throw new Error(`狗了个狗 special mechanism handler is missing: ${mechanismType}`);
-  }
-  return handler;
 }

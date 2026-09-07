@@ -3,7 +3,6 @@ import type {
   DogLegeDogLevel,
   DogPatternType,
   DogShuffleMechanismStatus,
-  DogSpecialMechanismHandler,
   DogTrayBlock,
 } from "@/games/dog-lege-dog/levels/level-types";
 import type { DogV13Config } from "@/games/dog-lege-dog/game/v13-config";
@@ -15,7 +14,6 @@ export interface GameSessionOptions {
   readonly config?: DogV13Config;
   readonly initialTrayBlocks?: readonly DogTrayBlock[];
   readonly initialTrayCapacity?: number;
-  readonly specialMechanismHandlers?: readonly DogSpecialMechanismHandler[];
 }
 
 export interface GameSessionSnapshot {

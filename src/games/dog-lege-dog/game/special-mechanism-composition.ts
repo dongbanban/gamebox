@@ -8,7 +8,7 @@ import {
   DOG_SPECIAL_MECHANISM_DENSITY_LIMIT,
   DOG_SPECIAL_MECHANISM_MIDDLE_LAYER_RATIO,
   DOG_TWIN_MECHANISM_TYPE,
-} from "@/games/dog-lege-dog/game/special-mechanism-handlers";
+} from "@/games/dog-lege-dog/game/special-mechanisms";
 import type { SeededRandom } from "@/games/dog-lege-dog/levels/level-random";
 
 export interface DogSpecialMechanismComposition {

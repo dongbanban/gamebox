@@ -1,6 +1,5 @@
 import type {
   DogBlock,
-  DogSpecialMechanismHandler,
   DogPatternType,
   DogTrayBlock,
 } from "@/games/dog-lege-dog/levels/level-types";
@@ -27,6 +26,7 @@ import {
 } from "@/games/dog-lege-dog/game/game-session-results";
 import type { GameSessionState } from "@/games/dog-lege-dog/game/game-session-state";
 import { cloneDogTrayBlock } from "@/games/dog-lege-dog/levels/level-tray-block";
+import type { DogV13Config } from "@/games/dog-lege-dog/game/v13-config";
 
 interface InternalWildcardPlan extends GameSessionWildcardPlan {
   readonly nextTray: readonly DogTrayBlock[];
@@ -186,14 +186,15 @@ export class GameSessionTrayActions {
     );
     const meltedBlockIds = applyDogTraySuccessfulTripleEffects(
       this.state.tray,
-      this.state.specialMechanismHandlers,
       plan.tripleCount,
-      [plan.patternType],
+      this.state.config,
     );
     const cascaded = resolveDogTrayMatches(
       this.state.tray,
-      this.state.specialMechanismHandlers,
-      { allowFrozenFinalTriple: this.state.remainingBlocks.size === 0 },
+      {
+        allowFrozenFinalTriple: this.state.remainingBlocks.size === 0,
+        config: this.state.config,
+      },
     );
 
     this.clearCaches();
@@ -241,7 +242,7 @@ export class GameSessionTrayActions {
       const resolution = resolveWildcardTrayInsertion(
         nextTray,
         { id: wildcardIdentity.id, patternType, visualMarker: "wildcard" },
-        this.state.specialMechanismHandlers,
+        this.state.config,
       );
       const nextRemainingBlocks = [...this.state.remainingBlocks.values()].filter(
         (block) => block.id !== compensatedBlock.id,
@@ -257,7 +258,6 @@ export class GameSessionTrayActions {
         trayCapacity: this.state.getEffectiveTrayCapacity(),
         config: this.state.config,
         branchBudget: Math.max(64, this.state.remainingBlocks.size * 2),
-        specialMechanismHandlers: [...this.state.specialMechanismHandlers.values()],
         magneticRandom: this.state.magneticRandom.clone(),
       });
       if (solvability.status !== "solvable") {
@@ -341,7 +341,6 @@ export class GameSessionTrayActions {
         trayCapacity: this.state.getEffectiveTrayCapacity(),
         config: this.state.config,
         branchBudget: Math.max(64, this.state.remainingBlocks.size * 2),
-        specialMechanismHandlers: [...this.state.specialMechanismHandlers.values()],
         magneticRandom: this.state.magneticRandom.clone(),
       });
       if (solvability.status === "solvable") {
@@ -361,7 +360,7 @@ export class GameSessionTrayActions {
 function resolveWildcardTrayInsertion(
   tray: DogTrayBlock[],
   wildcardBlock: DogTrayBlock,
-  handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
+  config: DogV13Config,
 ): {
   readonly removedCount: number;
   readonly tripleCount: number;
@@ -369,17 +368,16 @@ function resolveWildcardTrayInsertion(
 } {
   const pairIndex = findWildcardSuffixPairIndex(tray, wildcardBlock.patternType);
   if (pairIndex < 0) {
-    return insertDogBlockIntoTray(tray, wildcardBlock, handlers);
+    return insertDogBlockIntoTray(tray, wildcardBlock, { config });
   }
 
   tray.splice(pairIndex, 2);
   const meltedBlockIds = applyDogTraySuccessfulTripleEffects(
     tray,
-    handlers,
     1,
-    [wildcardBlock.patternType],
+    config,
   );
-  const cascaded = resolveDogTrayMatches(tray, handlers);
+  const cascaded = resolveDogTrayMatches(tray, { config });
   return {
     removedCount: 3 + cascaded.removedCount,
     tripleCount: 1 + cascaded.tripleCount,

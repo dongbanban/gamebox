@@ -1,16 +1,19 @@
 import {
   DOG_MAGNETIC_MECHANISM_TYPE,
+  prepareDogTrayBlocks,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
 import {
   insertDogBlockIntoTray,
-  prepareDogTrayBlocks,
   resolveDogTrayMatches,
 } from "@/games/dog-lege-dog/levels/level-rules";
 import type {
   DogLevelGeometry,
-  DogSpecialMechanismHandler,
   DogTrayBlock,
 } from "@/games/dog-lege-dog/levels/level-types";
+import {
+  DOG_V13_CONFIG,
+  type DogV13Config,
+} from "@/games/dog-lege-dog/game/v13-config";
 import { createBlockGraph, type BlockGraph } from "@/games/dog-lege-dog/levels/level-graph";
 import { SeededRandom } from "@/games/dog-lege-dog/levels/level-random";
 import { toDogTrayBlock } from "@/games/dog-lege-dog/levels/level-tray-block";
@@ -43,9 +46,9 @@ export function resolveDogSelection(
   remainingMask: bigint,
   higherBlockCounts: readonly number[],
   initialTray: readonly DogTrayBlock[],
-  handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
   magneticRandom: SeededRandom,
   knownGraph?: BlockGraph,
+  config: DogV13Config = DOG_V13_CONFIG,
 ): DogSelectionResolution {
   const selectedBlock = level.blocks[selectedBlockIndex];
   if (selectedBlock === undefined) {
@@ -78,8 +81,10 @@ export function resolveDogSelection(
     insertDogBlockIntoTray(
       tray,
       toDogTrayBlock(selectedBlock),
-      handlers,
-      { allowFrozenFinalTriple: nextRemainingMask === 0n },
+      {
+        allowFrozenFinalTriple: nextRemainingMask === 0n,
+        config,
+      },
     );
   } else {
     // Magnetic source and target enter as one animation. Resolve triples only
@@ -89,10 +94,10 @@ export function resolveDogSelection(
       tray,
       toDogTrayBlock(selectedBlock),
       targetBlock === undefined ? undefined : toDogTrayBlock(targetBlock),
-      handlers,
     );
-    resolveDogTrayMatches(tray, handlers, {
+    resolveDogTrayMatches(tray, {
       allowFrozenFinalTriple: nextRemainingMask === 0n,
+      config,
     });
   }
 
@@ -109,9 +114,8 @@ export function insertDogMagneticBlocks(
   tray: DogTrayBlock[],
   sourceBlock: DogTrayBlock,
   targetBlock: DogTrayBlock | undefined,
-  handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
 ): readonly string[] {
-  for (const block of prepareDogTrayBlocks(sourceBlock, handlers)) {
+  for (const block of prepareDogTrayBlocks(sourceBlock)) {
     tray.push(block);
   }
 
@@ -120,7 +124,7 @@ export function insertDogMagneticBlocks(
   }
 
   const targetTrayBlockIds: string[] = [];
-  for (const block of prepareDogTrayBlocks(targetBlock, handlers)) {
+  for (const block of prepareDogTrayBlocks(targetBlock)) {
     tray.push(block);
     targetTrayBlockIds.push(block.id);
   }

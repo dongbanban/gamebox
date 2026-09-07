@@ -103,7 +103,7 @@ export class GameSessionMechanismActions {
     this.state.tray[trayIndex] = removeSpecialMechanism(block);
     const resolution = resolveDogTrayMatches(
       this.state.tray,
-      this.state.specialMechanismHandlers,
+      { config: this.state.config },
     );
     this.state.updateResult();
     return createMeltResult(

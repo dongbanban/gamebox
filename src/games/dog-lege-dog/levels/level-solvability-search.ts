@@ -5,7 +5,6 @@ import {
 } from "@/games/dog-lege-dog/game/special-mechanisms";
 import type {
   DogLevelGeometry,
-  DogSpecialMechanismHandler,
   DogTrayBlock,
 } from "@/games/dog-lege-dog/levels/level-types";
 import {
@@ -36,7 +35,6 @@ export function searchSolvableContinuation(
   remainingMask: bigint,
   higherBlockCounts: readonly number[],
   tray: readonly DogTrayBlock[],
-  handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
   preferredRank: ReadonlyMap<number, number>,
   context: SolvabilitySearchContext,
   path: readonly string[],
@@ -123,7 +121,7 @@ export function searchSolvableContinuation(
     );
   }
 
-  sortSelectableBlocks(selectable, level, tray, handlers, preferredRank);
+  sortSelectableBlocks(selectable, level, tray, preferredRank);
 
   let trayPeakPressure = getDogTrayLogicalUnitCount(tray);
   for (let choiceIndex = 0; choiceIndex < selectable.length; choiceIndex += 1) {
@@ -147,9 +145,9 @@ export function searchSolvableContinuation(
       remainingMask,
       higherBlockCounts,
       tray,
-      handlers,
       nextMagneticRandom,
       graph,
+      context.config,
     );
     const nextRemainingMask = resolution.remainingMask;
     const shuffleResolution = resolveDogShuffleAfterSelection({
@@ -157,7 +155,6 @@ export function searchSolvableContinuation(
       tray: resolution.tray,
       remainingMask: nextRemainingMask,
       effectiveTrayCapacity: trayCapacity,
-      handlers,
       magneticRandom: nextMagneticRandom,
       config: context.config,
     });
@@ -179,7 +176,6 @@ export function searchSolvableContinuation(
       trayCapacity,
       nextRemainingMask !== 0n,
       nextSelectable,
-      handlers,
       context.config,
       nextHigherBlockCounts,
       nextMagneticRandom,
@@ -194,7 +190,6 @@ export function searchSolvableContinuation(
       nextRemainingMask,
       nextHigherBlockCounts,
       nextTray,
-      handlers,
       preferredRank,
       context,
       [...path, level.blocks[selectedIndex].id],
@@ -215,7 +210,6 @@ export function searchSolvableContinuation(
             tray,
             continuationPath,
             graph,
-            handlers,
             context.config,
             remainingMask,
             higherBlockCounts,
@@ -251,7 +245,6 @@ export function findGreedyContinuation(
   initialRemainingMask: bigint,
   initialHigherBlockCounts: readonly number[],
   initialTray: readonly DogTrayBlock[],
-  handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
   preferredRank: ReadonlyMap<number, number>,
   initialPath: readonly string[],
   initialPathDepth: number,
@@ -278,7 +271,7 @@ export function findGreedyContinuation(
     if (selectable.length === 0) {
       return undefined;
     }
-    sortSelectableBlocks(selectable, level, tray, handlers, preferredRank);
+    sortSelectableBlocks(selectable, level, tray, preferredRank);
 
     const selectedIndex = selectable[0];
     const resolution = resolveDogSelection(
@@ -287,9 +280,9 @@ export function findGreedyContinuation(
       remainingMask,
       higherBlockCounts,
       tray,
-      handlers,
       selectionRandom,
       graph,
+      config,
     );
     remainingMask = resolution.remainingMask;
     const shuffleResolution = resolveDogShuffleAfterSelection({
@@ -297,7 +290,6 @@ export function findGreedyContinuation(
       tray: resolution.tray,
       remainingMask,
       effectiveTrayCapacity: trayCapacity,
-      handlers,
       magneticRandom: selectionRandom,
       config,
     });
@@ -316,7 +308,6 @@ export function findGreedyContinuation(
       trayCapacity,
       remainingMask !== 0n,
       nextSelectable,
-      handlers,
       config,
       higherBlockCounts,
       selectionRandom,
@@ -344,7 +335,6 @@ export function verifyStateContinuation(
   initialHigherBlockCounts: readonly number[],
   initialTray: readonly DogTrayBlock[],
   path: readonly string[],
-  handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
   trayCapacity: number,
   magneticRandom: SeededRandom = createDogMagneticRandom(level),
   config: DogV13Config = DOG_V13_CONFIG,
@@ -381,9 +371,9 @@ export function verifyStateContinuation(
       remainingMask,
       higherBlockCounts,
       tray,
-      handlers,
       selectionRandom,
       graph,
+      config,
     );
     remainingMask = resolution.remainingMask;
     higherBlockCounts.splice(0, higherBlockCounts.length, ...resolution.higherBlockCounts);
@@ -392,7 +382,6 @@ export function verifyStateContinuation(
       tray: resolution.tray,
       remainingMask,
       effectiveTrayCapacity: trayCapacity,
-      handlers,
       magneticRandom: selectionRandom,
       config,
     });
@@ -413,7 +402,6 @@ export function verifyStateContinuation(
       trayCapacity,
       remainingMask !== 0n,
       nextSelectable,
-      handlers,
       config,
       higherBlockCounts,
       selectionRandom,

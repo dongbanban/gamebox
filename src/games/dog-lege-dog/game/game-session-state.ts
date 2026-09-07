@@ -1,28 +1,24 @@
 import {
   type DogBlock,
   type DogLegeDogLevel,
-  type DogSpecialMechanismHandler,
   type DogTrayBlock,
 } from "@/games/dog-lege-dog/levels/level-types";
 import { createBlockGraph, type BlockGraph } from "@/games/dog-lege-dog/levels/level-graph";
 import { freezeDogLegeDogLevel } from "@/games/dog-lege-dog/levels/level-immutability";
 import {
-  prepareDogTrayBlocks,
   resolveDogTrayMatches,
 } from "@/games/dog-lege-dog/levels/level-rules";
 import { GameSessionShuffleRuntime } from "@/games/dog-lege-dog/game/game-session-shuffle";
 import { resolveDogSelection } from "@/games/dog-lege-dog/levels/level-mechanism-resolution";
 import { resolveDogShuffleState } from "@/games/dog-lege-dog/levels/level-shuffle";
 import {
-  createDogSpecialMechanismHandlerMap,
-  createDogSpecialMechanismHandlers,
-  DOG_SPECIAL_MECHANISM_HANDLERS,
   DOG_SHUFFLE_MECHANISM_TYPE,
   DOG_TWIN_MECHANISM_TYPE,
   getDogLogicalBlockCount,
   getDogShuffleMechanismStatus,
   getDogTrayLogicalUnitCount,
   isDogSpecialMechanismResolved,
+  prepareDogTrayBlocks,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
 import { SeededRandom } from "@/games/dog-lege-dog/levels/level-random";
 import {
@@ -48,7 +44,6 @@ export class GameSessionState {
   readonly graph: BlockGraph;
   readonly remainingBlocks = new Map<string, DogBlock>();
   readonly higherBlockCounts: number[];
-  readonly specialMechanismHandlers: ReadonlyMap<string, DogSpecialMechanismHandler>;
   readonly magneticRandom: SeededRandom;
   readonly tray: DogTrayBlock[];
   pendingMagneticResolution: GameSessionMagneticResolution | null = null;
@@ -64,12 +59,6 @@ export class GameSessionState {
     this.magneticRandom = new SeededRandom(`${this.level.runSeed}:magnetic-target`);
     this.graph = createBlockGraph(this.level.blocks);
     this.higherBlockCounts = [...this.graph.higherBlockCounts];
-    this.specialMechanismHandlers = createDogSpecialMechanismHandlerMap(
-      options.specialMechanismHandlers ??
-        (options.config === undefined
-          ? DOG_SPECIAL_MECHANISM_HANDLERS
-          : createDogSpecialMechanismHandlers(this.config)),
-    );
     this.trayCapacity = options.initialTrayCapacity ?? this.config.tray.baseCapacity;
     if (
       !Number.isInteger(this.trayCapacity) ||
@@ -87,7 +76,6 @@ export class GameSessionState {
     if (this.lockedTraySlotCount > this.trayCapacity) {
       throw new Error("GameSession locked tray slots cannot exceed tray capacity");
     }
-    validateMechanismHandlers(this.level.blocks, this.specialMechanismHandlers);
     if (
       options.initialTrayBlocks?.some(
         (block) => block.specialMechanism?.type === "illusion",
@@ -96,7 +84,7 @@ export class GameSessionState {
       throw new Error("GameSession illusion blocks cannot start in the tray");
     }
     this.tray = options.initialTrayBlocks?.flatMap((block) =>
-      prepareDogTrayBlocks({ ...block }, this.specialMechanismHandlers),
+      prepareDogTrayBlocks({ ...block }),
     ) ?? [];
 
     for (const block of this.level.blocks) {
@@ -106,7 +94,7 @@ export class GameSessionState {
       this.remainingBlocks.set(block.id, block);
     }
 
-    resolveDogTrayMatches(this.tray, this.specialMechanismHandlers);
+    resolveDogTrayMatches(this.tray, { config: this.config });
     const effectiveTrayCapacity = this.getEffectiveTrayCapacity();
     if (getDogTrayLogicalUnitCount(this.tray) > effectiveTrayCapacity) {
       throw new Error(
@@ -117,7 +105,6 @@ export class GameSessionState {
       config: this.config,
       level: this.level,
       remainingBlocks: this.remainingBlocks,
-      specialMechanismHandlers: this.specialMechanismHandlers,
       magneticRandom: this.magneticRandom,
       tray: this.tray,
       getEffectiveTrayCapacity: () => this.getEffectiveTrayCapacity(),
@@ -346,7 +333,7 @@ export class GameSessionState {
 
     const pendingBlock = toDogTrayBlock(this.pendingSelection.block);
     if (pendingBlock.specialMechanism?.type === DOG_TWIN_MECHANISM_TYPE) {
-      trayBlocks.push(...prepareDogTrayBlocks(pendingBlock, this.specialMechanismHandlers));
+      trayBlocks.push(...prepareDogTrayBlocks(pendingBlock));
     } else {
       trayBlocks.push(pendingBlock);
     }
@@ -382,9 +369,9 @@ export class GameSessionState {
         remainingMask,
         this.higherBlockCounts,
         this.tray,
-        this.specialMechanismHandlers,
         magneticRandom,
         this.graph,
+        this.config,
       );
       const shuffleResolution = resolveDogShuffleState({
         config: this.config,
@@ -394,7 +381,6 @@ export class GameSessionState {
           .filter((_, index) => (resolution.remainingMask & (1n << BigInt(index))) !== 0n)
           .map((block) => block.id),
         effectiveTrayCapacity,
-        handlers: this.specialMechanismHandlers,
         magneticRandom,
         sequence: 1,
       });
@@ -420,17 +406,4 @@ function normalizeLockedTraySlotCount(value: number | undefined, maxLockedSlotCo
   }
 
   return value;
-}
-
-function validateMechanismHandlers(
-  blocks: readonly DogBlock[],
-  handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
-): void {
-  for (const block of blocks) {
-    if (block.specialMechanism !== undefined && !handlers.has(block.specialMechanism.type)) {
-      throw new Error(
-        `狗了个狗 special mechanism handler is missing: ${block.specialMechanism.type}`,
-      );
-    }
-  }
 }

@@ -253,7 +253,6 @@ function createCandidateLevel(
     acceptedSolutionPath,
     undefined,
     undefined,
-    undefined,
     config,
   );
   const initialVerificationReason = verification.reason;
@@ -285,7 +284,6 @@ function createCandidateLevel(
       verification = verifyRemovalPath(
         acceptedGeometry,
         acceptedSolutionPath,
-        undefined,
         undefined,
         undefined,
         config,

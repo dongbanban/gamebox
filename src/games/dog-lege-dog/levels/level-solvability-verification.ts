@@ -1,12 +1,10 @@
 import { createBlockGraph, type BlockGraph } from "@/games/dog-lege-dog/levels/level-graph";
 import {
-  createDogSpecialMechanismHandlerMap,
   getDogTrayLogicalUnitCount,
   isDogSpecialMechanismResolved,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
 import type {
   DogLevelGeometry,
-  DogSpecialMechanismHandler,
   DogSolvabilityStatus,
   DogTrayBlock,
 } from "@/games/dog-lege-dog/levels/level-types";
@@ -35,14 +33,10 @@ import {
   resolveDogShuffleAfterSelection,
 } from "@/games/dog-lege-dog/levels/level-solvability-simulation";
 
-const DEFAULT_SPECIAL_MECHANISM_HANDLER_MAP = createDogSpecialMechanismHandlerMap();
-
 export function verifyRemovalPath(
   level: DogLevelGeometry,
   path: readonly string[],
   knownGraph?: BlockGraph,
-  specialMechanismHandlers: ReadonlyMap<string, DogSpecialMechanismHandler> =
-    DEFAULT_SPECIAL_MECHANISM_HANDLER_MAP,
   trayCapacity = resolveLevelTrayCapacity(level),
   config: DogV13Config = DOG_V13_CONFIG,
 ): PathVerification {
@@ -108,9 +102,9 @@ export function verifyRemovalPath(
       remainingMask,
       higherBlockCounts,
       tray,
-      specialMechanismHandlers,
       magneticRandom,
       graph,
+      config,
     );
     selectedBlockCount += 1;
     if (resolution.magneticTargetIndex !== null) {
@@ -138,7 +132,6 @@ export function verifyRemovalPath(
       tray: resolution.tray,
       remainingMask,
       effectiveTrayCapacity: trayCapacity,
-      handlers: specialMechanismHandlers,
       magneticRandom,
       config,
     });
@@ -158,7 +151,6 @@ export function verifyRemovalPath(
       trayCapacity,
       remainingMask !== 0n,
       selectable,
-      specialMechanismHandlers,
       config,
       higherBlockCounts,
       magneticRandom,
@@ -218,7 +210,6 @@ export function verifyRemovalPath(
 export function normalizeSolvabilityResult(
   level: DogLevelGeometry,
   result: SolvabilityResult,
-  handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
   config: DogV13Config = DOG_V13_CONFIG,
 ): SolvabilityResult {
   if (result.status !== "solvable") {
@@ -228,7 +219,6 @@ export function normalizeSolvabilityResult(
     level,
     result.path,
     undefined,
-    handlers,
     undefined,
     config,
   );

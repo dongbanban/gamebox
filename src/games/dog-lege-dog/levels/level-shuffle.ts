@@ -1,6 +1,4 @@
 import {
-  createDogSpecialMechanismHandlerMap,
-  createDogSpecialMechanismHandlers,
   consumeDogShuffleBlock,
   getDogTrayLogicalUnitCount,
   armDogShuffleBlock,
@@ -33,7 +31,6 @@ import { SeededRandom } from "@/games/dog-lege-dog/levels/level-random";
 import { cloneDogTrayBlock } from "@/games/dog-lege-dog/levels/level-tray-block";
 import type {
   DogLevelGeometry,
-  DogSpecialMechanismHandler,
   DogTrayBlock,
 } from "@/games/dog-lege-dog/levels/level-types";
 
@@ -60,7 +57,6 @@ export interface DogShuffleResolutionOptions {
   readonly triggerBlockId: string;
   readonly remainingBlockIds: readonly string[];
   readonly effectiveTrayCapacity: number;
-  readonly handlers: ReadonlyMap<string, DogSpecialMechanismHandler>;
   readonly magneticRandom: SeededRandom;
   readonly sequence: number;
 }
@@ -81,9 +77,6 @@ export function findShuffleTriggerPath(
   level: DogLevelGeometry,
   config: DogV13Config = DOG_V13_CONFIG,
 ): readonly string[] | undefined {
-  const handlers = createDogSpecialMechanismHandlerMap(
-    createDogSpecialMechanismHandlers(config),
-  );
   const graph = createBlockGraph(level.blocks);
   const preferredRank = new Map<number, number>();
   (level.solutionPath ?? []).forEach((blockId, rank) => {
@@ -122,7 +115,7 @@ export function findShuffleTriggerPath(
     visited.add(stateKey);
 
     const selectable = getSelectableBlocks(level, remainingMask, higherBlockCounts);
-    sortSelectableBlocks(selectable, level, tray, handlers, preferredRank);
+    sortSelectableBlocks(selectable, level, tray, preferredRank);
     for (const selectedIndex of selectable) {
       branchAttempts += 1;
       const nextMagneticRandom = magneticRandom.clone();
@@ -132,9 +125,9 @@ export function findShuffleTriggerPath(
         remainingMask,
         higherBlockCounts,
         tray,
-        handlers,
         nextMagneticRandom,
         graph,
+        config,
       );
       const nextPath = [...path, level.blocks[selectedIndex]!.id];
       const nextTray = resolution.tray.map(armDogShuffleBlock);
@@ -188,9 +181,6 @@ function findDirectShuffleTriggerPath(
     return undefined;
   }
 
-  const handlers = createDogSpecialMechanismHandlerMap(
-    createDogSpecialMechanismHandlers(config),
-  );
   const magneticRandom = createDogMagneticRandom(level);
   let remainingMask = createFullBlockMask(level.blocks.length);
   let higherBlockCounts = [...graph.higherBlockCounts];
@@ -219,9 +209,9 @@ function findDirectShuffleTriggerPath(
       remainingMask,
       higherBlockCounts,
       tray,
-      handlers,
       nextMagneticRandom,
       graph,
+      config,
     );
     remainingMask = resolution.remainingMask;
     higherBlockCounts = [...resolution.higherBlockCounts];
@@ -244,9 +234,9 @@ function findDirectShuffleTriggerPath(
     remainingMask,
     higherBlockCounts,
     tray,
-    handlers,
     nextMagneticRandom,
     graph,
+    config,
   );
   const triggerThreshold = getDogShuffleThreshold(effectiveTrayCapacity, config);
   const triggerable = resolution.tray.map(armDogShuffleBlock).some((block) =>
@@ -310,8 +300,10 @@ export function resolveDogSafeShuffle(
     const resolvedTray = candidate.tray.map(cloneDogTrayBlock);
     const resolution = resolveDogTrayMatches(
       resolvedTray,
-      options.handlers,
-      { allowFrozenFinalTriple: options.remainingBlockIds.length === 0 },
+      {
+        allowFrozenFinalTriple: options.remainingBlockIds.length === 0,
+        config: options.config,
+      },
     );
     if (getDogTrayLogicalUnitCount(resolvedTray) > options.effectiveTrayCapacity) {
       continue;
@@ -326,7 +318,6 @@ export function resolveDogSafeShuffle(
       // ponytail: generated candidates use the known-path budget; unproven
       // permutations stay stable instead of making every level exponential.
       branchBudget: hasKnownPathOverlap(options) ? 16 : 256,
-      specialMechanismHandlers: [...options.handlers.values()],
       magneticRandom: options.magneticRandom.clone(),
     });
     if (solvability.status !== "solvable") {

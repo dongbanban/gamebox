@@ -6,7 +6,6 @@ import {
 import type { DogV13Config } from "@/games/dog-lege-dog/game/v13-config";
 import type {
   DogLevelGeometry,
-  DogSpecialMechanismHandler,
   DogTrayBlock,
 } from "@/games/dog-lege-dog/levels/level-types";
 import {
@@ -47,7 +46,6 @@ export function isCapacityBlocked(
   trayCapacity: number,
   hasRemainingBlocks: boolean,
   selectableIndices: readonly number[],
-  handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
   config: DogV13Config,
   currentHigherBlockCounts?: readonly number[],
   magneticRandom?: SeededRandom,
@@ -74,16 +72,15 @@ export function isCapacityBlocked(
       remainingMask,
       currentHigherBlockCounts ?? createBlockGraph(level.blocks).higherBlockCounts,
       tray,
-      handlers,
       selectionRandom,
       knownGraph,
+      config,
     );
     const shuffled = resolveDogShuffleAfterSelection({
       level,
       tray: simulated.tray,
       remainingMask: simulated.remainingMask,
       effectiveTrayCapacity: trayCapacity,
-      handlers,
       magneticRandom: selectionRandom,
       config,
     });
@@ -96,7 +93,6 @@ export interface DogShuffleAfterSelectionOptions {
   readonly tray: readonly DogTrayBlock[];
   readonly remainingMask: bigint;
   readonly effectiveTrayCapacity: number;
-  readonly handlers: ReadonlyMap<string, DogSpecialMechanismHandler>;
   readonly magneticRandom: SeededRandom;
   readonly config: DogV13Config;
   readonly sequence?: number;
@@ -111,9 +107,8 @@ export function resolveDogShuffleAfterSelection(
     tray: options.tray,
     remainingBlockIds: options.level.blocks
       .filter((_, index) => (options.remainingMask & blockMask(index)) !== 0n)
-      .map((block) => block.id),
+    .map((block) => block.id),
     effectiveTrayCapacity: options.effectiveTrayCapacity,
-    handlers: options.handlers,
     magneticRandom: options.magneticRandom,
     sequence: options.sequence ?? 1,
   });
@@ -123,7 +118,6 @@ export function sortSelectableBlocks(
   selectable: number[],
   level: DogLevelGeometry,
   tray: readonly DogTrayBlock[],
-  handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
   preferredRank: ReadonlyMap<number, number>,
 ): void {
   selectable.sort((firstIndex, secondIndex) => {
@@ -132,12 +126,10 @@ export function sortSelectableBlocks(
     const firstMatches = getTrailingMatchCount(
       tray,
       level.blocks[firstIndex].patternType,
-      handlers,
     );
     const secondMatches = getTrailingMatchCount(
       tray,
       level.blocks[secondIndex].patternType,
-      handlers,
     );
     return (
       secondMatches - firstMatches ||
@@ -165,7 +157,6 @@ export function trayPeakPressureForPath(
   initialTray: readonly DogTrayBlock[],
   path: readonly string[],
   graph: BlockGraph,
-  handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
   config: DogV13Config,
   initialRemainingMask = createFullBlockMask(level.blocks.length),
   initialHigherBlockCounts: readonly number[] = graph.higherBlockCounts,
@@ -196,9 +187,9 @@ export function trayPeakPressureForPath(
       remainingMask,
       higherBlockCounts,
       tray,
-      handlers,
       selectionRandom,
       graph,
+      config,
     );
     remainingMask = resolution.remainingMask;
     higherBlockCounts.splice(0, higherBlockCounts.length, ...resolution.higherBlockCounts);
@@ -207,7 +198,6 @@ export function trayPeakPressureForPath(
       tray: resolution.tray,
       remainingMask,
       effectiveTrayCapacity: config.tray.baseCapacity - (level.lockedTraySlotCount ?? 0),
-      handlers,
       magneticRandom: selectionRandom,
       config,
     });
@@ -226,7 +216,6 @@ export function trayPeakPressureForPath(
 function getTrailingMatchCount(
   tray: readonly DogTrayBlock[],
   patternType: DogTrayBlock["patternType"],
-  handlers: ReadonlyMap<string, DogSpecialMechanismHandler>,
 ): number {
   let matchCount = 0;
   for (let index = tray.length - 1; index >= 0; index -= 1) {
@@ -234,7 +223,7 @@ function getTrailingMatchCount(
     if (
       block === undefined ||
       block.patternType !== patternType ||
-      !isDogTrayBlockMatchable(block, handlers)
+      !isDogTrayBlockMatchable(block)
     ) {
       break;
     }

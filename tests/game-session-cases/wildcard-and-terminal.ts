@@ -16,10 +16,6 @@ import {
   resolveDogSelection,
 } from "@/games/dog-lege-dog/levels/level-mechanism-resolution";
 import {
-  createDogSpecialMechanismHandlerMap,
-  DOG_SPECIAL_MECHANISM_HANDLERS,
-} from "@/games/dog-lege-dog/game/special-mechanisms";
-import {
   createFullBlockMask,
 } from "@/games/dog-lege-dog/levels/level-solvability-contracts";
 import type { DogTrayBlock } from "@/games/dog-lege-dog/levels/level-types";
@@ -223,7 +219,6 @@ function replayMagneticRandom(
   path: readonly string[],
 ) {
   const graph = createBlockGraph(level.blocks);
-  const handlers = createDogSpecialMechanismHandlerMap(DOG_SPECIAL_MECHANISM_HANDLERS);
   const magneticRandom = createDogMagneticRandom(level);
   let remainingMask = createFullBlockMask(level.blocks.length);
   const higherBlockCounts = [...graph.higherBlockCounts];
@@ -240,7 +235,6 @@ function replayMagneticRandom(
       remainingMask,
       higherBlockCounts,
       tray,
-      handlers,
       magneticRandom,
       graph,
     );

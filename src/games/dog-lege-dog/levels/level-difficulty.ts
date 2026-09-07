@@ -92,9 +92,9 @@ export function calculateDifficultyMetrics(
   const verification =
     knownVerification ??
     (discoveredSolvability?.status === "solvable"
-      ? verifyRemovalPath(level, path, undefined, undefined, undefined, config)
+      ? verifyRemovalPath(level, path, undefined, undefined, config)
       : discoveredSolvability === undefined
-        ? verifyRemovalPath(level, path, undefined, undefined, undefined, config)
+        ? verifyRemovalPath(level, path, undefined, undefined, config)
         : toPathVerification(discoveredSolvability));
   const graph = createBlockGraph(level.blocks);
   const initialSelectable = graph.higherBlockCounts.filter((count) => count === 0).length;

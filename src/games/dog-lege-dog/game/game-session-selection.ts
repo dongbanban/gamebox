@@ -75,8 +75,10 @@ export class GameSessionSelectionRuntime {
     const resolution = insertDogBlockIntoTray(
       this.state.tray,
       toDogTrayBlock(pendingSelection.block),
-      this.state.specialMechanismHandlers,
-      { allowFrozenFinalTriple: this.state.remainingBlocks.size === 0 },
+      {
+        allowFrozenFinalTriple: this.state.remainingBlocks.size === 0,
+        config: this.state.config,
+      },
     );
     const shuffleResolution = this.state.updateResult();
 
@@ -118,8 +120,10 @@ export class GameSessionSelectionRuntime {
     this.state.pendingMagneticResolution = null;
     const resolution = resolveDogTrayMatches(
       this.state.tray,
-      this.state.specialMechanismHandlers,
-      { allowFrozenFinalTriple: this.state.remainingBlocks.size === 0 },
+      {
+        allowFrozenFinalTriple: this.state.remainingBlocks.size === 0,
+        config: this.state.config,
+      },
     );
     const shuffleResolution = this.state.updateResult();
     return createSelectionResult(
@@ -184,7 +188,6 @@ export class GameSessionSelectionRuntime {
       this.state.tray,
       magneticSource,
       targetBlock === undefined ? undefined : toDogTrayBlock(targetBlock),
-      this.state.specialMechanismHandlers,
     );
 
     return Object.freeze({

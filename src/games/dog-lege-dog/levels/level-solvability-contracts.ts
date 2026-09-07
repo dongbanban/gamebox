@@ -1,7 +1,6 @@
 import type {
   DogSafeChoiceSearchStatus,
   DogSolvabilityStatus,
-  DogSpecialMechanismHandler,
   DogTrayBlock,
 } from "@/games/dog-lege-dog/levels/level-types";
 import type { DogV13Config } from "@/games/dog-lege-dog/game/v13-config";
@@ -11,7 +10,6 @@ export const MAX_SOLVABILITY_SEARCH_BRANCHES = 16 as const;
 
 export interface SolvabilitySearchOptions {
   readonly branchBudget?: number;
-  readonly specialMechanismHandlers?: readonly DogSpecialMechanismHandler[];
   readonly config?: DogV13Config;
   readonly requireShuffleTrigger?: boolean;
 }

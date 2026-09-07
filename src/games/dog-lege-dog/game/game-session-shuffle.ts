@@ -1,7 +1,6 @@
 import type {
   DogBlock,
   DogLegeDogLevel,
-  DogSpecialMechanismHandler,
   DogTrayBlock,
 } from "@/games/dog-lege-dog/levels/level-types";
 import {
@@ -25,7 +24,6 @@ export interface GameSessionShuffleRuntimeContext {
   readonly config: DogV13Config;
   readonly level: DogLegeDogLevel;
   readonly remainingBlocks: ReadonlyMap<string, DogBlock>;
-  readonly specialMechanismHandlers: ReadonlyMap<string, DogSpecialMechanismHandler>;
   readonly magneticRandom: SeededRandom;
   readonly tray: DogTrayBlock[];
   readonly getEffectiveTrayCapacity: () => number;
@@ -148,7 +146,6 @@ export class GameSessionShuffleRuntime {
       remainingBlockIds: [...this.context.remainingBlocks.keys()],
       tray: this.context.tray,
       effectiveTrayCapacity: this.context.getEffectiveTrayCapacity(),
-      handlers: this.context.specialMechanismHandlers,
       magneticRandom: this.context.magneticRandom,
       sequence: this.shuffleSequence + 1,
     });

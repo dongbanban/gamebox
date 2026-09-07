@@ -1,7 +1,5 @@
 import { createBlockGraph, type BlockGraph } from "@/games/dog-lege-dog/levels/level-graph";
 import {
-  createDogSpecialMechanismHandlerMap,
-  DOG_SPECIAL_MECHANISM_HANDLERS,
   getDogBlockLogicalUnitCount,
   getDogTrayLogicalUnitCount,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
@@ -71,9 +69,6 @@ export function findSolvability(
 ): SolvabilityResult {
   const config = options.config ?? DOG_V13_CONFIG;
   const requireShuffleTrigger = options.requireShuffleTrigger === true;
-  const handlers = createDogSpecialMechanismHandlerMap(
-    options.specialMechanismHandlers ?? DOG_SPECIAL_MECHANISM_HANDLERS,
-  );
   const trayCapacity = resolveLevelTrayCapacity(level);
   const storedPath = level.solutionPath;
   if (storedPath !== undefined && storedPath.length > 0) {
@@ -81,7 +76,6 @@ export function findSolvability(
       level,
       storedPath,
       undefined,
-      handlers,
       trayCapacity,
       config,
     );
@@ -96,12 +90,11 @@ export function findSolvability(
     .sort((first, second) => second.z - first.z || first.id.localeCompare(second.id))
     .map((block) => block.id);
   const descendingVerification = verifyRemovalPath(
-    level,
-    descendingPath,
-    undefined,
-    handlers,
-    trayCapacity,
-    config,
+      level,
+      descendingPath,
+      undefined,
+      trayCapacity,
+      config,
   );
   if (descendingVerification.solvable && (
     !requireShuffleTrigger || (descendingVerification.simulation?.shuffleTriggerCount ?? 0) > 0
@@ -118,7 +111,6 @@ export function findSolvability(
     createFullBlockMask(level.blocks.length),
     [...graph.higherBlockCounts],
     [],
-    handlers,
     preferredRank,
     [],
     0,
@@ -128,7 +120,7 @@ export function findSolvability(
     requireShuffleTrigger,
   );
   if (greedyResult !== undefined) {
-    return normalizeSolvabilityResult(level, greedyResult, handlers, config);
+    return normalizeSolvabilityResult(level, greedyResult, config);
   }
 
   const searchResult = searchSolvableContinuation(
@@ -137,7 +129,6 @@ export function findSolvability(
     createFullBlockMask(level.blocks.length),
     [...graph.higherBlockCounts],
     [],
-    handlers,
     preferredRank,
     {
       completedStates: new Map(),
@@ -151,7 +142,7 @@ export function findSolvability(
     trayCapacity,
     createDogMagneticRandom(level),
   );
-  return normalizeSolvabilityResult(level, searchResult, handlers, config);
+  return normalizeSolvabilityResult(level, searchResult, config);
 }
 
 export function findSolvabilityFromState(
@@ -160,9 +151,6 @@ export function findSolvabilityFromState(
 ): SolvabilityResult {
   const config = options.config ?? DOG_V13_CONFIG;
   const requireShuffleTrigger = options.requireShuffleTrigger === true;
-  const handlers = createDogSpecialMechanismHandlerMap(
-    options.specialMechanismHandlers ?? DOG_SPECIAL_MECHANISM_HANDLERS,
-  );
   const trayCapacity = options.trayCapacity === undefined
     ? resolveLevelTrayCapacity(level)
     : resolveTrayCapacity(options.trayCapacity);
@@ -212,8 +200,9 @@ export function findSolvabilityFromState(
   }
 
   const tray = options.initialTray.map(cloneDogTrayBlock);
-  resolveDogTrayMatches(tray, handlers, {
+  resolveDogTrayMatches(tray, {
     allowFrozenFinalTriple: remainingMask === 0n,
+    config,
   });
   const magneticRandom = options.magneticRandom?.clone() ?? createDogMagneticRandom(level);
   const shuffleResolution = resolveDogShuffleAfterSelection({
@@ -221,7 +210,6 @@ export function findSolvabilityFromState(
     tray,
     remainingMask,
     effectiveTrayCapacity: trayCapacity,
-    handlers,
     magneticRandom,
     config,
   });
@@ -236,7 +224,6 @@ export function findSolvabilityFromState(
     trayCapacity,
     remainingMask !== 0n,
     selectable,
-    handlers,
     config,
     higherBlockCounts,
     magneticRandom,
@@ -261,7 +248,6 @@ export function findSolvabilityFromState(
     higherBlockCounts,
     tray,
     preferredPath,
-    handlers,
     trayCapacity,
     magneticRandom,
     config,
@@ -278,7 +264,6 @@ export function findSolvabilityFromState(
     remainingMask,
     higherBlockCounts,
     tray,
-    handlers,
     preferredRank,
     [],
     0,
@@ -298,7 +283,6 @@ export function findSolvabilityFromState(
     remainingMask,
     higherBlockCounts,
     tray,
-    handlers,
     preferredRank,
     {
       completedStates: options.completedStates ?? new Map(),
@@ -330,9 +314,6 @@ export function countSafeChoiceMetrics(
   let safeChoiceCount = 0;
   let searchStatus: DogSafeChoiceSearchStatus = "complete";
   const config = options.config ?? DOG_V13_CONFIG;
-  const handlers = createDogSpecialMechanismHandlerMap(
-    options.specialMechanismHandlers ?? DOG_SPECIAL_MECHANISM_HANDLERS,
-  );
   for (let index = 0; index < level.blocks.length; index += 1) {
     if (graph.higherBlockCounts[index] !== 0) {
       continue;
@@ -347,7 +328,6 @@ export function countSafeChoiceMetrics(
       level,
       candidatePath,
       graph,
-      handlers,
       undefined,
       config,
     );

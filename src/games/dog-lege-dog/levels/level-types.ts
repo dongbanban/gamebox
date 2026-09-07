@@ -45,17 +45,6 @@ export interface DogTrayBlock {
   readonly specialMechanism?: DogSpecialMechanism;
 }
 
-export interface DogSpecialMechanismHandler {
-  readonly type: string;
-  isMatchable(mechanism: DogSpecialMechanism): boolean;
-  onEnterTray?(block: DogTrayBlock): DogTrayBlock | readonly DogTrayBlock[];
-  onSuccessfulTriples(
-    block: DogTrayBlock,
-    tripleCount: number,
-    triplePatterns: readonly DogPatternType[],
-  ): DogTrayBlock;
-}
-
 export type DogSolvabilityStatus =
   | "solvable"
   | "unsolvable"

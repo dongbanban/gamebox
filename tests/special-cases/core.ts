@@ -16,7 +16,6 @@ import {
   startDogLegeDogGame,
 } from "@/games/dog-lege-dog";
 import { TEST_LEVEL, TEST_PATTERN_TYPES } from "../support/dog-level-fixture";
-import { createDogSpecialMechanismHandlerMap } from "@/games/dog-lege-dog/game/special-mechanisms";
 import {
   applyDogTraySuccessfulTripleEffects,
   resolveDogTrayMatches,
@@ -119,9 +118,7 @@ describe("特殊机制测试 · core", () => {
 
     const meltedBlockIds = applyDogTraySuccessfulTripleEffects(
       tray,
-      createDogSpecialMechanismHandlerMap(),
       1,
-      [WORKING_DOG],
     );
 
     expect(meltedBlockIds).toEqual(["freeze"]);
@@ -129,7 +126,6 @@ describe("特殊机制测试 · core", () => {
   });
 
   it("规则 seam 允许终局完整三消组直接移除冻结方块", () => {
-    const handlers = createDogSpecialMechanismHandlerMap();
     const tray = [
       createTrayBlock("freeze", WORKING_DOG, {
         type: DOG_FREEZE_MECHANISM_TYPE,
@@ -139,7 +135,7 @@ describe("特殊机制测试 · core", () => {
       createTrayBlock("working-2", WORKING_DOG),
     ];
 
-    const resolution = resolveDogTrayMatches(tray, handlers, {
+    const resolution = resolveDogTrayMatches(tray, {
       allowFrozenFinalTriple: true,
     });
 
@@ -149,7 +145,6 @@ describe("特殊机制测试 · core", () => {
   });
 
   it("终局三消也不跨非相邻方块移除冻结方块", () => {
-    const handlers = createDogSpecialMechanismHandlerMap();
     const tray = [
       createTrayBlock("freeze", WORKING_DOG, {
         type: DOG_FREEZE_MECHANISM_TYPE,
@@ -159,7 +154,7 @@ describe("特殊机制测试 · core", () => {
       createTrayBlock("working-1", WORKING_DOG),
     ];
 
-    const resolution = resolveDogTrayMatches(tray, handlers, {
+    const resolution = resolveDogTrayMatches(tray, {
       allowFrozenFinalTriple: true,
     });
 
@@ -168,7 +163,6 @@ describe("特殊机制测试 · core", () => {
   });
 
   it("终局结算先移除包含冻结方块的合法相邻三连", () => {
-    const handlers = createDogSpecialMechanismHandlerMap();
     const tray = [
       createTrayBlock("freeze", WORKING_DOG, {
         type: DOG_FREEZE_MECHANISM_TYPE,
@@ -179,7 +173,7 @@ describe("特殊机制测试 · core", () => {
       createTrayBlock("single", SINGLE_DOG),
     ];
 
-    const resolution = resolveDogTrayMatches(tray, handlers, {
+    const resolution = resolveDogTrayMatches(tray, {
       allowFrozenFinalTriple: true,
     });
 
@@ -188,7 +182,6 @@ describe("特殊机制测试 · core", () => {
   });
 
   it("终局冻结三消允许先消除其他组再级联覆盖全部相邻方块", () => {
-    const handlers = createDogSpecialMechanismHandlerMap();
     const tray = [
       createTrayBlock("freeze", WORKING_DOG, {
         type: DOG_FREEZE_MECHANISM_TYPE,
@@ -201,7 +194,7 @@ describe("特殊机制测试 · core", () => {
       createTrayBlock("working-2", WORKING_DOG),
     ];
 
-    const resolution = resolveDogTrayMatches(tray, handlers, {
+    const resolution = resolveDogTrayMatches(tray, {
       allowFrozenFinalTriple: true,
     });
 
@@ -225,7 +218,6 @@ describe("特殊机制测试 · core", () => {
 
     const resolution = resolveDogTrayMatches(
       tray,
-      createDogSpecialMechanismHandlerMap(),
     );
 
     expect(resolution).toMatchObject({ removedCount: 6, tripleCount: 2 });
