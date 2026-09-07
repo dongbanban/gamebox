@@ -23,9 +23,9 @@ import {
 } from "@/games/dog-lege-dog/game/game-session-results";
 import {
   removeSpecialMechanism,
-  toTrayBlock,
   type GameSessionState,
 } from "@/games/dog-lege-dog/game/game-session-state";
+import { toDogTrayBlock } from "@/games/dog-lege-dog/levels/level-tray-block";
 
 export class GameSessionSelectionRuntime {
   constructor(
@@ -74,7 +74,7 @@ export class GameSessionSelectionRuntime {
     this.state.pendingSelection = null;
     const resolution = insertDogBlockIntoTray(
       this.state.tray,
-      toTrayBlock(pendingSelection.block),
+      toDogTrayBlock(pendingSelection.block),
       this.state.specialMechanismHandlers,
       { allowFrozenFinalTriple: this.state.remainingBlocks.size === 0 },
     );
@@ -167,7 +167,7 @@ export class GameSessionSelectionRuntime {
       readonly magneticTargetBlockId: string | null;
     },
   ): GameSessionMagneticResolution {
-    const magneticSource = removeSpecialMechanism(toTrayBlock(pendingSelection.block));
+    const magneticSource = removeSpecialMechanism(toDogTrayBlock(pendingSelection.block));
     const targetBlockId = pendingSelection.magneticTargetBlockId;
     const targetBlock = targetBlockId === null
       ? undefined
@@ -183,7 +183,7 @@ export class GameSessionSelectionRuntime {
     const targetTrayBlockIds = insertDogMagneticBlocks(
       this.state.tray,
       magneticSource,
-      targetBlock === undefined ? undefined : toTrayBlock(targetBlock),
+      targetBlock === undefined ? undefined : toDogTrayBlock(targetBlock),
       this.state.specialMechanismHandlers,
     );
 

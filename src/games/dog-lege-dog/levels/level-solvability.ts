@@ -26,11 +26,11 @@ import type {
   SolvabilityStateOptions,
 } from "@/games/dog-lege-dog/levels/level-solvability-contracts";
 import {
-  cloneTray,
   getSelectableBlocks,
   isCapacityBlocked,
   resolveDogShuffleAfterSelection,
 } from "@/games/dog-lege-dog/levels/level-solvability-simulation";
+import { cloneDogTrayBlock } from "@/games/dog-lege-dog/levels/level-tray-block";
 import { resolveDogTrayMatches } from "@/games/dog-lege-dog/levels/level-rules";
 import {
   createPreferredRank,
@@ -211,7 +211,7 @@ export function findSolvabilityFromState(
     );
   }
 
-  const tray = cloneTray(options.initialTray);
+  const tray = options.initialTray.map(cloneDogTrayBlock);
   resolveDogTrayMatches(tray, handlers, {
     allowFrozenFinalTriple: remainingMask === 0n,
   });

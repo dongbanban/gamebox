@@ -13,6 +13,7 @@ import type {
 } from "@/games/dog-lege-dog/levels/level-types";
 import { createBlockGraph, type BlockGraph } from "@/games/dog-lege-dog/levels/level-graph";
 import { SeededRandom } from "@/games/dog-lege-dog/levels/level-random";
+import { toDogTrayBlock } from "@/games/dog-lege-dog/levels/level-tray-block";
 
 export interface DogSelectionResolution {
   readonly remainingMask: bigint;
@@ -76,7 +77,7 @@ export function resolveDogSelection(
   if (magneticTargetIndex === null) {
     insertDogBlockIntoTray(
       tray,
-      toTrayBlock(selectedBlock),
+      toDogTrayBlock(selectedBlock),
       handlers,
       { allowFrozenFinalTriple: nextRemainingMask === 0n },
     );
@@ -86,8 +87,8 @@ export function resolveDogSelection(
     const targetBlock = level.blocks[magneticTargetIndex];
     insertDogMagneticBlocks(
       tray,
-      toTrayBlock(selectedBlock),
-      targetBlock === undefined ? undefined : toTrayBlock(targetBlock),
+      toDogTrayBlock(selectedBlock),
+      targetBlock === undefined ? undefined : toDogTrayBlock(targetBlock),
       handlers,
     );
     resolveDogTrayMatches(tray, handlers, {
@@ -166,16 +167,6 @@ function revealLowerBlocks(
   for (const lowerBlockIndex of graph.lowerBlockIndicesByHigher[higherBlockIndex] ?? []) {
     higherBlockCounts[lowerBlockIndex] -= 1;
   }
-}
-
-function toTrayBlock(block: DogLevelGeometry["blocks"][number]): DogTrayBlock {
-  return {
-    id: block.id,
-    patternType: block.patternType,
-    ...(block.specialMechanism === undefined
-      ? {}
-      : { specialMechanism: block.specialMechanism }),
-  };
 }
 
 function blockMask(blockIndex: number): bigint {

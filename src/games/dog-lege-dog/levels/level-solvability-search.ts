@@ -19,7 +19,6 @@ import {
   type SolvabilitySearchContext,
 } from "@/games/dog-lege-dog/levels/level-solvability-contracts";
 import {
-  cloneTray,
   getSelectableBlocks,
   isCapacityBlocked,
   resolveDogShuffleAfterSelection,
@@ -29,6 +28,7 @@ import {
 } from "@/games/dog-lege-dog/levels/level-solvability-simulation";
 import { createDogMagneticRandom, resolveDogSelection } from "@/games/dog-lege-dog/levels/level-mechanism-resolution";
 import { SeededRandom } from "@/games/dog-lege-dog/levels/level-random";
+import { cloneDogTrayBlock } from "@/games/dog-lege-dog/levels/level-tray-block";
 
 export function searchSolvableContinuation(
   level: DogLevelGeometry,
@@ -353,7 +353,7 @@ export function verifyStateContinuation(
 ): SolvabilityResult | undefined {
   let remainingMask = initialRemainingMask;
   const higherBlockCounts = [...initialHigherBlockCounts];
-  const tray = cloneTray(initialTray);
+  const tray = initialTray.map(cloneDogTrayBlock);
   const selectionRandom = magneticRandom.clone();
   const autoConsumedIndices = new Set<number>();
   let trayPeakPressure = getDogTrayLogicalUnitCount(tray);

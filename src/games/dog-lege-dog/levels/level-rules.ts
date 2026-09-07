@@ -6,13 +6,6 @@ import type {
 
 export { getPositiveOverlapArea, hasPositiveAreaOverlap } from "@/games/dog-lege-dog/levels/level-graph";
 
-export interface DogRectangle {
-  readonly x: number;
-  readonly y: number;
-  readonly width: number;
-  readonly height: number;
-}
-
 export interface DogTrayMatchResolution {
   readonly removedCount: number;
   readonly tripleCount: number;
@@ -188,23 +181,9 @@ function getAdjacentMatchGroups<T, K>(
 
 function removeItemsAtIndexes<T>(items: T[], indexes: readonly number[]): number {
   const removalIndexes = new Set(indexes);
-  let writeIndex = 0;
-  let removedCount = 0;
-  for (let index = 0; index < items.length; index += 1) {
-    const item = items[index];
-    if (item === undefined) {
-      continue;
-    }
-
-    if (removalIndexes.has(index)) {
-      removedCount += 1;
-      continue;
-    }
-
-    items[writeIndex] = item;
-    writeIndex += 1;
-  }
-  items.length = writeIndex;
+  const remainingItems = items.filter((_, index) => !removalIndexes.has(index));
+  const removedCount = items.length - remainingItems.length;
+  items.splice(0, items.length, ...remainingItems);
   return removedCount;
 }
 

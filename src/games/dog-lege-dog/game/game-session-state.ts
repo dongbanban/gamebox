@@ -25,7 +25,10 @@ import {
   isDogSpecialMechanismResolved,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
 import { SeededRandom } from "@/games/dog-lege-dog/levels/level-random";
-import { cloneDogTrayBlock } from "@/games/dog-lege-dog/levels/level-tray-block";
+import {
+  cloneDogTrayBlock,
+  toDogTrayBlock,
+} from "@/games/dog-lege-dog/levels/level-tray-block";
 import {
   DOG_V13_CONFIG,
   getDogShuffleThreshold,
@@ -341,7 +344,7 @@ export class GameSessionState {
       return trayBlocks;
     }
 
-    const pendingBlock = toTrayBlock(this.pendingSelection.block);
+    const pendingBlock = toDogTrayBlock(this.pendingSelection.block);
     if (pendingBlock.specialMechanism?.type === DOG_TWIN_MECHANISM_TYPE) {
       trayBlocks.push(...prepareDogTrayBlocks(pendingBlock, this.specialMechanismHandlers));
     } else {
@@ -398,16 +401,6 @@ export class GameSessionState {
       return getDogTrayLogicalUnitCount(shuffleResolution.tray) <= effectiveTrayCapacity;
     });
   }
-}
-
-export function toTrayBlock(block: DogBlock): DogTrayBlock {
-  return {
-    id: block.id,
-    patternType: block.patternType,
-    ...(block.specialMechanism === undefined
-      ? {}
-      : { specialMechanism: block.specialMechanism }),
-  };
 }
 
 export function removeSpecialMechanism<T extends DogBlock | DogTrayBlock>(block: T): T {

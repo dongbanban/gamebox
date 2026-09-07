@@ -223,30 +223,6 @@ export function trayPeakPressureForPath(
   return trayPeakPressure;
 }
 
-export function toTrayBlock(block: DogLevelGeometry["blocks"][number]): DogTrayBlock {
-  return {
-    id: block.id,
-    patternType: block.patternType,
-    ...(block.specialMechanism === undefined
-      ? {}
-      : { specialMechanism: block.specialMechanism }),
-  };
-}
-
-export function cloneTray(tray: readonly DogTrayBlock[]): DogTrayBlock[] {
-  return tray.map((block) => ({
-    ...block,
-    ...(block.specialMechanism === undefined
-      ? {}
-      : {
-          specialMechanism: {
-            ...block.specialMechanism,
-            state: { ...block.specialMechanism.state },
-          },
-        }),
-  }));
-}
-
 function getTrailingMatchCount(
   tray: readonly DogTrayBlock[],
   patternType: DogTrayBlock["patternType"],
