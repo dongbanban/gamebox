@@ -2,50 +2,13 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  BLOCK_FLIGHT_DURATION_MS,
-  DOG_DEMAGNETIZER_DURATION_MS,
-  DOG_MAGNETIC_ATTRACTION_DURATION_MS,
   DOG_FREEZE_MELT_DURATION_MS,
-  DOG_DETECTOR_REVEAL_DURATION_MS,
   DOG_TORCH_MELT_DURATION_MS,
-  DOG_ILLUSION_REVEAL_DURATION_MS,
-  DOG_TWIN_SPLIT_DURATION_MS,
 } from "@/games/dog-lege-dog/assets/animation-effects";
-import { getDogPatternAssetUrl } from "@/games/dog-lege-dog/assets/game-assets";
 import {
-  BLOCK_HEIGHT,
-  BLOCK_WIDTH,
-  DOG_ILLUSION_MECHANISM_TYPE,
-  DOG_PATTERN_TYPES,
   DOG_FREEZE_MECHANISM_TYPE,
-  DOG_MAGNETIC_MECHANISM_TYPE,
-  DOG_TWIN_MECHANISM_TYPE,
-  GameSession,
-  LevelGenerator,
-  createDogSpecialMechanism,
-  getBlockCount,
-  getDogLogicalBlockCount,
-  getDogV13LogicalBlockCount,
-  getDogV13MechanismPlan,
-  getDogSpecialMechanismComposition,
-  getDogSpecialMechanismConfigs,
-  validateDogSpecialMechanismComposition,
-  type DogBlock,
-  type DogLegeDogLevel,
-  type DogPatternType,
-  type DogTrayBlock,
   startDogLegeDogGame,
 } from "@/games/dog-lege-dog";
-import { TEST_LEVEL, TEST_PATTERN_TYPES } from "../support/dog-level-fixture";
-import { createDogSpecialMechanismHandlerMap } from "@/games/dog-lege-dog/game/special-mechanisms";
-import {
-  applyDogTraySuccessfulTripleEffects,
-  resolveDogTrayMatches,
-} from "@/games/dog-lege-dog/levels/level-rules";
-
-const WORKING_DOG: DogPatternType = "打工狗";
-const SINGLE_DOG: DogPatternType = "单身狗";
-const LICKING_DOG: DogPatternType = "舔狗";
 
 describe("特殊机制测试 · torch-ui", () => {
   afterEach(() => {
@@ -315,54 +278,3 @@ describe("特殊机制测试 · torch-ui", () => {
     game.destroy();
   });
 });
-
-function selectAll(session: GameSession, blockIds: readonly string[]) {
-  let result;
-  for (const blockId of blockIds) {
-    result = session.selectBlock(blockId);
-  }
-  if (result === undefined) {
-    throw new Error("Expected at least one block to select");
-  }
-  return result;
-}
-
-function createLevel(blocks: readonly DogBlock[]): DogLegeDogLevel {
-  return {
-    ...TEST_LEVEL,
-    patternTypes: TEST_PATTERN_TYPES,
-    blocks,
-  };
-}
-
-function createBlock(
-  id: string,
-  x: number,
-  y: number,
-  patternType: DogPatternType,
-  specialMechanism?: DogBlock["specialMechanism"],
-): DogBlock {
-  return {
-    id,
-    x,
-    y,
-    z: 0,
-    width: BLOCK_WIDTH,
-    height: BLOCK_HEIGHT,
-    rotation: 0,
-    patternType,
-    ...(specialMechanism === undefined ? {} : { specialMechanism }),
-  };
-}
-
-function createTrayBlock(
-  id: string,
-  patternType: DogPatternType,
-  specialMechanism?: DogTrayBlock["specialMechanism"],
-): DogTrayBlock {
-  return {
-    id,
-    patternType,
-    ...(specialMechanism === undefined ? {} : { specialMechanism }),
-  };
-}

@@ -258,8 +258,7 @@ function assignRemainingMechanisms(
   if (count <= 0) {
     return;
   }
-  const candidates = blocks
-    .map((block, index) => index)
+  const candidates = [...blocks.keys()]
     .filter((index) => isEligibleHighLayerBlock(blocks[index], index, usedIndices));
   assignFromCandidates(
     candidates,

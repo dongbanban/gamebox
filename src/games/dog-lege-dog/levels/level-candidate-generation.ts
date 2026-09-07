@@ -10,7 +10,6 @@ import {
 } from "@/games/dog-lege-dog/levels/level-shapes";
 import {
   createRemovalPathPlan,
-  createSolvableBlockPlacements,
   createSolvableBlocks,
   resolveRemovalPathPlan,
   selectPatternTypes,

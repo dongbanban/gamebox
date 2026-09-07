@@ -1,7 +1,6 @@
 import { createBlockGraph, type BlockGraph } from "@/games/dog-lege-dog/levels/level-graph";
 import {
   createDogSpecialMechanismHandlerMap,
-  DOG_SPECIAL_MECHANISM_HANDLERS,
   getDogTrayLogicalUnitCount,
   isDogSpecialMechanismResolved,
 } from "@/games/dog-lege-dog/game/special-mechanisms";

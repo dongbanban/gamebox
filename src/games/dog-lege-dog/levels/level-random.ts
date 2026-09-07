@@ -36,23 +36,6 @@ export function createRunSeed(): string {
   return `run-${timestamp}-${counter}`;
 }
 
-export function weightedPick<T>(
-  values: readonly T[],
-  weights: readonly number[],
-  random: SeededRandom,
-): T {
-  const totalWeight = weights.reduce((total, weight) => total + weight, 0);
-  let target = random.next() * totalWeight;
-  for (let index = 0; index < values.length; index += 1) {
-    target -= weights[index];
-    if (target < 0) {
-      return values[index];
-    }
-  }
-
-  return values[values.length - 1];
-}
-
 export class SeededRandom {
   private state: number;
 

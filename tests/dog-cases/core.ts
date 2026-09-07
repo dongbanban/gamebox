@@ -2,29 +2,18 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { resolveAssetUrl } from "@/asset-url";
-import type { GameResult } from "@/catalog";
-import {
-  BLOCK_FLIGHT_DURATION_MS,
-  DOG_ITEM_FEEDBACK_DURATION_MS,
-} from "@/games/dog-lege-dog/assets/animation-effects";
 import {
   DOG_PATTERN_TYPES,
-  DOG_ILLUSION_MECHANISM_TYPE,
   DOG_TWIN_MECHANISM_TYPE,
   DOG_V13_CONFIG,
   LevelGenerator,
   getDogLogicalBlockCount,
   startDogLegeDogGame,
-  type DogBlock,
-  type DogLegeDogLevel,
-  type DogPatternType,
 } from "@/games/dog-lege-dog";
-import type { GameLaunchContext } from "@/game-contracts";
 import {
-  getDogPatternClassName,
   renderDogPatternAsset,
 } from "@/games/dog-lege-dog/assets/game-assets";
-import { TEST_LEVEL, TEST_RUN_SEED } from "../support/dog-level-fixture";
+import { TEST_LEVEL } from "../support/dog-level-fixture";
 import { startTestGame } from "../support/dog-game-fixtures";
 
 afterEach(() => {

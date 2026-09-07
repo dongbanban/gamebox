@@ -13,10 +13,8 @@ import {
   type DogV13TestProfileName,
 } from "@/games/dog-lege-dog/game/v13-config-types";
 import { DOG_V13_CONFIG_SOURCE } from "@/games/dog-lege-dog/game/v13-config-source";
-import {
-  cloneAndFreeze,
-  collectConfigIssues,
-} from "@/games/dog-lege-dog/game/v13-config-validation";
+import { collectConfigIssues } from "@/games/dog-lege-dog/game/v13-config-validation";
+import { cloneAndFreeze } from "@/games/dog-lege-dog/game/v13-config-validation-primitives";
 
 export * from "@/games/dog-lege-dog/game/v13-config-types";
 
@@ -31,22 +29,9 @@ export class DogV13ConfigError extends Error {
   }
 }
 
-export function assertDogV13Config(input: unknown): asserts input is DogV13Config {
+export function loadDogV13Config(input: unknown = DOG_V13_CONFIG_SOURCE): DogV13Config {
   const issues = collectConfigIssues(input);
   if (issues.length > 0) throw new DogV13ConfigError(issues);
-}
-
-export function validateDogV13Config(input: unknown): DogV13Config {
-  assertDogV13Config(input);
-  return input;
-}
-
-export function getDogV13ConfigIssues(input: unknown): readonly DogV13ConfigIssue[] {
-  return Object.freeze(collectConfigIssues(input));
-}
-
-export function loadDogV13Config(input: unknown = DOG_V13_CONFIG_SOURCE): DogV13Config {
-  validateDogV13Config(input);
   return cloneAndFreeze(input) as DogV13Config;
 }
 
@@ -62,18 +47,6 @@ export function getDogV13LevelStage(
   );
   if (stage === undefined) throw new Error(`狗了个狗 v13 level stage is unavailable for level ${levelNumber}`);
   return { ...stage };
-}
-
-export function getDogV13LevelStageIndex(
-  levelNumber: number,
-  config: DogV13Config = DOG_V13_CONFIG,
-): number {
-  validateLevelNumber(levelNumber, config);
-  const index = config.levels.structureStages.findIndex(
-    (candidate) => levelNumber >= candidate.minLevel && levelNumber <= candidate.maxLevel,
-  );
-  if (index < 0) throw new Error(`狗了个狗 v13 level stage is unavailable for level ${levelNumber}`);
-  return index;
 }
 
 export function getDogV13LogicalBlockCount(

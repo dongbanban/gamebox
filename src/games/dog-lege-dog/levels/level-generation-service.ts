@@ -10,7 +10,6 @@ import {
 import type {
   DogLevelGenerationWorker,
   DogLevelGenerationWorkerRequest,
-  DogLevelGenerationWorkerResponse,
 } from "@/games/dog-lege-dog/levels/level-generation-protocol";
 import type { LevelGeneratorRequest } from "@/games/dog-lege-dog/levels/level-generator-contracts";
 import { freezeDogLegeDogLevel } from "@/games/dog-lege-dog/levels/level-immutability";

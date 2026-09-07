@@ -18,7 +18,6 @@ import type {
   GameSessionTripleRemovalPlan,
   GameSessionTripleRemovalResult,
   GameSessionWildcardPlan,
-  GameSessionWildcardResolution,
   GameSessionWildcardResult,
 } from "@/games/dog-lege-dog/game/game-session-contracts";
 import {

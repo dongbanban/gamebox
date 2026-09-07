@@ -2,25 +2,16 @@ import { describe, expect, it } from "vitest";
 import {
   DOG_FREEZE_MECHANISM_TYPE,
   DOG_ILLUSION_MECHANISM_TYPE,
-  DOG_MAGNETIC_MECHANISM_TYPE,
   GameSession,
-  type DogBlock,
-  type DogLegeDogLevel,
   type DogPatternType,
 } from "@/games/dog-lege-dog";
-import { DOG_V13_CONFIG } from "@/games/dog-lege-dog";
-import { TEST_LEVEL, TEST_PATTERN_TYPES } from "../support/dog-level-fixture";
 import { createBlock, createLevel, createTargetDefinition } from "../support/item-fixtures";
 import {
   DOG_ITEM_DEFINITIONS,
-  DOG_ITEM_IDS,
-  type DogItemDefinition,
-  type DogItemId,
 } from "@/games/dog-lege-dog/game/dog-loadout";
 import {
   DogItemRuntime,
   type DogItemRuntimeDefinition,
-  type DogItemTarget,
 } from "@/games/dog-lege-dog/game/dog-item-runtime";
 
 const WORKING_DOG: DogPatternType = "打工狗";

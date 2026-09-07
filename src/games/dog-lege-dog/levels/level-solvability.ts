@@ -7,7 +7,6 @@ import {
 } from "@/games/dog-lege-dog/game/special-mechanisms";
 import {
   DOG_V13_CONFIG,
-  type DogV13Config,
 } from "@/games/dog-lege-dog/game/v13-config";
 import type {
   DogLevelGeometry,
@@ -313,14 +312,6 @@ export function findSolvabilityFromState(
     trayCapacity,
     magneticRandom,
   );
-}
-
-export function countSafeChoices(
-  level: DogLevelGeometry,
-  solutionPath: readonly string[],
-  graph: BlockGraph,
-): number {
-  return countSafeChoiceMetrics(level, solutionPath, graph).safeChoiceCount;
 }
 
 export function countSafeChoiceMetrics(

@@ -1,4 +1,3 @@
-import type { DogTrayBlock } from "@/games/dog-lege-dog/levels/level-types";
 import { resolveDogTrayMatches } from "@/games/dog-lege-dog/levels/level-rules";
 import {
   DOG_FREEZE_MECHANISM_TYPE,

@@ -10,7 +10,6 @@ import {
   prepareDogTrayBlocks,
   resolveDogTrayMatches,
 } from "@/games/dog-lege-dog/levels/level-rules";
-import { findSolvabilityFromState } from "@/games/dog-lege-dog/levels/level-solvability";
 import { GameSessionShuffleRuntime } from "@/games/dog-lege-dog/game/game-session-shuffle";
 import { resolveDogSelection } from "@/games/dog-lege-dog/levels/level-mechanism-resolution";
 import { resolveDogShuffleState } from "@/games/dog-lege-dog/levels/level-shuffle";

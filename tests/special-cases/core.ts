@@ -2,34 +2,13 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  BLOCK_FLIGHT_DURATION_MS,
-  DOG_DEMAGNETIZER_DURATION_MS,
-  DOG_MAGNETIC_ATTRACTION_DURATION_MS,
-  DOG_FREEZE_MELT_DURATION_MS,
-  DOG_DETECTOR_REVEAL_DURATION_MS,
-  DOG_TORCH_MELT_DURATION_MS,
-  DOG_ILLUSION_REVEAL_DURATION_MS,
-  DOG_TWIN_SPLIT_DURATION_MS,
-} from "@/games/dog-lege-dog/assets/animation-effects";
-import { getDogPatternAssetUrl } from "@/games/dog-lege-dog/assets/game-assets";
-import {
   BLOCK_HEIGHT,
   BLOCK_WIDTH,
-  DOG_ILLUSION_MECHANISM_TYPE,
-  DOG_PATTERN_TYPES,
   DOG_FREEZE_MECHANISM_TYPE,
-  DOG_MAGNETIC_MECHANISM_TYPE,
-  DOG_TWIN_MECHANISM_TYPE,
   GameSession,
-  LevelGenerator,
-  createDogSpecialMechanism,
-  getBlockCount,
-  getDogLogicalBlockCount,
   getDogV13LogicalBlockCount,
   getDogV13MechanismPlan,
-  getDogSpecialMechanismComposition,
   getDogSpecialMechanismConfigs,
-  validateDogSpecialMechanismComposition,
   type DogBlock,
   type DogLegeDogLevel,
   type DogPatternType,

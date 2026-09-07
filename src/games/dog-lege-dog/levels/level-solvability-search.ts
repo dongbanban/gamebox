@@ -15,7 +15,6 @@ import {
 import {
   blockMask,
   createSolvabilityResult,
-  resolveBranchBudget,
   type SolvabilityResult,
   type SolvabilitySearchContext,
 } from "@/games/dog-lege-dog/levels/level-solvability-contracts";

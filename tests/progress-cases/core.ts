@@ -28,40 +28,6 @@ class MemoryStorage implements StorageLike {
   }
 }
 
-class UnavailableStorage implements StorageLike {
-  getItem(): string {
-    throw new Error("storage unavailable");
-  }
-
-  setItem(): void {
-    throw new Error("storage unavailable");
-  }
-
-  removeItem(): void {
-    throw new Error("storage unavailable");
-  }
-}
-
-class WriteFailureStorage implements StorageLike {
-  private readonly value: string;
-
-  constructor(value: string) {
-    this.value = value;
-  }
-
-  getItem(): string {
-    return this.value;
-  }
-
-  setItem(): void {
-    throw new Error("storage write failed");
-  }
-
-  removeItem(): void {
-    throw new Error("storage write failed");
-  }
-}
-
 const userId = "123e4567-e89b-12d3-a456-426614174000";
 
 function createStoredState(games: Record<string, unknown>): string {
@@ -71,15 +37,6 @@ function createStoredState(games: Record<string, unknown>): string {
     games,
     settings: { soundEnabled: true },
   });
-}
-
-function loadGameProgress(progress: unknown): ReturnType<ProgressStore["snapshot"]> {
-  const storage = new MemoryStorage();
-  storage.setItem(
-    "gamebox.state",
-    createStoredState({ [GAME_ID]: progress }),
-  );
-  return new ProgressStore({ storage }).snapshot();
 }
 
 describe("ProgressStore · core", () => {

@@ -1,14 +1,11 @@
 import {
   DOG_V13_ITEM_COPY_KEYS,
   DOG_V13_SCHEMA_VERSION,
-  type DogConfigChangeArea,
   type DogV13Config,
   type DogV13DifficultyTarget,
   type DogV13ItemId,
-  type DogV13MechanismType,
-  type DogV13TestProfile,
 } from "@/games/dog-lege-dog/game/v13-config-types";
-import { DOG_PATTERN_TYPES, type DogPatternType } from "@/games/dog-lege-dog/levels/level-types";
+import { type DogPatternType } from "@/games/dog-lege-dog/levels/level-types";
 import DOG_V13_TEST_PROFILES_JSON from "@/games/dog-lege-dog/game/v13-test-profiles.json";
 
 const PATTERN_ASSET_PATHS: Readonly<Record<DogPatternType, string>> = {

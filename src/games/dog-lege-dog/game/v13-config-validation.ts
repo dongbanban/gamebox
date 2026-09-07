@@ -4,7 +4,6 @@ import {
 } from "@/games/dog-lege-dog/game/v13-config-types";
 import {
   asRecord,
-  cloneAndFreeze,
   isRecord,
   requiredObject,
 } from "@/games/dog-lege-dog/game/v13-config-validation-primitives";
@@ -23,8 +22,6 @@ import {
   validateTray,
 } from "@/games/dog-lege-dog/game/v13-config-validation-core";
 import { validateUiConfig } from "@/games/dog-lege-dog/game/v13-config-validation-ui";
-
-export { cloneAndFreeze } from "@/games/dog-lege-dog/game/v13-config-validation-primitives";
 
 export function collectConfigIssues(input: unknown): DogV13ConfigIssue[] {
   if (!isRecord(input)) {

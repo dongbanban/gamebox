@@ -2,7 +2,6 @@ import { expect, test } from "@playwright/test";
 import {
   enterGame,
   winCurrentLevel,
-  getBlockIds,
   leaveActiveGame,
   reset,
 } from "../support/full-flow-fixtures";

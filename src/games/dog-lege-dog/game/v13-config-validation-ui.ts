@@ -2,12 +2,9 @@ import {
   DOG_V13_ITEM_COPY_KEYS,
   type DogV13ConfigIssue,
 } from "@/games/dog-lege-dog/game/v13-config-types";
-import { DOG_PATTERN_TYPES, type DogPatternType } from "@/games/dog-lege-dog/levels/level-types";
 import {
   asRecord,
-  validateAssetMap,
   validateInteger,
-  validateLevelNumberArray,
   validateNonEmptyString,
   validateRange,
   validateStringArray,

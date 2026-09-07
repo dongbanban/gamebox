@@ -12,7 +12,6 @@ import {
 } from "@/games/dog-lege-dog/levels/level-placement-solvability";
 import type {
   BlockPlacement,
-  PlacementFactory,
   RemovalPathPlan,
 } from "@/games/dog-lege-dog/levels/level-placement-contracts";
 

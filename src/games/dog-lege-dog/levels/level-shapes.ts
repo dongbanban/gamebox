@@ -93,10 +93,6 @@ function createRows(holes: readonly Hole[]): readonly string[] {
   });
 }
 
-function cellKey(cell: DogBoardCell): string {
-  return `${cell.x}:${cell.y}`;
-}
-
 export function selectShapeTemplate(random: SeededRandom): DogShapeTemplate {
   return DOG_SHAPE_TEMPLATES.filter((template) => template.shape === "irregular")[
     random.nextInt(DOG_SHAPE_TEMPLATES.length)

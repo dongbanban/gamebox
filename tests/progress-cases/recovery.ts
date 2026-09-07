@@ -5,12 +5,6 @@ import {
   ProgressStore,
   type StorageLike,
 } from "@/progress-store";
-import {
-  DOG_V13_CONFIG,
-  LevelGenerator,
-} from "@/games/dog-lege-dog";
-
-const MAX_LEVEL_NUMBER = DOG_V13_CONFIG.game.maxLevelNumber;
 
 class MemoryStorage implements StorageLike {
   private readonly values = new Map<string, string>();
@@ -71,15 +65,6 @@ function createStoredState(games: Record<string, unknown>): string {
     games,
     settings: { soundEnabled: true },
   });
-}
-
-function loadGameProgress(progress: unknown): ReturnType<ProgressStore["snapshot"]> {
-  const storage = new MemoryStorage();
-  storage.setItem(
-    "gamebox.state",
-    createStoredState({ [GAME_ID]: progress }),
-  );
-  return new ProgressStore({ storage }).snapshot();
 }
 
 describe("ProgressStore · recovery", () => {

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { acceptBeforeUnload, confirmDogLoadout, resetPage } from "../support/common";
+import { confirmDogLoadout, resetPage } from "../support/common";
 
 test.describe.configure({ timeout: 120_000 });
 

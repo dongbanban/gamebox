@@ -1,11 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   GameSession,
-  type DogBlock,
-  type DogLegeDogLevel,
   type DogPatternType,
 } from "@/games/dog-lege-dog";
-import { TEST_LEVEL, TEST_PATTERN_TYPES } from "../support/dog-level-fixture";
 import {
   createBlock,
   createLevel,

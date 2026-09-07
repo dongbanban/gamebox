@@ -21,7 +21,6 @@ import {
 import {
   createRunSeed,
   getCandidateRandomSeed,
-  SeededRandom,
 } from "@/games/dog-lege-dog/levels/level-random";
 import type {
   DogLevelDifficulty,

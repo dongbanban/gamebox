@@ -1,5 +1,4 @@
 import type {
-  DogLevelGeometry,
   DogSafeChoiceSearchStatus,
   DogSolvabilityStatus,
   DogSpecialMechanismHandler,

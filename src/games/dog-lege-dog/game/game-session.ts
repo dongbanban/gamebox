@@ -16,7 +16,6 @@ import type {
   GameSessionSnapshot,
   GameSessionShuffleReplayEvent,
   GameSessionShuffleTransaction,
-  GameSessionShuffleState,
   GameSessionTripleRemovalPlan,
   GameSessionTripleRemovalResult,
   GameSessionUnlockResult,

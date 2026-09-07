@@ -10,18 +10,13 @@ import {
   type DogPatternType,
 } from "@/games/dog-lege-dog";
 import { DOG_V13_CONFIG } from "@/games/dog-lege-dog";
-import { TEST_LEVEL, TEST_PATTERN_TYPES } from "../support/dog-level-fixture";
+import { TEST_LEVEL } from "../support/dog-level-fixture";
 import { createBlock, createLevel } from "../support/item-fixtures";
 import {
-  DOG_ITEM_DEFINITIONS,
   DOG_ITEM_IDS,
-  type DogItemDefinition,
-  type DogItemId,
 } from "@/games/dog-lege-dog/game/dog-loadout";
 import {
   DogItemRuntime,
-  type DogItemRuntimeDefinition,
-  type DogItemTarget,
 } from "@/games/dog-lege-dog/game/dog-item-runtime";
 
 const WORKING_DOG: DogPatternType = "打工狗";

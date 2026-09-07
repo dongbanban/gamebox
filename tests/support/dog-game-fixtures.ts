@@ -5,7 +5,7 @@ import {
   type DogLegeDogLevel,
   type DogPatternType,
 } from "@/games/dog-lege-dog";
-import { TEST_LEVEL, TEST_PATTERN_TYPES, TEST_RUN_SEED } from "./dog-level-fixture";
+import { TEST_LEVEL, TEST_RUN_SEED } from "./dog-level-fixture";
 
 export function startTestGame(root: HTMLElement, options: GameLaunchContext = {}) {
   return startDogLegeDogGame(root, {

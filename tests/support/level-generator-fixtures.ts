@@ -1,27 +1,9 @@
-import { describe, expect, it, vi } from "vitest";
 import {
   BLOCK_HEIGHT,
   BLOCK_WIDTH,
-  calculateDifficultyMetrics,
   DOG_PATTERN_TYPES,
-  DOG_SHAPE_TEMPLATES,
-  DOG_V13_CONFIG,
-  GameSession,
-  MAX_LEVEL_GENERATION_ATTEMPTS,
   LevelGenerator,
-  getDifficultyTarget,
-  getBlockCount,
-  getMaxLayers,
-  getPatternTypeCount,
-  getDogLegeDogLevel,
-  getDogLogicalBlockCount,
-  DOG_REWARD_CONFIG_VERSION,
-  getDogTrayLockCount,
 } from "@/games/dog-lege-dog";
-
-const MAX_LEVEL_NUMBER = DOG_V13_CONFIG.game.maxLevelNumber;
-const CURRENT_GENERATOR_VERSION = DOG_V13_CONFIG.game.generatorVersion;
-const MAX_LOCKED_TRAY_SLOTS = DOG_V13_CONFIG.tray.maxLockedSlotCount;
 
 type SolvabilityFixture = Parameters<LevelGenerator["findSolvability"]>[0];
 export function createLongSearchFixture(): SolvabilityFixture {

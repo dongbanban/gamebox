@@ -1,6 +1,5 @@
 import {
   type DogBlock,
-  type DogPatternType,
 } from "@/games/dog-lege-dog/levels/level-types";
 import {
   insertDogBlockIntoTray,
@@ -153,7 +152,7 @@ export class GameSessionSelectionRuntime {
       return false;
     }
     const magneticTargetBlockId = selectedBlock.specialMechanism?.type === DOG_MAGNETIC_MECHANISM_TYPE
-      ? this.chooseMagneticTarget(selectedBlock, blockIndex)
+      ? this.chooseMagneticTarget(blockIndex)
       : null;
     this.state.pendingSelection = {
       block: selectedBlock,
@@ -195,7 +194,7 @@ export class GameSessionSelectionRuntime {
     });
   }
 
-  private chooseMagneticTarget(sourceBlock: DogBlock, sourceBlockIndex: number): string | null {
+  private chooseMagneticTarget(sourceBlockIndex: number): string | null {
     const targetBlockIndex = chooseDogMagneticTargetIndex(
       this.state.level,
       sourceBlockIndex,
