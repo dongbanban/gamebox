@@ -41,7 +41,7 @@ const PLAYWRIGHT_CASE_RULES = [
     entries: ["tests/e2e/full-flow.spec.ts"],
     patterns: [
       /^tests\/e2e\/full-flow-cases\//,
-      /^tests\/e2e\/support\/(?:browser-solvability|full-flow-fixtures)\.ts$/,
+      /^tests\/e2e\/support\/full-flow-fixtures\.ts$/,
     ],
   },
   {

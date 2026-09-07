@@ -4,12 +4,17 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] 浏览器通关 helper 从现有可观察游戏状态读取关卡号和 `runSeed`，通过当前生成器 seam 复现同一关卡。
-- [ ] E2E 流程按复现关卡的 `solutionPath` 点击方块并到达通关结果页。
-- [ ] 删除浏览器专用的层叠搜索、暂存槽模拟、冻结处理、磁吸目标选择和种子随机实现。
-- [ ] 不新增生产调试接口、全局测试后门或 DOM 解法属性。
-- [ ] 生成器、可解性、回放和随机回归测试继续负责证明 `solutionPath` 正确，E2E 只验证浏览器可以执行它。
-- [ ] 注册、进入、通关、失败、重试、下一关、刷新、离开与重置浏览器流程保持覆盖。
-- [ ] 运行相关浏览器验证并记录结果；最终批量 QA 关联 ticket 10。
+- [x] 浏览器通关 helper 从现有可观察游戏状态读取关卡号和 `runSeed`，通过当前生成器 seam 复现同一关卡。
+- [x] E2E 流程按复现关卡的 `solutionPath` 点击方块并到达通关结果页。
+- [x] 删除浏览器专用的层叠搜索、暂存槽模拟、冻结处理、磁吸目标选择和种子随机实现。
+- [x] 不新增生产调试接口、全局测试后门或 DOM 解法属性。
+- [x] 生成器、可解性、回放和随机回归测试继续负责证明 `solutionPath` 正确，E2E 只验证浏览器可以执行它。
+- [x] 注册、进入、通关、失败、重试、下一关、刷新、离开与重置浏览器流程保持覆盖。
+- [x] 运行相关浏览器验证并记录结果；最终批量 QA 关联 ticket 10。
+
+## Comments
+
+- `getVerifiedSolutionPath` 从现有 `dog-active-level` 文本和 `data-run-seed` 读取关卡尝试，通过 `DogLevelGenerationService` 与 `getPreparedDogLevel` 复现已验证关卡并返回其 `solutionPath`；删除了独立浏览器求解器及路由引用。未新增生产接口、全局后门或解法 DOM 属性。
+- 验证通过：`pnpm typecheck`；`pnpm exec playwright test tests/e2e/full-flow.spec.ts --project=chromium`（8/8，初始 seam）；`pnpm test:e2e:cross-browser`（18/18）；最终 `pnpm test:qa`（core 18 files/259 tests、Worker fallback 4、random regression 3、Chromium E2E 24、cross-browser 18、Pages build、`git diff --check`、500 行检查均通过）。最终批量 QA 关联 ticket 10。

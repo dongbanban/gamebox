@@ -1,6 +1,4 @@
 import { expect, type Page } from "@playwright/test";
-import type { BrowserBlock } from "./browser-solvability";
-import { findIndependentSolvablePath } from "./browser-solvability";
 import { confirmDogLoadout } from "./common";
 
 export async function enterGame(page: Page): Promise<void> {
@@ -60,7 +58,7 @@ export async function loseCurrentLevel(page: Page): Promise<void> {
 }
 
 export async function winCurrentLevel(page: Page): Promise<void> {
-  const solutionPath = await findBrowserSolvablePath(page);
+  const solutionPath = await getVerifiedSolutionPath(page);
   for (const blockId of solutionPath) {
     if (await page.locator('[data-result="won"]').isVisible().catch(() => false)) {
       return;
@@ -72,38 +70,38 @@ export async function winCurrentLevel(page: Page): Promise<void> {
   await expect(page.locator('[data-result="won"]')).toBeVisible();
 }
 
-export async function findBrowserSolvablePath(page: Page): Promise<string[]> {
-  const blocks = await page.locator('[data-testid="dog-block"]').evaluateAll((elements) =>
-    elements.map((element): BrowserBlock => {
-      const specialMechanism = element.dataset.specialMechanism;
-      return {
-        id: element.dataset.blockId ?? "",
-        patternType: element.dataset.patternType ?? "",
-        specialMechanism:
-          specialMechanism === "freeze" ||
-          specialMechanism === "illusion" ||
-          specialMechanism === "magnetic" ||
-          specialMechanism === "twin"
-            ? specialMechanism
-            : undefined,
-        x: Number(element.dataset.x),
-        y: Number(element.dataset.y),
-        z: Number(element.dataset.z),
-      };
-    }),
+export async function getVerifiedSolutionPath(page: Page): Promise<string[]> {
+  const levelNumber = Number(
+    await page.getByTestId("dog-active-level").locator("strong").textContent(),
   );
   const runSeed = await page.getByTestId("dog-game").getAttribute("data-run-seed");
-  const trayCapacity = Number(
-    await page.getByTestId("dog-tray").getAttribute("data-effective-tray-capacity"),
-  );
-  if (runSeed === null || !Number.isSafeInteger(trayCapacity) || trayCapacity < 1) {
-    throw new Error("E2E could not read level seed or effective tray capacity");
+  if (!Number.isSafeInteger(levelNumber) || runSeed === null) {
+    throw new Error("E2E could not read current level number or runSeed");
   }
 
-  return findIndependentSolvablePath(
-    blocks,
-    runSeed,
-    trayCapacity,
+  return page.evaluate(
+    async ({ levelNumber: currentLevelNumber, runSeed: currentRunSeed }) => {
+      const configModulePath: string = "/src/games/dog-lege-dog/game/v13-config.ts";
+      const generationServiceModulePath: string =
+        "/src/games/dog-lege-dog/levels/level-generation-service.ts";
+      const [{ DOG_V13_CONFIG }, { DogLevelGenerationService, getPreparedDogLevel }] =
+        await Promise.all([
+          import(configModulePath),
+          import(generationServiceModulePath),
+        ]);
+      const preparation = await new DogLevelGenerationService().prepare({
+        levelNumber: currentLevelNumber,
+        runSeed: currentRunSeed,
+        config: DOG_V13_CONFIG,
+      });
+      const level = getPreparedDogLevel(preparation, {
+        levelNumber: currentLevelNumber,
+        runSeed: currentRunSeed,
+        config: DOG_V13_CONFIG,
+      });
+      return [...level.solutionPath];
+    },
+    { levelNumber, runSeed },
   );
 }
 
