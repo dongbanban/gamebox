@@ -7,7 +7,6 @@ const MAX_LEVEL_NUMBER = DOG_V13_CONFIG.game.maxLevelNumber;
 const DOG_PERSISTED_LOADOUT_SIZE = 3 as const;
 
 const PERSISTENCE_WARNING = "本地数据无法持久化，当前为临时运行模式。";
-const MAX_LEGACY_COMPLETED_LEVELS = 100_000;
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -289,35 +288,7 @@ function getBrowserStorage(): StorageLike | null {
 }
 
 function createUserId(): string {
-  const browserCrypto = globalThis.crypto;
-  if (typeof browserCrypto?.randomUUID === "function") {
-    return browserCrypto.randomUUID();
-  }
-
-  if (typeof browserCrypto?.getRandomValues === "function") {
-    const bytes = new Uint8Array(16);
-    browserCrypto.getRandomValues(bytes);
-    bytes[6] = (bytes[6] & 0x0f) | 0x40;
-    bytes[8] = (bytes[8] & 0x3f) | 0x80;
-    return formatUuid(bytes);
-  }
-
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (token) => {
-    const random = Math.floor(Math.random() * 16);
-    const value = token === "x" ? random : (random & 0x3) | 0x8;
-    return value.toString(16);
-  });
-}
-
-function formatUuid(bytes: Uint8Array): string {
-  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0"));
-  return [
-    hex.slice(0, 4).join(""),
-    hex.slice(4, 6).join(""),
-    hex.slice(6, 8).join(""),
-    hex.slice(8, 10).join(""),
-    hex.slice(10, 16).join(""),
-  ].join("-");
+  return globalThis.crypto.randomUUID();
 }
 
 function normalizeAppState(value: unknown): AppState | null {
@@ -378,7 +349,6 @@ function normalizeGameProgress(value: unknown, gameId: string): GameProgress | n
       ? inferCompletedLevels(value.highestUnlockedLevel)
       : value.completedLevels;
   if (
-    completedLevels === null ||
     !Array.isArray(completedLevels) ||
     !completedLevels.every(
       (levelNumber) => Number.isSafeInteger(levelNumber) && levelNumber >= 1,
@@ -446,12 +416,8 @@ function cloneGameProgress(progress: GameProgress): GameProgress {
   };
 }
 
-function inferCompletedLevels(highestUnlockedLevel: number): number[] | null {
+function inferCompletedLevels(highestUnlockedLevel: number): number[] {
   const completedLevelCount = highestUnlockedLevel - 1;
-  if (completedLevelCount > MAX_LEGACY_COMPLETED_LEVELS) {
-    return null;
-  }
-
   return Array.from(
     { length: completedLevelCount },
     (_, index) => index + 1,

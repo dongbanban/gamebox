@@ -16,11 +16,11 @@ export function setGameHistory(gameId: string, levelNumber: number): void {
     levelNumber,
   };
   if (getHistoryRoute() === "game") {
-    window.history.replaceState(nextState, "", getCurrentUrl());
+    window.history.replaceState(nextState, "");
     return;
   }
 
-  window.history.pushState(nextState, "", getCurrentUrl());
+  window.history.pushState(nextState, "");
 }
 
 export function restoreGameHistory(activeLevel: ActiveLevel | null): void {
@@ -35,7 +35,6 @@ export function replaceHistoryWithCatalog(): void {
   window.history.replaceState(
     { gameboxRoute: "catalog" } satisfies GameboxHistoryState,
     "",
-    getCurrentUrl(),
   );
 }
 
@@ -51,8 +50,4 @@ export function getHistoryRoute(): GameboxHistoryState["gameboxRoute"] | null {
   }
 
   return state.gameboxRoute;
-}
-
-function getCurrentUrl(): string {
-  return `${window.location.pathname}${window.location.search}${window.location.hash}`;
 }

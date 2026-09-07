@@ -88,42 +88,6 @@ describe("ProgressStore · recovery", () => {
     expect(store.snapshot().warning).toContain("无法持久化");
   });
 
-  it("enters temporary play when legacy history is too large to infer safely", () => {
-    const storage = new MemoryStorage();
-    storage.setItem(
-      "gamebox.state",
-      createStoredState({
-        [GAME_ID]: {
-          highestUnlockedLevel: 1_000_002,
-          totalScore: 120,
-        },
-      }),
-    );
-    const store = new ProgressStore({
-      storage,
-      userIdFactory: () => userId,
-    });
-
-    expect(store.snapshot().state).toBeNull();
-    expect(store.snapshot().persistence).toBe("temporary");
-    expect(store.snapshot().warning).toContain("无法持久化");
-
-    const state = store.register();
-    const completion = store.recordLevelCompletion({
-      gameId: GAME_ID,
-      levelNumber: 1,
-      reward: 10,
-    });
-
-    expect(state.games[GAME_ID].completedLevels).toEqual([]);
-    expect(completion.progress).toMatchObject({
-      highestUnlockedLevel: 2,
-      totalScore: 10,
-      completedLevels: [1],
-    });
-    expect(store.snapshot().persistence).toBe("temporary");
-  });
-
   it("falls back to temporary state when stored data is damaged", () => {
     const storage = new MemoryStorage();
     storage.setItem("gamebox.state", "not-json");
