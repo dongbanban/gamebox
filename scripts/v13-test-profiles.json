@@ -19,48 +19,21 @@
       "levelNumbers": [1],
       "fixedSeeds": ["v13-focused"],
       "randomLevelPrefix": 0,
-      "stressLevelCount": 0,
-      "runCore": true,
-      "runRandomRegression": false,
-      "runE2E": false,
-      "runCrossBrowser": false,
-      "runWorkerFallback": false,
-      "runBuild": false,
-      "runDiffCheck": false,
-      "runFileLineCheck": false,
-      "maxChangedFileLines": 500
+      "stressLevelCount": 0
     },
     "smoke": {
       "name": "smoke",
       "levelNumbers": [1, 2, 3, 6, 16, 31, 99],
       "fixedSeeds": ["v13-smoke-a", "v13-smoke-b"],
       "randomLevelPrefix": 5,
-      "stressLevelCount": 5,
-      "runCore": true,
-      "runRandomRegression": true,
-      "runE2E": true,
-      "runCrossBrowser": false,
-      "runWorkerFallback": true,
-      "runBuild": false,
-      "runDiffCheck": false,
-      "runFileLineCheck": false,
-      "maxChangedFileLines": 500
+      "stressLevelCount": 5
     },
     "full": {
       "name": "full",
       "levelNumbers": [1, 2, 3, 6, 16, 31, 99],
       "fixedSeeds": ["v13-full-a", "v13-full-b"],
       "randomLevelPrefix": 99,
-      "stressLevelCount": 99,
-      "runCore": true,
-      "runRandomRegression": true,
-      "runE2E": true,
-      "runCrossBrowser": true,
-      "runWorkerFallback": true,
-      "runBuild": true,
-      "runDiffCheck": true,
-      "runFileLineCheck": true,
-      "maxChangedFileLines": 500
+      "stressLevelCount": 99
     }
   }
 }

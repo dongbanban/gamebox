@@ -1,3 +1,7 @@
+import { chmodSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { spawnSync } from "node:child_process";
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
@@ -16,6 +20,8 @@ test("profile plan uses smoke boundaries and one Chromium flow", () => {
 
   assert.deepEqual(profile.levelNumbers, [1, 2, 3, 6, 16, 31, 99]);
   assert.deepEqual(profile.fixedSeeds, ["v13-smoke-a", "v13-smoke-b"]);
+  assert.equal(profile.randomLevelPrefix, 5);
+  assert.equal(profile.stressLevelCount, 5);
   assert.equal(
     steps.find((step) => step.name === "chromium-smoke")?.args.includes("--project=chromium"),
     true,
@@ -39,6 +45,41 @@ test("full plan includes all release checks", () => {
     ),
     true,
   );
+});
+
+test("full file line check uses Git and standard shell tools", () => {
+  const step = buildProfilePlan("full").find((item) => item.name === "file-line-check");
+
+  assert.equal(step?.command, "sh");
+  assert.match(step?.args[1] ?? "", /git diff --name-only HEAD/);
+  assert.match(step?.args[1] ?? "", /git ls-files --others --exclude-standard/);
+  assert.match(step?.args[1] ?? "", /wc -l/);
+  assert.equal(step?.args[3], "500");
+});
+
+test("file line check reports violations through shell exit status", () => {
+  const temporaryDirectory = mkdtempSync(join(tmpdir(), "gamebox-line-check-"));
+  const fakeGit = join(temporaryDirectory, "git");
+
+  try {
+    writeFileSync(fakeGit, "#!/bin/sh\nprintf '%s\\n' 'scripts/test-profile.mjs'\n");
+    chmodSync(fakeGit, 0o755);
+    const step = buildProfilePlan("full").find((item) => item.name === "file-line-check");
+    const result = spawnSync(
+      step?.command ?? "sh",
+      [...(step?.args ?? []).slice(0, -1), "1"],
+      {
+        cwd: process.cwd(),
+        encoding: "utf8",
+        env: { ...process.env, PATH: `${temporaryDirectory}:${process.env.PATH ?? ""}` },
+      },
+    );
+
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /文件行数超限：scripts\/test-profile\.mjs/);
+  } finally {
+    rmSync(temporaryDirectory, { recursive: true, force: true });
+  }
 });
 
 test("changed files share profile selection with affected runner", () => {

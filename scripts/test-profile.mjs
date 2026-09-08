@@ -4,17 +4,41 @@ import DOG_TEST_PROFILES from "./v13-test-profiles.json" with { type: "json" };
 import { classifyTestFile } from "./test-paths.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
-const PROFILE_NAMES = Object.keys(DOG_TEST_PROFILES.profiles);
-const PROFILE_BOOLEAN_KEYS = [
-  "runCore",
-  "runRandomRegression",
-  "runE2E",
-  "runCrossBrowser",
-  "runWorkerFallback",
-  "runBuild",
-  "runDiffCheck",
-  "runFileLineCheck",
-];
+const PROFILE_NAMES = ["focused", "smoke", "full"];
+const MAX_CHANGED_FILE_LINES = 500;
+const FILE_LINE_CHECK_SCRIPT = `
+set -eu
+max_lines=$1
+status=0
+checkable_files=0
+changed_files=$(mktemp "\${TMPDIR:-/tmp}/gamebox-line-check.XXXXXX")
+trap 'rm -f "$changed_files"' EXIT
+if ! git diff --name-only HEAD -- > "$changed_files"; then
+  printf '读取改动文件失败：git diff\\n' >&2
+  exit 1
+fi
+if ! git ls-files --others --exclude-standard >> "$changed_files"; then
+  printf '读取改动文件失败：git ls-files\\n' >&2
+  exit 1
+fi
+while IFS= read -r file; do
+  case "$file" in
+    src/*.ts|src/*.mjs|src/*.css|tests/*.ts|tests/*.mjs|tests/*.css|scripts/*.ts|scripts/*.mjs|scripts/*.css)
+      [ -f "$file" ] || continue
+      checkable_files=$((checkable_files + 1))
+      lines=$(wc -l < "$file")
+      if [ "$lines" -gt "$max_lines" ]; then
+        printf '文件行数超限：%s %s > %s\\n' "$file" "$lines" "$max_lines" >&2
+        status=1
+      fi
+      ;;
+  esac
+done < "$changed_files"
+if [ "$status" -ne 0 ]; then
+  exit "$status"
+fi
+printf '文件行数检查通过：%s 个文件，阈值 %s 行。\\n' "$checkable_files" "$max_lines"
+`;
 
 assertTestProfileSource(DOG_TEST_PROFILES);
 
@@ -45,13 +69,8 @@ function assertTestProfileSource(source) {
         profile.levelNumbers.length === 0 || profile.fixedSeeds.length === 0) {
       throw new Error(`狗了个狗 test profile 边界/seed 无效: ${name}`);
     }
-    for (const key of PROFILE_BOOLEAN_KEYS) {
-      if (typeof profile[key] !== "boolean") {
-        throw new Error(`狗了个狗 test profile flag 无效: ${name}.${key}`);
-      }
-    }
-    for (const key of ["randomLevelPrefix", "stressLevelCount", "maxChangedFileLines"]) {
-      const minimum = key === "maxChangedFileLines" ? 1 : 0;
+    for (const key of ["randomLevelPrefix", "stressLevelCount"]) {
+      const minimum = 0;
       if (!Number.isSafeInteger(profile[key]) || profile[key] < minimum) {
         throw new Error(`狗了个狗 test profile number 无效: ${name}.${key}`);
       }
@@ -61,28 +80,24 @@ function assertTestProfileSource(source) {
 
 export function buildProfilePlan(profileName) {
   const profile = getProfile(profileName);
-  const steps = [];
 
   if (profileName === "focused") {
-    steps.push({
+    return [{
       name: "focused-affected",
       command: "pnpm",
       args: ["test:focused"],
       env: { DOG_TEST_PROFILE: profileName },
-    });
-    return steps;
+    }];
   }
 
-  if (profile.runCore) {
-    steps.push({
+  const steps = [
+    {
       name: "core",
       command: "pnpm",
       args: ["test:core"],
       env: { DOG_TEST_PROFILE: profileName },
-    });
-  }
-  if (profile.runWorkerFallback) {
-    steps.push({
+    },
+    {
       name: "worker-fallback",
       command: "pnpm",
       args: [
@@ -92,10 +107,8 @@ export function buildProfilePlan(profileName) {
         "tests/generation-lifecycle.test.ts",
       ],
       env: { DOG_TEST_PROFILE: profileName },
-    });
-  }
-  if (profile.runRandomRegression) {
-    steps.push({
+    },
+    {
       name: "random-regression",
       command: "pnpm",
       args: ["test:random"],
@@ -105,10 +118,8 @@ export function buildProfilePlan(profileName) {
         DOG_RANDOM_LEVEL_COUNT: String(profile.randomLevelPrefix),
         DOG_STRESS_LEVEL_COUNT: String(profile.stressLevelCount),
       },
-    });
-  }
-  if (profile.runE2E) {
-    steps.push({
+    },
+    {
       name: profileName === "smoke" ? "chromium-smoke" : "chromium",
       command: "pnpm",
       args: profileName === "smoke"
@@ -123,47 +134,45 @@ export function buildProfilePlan(profileName) {
           ]
         : ["test:e2e"],
       env: { DOG_TEST_PROFILE: profileName },
-    });
+    },
+  ];
+
+  if (profileName === "smoke") {
+    return steps;
   }
-  if (profile.runCrossBrowser) {
-    steps.push({
+
+  return [
+    ...steps,
+    {
       name: "cross-browser",
       command: "pnpm",
       args: ["test:e2e:cross-browser"],
       env: { DOG_TEST_PROFILE: profileName },
-    });
-  }
-  if (profile.runBuild) {
-    steps.push({
+    },
+    {
       name: "pages-build",
       command: "pnpm",
       args: ["build:pages"],
       env: { DOG_TEST_PROFILE: profileName },
-    });
-  }
-  if (profile.runDiffCheck) {
-    steps.push({
+    },
+    {
       name: "diff-check",
       command: "git",
       args: ["diff", "--check"],
       env: {},
-    });
-  }
-  if (profile.runFileLineCheck) {
-    steps.push({
+    },
+    {
       name: "file-line-check",
-      command: "node",
+      command: "sh",
       args: [
-        "scripts/check-file-lines.mjs",
-        "--changed",
-        "--max-lines",
-        String(profile.maxChangedFileLines),
+        "-c",
+        FILE_LINE_CHECK_SCRIPT,
+        "file-line-check",
+        String(MAX_CHANGED_FILE_LINES),
       ],
       env: {},
-    });
-  }
-
-  return steps;
+    },
+  ];
 }
 
 export function classifyChangedFiles(files) {
