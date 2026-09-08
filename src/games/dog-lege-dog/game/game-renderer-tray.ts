@@ -35,7 +35,7 @@ export function renderDogTray(
 ): string {
   const labels = config.ui.copy.labels;
   return `
-    <section class="dog-tray" data-testid="dog-tray-region" aria-label="${labels.tray}" style="--dog-shuffle-armed-duration: ${config.animation.shuffleArmedMs}ms; --dog-shuffle-triggerable-duration: ${config.animation.shuffleTriggerableMs}ms;">
+    <section class="dog-tray" data-testid="dog-tray-region" aria-label="${labels.tray}">
       ${renderDogMatchFeedback(feedback, config)}
       ${renderDogShuffleStatus(session, config)}
       <ol class="dog-tray__slots" data-testid="dog-tray" data-tray-capacity="${session.trayCapacity}" data-effective-tray-capacity="${session.effectiveTrayCapacity}" data-tray-free-capacity="${session.trayFreeCapacity}" data-locked-tray-slot-count="${session.lockedTraySlotCount}" style="--dog-tray-columns: ${session.trayCapacity};">${renderDogTraySlots(session, itemTargetType, itemTargetId, targetBlockIds, config)}</ol>

@@ -233,7 +233,7 @@ export function validateDifficulty(value: unknown, gameMaxLevelNumber: unknown, 
 export function validateAnimation(value: unknown, issues: DogV13ConfigIssue[]): void {
   const animation = asRecord(value);
   if (animation === undefined) return;
-  for (const key of ["blockFlightMs", "illusionRevealMs", "itemFeedbackMs", "freezeMeltMs", "twinSplitMs", "magneticAttractionMs", "keyDropMs", "trayUnlockMs", "shuffleArmedMs", "shuffleTriggerableMs"]) {
+  for (const key of ["blockFlightMs", "illusionRevealMs", "itemFeedbackMs", "freezeMeltMs", "twinSplitMs", "magneticAttractionMs", "keyDropMs", "trayUnlockMs", "shuffleFeedbackMs"]) {
     validateInteger(animation[key], `animation.${key}`, 1, issues);
   }
   if (animation.inputLockedDuringAnimation !== true) {

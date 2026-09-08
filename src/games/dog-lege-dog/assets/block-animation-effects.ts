@@ -245,7 +245,7 @@ export function animateDogShuffleEffect(
 ): CancellableAnimation {
   const durationMs = resolveAnimationDuration(
     options.config,
-    "shuffleTriggerableMs",
+    "shuffleFeedbackMs",
     1200,
   );
   const layer = options.root.querySelector<HTMLElement>(

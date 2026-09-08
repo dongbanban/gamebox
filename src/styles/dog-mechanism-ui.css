@@ -184,16 +184,6 @@
   height: 86%;
 }
 
-.dog-special-mechanism-card__thumbnail:not(.dog-block--special-illusion, .dog-block--special-twin),
-.dog-special-mechanism-card__thumbnail:not(.dog-block--special-illusion, .dog-block--special-twin)::before,
-.dog-special-mechanism-card__thumbnail:not(.dog-block--special-illusion, .dog-block--special-twin)::after,
-.dog-special-mechanism-card__thumbnail:not(.dog-block--special-illusion, .dog-block--special-twin) .dog-block__glyph,
-.dog-special-mechanism-card__thumbnail:not(.dog-block--special-illusion, .dog-block--special-twin) .dog-block__glyph::before,
-.dog-special-mechanism-card__thumbnail:not(.dog-block--special-illusion, .dog-block--special-twin) .dog-block__glyph::after,
-.dog-special-mechanism-card__thumbnail:not(.dog-block--special-illusion, .dog-block--special-twin) .dog-block__glyph > img {
-  animation: none !important;
-}
-
 .dog-special-mechanism-card strong {
   color: var(--ink);
   font-size: 13px;

@@ -77,12 +77,15 @@ describe("特殊机制测试 · shuffle-ui", () => {
     const boardBlock = root.querySelector<HTMLElement>(
       '[data-testid="dog-block"][data-block-id="shuffle"]',
     );
+    const trayRegion = root.querySelector<HTMLElement>('[data-testid="dog-tray-region"]');
 
     expect(boardBlock?.dataset.specialMechanism).toBe(DOG_SHUFFLE_MECHANISM_TYPE);
     expect(boardBlock?.dataset.specialMechanismState).toBe("dormant");
     expect(boardBlock?.classList.contains("dog-block--special-shuffle")).toBe(false);
     expect(boardBlock?.classList.contains("dog-block--special")).toBe(false);
     expect(boardBlock?.querySelector(".dog-block__mechanism-icon")).toBeNull();
+    expect(trayRegion?.style.getPropertyValue("--dog-shuffle-armed-duration")).toBe("");
+    expect(trayRegion?.style.getPropertyValue("--dog-shuffle-triggerable-duration")).toBe("");
 
     game.selectBlock("shuffle");
 

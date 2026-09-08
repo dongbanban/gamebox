@@ -269,8 +269,7 @@ export interface DogV13Config {
     readonly magneticAttractionMs: number;
     readonly keyDropMs: number;
     readonly trayUnlockMs: number;
-    readonly shuffleArmedMs: number;
-    readonly shuffleTriggerableMs: number;
+    readonly shuffleFeedbackMs: number;
     readonly inputLockedDuringAnimation: true;
   };
   readonly assets: {

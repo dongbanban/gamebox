@@ -17,7 +17,6 @@
   );
   content: "";
   pointer-events: none;
-  animation: dog-special-shimmer 2200ms ease-in-out infinite;
 }
 
 .dog-block--special-freeze {
@@ -30,7 +29,6 @@
     4px 5px 0 rgba(22, 68, 93, 0.2),
     inset 0 0 0 2px rgba(229, 253, 255, 0.94),
     inset 0 0 14px rgba(121, 225, 255, 0.66);
-  animation: dog-freeze-pulse 1800ms ease-in-out infinite;
 }
 
 .dog-block--special-freeze::before {
@@ -50,7 +48,6 @@
     inset 0 0 10px rgba(255, 255, 255, 0.58);
   content: "";
   backdrop-filter: blur(0.8px) saturate(0.82);
-  animation: dog-freeze-ice 1500ms ease-in-out infinite;
 }
 
 .dog-block--special-freeze::after {
@@ -74,7 +71,6 @@
     0 0 16px #efffff,
     0 0 24px rgba(239, 253, 255, 0.88),
     2px 3px 0 rgba(22, 68, 93, 0.3);
-  animation: dog-freeze-snowflake 1800ms linear infinite;
 }
 
 .dog-block--special-freeze .dog-block__glyph {
@@ -89,7 +85,6 @@
     0 0 8px 2.5px rgba(255, 209, 102, 0.54),
     4px 5px 0 rgba(22, 68, 93, 0.2),
     inset 0 0 0 2px rgba(255, 255, 255, 0.88);
-  animation: dog-illusion-pulse 1600ms ease-in-out infinite;
 }
 
 .dog-block--special-illusion::before {
@@ -151,21 +146,18 @@
   opacity: 0.42;
   filter: blur(0.2px) saturate(1.5) hue-rotate(-10deg);
   mix-blend-mode: screen;
-  animation: dog-illusion-fuzzy-slice-a 720ms steps(8, end) infinite;
 }
 
 .dog-block--special-illusion .dog-block__glyph--fuzzy::after {
   opacity: 0.34;
   filter: blur(0.35px) saturate(1.65) hue-rotate(14deg);
   mix-blend-mode: multiply;
-  animation: dog-illusion-fuzzy-slice-b 940ms steps(10, end) infinite;
 }
 
 .dog-block--special-illusion .dog-block__glyph--fuzzy > img {
   position: relative;
   z-index: 1;
   filter: contrast(1.08) saturate(0.78);
-  animation: dog-illusion-fuzzy-image 880ms steps(9, end) infinite;
 }
 
 .dog-block--special-twin {
@@ -175,7 +167,6 @@
     0 0 9px 3px rgba(86, 211, 112, 0.56),
     4px 5px 0 rgba(22, 68, 93, 0.2),
     inset 0 0 0 2px rgba(246, 255, 237, 0.9);
-  animation: dog-twin-pulse 1500ms ease-in-out infinite;
 }
 
 .dog-block--special-twin::before {
@@ -213,7 +204,6 @@
     0 0 10px 3px rgba(255, 135, 47, 0.56),
     4px 5px 0 rgba(22, 68, 93, 0.2),
     inset 0 0 0 2px rgba(255, 252, 235, 0.92);
-  animation: dog-magnetic-pulse 1400ms ease-in-out infinite;
 }
 
 .dog-block--special-magnetic::before {
@@ -235,7 +225,6 @@
     0 0 8px 2px rgba(255, 153, 58, 0.42),
     inset 0 0 12px rgba(255, 255, 255, 0.48);
   content: "";
-  animation: dog-magnetic-field 1100ms linear infinite;
 }
 
 .dog-block__mechanism-icon {

@@ -104,6 +104,30 @@
     inset 0 0 0 1px rgba(22, 68, 93, 0.12);
 }
 
+.dog-tray__slot--shuffle-armed {
+  box-shadow:
+    0 0 0 2px rgba(255, 209, 102, 0.34),
+    0 0 10px rgba(255, 209, 102, 0.38),
+    4px 5px 0 rgba(22, 68, 93, 0.2),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.72);
+}
+
+.dog-tray__slot--shuffle-triggerable {
+  box-shadow:
+    0 0 0 3px rgba(255, 122, 89, 0.46),
+    0 0 14px rgba(255, 122, 89, 0.6),
+    4px 5px 0 rgba(22, 68, 93, 0.2),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.82);
+}
+
+.dog-tray__slot:where([data-shuffle-state="consumed"]) {
+  box-shadow:
+    0 0 0 2px rgba(22, 145, 137, 0.24),
+    0 0 10px rgba(22, 145, 137, 0.28),
+    4px 5px 0 rgba(22, 68, 93, 0.2),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.72);
+}
+
 .dog-tray__slot--locked {
   border: 2px solid rgba(22, 68, 93, 0.2);
   background:
