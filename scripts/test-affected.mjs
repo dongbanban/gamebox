@@ -1,7 +1,6 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import { selectProfileForChangedFiles } from "./test-profile.mjs";
 import {
-  getPlaywrightEntriesForFiles,
   isHighRiskTestFile,
   isUiOnlyTestFile,
 } from "./test-paths.mjs";
@@ -87,9 +86,8 @@ if (requiresRandomRegression(changedFiles)) {
   console.log("未触发关卡生成/随机回归范围，跳过随机回归。");
 }
 
-const e2eTargets = getE2ETargets(changedFiles);
-if (e2eTargets.length > 0) {
-  runOrExit("pnpm", ["exec", "playwright", "test", ...e2eTargets]);
+if (changedFiles.some((file) => file.startsWith("public/"))) {
+  runOrExit("pnpm", ["test:e2e"]);
 } else {
   console.log("未触发浏览器流程范围，跳过 Chromium E2E。");
 }
@@ -139,32 +137,6 @@ function isUiOnlyChange(files) {
         /^public\/audio\//.test(file),
     )
   );
-}
-
-function getE2ETargets(files) {
-  const targets = new Set(getPlaywrightEntriesForFiles(files));
-
-  if (files.some((file) => file === "src/style.css")) {
-    targets.add("tests/e2e/register-catalog.spec.ts");
-  }
-
-  if (
-    files.some(
-      (file) =>
-        file === "src/app.ts" ||
-        file === "src/catalog.ts" ||
-        file === "src/main.ts" ||
-        file === "src/progress-store.ts" ||
-        file.startsWith("src/games/dog-lege-dog/") ||
-        file.startsWith("public/"),
-    )
-  ) {
-    targets.add("tests/e2e/register-catalog.spec.ts");
-    targets.add("tests/e2e/full-flow.spec.ts");
-    targets.add("tests/e2e/cross-browser.spec.ts");
-  }
-
-  return [...targets].sort();
 }
 
 function runOrExit(command, args) {

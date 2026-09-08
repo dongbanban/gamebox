@@ -8,10 +8,7 @@ import {
   runProfileSteps,
   selectProfileForChangedFiles,
 } from "./test-profile.mjs";
-import {
-  getPlaywrightEntriesForFiles,
-  isUiOnlyTestFile,
-} from "./test-paths.mjs";
+import { isUiOnlyTestFile } from "./test-paths.mjs";
 
 test("profile plan uses smoke boundaries and one Chromium flow", () => {
   const profile = getProfile("smoke");
@@ -59,21 +56,7 @@ test("changed files share profile selection with affected runner", () => {
   );
 });
 
-test("nested E2E cases resolve to their Playwright specs", () => {
-  assert.deepEqual(
-    getPlaywrightEntriesForFiles([
-      "tests/e2e/full-flow-cases/lifecycle.ts",
-      "tests/e2e/register-catalog-cases/responsive.ts",
-      "tests/e2e/support/common.ts",
-    ]),
-    [
-      "tests/e2e/full-flow.spec.ts",
-      "tests/e2e/register-catalog.spec.ts",
-    ],
-  );
-});
-
-test("native Vitest paths retain UI and high-risk profile classification", () => {
+test("native test paths retain profile classification", () => {
   assert.equal(isUiOnlyTestFile("tests/app-cases/app-results.test.ts"), true);
   assert.equal(isUiOnlyTestFile("tests/special-cases/board-ui.test.ts"), true);
   assert.equal(isUiOnlyTestFile("tests/special-cases/shuffle-ui.test.ts"), true);
@@ -90,8 +73,16 @@ test("native Vitest paths retain UI and high-risk profile classification", () =>
     "full",
   );
   assert.deepEqual(
-    classifyChangedFiles(["tests/e2e/full-flow-cases/lifecycle.ts"]),
+    classifyChangedFiles(["tests/e2e/support/common.ts"]),
     ["cross-browser"],
+  );
+  assert.equal(
+    selectProfileForChangedFiles(["tests/e2e/support/common.ts"]),
+    "full",
+  );
+  assert.equal(
+    selectProfileForChangedFiles(["playwright.config.ts"]),
+    "full",
   );
 });
 

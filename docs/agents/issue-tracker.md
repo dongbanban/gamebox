@@ -33,7 +33,7 @@ Used by `/wayfinder`. The **map** is a file with one **child** file per ticket.
 
 默认采用“聚焦检查逐票、完整 QA 分批”策略，避免每个 ticket 重复支付构建、E2E 与随机回归成本。
 
-测试文件分类：Vitest 原生发现 `tests/**/*.test.ts`；Playwright 当前由根 `tests/e2e/*.spec.ts` 入口收集 `tests/e2e/*-cases/*.ts`；`tests/support/**` 与 `tests/e2e/support/**` 是 fixture/helper。受影响 runner 通过 Vitest `related` import graph 选择单测，只为 Playwright 保留 nested case 到 spec 的映射。
+测试文件分类：Vitest 原生发现 `tests/**/*.test.ts`；Playwright 原生发现 `tests/e2e/**/*.spec.ts`；`tests/support/**` 与 `tests/e2e/support/**` 是 fixture/helper。受影响 runner 通过 Vitest `related` import graph 选择单测，不维护 case 到入口映射；E2E helper 或浏览器基础设施变化直接运行小规模完整 E2E 套件。
 
 - 文档-only 改动：可标记“未运行测试”。
 - 普通实现 ticket：完成前运行 `pnpm test:focused`。该命令按 Vitest `related` import graph 运行受影响核心单测，排除随机回归与生成器压力套件，不运行 Chromium E2E 或构建；生成器/可解性/难度/特殊机制运行时/E2E case 改动会拒绝通过，改跑 `pnpm test:qa`；随机回归改动改跑 `pnpm test:smoke` 或 `pnpm test:qa`。
@@ -58,7 +58,7 @@ pnpm test:ui
 pnpm test:affected
 ```
 
-该命令读取当前 Git 改动与未跟踪文件；纯 UI 改动直接运行 `pnpm test:ui` 并结束，其他改动按 Vitest `related` import graph 运行受影响核心测试，按 E2E case 到 spec 的映射选择浏览器流程，并在末尾运行一次 `pnpm build`。生成器、公共契约、启动、运行时或 E2E 风险改动自动升级 full profile；它不属于普通 ticket 默认门槛，也不与 `pnpm test:qa` 叠加。`build` 已包含 `tsc --noEmit`，不再重复运行独立 typecheck；任一步失败立即停止。
+该命令读取当前 Git 改动与未跟踪文件；纯 UI 改动直接运行 `pnpm test:ui` 并结束，其他改动按 Vitest `related` import graph 运行受影响核心测试，并在末尾运行一次 `pnpm build`。生成器、公共契约、启动、运行时或 E2E 风险改动自动升级 full profile，其中 E2E helper 或浏览器基础设施变化直接运行完整浏览器套件；它不属于普通 ticket 默认门槛，也不与 `pnpm test:qa` 叠加。`build` 已包含 `tsc --noEmit`，不再重复运行独立 typecheck；任一步失败立即停止。
 
 以下范围必须追加全量测试：
 

@@ -18,7 +18,7 @@ pnpm build:pages       # 生成 GitHub Pages /gamebox/ 路径产物
 
 ## Ticket 验收规则
 
-测试文件分类：Vitest 原生发现 `tests/**/*.test.ts`；Playwright 当前由根 `tests/e2e/*.spec.ts` 入口收集 `tests/e2e/*-cases/*.ts`；`tests/support/**` 与 `tests/e2e/support/**` 是 fixture/helper。受影响 runner 使用 Vitest `related` import graph，不维护 Vitest case 到入口映射。
+测试文件分类：Vitest 原生发现 `tests/**/*.test.ts`；Playwright 原生发现 `tests/e2e/**/*.spec.ts`；`tests/support/**` 与 `tests/e2e/support/**` 是 fixture/helper。受影响 runner 使用 Vitest `related` import graph，不维护 case 到入口映射；E2E helper 或浏览器基础设施变化直接运行小规模完整 E2E 套件。
 
 UI 文案、DOM、渲染器、样式、视觉资源或游戏音效改动运行 `pnpm test:ui`；该命令直接收集 app、狗了个狗交互、道具组、特殊机制视觉、渲染、动画/配置 seam 与音效测试，不触发随机回归、浏览器 E2E 或构建。需要 DOM 的测试文件使用 `@vitest-environment jsdom` 标注。
 
