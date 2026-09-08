@@ -2,6 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { resolveAssetUrl } from "@/asset-url";
+import { BLOCK_FLIGHT_DURATION_MS } from "@/games/dog-lege-dog/assets/animation-effects";
 import {
   DOG_PATTERN_TYPES,
   DOG_TWIN_MECHANISM_TYPE,
@@ -283,6 +284,84 @@ describe("狗了个狗测试 · core", () => {
           `[data-testid="dog-block"][data-block-id="${blockId}"]`,
         )
         ?.click();
+    }
+  });
+
+  it("普通选择只增量同步真实变化的棋盘和暂存槽节点", async () => {
+    vi.useFakeTimers();
+    const covered = { ...TEST_LEVEL.blocks[0], id: "covered", x: 0, y: 0, z: 1, patternType: "打工狗" as const };
+    const exposed = { ...TEST_LEVEL.blocks[1], id: "exposed", x: 0, y: 0, z: 0, patternType: "单身狗" as const };
+    const other = { ...TEST_LEVEL.blocks[2], id: "other", x: 4, y: 0, z: 0, patternType: "舔狗" as const };
+    const unrelated = { ...TEST_LEVEL.blocks[3], id: "unrelated", x: 8, y: 0, z: 0, patternType: "疯狗" as const };
+    const root = document.createElement("div");
+    const game = startDogLegeDogGame(root, {
+      level: { ...TEST_LEVEL, blocks: [covered, exposed, other, unrelated] },
+    });
+
+    try {
+      game.selectBlock(other.id);
+      await vi.advanceTimersByTimeAsync(BLOCK_FLIGHT_DURATION_MS);
+      await vi.runAllTimersAsync();
+
+      const board = root.querySelector<HTMLElement>('[data-testid="dog-board"]');
+      const tray = root.querySelector<HTMLOListElement>('[data-testid="dog-tray"]');
+      const exposedElement = root.querySelector<HTMLButtonElement>('[data-block-id="exposed"]');
+      const unrelatedElement = root.querySelector<HTMLButtonElement>('[data-block-id="unrelated"]');
+      const firstTraySlot = root.querySelector<HTMLElement>('[data-block-id="other"]');
+      const initialTraySlots = [...(tray?.querySelectorAll<HTMLElement>('[data-testid="dog-tray-slot"]') ?? [])];
+      const exposedAriaLabel = exposedElement?.getAttribute("aria-label");
+      if (board === null || tray === null || exposedElement === null || unrelatedElement === null || firstTraySlot === null) {
+        throw new Error("Expected ordinary selection fixture DOM");
+      }
+
+      const observer = new MutationObserver(() => undefined);
+      observer.observe(board, { childList: true });
+      observer.observe(tray, { childList: true });
+      root.querySelector<HTMLElement>('[data-testid="dog-block"][data-block-id="covered"]')?.dispatchEvent(
+        new Event("pointerup", { bubbles: true, cancelable: true }),
+      );
+
+      expect(game.getState().inputLocked).toBe(true);
+      expect(root.querySelector('[data-testid="dog-block"][data-block-id="covered"]')).toBeNull();
+      expect(root.querySelector('[data-block-id="exposed"]')).toBe(exposedElement);
+      expect(root.querySelector('[data-block-id="unrelated"]')).toBe(unrelatedElement);
+      expect(exposedElement.disabled).toBe(true);
+      expect(unrelatedElement.disabled).toBe(true);
+      expect(exposedElement.getAttribute("aria-label")).toBe(exposedAriaLabel);
+      expect(root.querySelector('[data-testid="dog-tray-slot"][data-block-id="other"]')).toBe(firstTraySlot);
+
+      const records = observer.takeRecords();
+      observer.disconnect();
+      const boardRecords = records.filter((record) => record.target === board);
+      const trayRecords = records.filter((record) => record.target === tray);
+      const removedBoardNodes = boardRecords.flatMap((record) => [...record.removedNodes]);
+      expect(removedBoardNodes).toHaveLength(1);
+      expect(removedBoardNodes[0]).toBeInstanceOf(HTMLElement);
+      expect((removedBoardNodes[0] as HTMLElement).dataset.blockId).toBe("covered");
+      expect(boardRecords.flatMap((record) => [...record.addedNodes])).toHaveLength(0);
+      expect(trayRecords.flatMap((record) => [...record.removedNodes])).toHaveLength(0);
+      expect(trayRecords.flatMap((record) => [...record.addedNodes])).toHaveLength(0);
+
+      await vi.advanceTimersByTimeAsync(BLOCK_FLIGHT_DURATION_MS);
+      await vi.runAllTimersAsync();
+
+      expect(game.getState().inputLocked).toBe(false);
+      expect(exposedElement.disabled).toBe(false);
+      expect(unrelatedElement.disabled).toBe(false);
+      expect(exposedElement.getAttribute("aria-label")).toBe(exposedAriaLabel);
+      expect(game.getState().session.remainingBlocks.map((block) => block.id)).toEqual([
+        exposed.id,
+        unrelated.id,
+      ]);
+      expect(game.getState().session.trayBlocks.map((block) => block.id)).toEqual([
+        other.id,
+        covered.id,
+      ]);
+      expect(root.querySelector('[data-testid="dog-tray-slot"][data-block-id="other"]')).toBe(firstTraySlot);
+      expect(root.querySelector('[data-testid="dog-tray-slot"][data-block-id="covered"]')).toBe(initialTraySlots[1]);
+      expect([...tray.querySelectorAll<HTMLElement>('[data-testid="dog-tray-slot"]')]).toEqual(initialTraySlots);
+    } finally {
+      game.destroy();
     }
   });
 });

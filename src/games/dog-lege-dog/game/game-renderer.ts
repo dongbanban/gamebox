@@ -3,6 +3,7 @@ import type { DogLegeDogGameState } from "@/games/dog-lege-dog/game/game-types";
 import {
   getDogBlockVisualMetrics,
   renderDogBlock,
+  syncDogBlockElement,
 } from "@/games/dog-lege-dog/game/game-renderer-blocks";
 import { fitDogBoardToFrame } from "@/games/dog-lege-dog/game/game-renderer-layout";
 import {
@@ -17,7 +18,9 @@ import {
   renderDogShuffleStatus,
   renderDogStatusMessage,
   renderDogTray,
+  renderDogTraySlot,
   renderDogTraySlots,
+  syncDogTraySlotElement,
 } from "@/games/dog-lege-dog/game/game-renderer-tray";
 
 export {
@@ -47,6 +50,7 @@ export function renderDogLegeDogGame(
   const { board } = state.level;
   const blocks = state.session.remainingBlocks;
   const itemTargetBlockIds = getActiveItemTargetBlockIds(state);
+  const blockRenderOptions = createDogBlockRenderOptions(state, boardMetrics, itemTargetBlockIds, config);
   const labels = config.ui.copy.labels;
   const boardLabel = getDogBoardLabel(state, config);
   gameRoot.innerHTML = `
@@ -66,16 +70,7 @@ export function renderDogLegeDogGame(
       <div class="dog-board-frame">
         <div class="dog-board-scaler" style="--board-pixel-width: ${boardMetrics.pixelWidth}px; --board-pixel-height: ${boardMetrics.pixelHeight}px;">
           <div class="dog-board" data-testid="dog-board" data-shape="${board.shape}" data-surface-shape="rectangle" data-template-id="${board.templateId}" data-logical-width="${board.width}" data-logical-height="${board.height}" style="--board-columns: ${boardMetrics.columns}; --board-rows: ${boardMetrics.rows}; --board-pixel-width: ${boardMetrics.pixelWidth}px; --board-pixel-height: ${boardMetrics.pixelHeight}px;" role="group" aria-label="${boardLabel}">
-            ${blocks.map((block) => renderDogBlock(block, {
-              boardPixelWidth: boardMetrics.pixelWidth,
-              boardPixelHeight: boardMetrics.pixelHeight,
-              selectableBlockIds: state.session.selectableBlockIds,
-              inputLocked: state.inputLocked,
-              itemTargetType: state.items?.selectedItemTargetType ?? null,
-              itemTargetId: state.items?.selectedItemId ?? null,
-              targetBlockIds: itemTargetBlockIds,
-              config,
-            })).join("")}
+            ${blocks.map((block) => renderDogBlock(block, blockRenderOptions)).join("")}
           </div>
         </div>
       </div>
@@ -121,6 +116,7 @@ function updateDogLegeDogGame(
   const loadoutSlot = gameRoot.querySelector<HTMLElement>('[data-testid="dog-loadout-slot"]');
   const replaySlot = gameRoot.querySelector<HTMLElement>('[data-testid="dog-replay-current-level-slot"]');
   const itemTargetBlockIds = getActiveItemTargetBlockIds(state);
+  const boardGeometryChanged = boardElement !== null && hasBoardGeometryChanged(boardElement, boardScaler, board, boardMetrics);
 
   gameRoot.dataset.inputLocked = String(state.inputLocked);
   gameRoot.dataset.feedback = state.feedback;
@@ -140,16 +136,7 @@ function updateDogLegeDogGame(
     boardElement.style.setProperty("--board-pixel-width", `${boardMetrics.pixelWidth}px`);
     boardElement.style.setProperty("--board-pixel-height", `${boardMetrics.pixelHeight}px`);
     boardElement.setAttribute("aria-label", getDogBoardLabel(state, config));
-    boardElement.innerHTML = state.session.remainingBlocks.map((block) => renderDogBlock(block, {
-      boardPixelWidth: boardMetrics.pixelWidth,
-      boardPixelHeight: boardMetrics.pixelHeight,
-      selectableBlockIds: state.session.selectableBlockIds,
-      inputLocked: state.inputLocked,
-      itemTargetType: state.items?.selectedItemTargetType ?? null,
-      itemTargetId: state.items?.selectedItemId ?? null,
-      targetBlockIds: itemTargetBlockIds,
-      config,
-    })).join("");
+    syncDogBoard(boardElement, state, boardMetrics, itemTargetBlockIds, config);
   }
   boardScaler?.style.setProperty("--board-pixel-width", `${boardMetrics.pixelWidth}px`);
   boardScaler?.style.setProperty("--board-pixel-height", `${boardMetrics.pixelHeight}px`);
@@ -159,7 +146,14 @@ function updateDogLegeDogGame(
     traySlots.dataset.effectiveTrayCapacity = String(state.session.effectiveTrayCapacity);
     traySlots.dataset.trayFreeCapacity = String(state.session.trayFreeCapacity);
     traySlots.dataset.lockedTraySlotCount = String(state.session.lockedTraySlotCount);
-    traySlots.innerHTML = renderDogTraySlots(state.session, state.items?.selectedItemTargetType ?? null, state.items?.selectedItemId ?? null, itemTargetBlockIds, config);
+    syncDogTraySlots(
+      traySlots,
+      state.session,
+      state.items?.selectedItemTargetType ?? null,
+      state.items?.selectedItemId ?? null,
+      itemTargetBlockIds,
+      config,
+    );
   }
   const shuffleStatusMarkup = renderDogShuffleStatus(state.session, config);
   if (shuffleStatusElement !== null) {
@@ -185,7 +179,168 @@ function updateDogLegeDogGame(
   } else {
     matchEffect?.remove();
   }
-  fitDogBoardToFrame(gameRoot);
+  if (boardGeometryChanged) {
+    fitDogBoardToFrame(gameRoot);
+  }
+}
+
+function createDogBlockRenderOptions(
+  state: DogLegeDogGameState,
+  boardMetrics: DogBoardMetrics,
+  targetBlockIds: readonly string[],
+  config: DogV13Config,
+) {
+  return {
+    boardPixelWidth: boardMetrics.pixelWidth,
+    boardPixelHeight: boardMetrics.pixelHeight,
+    selectableBlockIds: state.session.selectableBlockIds,
+    inputLocked: state.inputLocked,
+    itemTargetType: state.items?.selectedItemTargetType ?? null,
+    itemTargetId: state.items?.selectedItemId ?? null,
+    targetBlockIds,
+    config,
+  } as const;
+}
+
+function syncDogBoard(
+  boardElement: HTMLElement,
+  state: DogLegeDogGameState,
+  boardMetrics: DogBoardMetrics,
+  targetBlockIds: readonly string[],
+  config: DogV13Config,
+): void {
+  const existingBlocks = new Map<string, HTMLElement>();
+  const currentBlocks = [...boardElement.querySelectorAll<HTMLElement>('[data-testid="dog-block"]')];
+  for (const block of currentBlocks) {
+    const blockId = block.dataset.blockId;
+    if (blockId === undefined || existingBlocks.has(blockId)) {
+      block.remove();
+      continue;
+    }
+    existingBlocks.set(blockId, block);
+  }
+
+  const nextBlocks: HTMLElement[] = [];
+  const renderOptions = createDogBlockRenderOptions(state, boardMetrics, targetBlockIds, config);
+  for (const block of state.session.remainingBlocks) {
+    const current = existingBlocks.get(block.id);
+    if (current === undefined) {
+      nextBlocks.push(parseSingleElement(renderDogBlock(block, renderOptions)));
+    } else {
+      nextBlocks.push(syncDogBlockElement(current, block, renderOptions));
+    }
+  }
+
+  const nextIds = new Set(state.session.remainingBlocks.map((block) => block.id));
+  for (const [blockId, block] of existingBlocks) {
+    if (!nextIds.has(blockId)) {
+      block.remove();
+    }
+  }
+
+  for (let index = 0; index < nextBlocks.length; index += 1) {
+    const block = nextBlocks[index];
+    if (boardElement.children[index] !== block) {
+      boardElement.insertBefore(block, boardElement.children[index] ?? null);
+    }
+  }
+}
+
+function syncDogTraySlots(
+  traySlots: HTMLOListElement,
+  session: Parameters<typeof renderDogTraySlots>[0],
+  itemTargetType: Parameters<typeof renderDogTraySlots>[1],
+  itemTargetId: Parameters<typeof renderDogTraySlots>[2],
+  targetBlockIds: Parameters<typeof renderDogTraySlots>[3],
+  config: DogV13Config,
+): void {
+  const currentSlots = [...traySlots.children].filter(
+    (element): element is HTMLElement => element instanceof HTMLElement,
+  );
+  const currentBlocks = new Map<string, HTMLElement>();
+  for (const slot of currentSlots) {
+    const blockId = slot.dataset.blockId;
+    if (blockId !== undefined) {
+      currentBlocks.set(blockId, slot);
+    }
+  }
+
+  const usedSlots = new Set<HTMLElement>();
+  const nextSlots: HTMLElement[] = [];
+  const slotCount = Math.max(session.trayCapacity, session.trayBlocks.length);
+  for (let index = 0; index < slotCount; index += 1) {
+    const blockId = session.trayBlocks[index]?.id;
+    let current = blockId === undefined ? currentSlots[index] : currentBlocks.get(blockId);
+    if (current === undefined || usedSlots.has(current)) {
+      current = currentSlots.find((slot) => !usedSlots.has(slot));
+    }
+
+    if (current === undefined) {
+      current = parseSingleElement(
+        renderDogTraySlot(
+          session,
+          index,
+          itemTargetType,
+          itemTargetId,
+          targetBlockIds,
+          config,
+        ),
+      );
+    } else {
+      usedSlots.add(current);
+      syncDogTraySlotElement(
+        current,
+        session,
+        index,
+        itemTargetType,
+        itemTargetId,
+        targetBlockIds,
+        config,
+      );
+    }
+    nextSlots.push(current);
+  }
+
+  for (const slot of currentSlots) {
+    if (!usedSlots.has(slot)) {
+      slot.remove();
+    }
+  }
+  for (let index = 0; index < nextSlots.length; index += 1) {
+    const slot = nextSlots[index];
+    if (traySlots.children[index] !== slot) {
+      traySlots.insertBefore(slot, traySlots.children[index] ?? null);
+    }
+  }
+}
+
+function parseSingleElement(markup: string): HTMLElement {
+  const template = document.createElement("template");
+  template.innerHTML = markup.trim();
+  const element = template.content.firstElementChild;
+  if (!(element instanceof HTMLElement)) {
+    throw new Error("Expected renderer markup to contain one element");
+  }
+  return element;
+}
+
+function hasBoardGeometryChanged(
+  boardElement: HTMLElement,
+  boardScaler: HTMLElement | null,
+  board: DogLegeDogGameState["level"]["board"],
+  metrics: DogBoardMetrics,
+): boolean {
+  return boardElement.dataset.shape !== board.shape ||
+    boardElement.dataset.surfaceShape !== "rectangle" ||
+    boardElement.dataset.templateId !== board.templateId ||
+    boardElement.dataset.logicalWidth !== String(board.width) ||
+    boardElement.dataset.logicalHeight !== String(board.height) ||
+    boardElement.style.getPropertyValue("--board-columns") !== String(metrics.columns) ||
+    boardElement.style.getPropertyValue("--board-rows") !== String(metrics.rows) ||
+    boardElement.style.getPropertyValue("--board-pixel-width") !== `${metrics.pixelWidth}px` ||
+    boardElement.style.getPropertyValue("--board-pixel-height") !== `${metrics.pixelHeight}px` ||
+    boardScaler?.style.getPropertyValue("--board-pixel-width") !== `${metrics.pixelWidth}px` ||
+    boardScaler?.style.getPropertyValue("--board-pixel-height") !== `${metrics.pixelHeight}px`;
 }
 
 function getDogBoardLabel(state: DogLegeDogGameState, config: DogV13Config): string {

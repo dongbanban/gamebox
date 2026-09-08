@@ -17,7 +17,6 @@ import type {
 import type { DogVisualFeedback } from "@/games/dog-lege-dog/game/game-types";
 import {
   getSpecialMechanismClass,
-  renderSpecialMechanismAttributes,
 } from "@/games/dog-lege-dog/game/game-renderer-mechanisms";
 import { isDogItemTargetable } from "@/games/dog-lege-dog/game/game-renderer-targets";
 import {
@@ -54,78 +53,276 @@ export function renderDogTraySlots(
   targetBlockIds: readonly string[] = [],
   config: DogV13Config = DOG_V13_CONFIG,
 ): string {
-  const labels = config.ui.copy.labels;
   const slotCount = Math.max(session.trayCapacity, session.trayBlocks.length);
-  return Array.from({ length: slotCount }, (_, index) => {
-    const block = session.trayBlocks[index];
-    if (block === undefined) {
-      const locked = index >= session.trayCapacity - session.lockedTraySlotCount;
-      return locked
-        ? `<li class="dog-tray__slot dog-tray__slot--locked" data-testid="dog-tray-slot" data-tray-slot-index="${index}" data-slot-state="locked" aria-label="${labels.lockedTraySlot}"><span class="dog-tray__lock" aria-hidden="true">🔒</span></li>`
-        : `<li class="dog-tray__slot" data-testid="dog-tray-slot" data-tray-slot-index="${index}" data-slot-state="empty" aria-label="${labels.emptyTraySlot}"></li>`;
-    }
+  return Array.from({ length: slotCount }, (_, index) =>
+    renderDogTraySlot(session, index, itemTargetType, itemTargetId, targetBlockIds, config),
+  ).join("");
+}
 
-    const displayPatternType = getDogIllusionDisguisedPattern(block);
-    const isIllusion = block.specialMechanism?.type === DOG_ILLUSION_MECHANISM_TYPE;
-    const shuffleStatus = block.specialMechanism?.type === DOG_SHUFFLE_MECHANISM_TYPE
-      ? getDogShuffleMechanismStatus(block.specialMechanism)
-      : null;
-    const shuffleClass = shuffleStatus === "armed"
-      ? " dog-tray__slot--shuffle-armed"
-      : shuffleStatus === "triggerable"
-        ? " dog-tray__slot--shuffle-triggerable"
-        : "";
-    const mechanismClass = `${getSpecialMechanismClass(block.specialMechanism?.type)}${shuffleClass}`;
-    const mechanismAttributes = [
-      renderSpecialMechanismAttributes(block.specialMechanism),
-      shuffleStatus === null ? "" : `data-shuffle-state="${shuffleStatus}"`,
-    ].filter(Boolean).join(" ");
-    const glyphClass = isIllusion
-      ? "dog-block__glyph dog-block__glyph--fuzzy"
-      : "dog-block__glyph";
-    const illusionStyle = isIllusion
-      ? `style="--dog-illusion-image: url(${getDogPatternAssetUrl(displayPatternType, config)});"`
+export function renderDogTraySlot(
+  session: GameSessionSnapshot,
+  index: number,
+  itemTargetType: DogItemTargetType | null = null,
+  itemTargetId: DogItemId | null = null,
+  targetBlockIds: readonly string[] = [],
+  config: DogV13Config = DOG_V13_CONFIG,
+): string {
+  const details = getDogTraySlotRenderDetails(
+    session,
+    index,
+    itemTargetType,
+    itemTargetId,
+    targetBlockIds,
+    config,
+  );
+  const attributes = details.attributes
+    .map(([name, value]) => `${name}="${value}"`)
+    .join(" ");
+  return `<li ${attributes}>${details.childrenMarkup}</li>`;
+}
+
+export function syncDogTraySlotElement(
+  element: HTMLElement,
+  session: GameSessionSnapshot,
+  index: number,
+  itemTargetType: DogItemTargetType | null = null,
+  itemTargetId: DogItemId | null = null,
+  targetBlockIds: readonly string[] = [],
+  config: DogV13Config = DOG_V13_CONFIG,
+): void {
+  const details = getDogTraySlotRenderDetails(
+    session,
+    index,
+    itemTargetType,
+    itemTargetId,
+    targetBlockIds,
+    config,
+  );
+  const visualChanged = getDogTraySlotVisualKey(element) !== details.visualKey;
+  const transientClasses = [
+    "dog-tray__slot--illusion-reveal",
+    "dog-tray__slot--unlocking",
+  ].filter((className) => element.classList.contains(className));
+  const transientAttributes: Array<[string, string]> = [];
+  for (const [name, value] of [
+    ["data-illusion-reveal", element.dataset.illusionReveal],
+    ["data-unlocking", element.dataset.unlocking],
+  ] as const) {
+    if (value !== undefined) {
+      transientAttributes.push([name, value]);
+    }
+  }
+  const animationDuration = element.style.getPropertyValue("--dog-animation-duration");
+  const attributes = details.attributes.map(([name, value]) => {
+    if (name === "class" && transientClasses.length > 0) {
+      return [name, `${value} ${transientClasses.join(" ")}`] as [string, string];
+    }
+    if (name === "style" && animationDuration !== "") {
+      return [name, `${value} --dog-animation-duration: ${animationDuration};`] as [string, string];
+    }
+    return [name, value] as [string, string];
+  });
+  if (animationDuration !== "" && !attributes.some(([name]) => name === "style")) {
+    attributes.push(["style", `--dog-animation-duration: ${animationDuration};`]);
+  }
+  syncElementAttributes(element, [...attributes, ...transientAttributes]);
+  if (visualChanged) {
+    element.innerHTML = details.childrenMarkup;
+  }
+}
+
+interface DogTraySlotRenderDetails {
+  readonly attributes: Array<[string, string]>;
+  readonly childrenMarkup: string;
+  readonly visualKey: string;
+}
+
+function getDogTraySlotRenderDetails(
+  session: GameSessionSnapshot,
+  index: number,
+  itemTargetType: DogItemTargetType | null,
+  itemTargetId: DogItemId | null,
+  targetBlockIds: readonly string[],
+  config: DogV13Config,
+): DogTraySlotRenderDetails {
+  const labels = config.ui.copy.labels;
+  const block = session.trayBlocks[index];
+  if (block === undefined) {
+    const locked = index >= session.trayCapacity - session.lockedTraySlotCount;
+    const className = locked
+      ? "dog-tray__slot dog-tray__slot--locked"
+      : "dog-tray__slot";
+    return {
+      attributes: [
+        ["class", className],
+        ["data-testid", "dog-tray-slot"],
+        ["data-tray-slot-index", String(index)],
+        ["data-slot-state", locked ? "locked" : "empty"],
+        ["aria-label", locked ? labels.lockedTraySlot : labels.emptyTraySlot],
+      ],
+      childrenMarkup: locked ? '<span class="dog-tray__lock" aria-hidden="true">🔒</span>' : "",
+      visualKey: getTrayVisualKey(className, "", "", "", "", ""),
+    };
+  }
+
+  const displayPatternType = getDogIllusionDisguisedPattern(block);
+  const isIllusion = block.specialMechanism?.type === DOG_ILLUSION_MECHANISM_TYPE;
+  const shuffleStatus = block.specialMechanism?.type === DOG_SHUFFLE_MECHANISM_TYPE
+    ? getDogShuffleMechanismStatus(block.specialMechanism)
+    : null;
+  const shuffleClass = shuffleStatus === "armed"
+    ? " dog-tray__slot--shuffle-armed"
+    : shuffleStatus === "triggerable"
+      ? " dog-tray__slot--shuffle-triggerable"
       : "";
-    const selectingBlockTarget = isDogItemTargetable(
-      block.specialMechanism,
-      itemTargetType,
-      itemTargetId,
-      true,
-      block.id,
-      targetBlockIds,
-    );
-    const targetAttributes = selectingBlockTarget
-      ? 'data-item-targetable="true" role="button" tabindex="0"'
-      : "";
-    const targetClass = selectingBlockTarget ? " dog-tray__slot--item-targetable" : "";
-    const targetDisabled = itemTargetType !== null && !selectingBlockTarget;
-    const targetDisabledAttributes = targetDisabled
-      ? 'data-item-target-disabled="true" aria-disabled="true"'
-      : "";
-    const targetDisabledClass = targetDisabled ? " dog-tray__slot--item-target-disabled" : "";
-    const shuffleStateLabel = shuffleStatus === null
-      ? ""
-      : config.ui.copy.specialMechanisms.presentations.shuffle.stateLabels[shuffleStatus];
-    const baseAccessibleLabel = selectingBlockTarget
-      ? labels.itemTarget
-      : block.visualMarker === "wildcard"
-        ? `${labels.wildcard}，${block.patternType}`
-        : block.patternType;
-    const accessibleLabel = shuffleStateLabel === ""
-      ? baseAccessibleLabel
-      : `${baseAccessibleLabel}，${shuffleStateLabel}`;
-    const visualMarkerClass = block.visualMarker === "wildcard"
-      ? " dog-tray__slot--wildcard"
-      : "";
-    const visualMarkerAttributes = block.visualMarker === undefined
-      ? ""
-      : `data-visual-marker="${block.visualMarker}"`;
-    return `
-      <li class="dog-tray__slot dog-tray__slot--filled${targetClass}${targetDisabledClass}${visualMarkerClass} dog-block--${getDogPatternClassName(displayPatternType)}${mechanismClass}" data-testid="dog-tray-slot" data-tray-slot-index="${index}" data-slot-state="filled" data-block-id="${block.id}" data-pattern-type="${block.patternType}" ${visualMarkerAttributes} ${mechanismAttributes} ${targetAttributes} ${targetDisabledAttributes} ${illusionStyle} aria-label="${accessibleLabel}">
-        <span class="${glyphClass}">${renderDogPatternAsset(displayPatternType, config)}</span>
-      </li>
-    `;
-  }).join("");
+  const mechanismClass = `${getSpecialMechanismClass(block.specialMechanism?.type)}${shuffleClass}`;
+  const glyphClass = isIllusion
+    ? "dog-block__glyph dog-block__glyph--fuzzy"
+    : "dog-block__glyph";
+  const selectingBlockTarget = isDogItemTargetable(
+    block.specialMechanism,
+    itemTargetType,
+    itemTargetId,
+    true,
+    block.id,
+    targetBlockIds,
+  );
+  const targetDisabled = itemTargetType !== null && !selectingBlockTarget;
+  const className = `dog-tray__slot dog-tray__slot--filled${selectingBlockTarget ? " dog-tray__slot--item-targetable" : ""}${targetDisabled ? " dog-tray__slot--item-target-disabled" : ""}${block.visualMarker === "wildcard" ? " dog-tray__slot--wildcard" : ""} dog-block--${getDogPatternClassName(displayPatternType)}${mechanismClass}`;
+  const shuffleStateLabel = shuffleStatus === null
+    ? ""
+    : config.ui.copy.specialMechanisms.presentations.shuffle.stateLabels[shuffleStatus];
+  const baseAccessibleLabel = selectingBlockTarget
+    ? labels.itemTarget
+    : block.visualMarker === "wildcard"
+      ? `${labels.wildcard}，${block.patternType}`
+      : block.patternType;
+  const accessibleLabel = shuffleStateLabel === ""
+    ? baseAccessibleLabel
+    : `${baseAccessibleLabel}，${shuffleStateLabel}`;
+  const attributes: Array<[string, string]> = [
+    ["class", className],
+    ["data-testid", "dog-tray-slot"],
+    ["data-tray-slot-index", String(index)],
+    ["data-slot-state", "filled"],
+    ["data-block-id", block.id],
+    ["data-pattern-type", block.patternType],
+  ];
+  if (block.visualMarker !== undefined) {
+    attributes.push(["data-visual-marker", block.visualMarker]);
+  }
+  appendMechanismAttributes(attributes, block.specialMechanism);
+  if (shuffleStatus !== null) {
+    attributes.push(["data-shuffle-state", shuffleStatus]);
+  }
+  if (selectingBlockTarget) {
+    attributes.push(["data-item-targetable", "true"], ["role", "button"], ["tabindex", "0"]);
+  }
+  if (targetDisabled) {
+    attributes.push(["data-item-target-disabled", "true"], ["aria-disabled", "true"]);
+  }
+  if (isIllusion) {
+    attributes.push(["style", `--dog-illusion-image: url(${getDogPatternAssetUrl(displayPatternType, config)});`]);
+  }
+  attributes.push(["aria-label", accessibleLabel]);
+  return {
+    attributes,
+    childrenMarkup: `<span class="${glyphClass}">${renderDogPatternAsset(displayPatternType, config)}</span>`,
+    visualKey: getTrayVisualKey(
+      className,
+      block.patternType,
+      block.specialMechanism?.type,
+      typeof block.specialMechanism?.state.disguisedPatternType === "string"
+        ? block.specialMechanism.state.disguisedPatternType
+        : "",
+      block.visualMarker,
+      glyphClass,
+    ),
+  };
+}
+
+function appendMechanismAttributes(
+  attributes: Array<[string, string]>,
+  mechanism: GameSessionSnapshot["trayBlocks"][number]["specialMechanism"],
+): void {
+  if (mechanism === undefined) {
+    return;
+  }
+
+  attributes.push(["data-special-mechanism", mechanism.type]);
+  const status = mechanism.state.status;
+  if (typeof status === "string") {
+    attributes.push(["data-special-mechanism-state", status]);
+  }
+  const disguisedPatternType = mechanism.state.disguisedPatternType;
+  if (typeof disguisedPatternType === "string") {
+    attributes.push(["data-disguised-pattern-type", disguisedPatternType]);
+  }
+  const completedTriples = mechanism.state.completedTriples;
+  if (typeof completedTriples === "number") {
+    attributes.push(["data-special-mechanism-progress", String(completedTriples)]);
+  }
+}
+
+function getDogTraySlotVisualKey(element: HTMLElement): string {
+  const glyph = element.querySelector<HTMLElement>(".dog-block__glyph");
+  return getTrayVisualKey(
+    element.className,
+    element.dataset.patternType,
+    element.dataset.specialMechanism,
+    element.dataset.disguisedPatternType,
+    element.dataset.visualMarker,
+    glyph?.className,
+  );
+}
+
+function getTrayVisualKey(
+  className: string,
+  patternType: string | undefined,
+  mechanismType: string | undefined,
+  disguisedPatternType: string | undefined,
+  visualMarker: string | undefined,
+  glyphClass: string | undefined,
+): string {
+  return [
+    getStaticClassKey(className),
+    patternType ?? "",
+    mechanismType ?? "",
+    disguisedPatternType ?? "",
+    visualMarker ?? "",
+    glyphClass ?? "",
+  ].join("|");
+}
+
+function syncElementAttributes(
+  element: HTMLElement,
+  attributes: readonly [string, string][],
+): void {
+  const desired = new Map(attributes);
+  for (const attribute of [...element.attributes]) {
+    if (!desired.has(attribute.name)) {
+      element.removeAttribute(attribute.name);
+    }
+  }
+  for (const [name, value] of attributes) {
+    if (element.getAttribute(name) !== value) {
+      element.setAttribute(name, value);
+    }
+  }
+}
+
+function getStaticClassKey(className: string): string {
+  return className
+    .split(/\s+/)
+    .filter((name) =>
+      name !== "" &&
+      name !== "dog-tray__slot--item-targetable" &&
+      name !== "dog-tray__slot--item-target-disabled" &&
+      name !== "dog-tray__slot--illusion-reveal" &&
+      name !== "dog-tray__slot--unlocking"
+    )
+    .sort()
+    .join(" ");
 }
 
 export function renderDogShuffleStatus(
