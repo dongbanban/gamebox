@@ -1,17 +1,19 @@
 import { describe, expect, it } from "vitest";
 import {
   DOG_V13_CONFIG,
-  getDogTestProfile,
   getDogV13LogicalBlockCount,
   getDogV13MechanismPlan,
   getDogV13SpecialMechanismBudget,
-  type DogV13TestProfileName,
   LevelGenerator,
+} from "@/games/dog-lege-dog";
+import {
   createDogGenerationTestCase,
   formatDogGenerationTestReport,
-} from "@/games/dog-lege-dog";
+  getDogTestProfile,
+  resolveDogTestProfileName,
+} from "./support/test-profile";
 
-const profileName = readProfileName(process.env.DOG_TEST_PROFILE);
+const profileName = resolveDogTestProfileName(process.env.DOG_TEST_PROFILE);
 const profile = getDogTestProfile(profileName);
 
 describe(`狗了个狗 ${profileName} generation profile`, () => {
@@ -117,13 +119,3 @@ describe(`狗了个狗 ${profileName} generation profile`, () => {
     });
   });
 });
-
-function readProfileName(rawProfile: string | undefined): DogV13TestProfileName {
-  if (rawProfile === undefined) {
-    return DOG_V13_CONFIG.testProfiles.default;
-  }
-  if (rawProfile === "focused" || rawProfile === "smoke" || rawProfile === "full") {
-    return rawProfile;
-  }
-  throw new Error(`未知狗了个狗测试 profile: ${rawProfile}`);
-}

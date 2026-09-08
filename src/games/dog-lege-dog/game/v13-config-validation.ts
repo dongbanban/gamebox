@@ -18,7 +18,6 @@ import {
   validateItems,
   validateLevels,
   validateSpecialMechanisms,
-  validateTestProfiles,
   validateTray,
 } from "@/games/dog-lege-dog/game/v13-config-validation-core";
 import { validateUiConfig } from "@/games/dog-lege-dog/game/v13-config-validation-ui";
@@ -29,9 +28,15 @@ export function collectConfigIssues(input: unknown): DogV13ConfigIssue[] {
   }
 
   const issues: DogV13ConfigIssue[] = [];
+  const configKeys = ["schemaVersion", "game", "generation", "board", "levels", "tray", "items", "specialMechanisms", "difficulty", "animation", "assets", "audio", "ui"] as const;
   const gameMaxLevelNumber = asRecord(input.game)?.maxLevelNumber;
-  for (const key of ["game", "generation", "board", "levels", "tray", "items", "specialMechanisms", "difficulty", "animation", "assets", "audio", "ui", "testProfiles"]) {
+  for (const key of configKeys.slice(1)) {
     requiredObject(input, key, issues);
+  }
+  for (const key of Object.keys(input)) {
+    if (!configKeys.includes(key as (typeof configKeys)[number])) {
+      issues.push({ path: key, code: "value", message: "包含不受支持的字段" });
+    }
   }
   if (!("schemaVersion" in input)) {
     issues.push({ path: "schemaVersion", code: "required", message: "必填" });
@@ -51,6 +56,5 @@ export function collectConfigIssues(input: unknown): DogV13ConfigIssue[] {
   validateAssets(input.assets, input.items, issues);
   validateAudio(input.audio, issues);
   validateUiConfig(input.ui, "ui", issues);
-  validateTestProfiles(input.testProfiles, gameMaxLevelNumber, issues);
   return issues;
 }

@@ -126,7 +126,6 @@ export {
   DOG_V13_CONFIG,
   DOG_V13_MECHANISM_TYPES,
   DOG_V13_SCHEMA_VERSION,
-  getDogTestProfile,
   getDogV13ActiveMechanismDefinitions,
   getDogV13DifficultyTarget,
   getDogV13ItemUses,
@@ -136,11 +135,9 @@ export {
   getDogV13SpecialMechanismBudget,
   getDogShuffleThreshold,
   loadDogV13Config,
-  selectDogTestProfile,
   DogV13ConfigError,
 } from "@/games/dog-lege-dog/game/v13-config";
 export type {
-  DogConfigChangeArea,
   DogV13AppCopy,
   DogV13Config,
   DogV13ConfigIssue,
@@ -163,14 +160,7 @@ export type {
   DogV13SoundEffectProfile,
   DogV13SoundWaveform,
   DogV13StructureStage,
-  DogV13TestProfile,
-  DogV13TestProfileName,
 } from "@/games/dog-lege-dog/game/v13-config";
-export {
-  createDogGenerationTestCase,
-  formatDogGenerationTestReport,
-} from "@/games/dog-lege-dog/game/test-profile";
-export type { DogGenerationTestCase } from "@/games/dog-lege-dog/game/test-profile";
 
 export {
   DOG_FREEZE_MECHANISM_TYPE,

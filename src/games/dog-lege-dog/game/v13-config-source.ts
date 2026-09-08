@@ -6,7 +6,6 @@ import {
   type DogV13ItemId,
 } from "@/games/dog-lege-dog/game/v13-config-types";
 import { type DogPatternType } from "@/games/dog-lege-dog/levels/level-types";
-import DOG_V13_TEST_PROFILES_JSON from "@/games/dog-lege-dog/game/v13-test-profiles.json";
 
 const PATTERN_ASSET_PATHS: Readonly<Record<DogPatternType, string>> = {
   打工狗: "assets/dog-icons-square/01-working-dog.svg",
@@ -46,9 +45,6 @@ const DIFFICULTY_TARGETS: readonly DogV13DifficultyTarget[] = [
   createDifficultyTarget(30, 30, [0.01, 0.19], [12, 14], [0.87, 1]),
   createDifficultyTarget(31, 99, [0.01, 0.18], [13, 16], [0.88, 1]),
 ];
-
-const DOG_V13_TEST_PROFILES_SOURCE =
-  DOG_V13_TEST_PROFILES_JSON as unknown as DogV13Config["testProfiles"];
 
 export const DOG_V13_CONFIG_SOURCE: DogV13Config = {
   schemaVersion: DOG_V13_SCHEMA_VERSION,
@@ -403,7 +399,6 @@ export const DOG_V13_CONFIG_SOURCE: DogV13Config = {
       },
     },
   },
-  testProfiles: DOG_V13_TEST_PROFILES_SOURCE,
 };
 
 function createDifficultyTarget(

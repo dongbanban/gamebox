@@ -8,17 +8,16 @@ import {
   getDogV13LogicalBlockCount,
   getDogV13MechanismPlan,
   getDogV13SpecialMechanismBudget,
-  getDogTestProfile,
   loadDogV13Config,
-  selectDogTestProfile,
 } from "@/games/dog-lege-dog/game/v13-config";
 import { LevelGenerator } from "@/games/dog-lege-dog/levels/level-generation-engine";
 import { createDogLegeDogGame } from "@/games/dog-lege-dog/game/game-controller";
 
 describe("狗了个狗 v13 集中配置", () => {
-  it("覆盖边界、预算、权重、道具、动画、资源与测试 profile", () => {
+  it("覆盖边界、预算、权重、道具、动画与资源", () => {
     expect(DOG_V13_CONFIG.schemaVersion).toBe(13);
     expect(Object.isFrozen(DOG_V13_CONFIG)).toBe(true);
+    expect(DOG_V13_CONFIG).not.toHaveProperty("testProfiles");
     expect(Object.isFrozen(DOG_V13_CONFIG.specialMechanisms.mechanisms)).toBe(true);
     expect(DOG_V13_CONFIG.game.maxLevelNumber).toBe(99);
     expect([1, 5, 6, 15, 16, 30, 31, 99].map((levelNumber) => getDogV13LogicalBlockCount(levelNumber))).toEqual([
@@ -113,24 +112,6 @@ describe("狗了个狗 v13 集中配置", () => {
     });
     expect(DOG_V13_CONFIG.generation.workerTimeoutMs).toBeGreaterThan(0);
     expect(DOG_V13_CONFIG.assets.patterns["打工狗"]).toContain("01-working-dog.svg");
-    expect(getDogTestProfile("smoke")).toMatchObject({
-      levelNumbers: [1, 2, 3, 6, 16, 31, 99],
-      fixedSeeds: ["v13-smoke-a", "v13-smoke-b"],
-      randomLevelPrefix: 5,
-      stressLevelCount: 5,
-      runWorkerFallback: true,
-    });
-    expect(getDogTestProfile("full")).toMatchObject({
-      randomLevelPrefix: 99,
-      stressLevelCount: 99,
-      runCrossBrowser: true,
-      runDiffCheck: true,
-      runFileLineCheck: true,
-      maxChangedFileLines: 500,
-    });
-    expect(getDogTestProfile("full")).not.toHaveProperty("runUI");
-    expect(DOG_V13_CONFIG.testProfiles.selection.fullAreas).toContain("generator");
-    expect(DOG_V13_CONFIG.testProfiles.selection.smokeAreas).toEqual(["random-regression"]);
     expect(getDogV13DifficultyTarget(1)).toMatchObject({
       safeChoiceRate: { min: 0.18, max: 0.28 },
       durationMinutes: { min: 9, max: 10 },
@@ -192,6 +173,13 @@ describe("狗了个狗 v13 集中配置", () => {
       expect(configError.message).toContain("generation.workerTimeoutMs");
       expect(configError.message).toContain("specialMechanisms.shuffle.candidateCount");
     }
+  });
+
+  it("拒绝已移除的顶层测试 profile 字段", () => {
+    expect(() => loadDogV13Config({
+      ...DOG_V13_CONFIG,
+      testProfiles: {},
+    })).toThrow(DogV13ConfigError);
   });
 
   it("拒绝缺失 item 资源与反向关卡区间", () => {
@@ -281,14 +269,6 @@ describe("狗了个狗 v13 集中配置", () => {
         ]),
       );
     }
-  });
-
-  it("profile 选择可供生成器、启动与 QA 共用", () => {
-    expect(selectDogTestProfile("ui")).toBe("focused");
-    expect(selectDogTestProfile("runtime")).toBe("full");
-    expect(selectDogTestProfile(["game-startup", "generator"])).toBe("full");
-    expect(selectDogTestProfile("random-regression")).toBe("smoke");
-    expect(selectDogTestProfile("docs")).toBe("focused");
   });
 
   it("生成器在候选棋盘前拒绝无效配置", () => {

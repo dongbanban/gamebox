@@ -26,7 +26,7 @@ UI 文案、DOM、渲染器、样式、视觉资源或游戏音效改动运行 `
 
 `pnpm test:affected` 仅用于需要按当前 diff 同时检查相关 E2E 与构建、但尚未触发完整 QA 的场景。命令会识别纯 UI 改动并只运行 `pnpm test:ui`；其他改动按影响范围追加随机回归、Chromium E2E，最后运行一次 `build`，其内部已包含 `tsc --noEmit`。它不属于普通 ticket 默认门槛，也不与 `pnpm test:qa` 叠加。
 
-`pnpm test:smoke` 与 `pnpm test:full` 读取 `src/games/dog-lege-dog/game/v13-test-profiles.json`。profile 选择、固定 `testSeed`、关键关卡号与生成 fallback 诊断来自同一配置；步骤失败立即短路，报告打印 profile、seed、关卡边界与下一步重放命令。生成器、可解性、难度、公共契约、游戏启动、运行时、Worker、E2E 或对应 nested case 改动由 `pnpm test:affected` 自动升级到 full profile；随机回归改动进入 smoke profile。
+`pnpm test:smoke` 与 `pnpm test:full` 读取测试基础设施的 `scripts/v13-test-profiles.json`。profile 选择、固定 `testSeed`、关键关卡号与生成 fallback 诊断来自同一配置；步骤失败立即短路，报告打印 profile、seed、关卡边界与下一步重放命令。生成器、可解性、难度、公共契约、游戏启动、运行时、Worker、E2E 或对应 nested case 改动由 `pnpm test:affected` 自动升级到 full profile；随机回归改动进入 smoke profile。
 
 测试失败后立即停止后续步骤，避免错误后的重复全量运行。
 

@@ -74,7 +74,7 @@ pnpm test:qa
 
 当前 v13 升级由 ticket 22–28、20、11 收口。ticket 23、24、25、26、28 已完成 profile、生成器、运行时、UI 拆分与旧逻辑清理；ticket 11 继续跟踪加载、预生成与 Worker 生命周期剩余工作。`test:core` 已排除 E2E 与随机回归，nested test 由入口映射处理；旧 hardening ticket 19 已归档，不再作为实现入口。
 
-v13 测试 profile：focused 只跑受影响核心或 UI；smoke 覆盖 1/6/16/31/99 关与少量 seed；full 入口覆盖核心、随机 1–99 前缀、Chromium、WebKit、移动 Chromium、Worker/fallback、页面构建、diff 检查与文件行数检查。具体入口与自动选择见 `src/games/dog-lege-dog/game/v13-test-profiles.json`、`scripts/test-profile.mjs`、`scripts/test-paths.mjs`；当前领域最大关卡为 99，v13 生成器机制与密度断言已收口。
+v13 测试 profile：focused 只跑受影响核心或 UI；smoke 覆盖 1/6/16/31/99 关与少量 seed；full 入口覆盖核心、随机 1–99 前缀、Chromium、WebKit、移动 Chromium、Worker/fallback、页面构建、diff 检查与文件行数检查。profile 数据与选择只属于测试基础设施，具体入口与自动选择见 `scripts/v13-test-profiles.json`、`scripts/test-profile.mjs`、`scripts/test-paths.mjs`；当前领域最大关卡为 99，v13 生成器机制与密度断言已收口。
 
 响应式或浏览器兼容改动追加：
 

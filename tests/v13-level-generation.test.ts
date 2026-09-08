@@ -157,8 +157,7 @@ describe("狗了个狗 v13 关卡生成 seam", () => {
     const generator = new LevelGenerator();
     const level = generator.generate({
       levelNumber: 30,
-      runSeed: "dog-lege-dog:random-regression:v13-full-a",
-      testSeed: "v13-full-a",
+      runSeed: "dog-lege-dog:locked-high-pressure",
       generatorVersion: DOG_V13_CONFIG.game.generatorVersion,
     });
 
@@ -170,7 +169,7 @@ describe("狗了个狗 v13 关卡生成 seam", () => {
     const generator = new LevelGenerator();
     const level = generator.generate({
       levelNumber: 16,
-      runSeed: "dog-lege-dog:random-regression:v13-full-a",
+      runSeed: "dog-lege-dog:level-16-replay",
       generatorVersion: DOG_V13_CONFIG.game.generatorVersion,
     });
     const session = new GameSession(level);

@@ -13,10 +13,12 @@ import {
   getDogV13SpecialMechanismBudget,
   isDifficultyWithinTarget,
   LevelGenerator,
-  formatDogGenerationTestReport,
-  type DogGenerationTestCase,
   type DogLegeDogLevel,
 } from "@/games/dog-lege-dog";
+import {
+  formatDogGenerationTestReport,
+  type DogGenerationTestCase,
+} from "./support/test-profile";
 
 const MAX_LEVEL_NUMBER = DOG_V13_CONFIG.game.maxLevelNumber;
 

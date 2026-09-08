@@ -1,10 +1,10 @@
 import { spawnSync } from "node:child_process";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import DOG_TEST_PROFILES from "../src/games/dog-lege-dog/game/v13-test-profiles.json" with { type: "json" };
+import DOG_TEST_PROFILES from "./v13-test-profiles.json" with { type: "json" };
 import { classifyTestFile } from "./test-paths.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
-const PROFILE_NAMES = ["focused", "smoke", "full"];
+const PROFILE_NAMES = Object.keys(DOG_TEST_PROFILES.profiles);
 const PROFILE_BOOLEAN_KEYS = [
   "runCore",
   "runRandomRegression",
@@ -197,8 +197,7 @@ export function classifyChangedFiles(files) {
     if (file.startsWith("src/games/dog-lege-dog/levels/") ||
         file === "src/games/dog-lege-dog/game/special-mechanisms.ts" ||
         /^src\/games\/dog-lege-dog\/game\/v13-config(?:-[^/]+)?\.ts$/.test(file) ||
-        file === "src/games/dog-lege-dog/game/v13-test-profiles.json" ||
-        file === "src/games/dog-lege-dog/game/test-profile.ts" ||
+        file === "tests/support/test-profile.ts" ||
         file === "tests/generation-profile.test.ts") {
       areas.add("generator");
       continue;

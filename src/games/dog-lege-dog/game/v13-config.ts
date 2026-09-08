@@ -1,6 +1,5 @@
 import {
   DOG_V13_MECHANISM_TYPES,
-  type DogConfigChangeArea,
   type DogV13Config,
   type DogV13ConfigIssue,
   type DogV13DifficultyTarget,
@@ -9,8 +8,6 @@ import {
   type DogV13MechanismPlan,
   type DogV13MechanismType,
   type DogV13StructureStage,
-  type DogV13TestProfile,
-  type DogV13TestProfileName,
 } from "@/games/dog-lege-dog/game/v13-config-types";
 import { DOG_V13_CONFIG_SOURCE } from "@/games/dog-lege-dog/game/v13-config-source";
 import { collectConfigIssues } from "@/games/dog-lege-dog/game/v13-config-validation";
@@ -168,26 +165,6 @@ export function getDogV13ItemUses(
 ): number {
   if (!config.items.ids.includes(itemId)) throw new Error(`狗了个狗 v13 item is not configured: ${itemId}`);
   return itemId === config.items.key.id ? config.items.key.initialUses : config.items.maxSuccessfulUsesPerLevel;
-}
-
-export function getDogTestProfile(
-  profileName?: DogV13TestProfileName,
-  config: DogV13Config = DOG_V13_CONFIG,
-): DogV13TestProfile {
-  const resolvedName = profileName ?? config.testProfiles.default;
-  const profile = config.testProfiles.profiles[resolvedName];
-  if (profile === undefined) throw new Error(`狗了个狗 v13 test profile is unavailable: ${resolvedName}`);
-  return cloneAndFreeze(profile) as DogV13TestProfile;
-}
-
-export function selectDogTestProfile(
-  areas: DogConfigChangeArea | readonly DogConfigChangeArea[],
-): DogV13TestProfileName {
-  const changedAreas = typeof areas === "string" ? [areas] : areas;
-  const selection = DOG_V13_CONFIG.testProfiles.selection;
-  if (changedAreas.some((area) => selection.fullAreas.includes(area))) return "full";
-  if (changedAreas.some((area) => selection.smokeAreas.includes(area))) return "smoke";
-  return "focused";
 }
 
 function validateLevelNumber(levelNumber: number, config: DogV13Config): void {

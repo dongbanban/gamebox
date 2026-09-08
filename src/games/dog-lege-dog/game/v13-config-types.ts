@@ -34,20 +34,6 @@ export const DOG_V13_ITEM_COPY_KEYS: readonly DogV13ItemId[] = [
   "restore-whistle",
 ];
 
-export type DogV13TestProfileName = "focused" | "smoke" | "full";
-export type DogConfigChangeArea =
-  | "docs"
-  | "ui"
-  | "runtime"
-  | "generator"
-  | "solvability"
-  | "difficulty"
-  | "public-contract"
-  | "game-startup"
-  | "worker"
-  | "random-regression"
-  | "cross-browser";
-
 export interface DogV13Range {
   readonly min: number;
   readonly max: number;
@@ -219,23 +205,6 @@ export interface DogV13LoadoutCopy {
   readonly remainingUses: string;
 }
 
-export interface DogV13TestProfile {
-  readonly name: DogV13TestProfileName;
-  readonly levelNumbers: readonly number[];
-  readonly fixedSeeds: readonly string[];
-  readonly randomLevelPrefix: number;
-  readonly stressLevelCount: number;
-  readonly runCore: boolean;
-  readonly runRandomRegression: boolean;
-  readonly runE2E: boolean;
-  readonly runCrossBrowser: boolean;
-  readonly runWorkerFallback: boolean;
-  readonly runBuild: boolean;
-  readonly runDiffCheck: boolean;
-  readonly runFileLineCheck: boolean;
-  readonly maxChangedFileLines: number;
-}
-
 export interface DogV13Config {
   readonly schemaVersion: typeof DOG_V13_SCHEMA_VERSION;
   readonly game: {
@@ -349,14 +318,6 @@ export interface DogV13Config {
       readonly result: Readonly<Record<"won" | "final" | "lost", DogV13ResultDisplay>>;
     };
     readonly particles: Readonly<Record<DogV13ParticleEffectName, DogV13ParticleEffectProfile>>;
-  };
-  readonly testProfiles: {
-    readonly default: DogV13TestProfileName;
-    readonly selection: {
-      readonly fullAreas: readonly DogConfigChangeArea[];
-      readonly smokeAreas: readonly DogConfigChangeArea[];
-    };
-    readonly profiles: Readonly<Record<DogV13TestProfileName, DogV13TestProfile>>;
   };
 }
 

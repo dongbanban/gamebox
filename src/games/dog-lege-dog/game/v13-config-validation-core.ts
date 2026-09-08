@@ -1,5 +1,4 @@
 import {
-  type DogConfigChangeArea,
   type DogV13ConfigIssue,
   type DogV13ItemId,
   DOG_V13_MECHANISM_TYPES,
@@ -16,7 +15,6 @@ import {
   requiredObject,
   validateFiniteNumber,
   validateInteger,
-  validateLevelNumberArray,
   validateNonEmptyString,
   validateRange,
   validateRangeObject,
@@ -270,23 +268,6 @@ export function validateAudio(value: unknown, issues: DogV13ConfigIssue[]): void
   for (const [name, effect] of Object.entries(effects)) validateAudioEffect(effect, `audio.effects.${name}`, issues);
 }
 
-export function validateTestProfiles(value: unknown, gameMaxLevelNumber: unknown, issues: DogV13ConfigIssue[]): void {
-  const testProfiles = asRecord(value);
-  if (testProfiles === undefined) return;
-  if (!["focused", "smoke", "full"].includes(String(testProfiles.default))) {
-    issues.push({ path: "testProfiles.default", code: "value", message: "profile 不受支持" });
-  }
-  const selection = asRecord(testProfiles.selection);
-  if (selection === undefined) requiredObject(testProfiles, "selection", issues, "testProfiles");
-  else validateProfileAreas(selection, issues);
-  const profiles = asRecord(testProfiles.profiles);
-  if (profiles === undefined) {
-    requiredObject(testProfiles, "profiles", issues, "testProfiles");
-    return;
-  }
-  for (const name of ["focused", "smoke", "full"] as const) validateProfile(profiles[name], name, gameMaxLevelNumber, issues);
-}
-
 function validateDifficultyTargets(value: unknown, path: string, gameMaxLevelNumber: unknown, issues: DogV13ConfigIssue[]): void {
   if (!Array.isArray(value) || value.length === 0) {
     issues.push({ path, code: "required", message: "必须包含难度目标" });
@@ -379,34 +360,6 @@ function validateAudioEffect(value: unknown, path: string, issues: DogV13ConfigI
   validateRange(effect.volume, `${path}.volume`, 0, 1, issues);
   validateRange(effect.noteSpacingSeconds, `${path}.noteSpacingSeconds`, 0, 10, issues);
   if (!["sine", "square", "sawtooth", "triangle"].includes(String(effect.waveform))) issues.push({ path: `${path}.waveform`, code: "value", message: "波形不受支持" });
-}
-
-function validateProfileAreas(selection: Record<string, unknown>, issues: DogV13ConfigIssue[]): void {
-  const allowed: readonly DogConfigChangeArea[] = ["docs", "ui", "runtime", "generator", "solvability", "difficulty", "public-contract", "game-startup", "worker", "random-regression", "cross-browser"];
-  for (const key of ["fullAreas", "smokeAreas"] as const) {
-    const path = `testProfiles.selection.${key}`;
-    validateStringArray(selection[key], path, issues);
-    if (Array.isArray(selection[key])) {
-      validateUnique(selection[key], path, issues);
-      for (const [index, area] of selection[key].entries()) if (!allowed.includes(area as DogConfigChangeArea)) issues.push({ path: `${path}[${index}]`, code: "value", message: "改动领域不受支持" });
-    }
-  }
-}
-
-function validateProfile(value: unknown, name: string, gameMaxLevelNumber: unknown, issues: DogV13ConfigIssue[]): void {
-  const profile = asRecord(value);
-  if (profile === undefined) {
-    issues.push({ path: `testProfiles.profiles.${name}`, code: "required", message: "必须是对象" });
-    return;
-  }
-  const path = `testProfiles.profiles.${name}`;
-  if (profile.name !== name) issues.push({ path: `${path}.name`, code: "value", message: `必须是 ${name}` });
-  validateLevelNumberArray(profile.levelNumbers, `${path}.levelNumbers`, asNumber(gameMaxLevelNumber), issues);
-  validateStringArray(profile.fixedSeeds, `${path}.fixedSeeds`, issues);
-  validateInteger(profile.randomLevelPrefix, `${path}.randomLevelPrefix`, 0, issues, asNumber(gameMaxLevelNumber));
-  validateInteger(profile.stressLevelCount, `${path}.stressLevelCount`, 0, issues, asNumber(gameMaxLevelNumber));
-  for (const key of ["runCore", "runRandomRegression", "runE2E", "runCrossBrowser", "runWorkerFallback", "runBuild", "runDiffCheck", "runFileLineCheck"]) if (typeof profile[key] !== "boolean") issues.push({ path: `${path}.${key}`, code: "type", message: "必须是布尔值" });
-  validateInteger(profile.maxChangedFileLines, `${path}.maxChangedFileLines`, 1, issues);
 }
 
 function validateWeight(value: unknown, path: string, issues: DogV13ConfigIssue[]): void {
