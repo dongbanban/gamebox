@@ -1,3 +1,5 @@
+/** @vitest-environment jsdom */
+
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { GameDefinition, GameLaunchContext, GameResult } from "@/catalog";
 import { GAME_ID, ProgressStore } from "@/progress-store";

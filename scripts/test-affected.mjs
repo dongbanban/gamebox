@@ -2,7 +2,6 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { selectProfileForChangedFiles } from "./test-profile.mjs";
 import {
   getPlaywrightEntriesForFiles,
-  getVitestEntriesForFiles,
   isHighRiskTestFile,
   isUiOnlyTestFile,
 } from "./test-paths.mjs";
@@ -43,14 +42,11 @@ if (!focusedOnly && selectedProfile === "full") {
   process.exit(0);
 }
 
-const vitestTargets = [...new Set([
-  ...changedFiles.filter(
-    (file) =>
-      /^src\/.*\.ts$/.test(file) ||
-      /^tests\/(?!e2e\/).*\.ts$/.test(file),
-  ),
-  ...getVitestEntriesForFiles(changedFiles),
-])].sort();
+const vitestTargets = changedFiles.filter(
+  (file) =>
+    /^src\/.*\.ts$/.test(file) ||
+    /^tests\/(?!e2e\/).*\.ts$/.test(file),
+);
 
 if (vitestTargets.length > 0) {
   const vitestArgs = [
@@ -69,7 +65,7 @@ if (vitestTargets.length > 0) {
   if (focusedOnly) {
     vitestArgs.push(
       "--exclude",
-      "tests/level-generator.test.ts",
+      "tests/level-generator-cases/**",
       "--exclude",
       "tests/generation-failure.test.ts",
     );

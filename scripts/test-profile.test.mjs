@@ -10,7 +10,6 @@ import {
 } from "./test-profile.mjs";
 import {
   getPlaywrightEntriesForFiles,
-  getVitestEntriesForFiles,
   isUiOnlyTestFile,
 } from "./test-paths.mjs";
 
@@ -60,26 +59,6 @@ test("changed files share profile selection with affected runner", () => {
   );
 });
 
-test("nested Vitest cases resolve to their root entries", () => {
-  assert.deepEqual(
-    getVitestEntriesForFiles([
-      "tests/app-cases/app-contract.ts",
-      "tests/level-generator-cases/solvability.ts",
-      "tests/support/level-generator-fixtures.ts",
-      "tests/special-cases/board-ui.ts",
-      "tests/special-cases/mechanism-runtime.ts",
-      "tests/special-cases/shuffle-block.ts",
-      "tests/special-cases/shuffle-ui.ts",
-    ]),
-    [
-      "tests/app.test.ts",
-      "tests/level-generator.test.ts",
-      "tests/special-mechanism.test.ts",
-      "tests/special-ui.test.ts",
-    ],
-  );
-});
-
 test("nested E2E cases resolve to their Playwright specs", () => {
   assert.deepEqual(
     getPlaywrightEntriesForFiles([
@@ -94,20 +73,20 @@ test("nested E2E cases resolve to their Playwright specs", () => {
   );
 });
 
-test("nested test paths retain UI and high-risk profile classification", () => {
-  assert.equal(isUiOnlyTestFile("tests/app-cases/app-results.ts"), true);
-  assert.equal(isUiOnlyTestFile("tests/special-cases/board-ui.ts"), true);
-  assert.equal(isUiOnlyTestFile("tests/special-cases/shuffle-ui.ts"), true);
+test("native Vitest paths retain UI and high-risk profile classification", () => {
+  assert.equal(isUiOnlyTestFile("tests/app-cases/app-results.test.ts"), true);
+  assert.equal(isUiOnlyTestFile("tests/special-cases/board-ui.test.ts"), true);
+  assert.equal(isUiOnlyTestFile("tests/special-cases/shuffle-ui.test.ts"), true);
   assert.deepEqual(
-    classifyChangedFiles(["tests/level-generator-cases/solvability.ts"]),
+    classifyChangedFiles(["tests/level-generator-cases/solvability.test.ts"]),
     ["generator"],
   );
   assert.deepEqual(
-    classifyChangedFiles(["tests/special-cases/shuffle-block.ts"]),
+    classifyChangedFiles(["tests/special-cases/shuffle-block.test.ts"]),
     ["generator"],
   );
   assert.equal(
-    selectProfileForChangedFiles(["tests/level-generator-cases/solvability.ts"]),
+    selectProfileForChangedFiles(["tests/level-generator-cases/solvability.test.ts"]),
     "full",
   );
   assert.deepEqual(

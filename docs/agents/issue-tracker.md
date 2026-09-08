@@ -33,10 +33,10 @@ Used by `/wayfinder`. The **map** is a file with one **child** file per ticket.
 
 默认采用“聚焦检查逐票、完整 QA 分批”策略，避免每个 ticket 重复支付构建、E2E 与随机回归成本。
 
-测试文件分类：根 `tests/*.test.ts` 与 `tests/e2e/*.spec.ts` 是测试入口；`tests/*-cases/*.ts` 是由入口 import 的 case；`tests/support/**` 与 `tests/e2e/support/**` 是 fixture/helper。受影响 runner 维护 case 到入口映射；nested case 不作为独立 Vitest/Playwright 文件收集。
+测试文件分类：Vitest 原生发现 `tests/**/*.test.ts`；Playwright 当前由根 `tests/e2e/*.spec.ts` 入口收集 `tests/e2e/*-cases/*.ts`；`tests/support/**` 与 `tests/e2e/support/**` 是 fixture/helper。受影响 runner 通过 Vitest `related` import graph 选择单测，只为 Playwright 保留 nested case 到 spec 的映射。
 
 - 文档-only 改动：可标记“未运行测试”。
-- 普通实现 ticket：完成前运行 `pnpm test:focused`。该命令按 import graph 与入口映射运行受影响核心 Vitest，排除随机回归与生成器压力套件，不运行 Chromium E2E 或构建；生成器/可解性/难度/特殊机制运行时/E2E case 改动会拒绝通过，改跑 `pnpm test:qa`；随机回归改动改跑 `pnpm test:smoke` 或 `pnpm test:qa`。
+- 普通实现 ticket：完成前运行 `pnpm test:focused`。该命令按 Vitest `related` import graph 运行受影响核心单测，排除随机回归与生成器压力套件，不运行 Chromium E2E 或构建；生成器/可解性/难度/特殊机制运行时/E2E case 改动会拒绝通过，改跑 `pnpm test:qa`；随机回归改动改跑 `pnpm test:smoke` 或 `pnpm test:qa`。
 - UI-only 改动：优先运行 `pnpm test:ui`；不再额外叠加 `pnpm test:focused` 或 `pnpm test:affected`。
 - 每 3–5 个 ticket、一个功能阶段结束、进入高风险 ticket 前、合并前或发布前，统一运行 `pnpm test:qa`。
 - 生成器、可解性/难度、公共契约、进度、导航、游戏启动、测试基础设施、跨模块或无法确认影响范围的改动，完成当前 ticket 前直接运行完整 QA；响应式或浏览器兼容改动追加 `pnpm test:e2e:cross-browser`。
@@ -50,7 +50,7 @@ UI 文案、DOM、渲染器、样式、视觉资源或游戏音效改动优先�
 pnpm test:ui
 ```
 
-该命令只跑 7 个 UI 测试入口：app、狗了个狗交互、道具组、特殊机制视觉、渲染、动画/配置 seam 与音效；不触发随机回归、浏览器 E2E 或构建。`pnpm test:affected` 检测到纯 UI 改动（含对应 nested case）时会自动委托给同一命令；已经手动运行 `test:ui` 后不要再叠加 `test:affected`。
+该命令直接收集 app、狗了个狗交互、道具组、特殊机制视觉、渲染、动画/配置 seam 与音效的 UI 测试文件；不触发随机回归、浏览器 E2E 或构建。`pnpm test:affected` 检测到纯 UI 改动时会自动委托给同一命令；已经手动运行 `test:ui` 后不要再叠加 `test:affected`。
 
 需要按当前 diff 同时检查相关 E2E 与构建、但尚未触发完整 QA 时运行：
 
@@ -58,7 +58,7 @@ pnpm test:ui
 pnpm test:affected
 ```
 
-该命令读取当前 Git 改动与未跟踪文件；纯 UI 改动直接运行 `pnpm test:ui` 并结束，其他改动按 Vitest import graph 与 nested case 入口映射运行受影响核心测试，按 E2E case 到 spec 的映射选择浏览器流程，并在末尾运行一次 `pnpm build`。生成器、公共契约、启动、运行时或 E2E 风险改动自动升级 full profile；它不属于普通 ticket 默认门槛，也不与 `pnpm test:qa` 叠加。`build` 已包含 `tsc --noEmit`，不再重复运行独立 typecheck；任一步失败立即停止。
+该命令读取当前 Git 改动与未跟踪文件；纯 UI 改动直接运行 `pnpm test:ui` 并结束，其他改动按 Vitest `related` import graph 运行受影响核心测试，按 E2E case 到 spec 的映射选择浏览器流程，并在末尾运行一次 `pnpm build`。生成器、公共契约、启动、运行时或 E2E 风险改动自动升级 full profile；它不属于普通 ticket 默认门槛，也不与 `pnpm test:qa` 叠加。`build` 已包含 `tsc --noEmit`，不再重复运行独立 typecheck；任一步失败立即停止。
 
 以下范围必须追加全量测试：
 
@@ -72,7 +72,7 @@ pnpm test:affected
 pnpm test:qa
 ```
 
-当前 v13 升级由 ticket 22–28、20、11 收口。ticket 23、24、25、26、28 已完成 profile、生成器、运行时、UI 拆分与旧逻辑清理；ticket 11 继续跟踪加载、预生成与 Worker 生命周期剩余工作。`test:core` 已排除 E2E 与随机回归，nested test 由入口映射处理；旧 hardening ticket 19 已归档，不再作为实现入口。
+当前 v13 升级由 ticket 22–28、20、11 收口。ticket 23、24、25、26、28 已完成 profile、生成器、运行时、UI 拆分与旧逻辑清理；ticket 11 继续跟踪加载、预生成与 Worker 生命周期剩余工作。`test:core` 已排除 E2E 与随机回归，其余 Vitest 文件由框架原生发现；旧 hardening ticket 19 已归档，不再作为实现入口。
 
 v13 测试 profile：focused 只跑受影响核心或 UI；smoke 覆盖 1/6/16/31/99 关与少量 seed；full 入口覆盖核心、随机 1–99 前缀、Chromium、WebKit、移动 Chromium、Worker/fallback、页面构建、diff 检查与文件行数检查。profile 数据与选择只属于测试基础设施，具体入口与自动选择见 `scripts/v13-test-profiles.json`、`scripts/test-profile.mjs`、`scripts/test-paths.mjs`；当前领域最大关卡为 99，v13 生成器机制与密度断言已收口。
 
