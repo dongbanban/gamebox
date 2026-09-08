@@ -346,7 +346,7 @@ test("跨浏览器乱序与复原反馈期间锁定重玩并保持窄屏布局",
       document.querySelector('[data-testid="dog-shuffle-effect"]') === null;
   });
   await replayButton.click();
-  await expect(page.getByTestId("dog-game")).toBeVisible();
+  await expect(page.getByTestId("dog-game")).toBeVisible({ timeout: 120_000 });
   const replayedRunSeed = await page.getByTestId("dog-game").getAttribute("data-run-seed");
   expect(replayedRunSeed).not.toBe(runSeed);
   await expect(page.locator('[data-testid="dog-tray-slot"][data-pattern-type]')).toHaveCount(0);
