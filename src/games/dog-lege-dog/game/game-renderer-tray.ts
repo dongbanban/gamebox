@@ -319,7 +319,9 @@ function getStaticClassKey(className: string): string {
       name !== "dog-tray__slot--item-targetable" &&
       name !== "dog-tray__slot--item-target-disabled" &&
       name !== "dog-tray__slot--illusion-reveal" &&
-      name !== "dog-tray__slot--unlocking"
+      name !== "dog-tray__slot--unlocking" &&
+      name !== "dog-tray__slot--shuffle-armed" &&
+      name !== "dog-tray__slot--shuffle-triggerable"
     )
     .sort()
     .join(" ");

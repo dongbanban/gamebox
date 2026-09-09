@@ -160,7 +160,7 @@ function updateDogLegeDogGame(
     if (shuffleStatusMarkup === "") {
       shuffleStatusElement.remove();
     } else {
-      shuffleStatusElement.outerHTML = shuffleStatusMarkup;
+      syncDogShuffleStatusElement(shuffleStatusElement, state.session, config);
     }
   } else if (shuffleStatusMarkup !== "" && tray !== null && tray !== undefined && traySlots !== null && traySlots !== undefined) {
     traySlots.insertAdjacentHTML("beforebegin", shuffleStatusMarkup);
@@ -182,6 +182,21 @@ function updateDogLegeDogGame(
   if (boardGeometryChanged) {
     fitDogBoardToFrame(gameRoot);
   }
+}
+
+function syncDogShuffleStatusElement(
+  element: HTMLElement,
+  session: DogLegeDogGameState["session"],
+  config: DogV13Config,
+): void {
+  if (session.shuffle === null) {
+    return;
+  }
+
+  const presentation = config.ui.copy.specialMechanisms.presentations.shuffle;
+  element.dataset.shuffleState = session.shuffle.status;
+  element.dataset.shuffleThreshold = String(session.shuffle.threshold);
+  element.textContent = `${presentation.name}：${presentation.stateLabels[session.shuffle.status]}`;
 }
 
 function createDogBlockRenderOptions(
@@ -265,14 +280,26 @@ function syncDogTraySlots(
     }
   }
 
+  const nextBlockIds = new Set(session.trayBlocks.map((block) => block.id));
+  const preservedSlots = new Set(
+    [...currentBlocks.entries()]
+      .filter(([blockId]) => nextBlockIds.has(blockId))
+      .map(([, slot]) => slot),
+  );
   const usedSlots = new Set<HTMLElement>();
   const nextSlots: HTMLElement[] = [];
   const slotCount = Math.max(session.trayCapacity, session.trayBlocks.length);
   for (let index = 0; index < slotCount; index += 1) {
     const blockId = session.trayBlocks[index]?.id;
     let current = blockId === undefined ? currentSlots[index] : currentBlocks.get(blockId);
-    if (current === undefined || usedSlots.has(current)) {
-      current = currentSlots.find((slot) => !usedSlots.has(slot));
+    if (
+      current === undefined ||
+      usedSlots.has(current) ||
+      (blockId === undefined && preservedSlots.has(current))
+    ) {
+      current = currentSlots.find((slot) =>
+        !usedSlots.has(slot) && !preservedSlots.has(slot),
+      );
     }
 
     if (current === undefined) {
