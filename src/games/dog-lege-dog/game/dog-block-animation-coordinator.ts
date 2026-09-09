@@ -60,6 +60,7 @@ export interface DogBlockAnimationCoordinatorOptions {
 
 export class DogBlockAnimationCoordinator {
   private readonly options: DogBlockAnimationCoordinatorOptions;
+  private illusionMeltFallbackRects: ReadonlyMap<string, DOMRect> | null = null;
 
   constructor(options: DogBlockAnimationCoordinatorOptions) {
     this.options = options;
@@ -206,6 +207,7 @@ export class DogBlockAnimationCoordinator {
       return pending.snapshot;
     }
 
+    this.illusionMeltFallbackRects = captureDogTrayBlockRects(root);
     runtime.hasInteracted = true;
     runtime.inputLocked = true;
     runtime.feedback = "idle";
@@ -296,6 +298,8 @@ export class DogBlockAnimationCoordinator {
 
     if (isIllusion) {
       const selection = runtime.session.completeBlockSelection();
+      this.options.feedback.startMeltAnimations(selection.meltedBlockIds, this.illusionMeltFallbackRects ?? new Map());
+      this.illusionMeltFallbackRects = null;
       this.options.render(selection.snapshot);
       const reveal = animateDogIllusionReveal({
         root,

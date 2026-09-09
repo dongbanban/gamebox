@@ -301,7 +301,7 @@ export function animateDogIllusionReveal(
     setDogAnimationDuration(traySlot, durationMs);
   }
 
-  return createAnimationLifecycle(durationMs, () => {
+  return createAnimationLifecycle(traySlot === null ? 0 : durationMs, () => {
     traySlot?.classList.remove("dog-tray__slot--illusion-reveal");
     clearDogAnimationDuration(traySlot);
     if (traySlot?.dataset.illusionReveal === "true") {
