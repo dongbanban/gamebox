@@ -23,3 +23,4 @@
 - 2026-09-08：移除特殊方块与暂存槽常驻 pulse、呼吸、闪烁、图像抖动和切片动画；保留幻化遮罩/模糊本体识别动画、静态机制样式与标记；一次性反馈时序未改动。将乱序一次性反馈的 1200ms 配置字段重命名为 `shuffleFeedbackMs`，删除无消费者的旧字段与 CSS 变量。
 - 2026-09-08：通过公开游戏入口检查浏览器样式：冻结、双生、磁吸棋盘块及机制缩略图的 `animationName` 为 `none`；幻化仅保留 fuzzy body 动画；CSSOM 中已删除 keyframes 不存在，雪花、“2”、磁铁规则没有动画属性，reduced-motion 规则覆盖剩余幻化动画。
 - 2026-09-08：`pnpm test:ui` 通过（17 files / 90 tests）；`pnpm exec tsc --noEmit --pretty false` 与 `git diff --check` 通过。按本 ticket 要求未运行完整 QA、`test:affected` 或 `test:focused`。
+- 2026-09-09：关联最终联合 QA ticket 07：`pnpm test:qa`、独立 `pnpm test:e2e:cross-browser`、`pnpm build:pages` 与 `git diff --check` 均通过；性能采样、动画清单与移动 Chromium 证据见 [07-performance-and-final-qa.md](07-performance-and-final-qa.md)。

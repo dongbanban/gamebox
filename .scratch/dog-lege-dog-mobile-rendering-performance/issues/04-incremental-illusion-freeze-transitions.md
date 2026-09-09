@@ -21,3 +21,4 @@
 
 - 2026-09-09：为延迟完成的幻化选择保留选择前暂存槽位置，并在真实入槽结算后启动冻结融化反馈；无有效幻化目标时跳过不存在节点的揭示等待。新增公开游戏入口测试覆盖幻化飞行/揭示、立即三消、检测仪原位揭示、冻结进度/融化及火把棋盘/暂存槽目标，断言目标节点变化、未变化节点复用、输入锁和反馈。
 - 2026-09-09：`pnpm test:ui` 通过（19 files / 104 tests）；`pnpm exec vitest run tests/dog-cases/incremental-specials.test.ts` 通过（7 tests）；`pnpm exec tsc --noEmit --pretty false` 通过；`git diff --check` 通过。按仓库 `AGENTS.md` 对特殊机制运行时的高风险规则额外运行 `pnpm test:qa`，通过（core 44 files / 272 tests、random regression 3 tests、Chromium E2E 24 tests、cross-browser 18 tests、Pages build、diff check、500-line check）；未运行 `pnpm test:affected` 或 `pnpm test:focused`。
+- 2026-09-09：关联最终联合 QA ticket 07：`pnpm test:qa`、独立 `pnpm test:e2e:cross-browser`、`pnpm build:pages` 与 `git diff --check` 均通过；性能采样、幻化/冻结路径与节点复用证据见 [07-performance-and-final-qa.md](07-performance-and-final-qa.md)。

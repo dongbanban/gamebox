@@ -21,7 +21,7 @@
     "test:random": "vitest run tests/random-regression.test.ts",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "test:e2e:cross-browser": "PLAYWRIGHT_CROSS_BROWSER=1 playwright test tests/e2e/cross-browser.spec.ts",
+    "test:e2e:cross-browser": "PLAYWRIGHT_CROSS_BROWSER=1 playwright test tests/e2e/cross-browser.spec.ts tests/e2e/cross-browser-additional.spec.ts",
     "test:qa": "pnpm test:full"
   },
   "devDependencies": {

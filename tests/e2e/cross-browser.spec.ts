@@ -1,5 +1,9 @@
 import { expect, test } from "@playwright/test";
-import { clickBlock, enterGame, loseCurrentLevel } from "./support/full-flow-fixtures";
+import {
+  clickBlock,
+  enterGame,
+  loseCurrentLevel,
+} from "./support/full-flow-fixtures";
 import { resetPage } from "./support/common";
 
 test("跨浏览器核心 smoke：注册、目录与首关入口可用", async ({ page }) => {

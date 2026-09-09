@@ -23,3 +23,4 @@
 - 2026-09-09：通过公开 `startDogLegeDogGame` 覆盖 reordered、stable、armed、triggerable、consumed、成功复原、终局不可复原和后续动作使事务失效路径；增加最终 DOM 顺序、MutationObserver 节点集合、冻结进度、钥匙掉落回滚与触发方块普通化断言。
 - 验证：`pnpm test:ui` 通过（19 files / 118 tests）；`pnpm exec vitest run tests/special-cases/shuffle-ui.test.ts tests/dog-cases/incremental-tray.test.ts tests/dog-cases/incremental-specials.test.ts --reporter=dot` 通过（32 tests）；`pnpm exec tsc --noEmit --pretty false` 通过；`git diff --check` 通过。按本 ticket 要求未运行完整 QA、`pnpm test:affected` 或 `pnpm test:focused`。
 - 代码审查：以 `c086a6c` 为起点完成 Standards/Spec 双轴审查，无未处理的实现问题或范围外变更。
+- 2026-09-09：关联最终联合 QA ticket 07：`pnpm test:qa`、独立 `pnpm test:e2e:cross-browser`、`pnpm build:pages` 与 `git diff --check` 均通过；性能采样、乱序/复原路径与节点复用证据见 [07-performance-and-final-qa.md](07-performance-and-final-qa.md)。

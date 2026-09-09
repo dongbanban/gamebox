@@ -23,3 +23,4 @@
 - 2026-09-08：首次渲染保留完整 DOM；后续棋盘按稳定方块 ID 增量删除/同步，暂存槽按方块 ID 和槽位顺序复用槽位节点，并在原地同步交互、目标、机制 data attrs 与 ARIA 状态；棋盘适配增加几何变化守卫。
 - 2026-09-08：新增公开 `startDogLegeDogGame` 结构回归测试，确认普通选择阶段只移除被选棋盘方块，未变化棋盘/暂存槽节点保持身份，输入锁与动画完成后可点击状态及公开 session snapshot 正确。
 - 2026-09-08：`pnpm test:ui` 通过（17 files / 91 tests）；`pnpm exec tsc --noEmit --pretty false` 通过；`git diff --check` 通过；另行验证普通选择结构测试（1/1）、board UI（4/4）与 torch UI（5/5）通过。按本 ticket 要求未运行完整 QA、`pnpm test:affected` 或 `pnpm test:focused`。
+- 2026-09-09：关联最终联合 QA ticket 07：`pnpm test:qa`、独立 `pnpm test:e2e:cross-browser`、`pnpm build:pages` 与 `git diff --check` 均通过；性能采样、普通选择与棋盘/暂存槽节点复用证据见 [07-performance-and-final-qa.md](07-performance-and-final-qa.md)。

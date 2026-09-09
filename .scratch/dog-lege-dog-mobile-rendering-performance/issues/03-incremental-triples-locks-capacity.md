@@ -22,3 +22,4 @@
 
 - 2026-09-09：复用现有 ID 增量同步路径，新增公开游戏入口结构回归覆盖普通三消、连续多组三消、道具三消移除、万能方块、容量提升和钥匙解锁；断言最终顺序、真实移除节点、未变化节点身份、锁槽属性及输入/反馈时序。
 - 2026-09-09：`pnpm exec vitest run tests/dog-cases/incremental-tray.test.ts` 通过（6 tests）；`pnpm test:ui` 通过（18 files / 97 tests）；`pnpm exec tsc --noEmit --pretty false` 通过；`git diff --check` 通过。按本 ticket 要求未运行完整 QA、`pnpm test:affected` 或 `pnpm test:focused`。
+- 2026-09-09：关联最终联合 QA ticket 07：`pnpm test:qa`、独立 `pnpm test:e2e:cross-browser`、`pnpm build:pages` 与 `git diff --check` 均通过；性能采样、三消/容量/锁槽及节点复用证据见 [07-performance-and-final-qa.md](07-performance-and-final-qa.md)。

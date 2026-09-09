@@ -21,3 +21,4 @@
 
 - 2026-09-09：复用现有 session 决策、动画编排及稳定 ID 的棋盘/暂存槽增量同步路径；新增公开 `startDogLegeDogGame` 回归覆盖磁吸有/无目标、冻结/幻化/双生被吸目标、消磁仪、普通双生、磁吸双生、三消、满槽与超容量，并断言节点身份、入槽顺序、输入锁和操作前动画位置。
 - 2026-09-09：`pnpm exec vitest run tests/dog-cases/incremental-specials.test.ts` 通过（17 tests）；`pnpm test:ui` 通过（19 files / 114 tests）；`pnpm exec tsc --noEmit --pretty false` 通过；`git diff --check` 通过。按本 ticket 要求未运行完整 QA、`pnpm test:affected` 或 `pnpm test:focused`。
+- 2026-09-09：关联最终联合 QA ticket 07：`pnpm test:qa`、独立 `pnpm test:e2e:cross-browser`、`pnpm build:pages` 与 `git diff --check` 均通过；性能采样、磁吸/双生路径与节点复用证据见 [07-performance-and-final-qa.md](07-performance-and-final-qa.md)。

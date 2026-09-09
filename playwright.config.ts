@@ -24,12 +24,12 @@ export default defineConfig({
       ? [
           {
             name: "safari",
-            testMatch: /cross-browser\.spec\.ts/,
+            testMatch: /cross-browser(?:-additional)?\.spec\.ts/,
             use: { ...devices["Desktop Safari"] },
           },
           {
             name: "mobile-chromium",
-            testMatch: /cross-browser\.spec\.ts/,
+            testMatch: /cross-browser(?:-additional)?\.spec\.ts/,
             use: { ...devices["Pixel 5"] },
           },
         ]

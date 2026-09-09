@@ -34,6 +34,8 @@ export {
   updateDogLoadoutArea,
 };
 
+const pendingDogBlockFocus = new WeakMap<HTMLElement, string>();
+
 export function renderDogLegeDogGame(
   root: HTMLElement,
   state: DogLegeDogGameState,
@@ -106,6 +108,7 @@ function updateDogLegeDogGame(
   boardMetrics: DogBoardMetrics,
   config: DogV13Config,
 ): void {
+  rememberDogBlockFocus(gameRoot);
   const { board } = state.level;
   const boardElement = gameRoot.querySelector<HTMLElement>('[data-testid="dog-board"]');
   const boardScaler = gameRoot.querySelector<HTMLElement>(".dog-board-scaler");
@@ -181,6 +184,49 @@ function updateDogLegeDogGame(
   }
   if (boardGeometryChanged) {
     fitDogBoardToFrame(gameRoot);
+  }
+  restoreDogBlockFocus(gameRoot, state.inputLocked);
+}
+
+function rememberDogBlockFocus(gameRoot: HTMLElement): void {
+  const activeElement = document.activeElement;
+  if (
+    activeElement instanceof HTMLElement &&
+    gameRoot.contains(activeElement) &&
+    activeElement.dataset.testid === "dog-block" &&
+    activeElement.dataset.blockId !== undefined
+  ) {
+    pendingDogBlockFocus.set(gameRoot, activeElement.dataset.blockId);
+    return;
+  }
+  if (activeElement === document.body) {
+    return;
+  }
+  pendingDogBlockFocus.delete(gameRoot);
+}
+
+function restoreDogBlockFocus(gameRoot: HTMLElement, inputLocked: boolean): void {
+  const blockId = pendingDogBlockFocus.get(gameRoot);
+  if (blockId === undefined) {
+    return;
+  }
+
+  const block = [...gameRoot.querySelectorAll<HTMLElement>('[data-testid="dog-block"]')]
+    .find((candidate) => candidate.dataset.blockId === blockId);
+  const activeElement = document.activeElement;
+  if (
+    activeElement !== null &&
+    activeElement !== document.body &&
+    activeElement !== block
+  ) {
+    pendingDogBlockFocus.delete(gameRoot);
+    return;
+  }
+  if (block instanceof HTMLButtonElement && !block.disabled) {
+    block.focus();
+    pendingDogBlockFocus.delete(gameRoot);
+  } else if (!inputLocked) {
+    pendingDogBlockFocus.delete(gameRoot);
   }
 }
 
