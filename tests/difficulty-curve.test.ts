@@ -1,9 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
 import { getDogLogicalBlockCount } from "@/games/dog-lege-dog/game/special-mechanisms";
-import {
-  isDifficultyWithinTarget,
-} from "@/games/dog-lege-dog/levels/level-difficulty";
+import { isDifficultyWithinTarget } from "@/games/dog-lege-dog/levels/level-difficulty";
 import { LevelGenerator } from "@/games/dog-lege-dog/levels/level-generation-engine";
 import {
   getBlockCount,
@@ -28,7 +26,9 @@ describe("狗了个狗难度曲线", () => {
       Number.MAX_SAFE_INTEGER,
       Number.MAX_SAFE_INTEGER,
     ]);
-    expect(targets.every((target) => Number.isFinite(target.safeChoiceCount.max))).toBe(true);
+    expect(
+      targets.every((target) => Number.isFinite(target.safeChoiceCount.max)),
+    ).toBe(true);
     expect(targets.map((target) => target.safeChoiceRate?.min)).toEqual([
       0.18, 0.18, 0.1, 0.1, 0.08,
     ]);
@@ -81,22 +81,30 @@ describe("狗了个狗难度曲线", () => {
     );
     expect(level.difficulty.withinTarget).toBe(true);
 
-    expect(isDifficultyWithinTarget({
-      ...level.difficulty,
-      trayPeakPressure: target.trayPeakPressure!.max + 0.01,
-    })).toBe(false);
-    expect(isDifficultyWithinTarget({
-      ...level.difficulty,
-      specialMechanismDensity: target.mechanismDensity!.max + 0.01,
-    })).toBe(false);
-    expect(isDifficultyWithinTarget({
-      ...level.difficulty,
-      operationCost: target.operationCost!.max + 0.01,
-    })).toBe(false);
-    expect(isDifficultyWithinTarget({
-      ...level.difficulty,
-      mistakeRisk: target.mistakeRisk!.max + 0.01,
-    })).toBe(false);
+    expect(
+      isDifficultyWithinTarget({
+        ...level.difficulty,
+        trayPeakPressure: target.trayPeakPressure!.max + 0.01,
+      }),
+    ).toBe(false);
+    expect(
+      isDifficultyWithinTarget({
+        ...level.difficulty,
+        specialMechanismDensity: target.mechanismDensity!.max + 0.01,
+      }),
+    ).toBe(false);
+    expect(
+      isDifficultyWithinTarget({
+        ...level.difficulty,
+        operationCost: target.operationCost!.max + 0.01,
+      }),
+    ).toBe(false);
+    expect(
+      isDifficultyWithinTarget({
+        ...level.difficulty,
+        mistakeRisk: target.mistakeRisk!.max + 0.01,
+      }),
+    ).toBe(false);
   });
 
   it("固定 1–30 批次覆盖阶段边界与真实生成指标", () => {
@@ -113,36 +121,45 @@ describe("狗了个狗难度曲线", () => {
     });
 
     expect(levels.every((level) => !level.generation.fallbackUsed)).toBe(true);
-    expect(levels.every((level) => isDifficultyWithinTarget(level.difficulty))).toBe(true);
-    expect(levels.every((level) => {
-      const { difficulty } = level;
-      return (
-        getDogLogicalBlockCount(level.blocks, level.specialMechanisms) === getBlockCount(level.number) &&
-        level.maxLayers === getMaxLayers(level.number) &&
-        level.patternTypes.length === getPatternTypeCount(level.number) &&
-        difficulty.solutionPathLength > 0 &&
-        difficulty.solutionPathLength <= level.blocks.length &&
-        difficulty.crossLayerOverlapCount > 0 &&
-        difficulty.partialOverlapRate > 0 &&
-        Number.isFinite(difficulty.specialMechanismDensity) &&
-        Number.isFinite(difficulty.estimatedDurationMinutes)
-      );
-    })).toBe(true);
+    expect(
+      levels.every((level) => isDifficultyWithinTarget(level.difficulty)),
+    ).toBe(true);
+    expect(
+      levels.every((level) => {
+        const { difficulty } = level;
+        return (
+          getDogLogicalBlockCount(level.blocks, level.specialMechanisms) ===
+            getBlockCount(level.number) &&
+          level.maxLayers === getMaxLayers(level.number) &&
+          level.patternTypes.length === getPatternTypeCount(level.number) &&
+          difficulty.solutionPathLength > 0 &&
+          difficulty.solutionPathLength <= level.blocks.length &&
+          difficulty.crossLayerOverlapCount > 0 &&
+          difficulty.partialOverlapRate > 0 &&
+          Number.isFinite(difficulty.specialMechanismDensity) &&
+          Number.isFinite(difficulty.estimatedDurationMinutes)
+        );
+      }),
+    ).toBe(true);
 
     const boundaryLevels = [1, 5, 6, 10, 11, 15, 16, 20, 21, 25, 26, 30, 31];
     const boundaryTargets = boundaryLevels.map((levelNumber) =>
       getDifficultyTarget(levelNumber),
     );
-    expect(boundaryTargets.every((target) =>
-      Number.isFinite(target.safeChoiceCount.max) && target.safeChoiceRate !== undefined,
-    )).toBe(true);
+    expect(
+      boundaryTargets.every(
+        (target) =>
+          Number.isFinite(target.safeChoiceCount.max) &&
+          target.safeChoiceRate !== undefined,
+      ),
+    ).toBe(true);
     for (let index = 1; index < boundaryTargets.length; index += 1) {
       expect(boundaryTargets[index]!.safeChoiceRate!.min).toBeLessThanOrEqual(
         boundaryTargets[index - 1]!.safeChoiceRate!.min,
       );
-      expect(boundaryTargets[index]!.durationMinutes.min).toBeGreaterThanOrEqual(
-        boundaryTargets[index - 1]!.durationMinutes.min,
-      );
+      expect(
+        boundaryTargets[index]!.durationMinutes.min,
+      ).toBeGreaterThanOrEqual(boundaryTargets[index - 1]!.durationMinutes.min);
     }
   });
 
@@ -157,9 +174,13 @@ describe("狗了个狗难度曲线", () => {
 
     expect(level.generation.fallbackUsed).toBe(false);
     expect(isDifficultyWithinTarget(level.difficulty)).toBe(true);
-    expect(level.difficulty.logicalBlockCount).toBe(getBlockCount(level.number));
+    expect(level.difficulty.logicalBlockCount).toBe(
+      getBlockCount(level.number),
+    );
     expect(level.difficulty.solutionPathLength).toBeGreaterThan(0);
-    expect(level.difficulty.solutionPathLength).toBeLessThanOrEqual(level.blocks.length);
+    expect(level.difficulty.solutionPathLength).toBeLessThanOrEqual(
+      level.blocks.length,
+    );
     expect(level.difficulty.crossLayerOverlapCount).toBeGreaterThan(0);
     expect(level.difficulty.partialOverlapRate).toBeGreaterThan(0);
     expect(level.difficulty.safeChoiceRate).toBeGreaterThanOrEqual(
@@ -170,15 +191,17 @@ describe("狗了个狗难度曲线", () => {
 
   it("不同 runSeed 保留目标内自然波动", () => {
     const generator = new LevelGenerator();
-    const levels = ["difficulty-curve-seed-a", "difficulty-curve-seed-b"].map((runSeed) =>
-      generator.generate({
-        levelNumber: 5,
-        runSeed,
-        generatorVersion: DOG_V13_CONFIG.game.generatorVersion,
-      }),
+    const levels = ["difficulty-curve-seed-a", "difficulty-curve-seed-b"].map(
+      (runSeed) =>
+        generator.generate({
+          levelNumber: 5,
+          runSeed,
+          generatorVersion: DOG_V13_CONFIG.game.generatorVersion,
+        }),
     );
     expect(levels[0]).not.toEqual(levels[1]);
-    expect(levels.every((level) => isDifficultyWithinTarget(level.difficulty))).toBe(true);
-
+    expect(
+      levels.every((level) => isDifficultyWithinTarget(level.difficulty)),
+    ).toBe(true);
   });
 });

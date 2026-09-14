@@ -39,7 +39,9 @@ describe(`随机关卡回归 [testSeed=${RANDOM_TEST_SEED}]`, () => {
       MAX_LEVEL_NUMBER,
     );
 
-    const replayLevelNumber = readLevelNumber(process.env.DOG_RANDOM_LEVEL_NUMBER);
+    const replayLevelNumber = readLevelNumber(
+      process.env.DOG_RANDOM_LEVEL_NUMBER,
+    );
     const levelNumbers =
       replayLevelNumber === undefined
         ? Array.from({ length: levelCount }, (_, index) => index + 1)
@@ -47,14 +49,11 @@ describe(`随机关卡回归 [testSeed=${RANDOM_TEST_SEED}]`, () => {
 
     for (const levelNumber of levelNumbers) {
       const regressionCase = createPendingCase(RANDOM_TEST_SEED, levelNumber);
-      withRegressionReport(
-        regressionCase,
-        () => {
-          const level = createLevel(generator, levelNumber);
-          assertV13MechanismPlan(level.number, level);
-          assertLevelInvariants(level, generator, true, regressionCase);
-        },
-      );
+      withRegressionReport(regressionCase, () => {
+        const level = createLevel(generator, levelNumber);
+        assertV13MechanismPlan(level.number, level);
+        assertLevelInvariants(level, generator, true, regressionCase);
+      });
     }
   });
 
@@ -64,14 +63,11 @@ describe(`随机关卡回归 [testSeed=${RANDOM_TEST_SEED}]`, () => {
 
     for (const levelNumber of [1, 5, 10, 15, 30, MAX_LEVEL_NUMBER]) {
       const regressionCase = createPendingCase(checkpointSeed, levelNumber);
-      withRegressionReport(
-        regressionCase,
-        () => {
-          const level = createLevel(generator, levelNumber, checkpointSeed);
-          assertV13MechanismPlan(level.number, level);
-          assertLevelInvariants(level, generator, true, regressionCase);
-        },
-      );
+      withRegressionReport(regressionCase, () => {
+        const level = createLevel(generator, levelNumber, checkpointSeed);
+        assertV13MechanismPlan(level.number, level);
+        assertLevelInvariants(level, generator, true, regressionCase);
+      });
     }
   });
 
@@ -87,14 +83,11 @@ describe(`随机关卡回归 [testSeed=${RANDOM_TEST_SEED}]`, () => {
 
     for (let levelNumber = 1; levelNumber <= levelCount; levelNumber += 1) {
       const regressionCase = createPendingCase(stressSeed, levelNumber);
-      withRegressionReport(
-        regressionCase,
-        () => {
-          const level = createLevel(generator, levelNumber, stressSeed);
-          assertV13MechanismPlan(levelNumber, level);
-          assertStressLevel(level);
-        },
-      );
+      withRegressionReport(regressionCase, () => {
+        const level = createLevel(generator, levelNumber, stressSeed);
+        assertV13MechanismPlan(levelNumber, level);
+        assertStressLevel(level);
+      });
     }
   });
 });
@@ -124,21 +117,31 @@ function createPendingCase(
     testSeed,
     runSeed,
     levelNumber,
-    levelSeed:
-      `${runSeed}:v${DOG_V13_CONFIG.game.generatorVersion}:level-${levelNumber}`,
+    levelSeed: `${runSeed}:v${DOG_V13_CONFIG.game.generatorVersion}:level-${levelNumber}`,
     generatorVersion: DOG_V13_CONFIG.game.generatorVersion,
   };
 }
 
 function getRunSeed(testSeed: string): string {
-  return process.env.DOG_RANDOM_RUN_SEED ??
-    `${DOG_V13_CONFIG.game.id}:random-regression:${testSeed}`;
+  return (
+    process.env.DOG_RANDOM_RUN_SEED ??
+    `${DOG_V13_CONFIG.game.id}:random-regression:${testSeed}`
+  );
 }
 
-function assertV13MechanismPlan(levelNumber: number, level?: DogLegeDogLevel): void {
+function assertV13MechanismPlan(
+  levelNumber: number,
+  level?: DogLegeDogLevel,
+): void {
   const logicalBlockCount = getDogV13LogicalBlockCount(levelNumber);
-  const plan = getDogV13MechanismPlan(logicalBlockCount, DOG_V13_CONFIG, levelNumber);
-  expect(plan.logicalUnitCount).toBe(getDogV13SpecialMechanismBudget(logicalBlockCount));
+  const plan = getDogV13MechanismPlan(
+    logicalBlockCount,
+    DOG_V13_CONFIG,
+    levelNumber,
+  );
+  expect(plan.logicalUnitCount).toBe(
+    getDogV13SpecialMechanismBudget(logicalBlockCount),
+  );
   expect(plan.logicalUnitCount).toBeLessThanOrEqual(logicalBlockCount * 0.3);
   expect(
     plan.counts.freeze > 0 &&
@@ -154,8 +157,10 @@ function assertV13MechanismPlan(levelNumber: number, level?: DogLegeDogLevel): v
       plan.counts.shuffle,
   ).toBe(plan.logicalUnitCount);
 
-  if (level?.generatorVersion !== undefined &&
-      level.generatorVersion >= DOG_V13_CONFIG.game.generatorVersion) {
+  if (
+    level?.generatorVersion !== undefined &&
+    level.generatorVersion >= DOG_V13_CONFIG.game.generatorVersion
+  ) {
     const actualCounts = new Map<string, number>();
     for (const block of level.blocks) {
       const type = block.specialMechanism?.type;
@@ -168,7 +173,9 @@ function assertV13MechanismPlan(levelNumber: number, level?: DogLegeDogLevel): v
     expect(actualCounts.get("magnetic")).toBeGreaterThan(0);
     expect(actualCounts.get("twin")).toBeGreaterThan(0);
     expect(actualCounts.get("shuffle") ?? 0).toBe(
-      levelNumber >= DOG_V13_CONFIG.specialMechanisms.shuffle.firstLevelNumber ? 1 : 0,
+      levelNumber >= DOG_V13_CONFIG.specialMechanisms.shuffle.firstLevelNumber
+        ? 1
+        : 0,
     );
     const actualLogicalUnitCount =
       (actualCounts.get("freeze") ?? 0) +
@@ -188,7 +195,9 @@ function assertLevelInvariants(
   regressionCase: RegressionCase,
 ): void {
   const { board, blocks, difficulty, generation } = level;
-  const playableCells = new Set(board.playableCells.map((cell) => `${cell.x}:${cell.y}`));
+  const playableCells = new Set(
+    board.playableCells.map((cell) => `${cell.x}:${cell.y}`),
+  );
 
   expect(level.number).toBeGreaterThanOrEqual(1);
   expect(getDogLogicalBlockCount(blocks, level.specialMechanisms)).toBe(
@@ -199,9 +208,11 @@ function assertLevelInvariants(
     level.number === 1 ? 6 : getPatternTypeCount(level.number),
   );
   expect(board.shape).toBe("irregular");
-  expect(level.patternTypes.every((patternType) => DOG_PATTERN_TYPES.includes(patternType))).toBe(
-    true,
-  );
+  expect(
+    level.patternTypes.every((patternType) =>
+      DOG_PATTERN_TYPES.includes(patternType),
+    ),
+  ).toBe(true);
   expect(new Set(blocks.map((block) => block.id))).toHaveLength(blocks.length);
   expect(new Set(blocks.map((block) => block.z))).toHaveLength(level.maxLayers);
 
@@ -209,7 +220,8 @@ function assertLevelInvariants(
     const logicalPatternCount = blocks
       .filter((block) => block.patternType === patternType)
       .reduce(
-        (total, block) => total + (block.specialMechanism?.type === "twin" ? 2 : 1),
+        (total, block) =>
+          total + (block.specialMechanism?.type === "twin" ? 2 : 1),
         0,
       );
     expect(logicalPatternCount % 3).toBe(0);
@@ -231,7 +243,11 @@ function assertLevelInvariants(
 
   for (let firstIndex = 0; firstIndex < blocks.length; firstIndex += 1) {
     const first = blocks[firstIndex];
-    for (let secondIndex = firstIndex + 1; secondIndex < blocks.length; secondIndex += 1) {
+    for (
+      let secondIndex = firstIndex + 1;
+      secondIndex < blocks.length;
+      secondIndex += 1
+    ) {
       const second = blocks[secondIndex];
       if (first.z === second.z) {
         expect(hasPositiveAreaOverlap(first, second)).toBe(false);
@@ -350,7 +366,9 @@ function assertLevelInvariants(
       randomSeed: failure.randomSeed,
       testSeed: failure.testSeed,
     });
-    expect(replayedFailure.blocks).toEqual(generator.replayAttempt(failure).blocks);
+    expect(replayedFailure.blocks).toEqual(
+      generator.replayAttempt(failure).blocks,
+    );
   }
 
   if (!playSolution) {
@@ -368,7 +386,9 @@ function assertLevelInvariants(
 
 function assertStressLevel(level: DogLegeDogLevel): void {
   const loadedSession = new GameSession(level);
-  expect(loadedSession.getState().remainingBlocks).toHaveLength(level.blocks.length);
+  expect(loadedSession.getState().remainingBlocks).toHaveLength(
+    level.blocks.length,
+  );
   expect(getDogLogicalBlockCount(level.blocks, level.specialMechanisms)).toBe(
     getBlockCount(level.number),
   );
@@ -406,9 +426,7 @@ function withRegressionReport(
     assertion();
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    throw new Error(
-      `${message}\n\n${formatRegressionReport(regressionCase)}`,
-    );
+    throw new Error(`${message}\n\n${formatRegressionReport(regressionCase)}`);
   }
 }
 
@@ -431,7 +449,9 @@ function readCount(
 
   const parsed = Number(rawValue);
   if (!Number.isSafeInteger(parsed) || parsed < min || parsed > max) {
-    throw new Error(`测试关卡数量必须是 ${min}–${max} 的整数，收到：${rawValue}`);
+    throw new Error(
+      `测试关卡数量必须是 ${min}–${max} 的整数，收到：${rawValue}`,
+    );
   }
 
   return parsed;
@@ -443,7 +463,11 @@ function readLevelNumber(rawValue: string | undefined): number | undefined {
   }
 
   const parsed = Number(rawValue);
-  if (!Number.isSafeInteger(parsed) || parsed < 1 || parsed > MAX_LEVEL_NUMBER) {
+  if (
+    !Number.isSafeInteger(parsed) ||
+    parsed < 1 ||
+    parsed > MAX_LEVEL_NUMBER
+  ) {
     throw new Error(
       `重放关卡号必须是 1–${MAX_LEVEL_NUMBER} 的整数，收到：${rawValue}`,
     );
@@ -464,8 +488,18 @@ function seededInteger(seed: string, min: number, max: number): number {
 }
 
 function hasPositiveAreaOverlap(
-  first: { readonly x: number; readonly y: number; readonly width: number; readonly height: number },
-  second: { readonly x: number; readonly y: number; readonly width: number; readonly height: number },
+  first: {
+    readonly x: number;
+    readonly y: number;
+    readonly width: number;
+    readonly height: number;
+  },
+  second: {
+    readonly x: number;
+    readonly y: number;
+    readonly width: number;
+    readonly height: number;
+  },
 ): boolean {
   return (
     first.x < second.x + second.width &&

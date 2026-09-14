@@ -32,19 +32,25 @@ describe("特殊机制测试 · shuffle-block", () => {
       candidateCount: 8,
       threshold: { maxLogicalUnitCount: 5, capacityBuffer: 2 },
     });
-    expect(DOG_V13_CONFIG.specialMechanisms.mechanisms.map(({ type }) => type))
-      .toContain(DOG_SHUFFLE_MECHANISM_TYPE);
-    expect(DOG_V13_CONFIG.ui.copy.specialMechanisms.presentations.shuffle).toMatchObject({
+    expect(
+      DOG_V13_CONFIG.specialMechanisms.mechanisms.map(({ type }) => type),
+    ).toContain(DOG_SHUFFLE_MECHANISM_TYPE);
+    expect(
+      DOG_V13_CONFIG.ui.copy.specialMechanisms.presentations.shuffle,
+    ).toMatchObject({
       name: "乱序方块",
     });
     expect(createDogShuffleMechanism()).toEqual({
       type: DOG_SHUFFLE_MECHANISM_TYPE,
       state: { status: "dormant" },
     });
-    expect([5, 6, 7, 8].map((capacity) => getDogShuffleThreshold(capacity)))
-      .toEqual([3, 4, 5, 5]);
+    expect(
+      [5, 6, 7, 8].map((capacity) => getDogShuffleThreshold(capacity)),
+    ).toEqual([3, 4, 5, 5]);
     expect(getDogV13MechanismPlan(90).counts.shuffle).toBe(0);
-    expect(getDogV13MechanismPlan(90, DOG_V13_CONFIG, 3).counts.shuffle).toBe(1);
+    expect(getDogV13MechanismPlan(90, DOG_V13_CONFIG, 3).counts.shuffle).toBe(
+      1,
+    );
   });
 
   it("乱序方块首次入槽先按普通三消结算，被移除时不进入待乱序", () => {
@@ -81,10 +87,15 @@ describe("特殊机制测试 · shuffle-block", () => {
       status: "armed",
       threshold: 5,
     });
-    expect(first.snapshot.trayBlocks.map((block) => block.id)).toEqual(["shuffle"]);
+    expect(first.snapshot.trayBlocks.map((block) => block.id)).toEqual([
+      "shuffle",
+    ]);
 
     const second = session.selectBlock("single");
-    expect(second.snapshot.shuffle).toMatchObject({ status: "armed", threshold: 5 });
+    expect(second.snapshot.shuffle).toMatchObject({
+      status: "armed",
+      threshold: 5,
+    });
     expect(second.snapshot.trayBlocks.map((block) => block.id)).toEqual([
       "shuffle",
       "single",
@@ -95,7 +106,13 @@ describe("特殊机制测试 · shuffle-block", () => {
     const session = new GameSession({
       level: {
         ...createLevel([
-          createBlock("shuffle", 0, 0, WORKING_DOG, createDogShuffleMechanism()),
+          createBlock(
+            "shuffle",
+            0,
+            0,
+            WORKING_DOG,
+            createDogShuffleMechanism(),
+          ),
           createBlock("remaining", 4, 0, "看门狗"),
         ]),
         lockedTraySlotCount: 2,
@@ -118,10 +135,30 @@ describe("特殊机制测试 · shuffle-block", () => {
 
   it("按有效容量使用 3、4、5、5 个逻辑方块完成乱序触发", () => {
     const cases = [
-      { effectiveCapacity: 5, trayCapacity: 7, lockedTraySlotCount: 2, threshold: 3 },
-      { effectiveCapacity: 6, trayCapacity: 7, lockedTraySlotCount: 1, threshold: 4 },
-      { effectiveCapacity: 7, trayCapacity: 7, lockedTraySlotCount: 0, threshold: 5 },
-      { effectiveCapacity: 8, trayCapacity: 8, lockedTraySlotCount: 0, threshold: 5 },
+      {
+        effectiveCapacity: 5,
+        trayCapacity: 7,
+        lockedTraySlotCount: 2,
+        threshold: 3,
+      },
+      {
+        effectiveCapacity: 6,
+        trayCapacity: 7,
+        lockedTraySlotCount: 1,
+        threshold: 4,
+      },
+      {
+        effectiveCapacity: 7,
+        trayCapacity: 7,
+        lockedTraySlotCount: 0,
+        threshold: 5,
+      },
+      {
+        effectiveCapacity: 8,
+        trayCapacity: 8,
+        lockedTraySlotCount: 0,
+        threshold: 5,
+      },
     ] as const;
     const patterns: readonly DogPatternType[] = [
       WORKING_DOG,
@@ -170,7 +207,13 @@ describe("特殊机制测试 · shuffle-block", () => {
     const unlockSession = new GameSession({
       level: {
         ...createLevel([
-          createBlock("shuffle", 0, 0, WORKING_DOG, createDogShuffleMechanism()),
+          createBlock(
+            "shuffle",
+            0,
+            0,
+            WORKING_DOG,
+            createDogShuffleMechanism(),
+          ),
           createBlock("single-1", 4, 0, SINGLE_DOG),
           createBlock("licking-1", 8, 0, LICKING_DOG),
           createBlock("guard-1", 12, 0, "看门狗"),
@@ -180,19 +223,31 @@ describe("特殊机制测试 · shuffle-block", () => {
     });
     unlockSession.selectBlock("shuffle");
     unlockSession.selectBlock("single-1");
-    expect(unlockSession.getState().shuffle).toMatchObject({ status: "armed", threshold: 3 });
+    expect(unlockSession.getState().shuffle).toMatchObject({
+      status: "armed",
+      threshold: 3,
+    });
     expect(unlockSession.unlockTraySlot()).toMatchObject({
       effectiveTrayCapacity: 6,
       snapshot: { shuffle: { status: "armed", threshold: 4 } },
     });
     unlockSession.selectBlock("licking-1");
     const unlocked = unlockSession.selectBlock("guard-1");
-    expect(unlocked.snapshot.shuffle).toMatchObject({ status: "consumed", threshold: 4 });
+    expect(unlocked.snapshot.shuffle).toMatchObject({
+      status: "consumed",
+      threshold: 4,
+    });
 
     const capacitySession = new GameSession({
       level: {
         ...createLevel([
-          createBlock("shuffle", 0, 0, WORKING_DOG, createDogShuffleMechanism()),
+          createBlock(
+            "shuffle",
+            0,
+            0,
+            WORKING_DOG,
+            createDogShuffleMechanism(),
+          ),
           createBlock("single-1", 4, 0, SINGLE_DOG),
           createBlock("licking-1", 8, 0, LICKING_DOG),
           createBlock("guard-1", 12, 0, "看门狗"),
@@ -204,12 +259,21 @@ describe("特殊机制测试 · shuffle-block", () => {
     capacitySession.selectBlock("shuffle");
     capacitySession.selectBlock("single-1");
     capacitySession.selectBlock("licking-1");
-    expect(capacitySession.getState().shuffle).toMatchObject({ status: "armed", threshold: 4 });
+    expect(capacitySession.getState().shuffle).toMatchObject({
+      status: "armed",
+      threshold: 4,
+    });
     expect(capacitySession.increaseTrayCapacity()).toBe(true);
-    expect(capacitySession.getState().shuffle).toMatchObject({ status: "armed", threshold: 5 });
+    expect(capacitySession.getState().shuffle).toMatchObject({
+      status: "armed",
+      threshold: 5,
+    });
     capacitySession.selectBlock("guard-1");
     const expanded = capacitySession.selectBlock("mad-1");
-    expect(expanded.snapshot.shuffle).toMatchObject({ status: "consumed", threshold: 5 });
+    expect(expanded.snapshot.shuffle).toMatchObject({
+      status: "consumed",
+      threshold: 5,
+    });
   });
 
   it("待乱序方块在阈值前被后续三消移除时失效", () => {
@@ -293,7 +357,9 @@ describe("特殊机制测试 · shuffle-block", () => {
       threshold: 5,
     });
     expect(result.snapshot.trayBlocks.map((block) => block.id)).toEqual(
-      result.shuffleResolution?.transaction?.after.trayBlocks.map((block) => block.id),
+      result.shuffleResolution?.transaction?.after.trayBlocks.map(
+        (block) => block.id,
+      ),
     );
     expect(session.getShuffleReplayEvents()).toEqual([
       result.shuffleResolution?.replayEvent,
@@ -335,8 +401,13 @@ describe("特殊机制测试 · shuffle-block", () => {
       "guard",
       "mad",
     ]);
-    expect(result.snapshot.trayBlocks.find((block) => block.id === "shuffle")?.specialMechanism)
-      .toMatchObject({ type: DOG_SHUFFLE_MECHANISM_TYPE, state: { status: "consumed" } });
+    expect(
+      result.snapshot.trayBlocks.find((block) => block.id === "shuffle")
+        ?.specialMechanism,
+    ).toMatchObject({
+      type: DOG_SHUFFLE_MECHANISM_TYPE,
+      state: { status: "consumed" },
+    });
     expect(session.getLastShuffleTransaction()).toBeNull();
   });
 
@@ -360,7 +431,13 @@ describe("特殊机制测试 · shuffle-block", () => {
     ]);
     const play = () => {
       const session = new GameSession({ level });
-      for (const blockId of ["shuffle", "single-1", "licking-1", "guard-1", "mad-1"]) {
+      for (const blockId of [
+        "shuffle",
+        "single-1",
+        "licking-1",
+        "guard-1",
+        "mad-1",
+      ]) {
         session.selectBlock(blockId);
       }
       const result = session.getState();
@@ -382,7 +459,13 @@ describe("特殊机制测试 · shuffle-block", () => {
           createBlock("single-1", 4, 0, SINGLE_DOG),
           createBlock("working-2", 8, 0, WORKING_DOG),
           createBlock("licking-1", 12, 0, LICKING_DOG),
-          createBlock("shuffle", 16, 0, WORKING_DOG, createDogShuffleMechanism()),
+          createBlock(
+            "shuffle",
+            16,
+            0,
+            WORKING_DOG,
+            createDogShuffleMechanism(),
+          ),
           createBlock("single-2", 20, 0, SINGLE_DOG),
           createBlock("single-3", 24, 0, SINGLE_DOG),
           createBlock("licking-2", 28, 0, LICKING_DOG),
@@ -407,17 +490,28 @@ describe("特殊机制测试 · shuffle-block", () => {
     expect(result.shuffleResolution?.outcome).toBe("reordered");
     expect(result.shuffleResolution?.tripleCount).toBeGreaterThan(0);
     expect(result.shuffleResolution?.secondaryTripleCount).toBe(1);
-    expect(result.shuffleResolution?.secondaryRemovedBlockIds.length).toBeGreaterThan(0);
-    expect(result.shuffleResolution?.transaction?.before.trayBlocks.find(
-      (block) => block.id === "shuffle",
-    )).toMatchObject({
+    expect(
+      result.shuffleResolution?.secondaryRemovedBlockIds.length,
+    ).toBeGreaterThan(0);
+    expect(
+      result.shuffleResolution?.transaction?.before.trayBlocks.find(
+        (block) => block.id === "shuffle",
+      ),
+    ).toMatchObject({
       id: "shuffle",
       patternType: WORKING_DOG,
-      specialMechanism: { type: DOG_SHUFFLE_MECHANISM_TYPE, state: { status: "armed" } },
+      specialMechanism: {
+        type: DOG_SHUFFLE_MECHANISM_TYPE,
+        state: { status: "armed" },
+      },
     });
-    expect(result.snapshot.trayBlocks.some((block) => block.id === "frozen")).toBe(true);
-    expect(result.snapshot.trayBlocks.find((block) => block.id === "frozen")?.specialMechanism)
-      .toMatchObject({ type: "freeze", state: { completedTriples: 1 } });
+    expect(
+      result.snapshot.trayBlocks.some((block) => block.id === "frozen"),
+    ).toBe(true);
+    expect(
+      result.snapshot.trayBlocks.find((block) => block.id === "frozen")
+        ?.specialMechanism,
+    ).toMatchObject({ type: "freeze", state: { completedTriples: 1 } });
     for (const block of result.snapshot.trayBlocks) {
       if (block.id === "shuffle") {
         expect(block.patternType).toBe(WORKING_DOG);

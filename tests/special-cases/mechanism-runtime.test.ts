@@ -55,42 +55,55 @@ describe("特殊机制测试 · mechanism-runtime", () => {
       await vi.runAllTimersAsync();
     }
 
-    expect(game.getState().session.trayBlocks.map((block) => block.patternType)).toEqual([
-      WORKING_DOG,
-      WORKING_DOG,
-      SINGLE_DOG,
-    ]);
     expect(
-      root.querySelector<HTMLButtonElement>('[data-action="use-item"][data-item-id="triple-removal"]')
-        ?.disabled,
+      game.getState().session.trayBlocks.map((block) => block.patternType),
+    ).toEqual([WORKING_DOG, WORKING_DOG, SINGLE_DOG]);
+    expect(
+      root.querySelector<HTMLButtonElement>(
+        '[data-action="use-item"][data-item-id="triple-removal"]',
+      )?.disabled,
     ).toBe(false);
 
-    root.querySelector<HTMLButtonElement>(
-      '[data-action="use-item"][data-item-id="triple-removal"]',
-    )?.click();
+    root
+      .querySelector<HTMLButtonElement>(
+        '[data-action="use-item"][data-item-id="triple-removal"]',
+      )
+      ?.click();
 
     expect(game.getState().items?.selectedItemTargetType).toBe("tray-block");
-    expect(root.querySelector('[data-testid="dog-item-targeting"]')).not.toBeNull();
-    expect(root.querySelector('[data-testid="dog-item-targeting"]')?.textContent).toContain("选择道具目标");
+    expect(
+      root.querySelector('[data-testid="dog-item-targeting"]'),
+    ).not.toBeNull();
+    expect(
+      root.querySelector('[data-testid="dog-item-targeting"]')?.textContent,
+    ).toContain("选择道具目标");
     const targetableSlots = root.querySelectorAll<HTMLElement>(
       '[data-testid="dog-tray-slot"][data-item-targetable="true"]',
     );
     expect(targetableSlots).toHaveLength(2);
-    expect([...targetableSlots].map((slot) => slot.dataset.patternType)).toEqual([
-      WORKING_DOG,
-      WORKING_DOG,
-    ]);
+    expect(
+      [...targetableSlots].map((slot) => slot.dataset.patternType),
+    ).toEqual([WORKING_DOG, WORKING_DOG]);
     const blockedTraySlots = root.querySelectorAll<HTMLElement>(
       '[data-testid="dog-tray-slot"][data-item-target-disabled="true"]',
     );
     expect(blockedTraySlots).toHaveLength(1);
-    expect([...blockedTraySlots].every((slot) =>
-      slot.classList.contains("dog-tray__slot--item-target-disabled") &&
-      slot.getAttribute("aria-disabled") === "true",
-    )).toBe(true);
-    expect(root.querySelectorAll('[data-testid="dog-block"][data-item-targetable="true"]')).toHaveLength(0);
+    expect(
+      [...blockedTraySlots].every(
+        (slot) =>
+          slot.classList.contains("dog-tray__slot--item-target-disabled") &&
+          slot.getAttribute("aria-disabled") === "true",
+      ),
+    ).toBe(true);
+    expect(
+      root.querySelectorAll(
+        '[data-testid="dog-block"][data-item-targetable="true"]',
+      ),
+    ).toHaveLength(0);
 
-    targetableSlots[1]?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    targetableSlots[1]?.dispatchEvent(
+      new MouseEvent("click", { bubbles: true }),
+    );
     expect(game.getState().items?.phase).toBe("animating");
 
     game.destroy();
@@ -114,10 +127,12 @@ describe("特殊机制测试 · mechanism-runtime", () => {
       tripleCount: 0,
     });
     expect(result.snapshot.remainingBlocks).toHaveLength(2);
-    expect(result.snapshot.remainingBlocks.find((block) => block.id === "freeze")).not.toHaveProperty(
-      "specialMechanism",
-    );
-    expect(result.snapshot.remainingBlocks.find((block) => block.id === "freeze")).toMatchObject({
+    expect(
+      result.snapshot.remainingBlocks.find((block) => block.id === "freeze"),
+    ).not.toHaveProperty("specialMechanism");
+    expect(
+      result.snapshot.remainingBlocks.find((block) => block.id === "freeze"),
+    ).toMatchObject({
       x: 4,
       y: 8,
       patternType: WORKING_DOG,
@@ -154,7 +169,9 @@ describe("特殊机制测试 · mechanism-runtime", () => {
   });
 
   it("火把不能融化普通方块或不存在目标", () => {
-    const session = new GameSession(createLevel([createBlock("ordinary", 4, 8, WORKING_DOG)]));
+    const session = new GameSession(
+      createLevel([createBlock("ordinary", 4, 8, WORKING_DOG)]),
+    );
     const initial = session.getState();
 
     expect(session.meltFrozenBlock("ordinary", "board").melted).toBe(false);
@@ -196,7 +213,11 @@ describe("特殊机制测试 · mechanism-runtime", () => {
     );
     expect(frozen.length).toBeGreaterThanOrEqual(configured?.min ?? 1);
     expect(frozen.length).toBeLessThanOrEqual(configured?.max ?? 0);
-    expect(frozen.every((block) => block.specialMechanism?.state.status === "frozen")).toBe(true);
+    expect(
+      frozen.every(
+        (block) => block.specialMechanism?.state.status === "frozen",
+      ),
+    ).toBe(true);
     expect(repeated).toEqual(first);
     expect(different).not.toEqual(first);
     expect(generator.findSolvability(first).status).toBe("solvable");
@@ -226,7 +247,8 @@ describe("特殊机制测试 · mechanism-runtime", () => {
     expect(illusions.length).toBeLessThanOrEqual(configured?.max ?? 0);
     expect(
       illusions.every((block) => {
-        const disguisedPatternType = block.specialMechanism?.state.disguisedPatternType;
+        const disguisedPatternType =
+          block.specialMechanism?.state.disguisedPatternType;
         return (
           block.patternType !== disguisedPatternType &&
           typeof disguisedPatternType === "string" &&
@@ -253,20 +275,28 @@ describe("特殊机制测试 · mechanism-runtime", () => {
       );
 
       expect(twinBlocks.length).toBeGreaterThan(0);
-      expect(level.blocks.length + twinBlocks.length).toBe(getBlockCount(levelNumber));
-      expect(getDogLogicalBlockCount(level.blocks, level.specialMechanisms)).toBe(
+      expect(level.blocks.length + twinBlocks.length).toBe(
         getBlockCount(levelNumber),
       );
+      expect(
+        getDogLogicalBlockCount(level.blocks, level.specialMechanisms),
+      ).toBe(getBlockCount(levelNumber));
       for (const patternType of level.patternTypes) {
         const logicalPatternCount = level.blocks
           .filter((block) => block.patternType === patternType)
           .reduce(
-            (total, block) => total + (block.specialMechanism?.type === DOG_TWIN_MECHANISM_TYPE ? 2 : 1),
+            (total, block) =>
+              total +
+              (block.specialMechanism?.type === DOG_TWIN_MECHANISM_TYPE
+                ? 2
+                : 1),
             0,
           );
         expect(logicalPatternCount % 3).toBe(0);
       }
-      expect(level.difficulty.logicalBlockCount).toBe(getBlockCount(levelNumber));
+      expect(level.difficulty.logicalBlockCount).toBe(
+        getBlockCount(levelNumber),
+      );
       expect(generator.findSolvability(level).status).toBe("solvable");
       expect(repeated).toEqual(level);
     }
@@ -289,7 +319,9 @@ describe("特殊机制测试 · mechanism-runtime", () => {
 
       expect(specialBlocks.length).toBeGreaterThan(1);
       expect(specialBlocks.every((block) => block.z > 0)).toBe(true);
-      expect(middleBlocks.length / specialBlocks.length).toBeGreaterThanOrEqual(0.7);
+      expect(middleBlocks.length / specialBlocks.length).toBeGreaterThanOrEqual(
+        0.7,
+      );
       expect(new Set(specialBlocks.map((block) => block.id)).size).toBe(
         specialBlocks.length,
       );
@@ -303,15 +335,17 @@ describe("特殊机制测试 · mechanism-runtime", () => {
       { type: DOG_ILLUSION_MECHANISM_TYPE, min: 1, max: 1 },
     ] as const;
     const bottomBlock = {
-      ...createBlock("bottom-freeze", 0, 0, WORKING_DOG, createDogSpecialMechanism("freeze")),
+      ...createBlock(
+        "bottom-freeze",
+        0,
+        0,
+        WORKING_DOG,
+        createDogSpecialMechanism("freeze"),
+      ),
       z: 0,
     };
     expect(
-      validateDogSpecialMechanismComposition(
-        [bottomBlock],
-        3,
-        configurations,
-      ),
+      validateDogSpecialMechanismComposition([bottomBlock], 3, configurations),
     ).toContain("base layer");
 
     const denseBlocks = Array.from({ length: 5 }, (_, index) => ({
@@ -321,18 +355,14 @@ describe("特殊机制测试 · mechanism-runtime", () => {
         ? { specialMechanism: createDogSpecialMechanism("freeze") }
         : {}),
     }));
-    const composition = getDogSpecialMechanismComposition(
-      denseBlocks,
-      3,
-      [configurations[0]],
-    );
+    const composition = getDogSpecialMechanismComposition(denseBlocks, 3, [
+      configurations[0],
+    ]);
     expect(composition.specialMechanismDensity).toBe(0.4);
     expect(
-      validateDogSpecialMechanismComposition(
-        denseBlocks,
-        3,
-        [configurations[0]],
-      ),
+      validateDogSpecialMechanismComposition(denseBlocks, 3, [
+        configurations[0],
+      ]),
     ).toContain("30%");
   });
 });

@@ -13,9 +13,7 @@ import {
   createDogMagneticRandom,
   resolveDogSelection,
 } from "@/games/dog-lege-dog/levels/level-mechanism-resolution";
-import {
-  createFullBlockMask,
-} from "@/games/dog-lege-dog/levels/level-solvability-contracts";
+import { createFullBlockMask } from "@/games/dog-lege-dog/levels/level-solvability-contracts";
 import type { DogTrayBlock } from "@/games/dog-lege-dog/levels/level-types";
 
 const WORKING_DOG: DogPatternType = "打工狗";
@@ -46,7 +44,11 @@ describe("GameSession · wildcard-and-terminal", () => {
 
     const result = session.useWildcard(WORKING_DOG);
 
-    expect(result).toMatchObject({ used: true, removedCount: 3, tripleCount: 1 });
+    expect(result).toMatchObject({
+      used: true,
+      removedCount: 3,
+      tripleCount: 1,
+    });
     expect(result.snapshot.trayBlocks).toEqual([
       createFrozenTrayBlock("frozen-working-1", WORKING_DOG, 1),
       { id: "ordinary-working-1", patternType: WORKING_DOG },
@@ -146,7 +148,11 @@ describe("GameSession · wildcard-and-terminal", () => {
     });
 
     const wildcard = session.useWildcard(WORKING_DOG);
-    expect(wildcard).toMatchObject({ used: true, removedCount: 3, tripleCount: 1 });
+    expect(wildcard).toMatchObject({
+      used: true,
+      removedCount: 3,
+      tripleCount: 1,
+    });
     expect(wildcard.snapshot.trayBlocks).toEqual([]);
 
     let finalSelection = session.selectBlock("single-cover");
@@ -161,7 +167,9 @@ describe("GameSession · wildcard-and-terminal", () => {
     }
 
     expect(finalSelection.removedCount).toBe(0);
-    expect(finalSelection.snapshot.trayBlocks.map((block) => block.patternType)).toEqual([
+    expect(
+      finalSelection.snapshot.trayBlocks.map((block) => block.patternType),
+    ).toEqual([
       SINGLE_DOG,
       LICKING_DOG,
       SINGLE_DOG,
@@ -237,7 +245,11 @@ function replayMagneticRandom(
       graph,
     );
     remainingMask = resolution.remainingMask;
-    higherBlockCounts.splice(0, higherBlockCounts.length, ...resolution.higherBlockCounts);
+    higherBlockCounts.splice(
+      0,
+      higherBlockCounts.length,
+      ...resolution.higherBlockCounts,
+    );
     tray.splice(0, tray.length, ...resolution.tray);
   }
 

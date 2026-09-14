@@ -1,17 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
-import {
-  calculateDifficultyMetrics,
-} from "@/games/dog-lege-dog/levels/level-difficulty";
+import { calculateDifficultyMetrics } from "@/games/dog-lege-dog/levels/level-difficulty";
 import {
   MAX_LEVEL_GENERATION_ATTEMPTS,
   LevelGenerator,
 } from "@/games/dog-lege-dog/levels/level-generation-engine";
 import { getDifficultyTarget } from "@/games/dog-lege-dog/levels/level-progression";
 import { findSolvabilityFromState } from "@/games/dog-lege-dog/levels/level-solvability";
-import {
-  DOG_PATTERN_TYPES,
-} from "@/games/dog-lege-dog/levels/level-types";
+import { DOG_PATTERN_TYPES } from "@/games/dog-lege-dog/levels/level-types";
 
 const MAX_LEVEL_NUMBER = DOG_V13_CONFIG.game.maxLevelNumber;
 const CURRENT_GENERATOR_VERSION = DOG_V13_CONFIG.game.generatorVersion;
@@ -35,7 +31,9 @@ describe("LevelGenerator · solvability", () => {
       const target = getDifficultyTarget(levelNumber);
 
       expect(generator.isSolvable(level)).toBe(true);
-      expect(level.difficulty.withinTarget || level.generation.fallbackUsed).toBe(true);
+      expect(
+        level.difficulty.withinTarget || level.generation.fallbackUsed,
+      ).toBe(true);
       expect(level.difficulty.safeChoiceCount).toBeGreaterThanOrEqual(
         target.safeChoiceCount.min,
       );
@@ -43,14 +41,18 @@ describe("LevelGenerator · solvability", () => {
         target.durationMinutes.min,
       );
       if (level.difficulty.withinTarget) {
-        expect(level.difficulty.safeChoiceCount).toBeLessThanOrEqual(target.safeChoiceCount.max);
+        expect(level.difficulty.safeChoiceCount).toBeLessThanOrEqual(
+          target.safeChoiceCount.max,
+        );
         expect(level.difficulty.estimatedDurationMinutes).toBeLessThanOrEqual(
           target.durationMinutes.max,
         );
       } else {
         expect(level.generation.failures.length).toBeGreaterThan(0);
       }
-      expect(level.generation.attempts).toBeLessThanOrEqual(MAX_LEVEL_GENERATION_ATTEMPTS);
+      expect(level.generation.attempts).toBeLessThanOrEqual(
+        MAX_LEVEL_GENERATION_ATTEMPTS,
+      );
       expect(level.generation.replay.levelSeed).toBe(level.seed);
       expect(level.generation.replay.testSeed).toBe(`test-seed-${levelNumber}`);
       expect(generator.replay(level.generation.replay)).toEqual(level);
@@ -64,7 +66,10 @@ describe("LevelGenerator · solvability", () => {
     const solvability = generator.findSolvability(level);
     const difficulty = generator.getDifficultyMetrics(level);
     const descendingPath = [...level.blocks]
-      .sort((first, second) => second.z - first.z || first.id.localeCompare(second.id))
+      .sort(
+        (first, second) =>
+          second.z - first.z || first.id.localeCompare(second.id),
+      )
       .map((block) => block.id);
 
     expect(solvability.status).toBe("solvable");
@@ -84,12 +89,13 @@ describe("LevelGenerator · solvability", () => {
     expect(generator.findSolvability(level, { branchBudget: 0 }).status).toBe(
       "budget-exhausted",
     );
-    expect(generator.findSolvability(finiteBranchLevel, { branchBudget: 0 }).status).toBe(
-      "budget-exhausted",
-    );
-    expect(generator.findSolvability(finiteBranchLevel, { branchBudget: 100 }).status).toBe(
-      "unsolvable",
-    );
+    expect(
+      generator.findSolvability(finiteBranchLevel, { branchBudget: 0 }).status,
+    ).toBe("budget-exhausted");
+    expect(
+      generator.findSolvability(finiteBranchLevel, { branchBudget: 100 })
+        .status,
+    ).toBe("unsolvable");
 
     const difficulty = generator.getDifficultyMetrics(level);
     const directDifficulty = calculateDifficultyMetrics(

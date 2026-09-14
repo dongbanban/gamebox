@@ -8,9 +8,7 @@ import { LevelGenerator } from "@/games/dog-lege-dog/levels/level-generation-eng
 type SolvabilityFixture = Parameters<LevelGenerator["findSolvability"]>[0];
 export function createLongSearchFixture(): SolvabilityFixture {
   const preferredOrder = [
-    0, 3, 6, 9, 12, 15,
-    1, 4, 2, 5,
-    7, 8, 10, 11, 13, 14, 16, 17,
+    0, 3, 6, 9, 12, 15, 1, 4, 2, 5, 7, 8, 10, 11, 13, 14, 16, 17,
   ];
   const idByBlockIndex = new Map(
     preferredOrder.map((blockIndex, order) => [
@@ -110,7 +108,6 @@ export function createFiniteBranchFixture(): SolvabilityFixture {
   };
 }
 
-
 type SpatialRegion =
   | "center"
   | "top-left"
@@ -125,26 +122,41 @@ export function classifySpatialRegion(
 ): SpatialRegion {
   const centerX = (block.x + BLOCK_WIDTH / 2) / board.width;
   const centerY = (block.y + BLOCK_HEIGHT / 2) / board.height;
-  const horizontal = centerX < 0.2 ? "left" : centerX > 0.8 ? "right" : "center";
+  const horizontal =
+    centerX < 0.2 ? "left" : centerX > 0.8 ? "right" : "center";
   const vertical = centerY < 0.2 ? "top" : centerY > 0.8 ? "bottom" : "center";
   if (horizontal === "center" && vertical === "center") {
     return "center";
   }
   if (horizontal !== "center" && vertical !== "center") {
-    return `${vertical}-${horizontal}` as Exclude<SpatialRegion, "center" | "edge">;
+    return `${vertical}-${horizontal}` as Exclude<
+      SpatialRegion,
+      "center" | "edge"
+    >;
   }
   return "edge";
 }
 
 export function hasRegionalCrossLayerOverlap(
-  blocks: readonly { readonly x: number; readonly y: number; readonly z: number; readonly width: number; readonly height: number }[],
+  blocks: readonly {
+    readonly x: number;
+    readonly y: number;
+    readonly z: number;
+    readonly width: number;
+    readonly height: number;
+  }[],
   board: { readonly width: number; readonly height: number },
   region: SpatialRegion,
 ): boolean {
-  const regionBlocks = blocks.filter((block) => classifySpatialRegion(block, board) === region);
+  const regionBlocks = blocks.filter(
+    (block) => classifySpatialRegion(block, board) === region,
+  );
   for (let firstIndex = 0; firstIndex < regionBlocks.length; firstIndex += 1) {
     for (const second of regionBlocks.slice(firstIndex + 1)) {
-      if (regionBlocks[firstIndex].z !== second.z && overlapArea(regionBlocks[firstIndex], second) > 0) {
+      if (
+        regionBlocks[firstIndex].z !== second.z &&
+        overlapArea(regionBlocks[firstIndex], second) > 0
+      ) {
         return true;
       }
     }
@@ -153,7 +165,13 @@ export function hasRegionalCrossLayerOverlap(
 }
 
 export function hasCrossRegionOverlap(
-  blocks: readonly { readonly x: number; readonly y: number; readonly z: number; readonly width: number; readonly height: number }[],
+  blocks: readonly {
+    readonly x: number;
+    readonly y: number;
+    readonly z: number;
+    readonly width: number;
+    readonly height: number;
+  }[],
   board: { readonly width: number; readonly height: number },
 ): boolean {
   for (let firstIndex = 0; firstIndex < blocks.length; firstIndex += 1) {
@@ -161,7 +179,8 @@ export function hasCrossRegionOverlap(
     for (const second of blocks.slice(firstIndex + 1)) {
       if (
         first.z !== second.z &&
-        classifySpatialRegion(first, board) !== classifySpatialRegion(second, board) &&
+        classifySpatialRegion(first, board) !==
+          classifySpatialRegion(second, board) &&
         overlapArea(first, second) > 0
       ) {
         return true;
@@ -183,39 +202,64 @@ export function hasPositiveAreaOverlap(
   );
 }
 
-export function cellKey(cell: { readonly x: number; readonly y: number }): string {
+export function cellKey(cell: {
+  readonly x: number;
+  readonly y: number;
+}): string {
   return `${cell.x}:${cell.y}`;
 }
 
 export function getLogicalPatternCount(
-  blocks: readonly { readonly patternType: string; readonly specialMechanism?: { readonly type: string } }[],
+  blocks: readonly {
+    readonly patternType: string;
+    readonly specialMechanism?: { readonly type: string };
+  }[],
   patternType: string,
 ): number {
   return blocks
     .filter((block) => block.patternType === patternType)
     .reduce(
-      (total, block) => total + (block.specialMechanism?.type === "twin" ? 2 : 1),
+      (total, block) =>
+        total + (block.specialMechanism?.type === "twin" ? 2 : 1),
       0,
     );
 }
 
 export function overlapArea(
-  first: { readonly x: number; readonly y: number; readonly width: number; readonly height: number },
-  second: { readonly x: number; readonly y: number; readonly width: number; readonly height: number },
+  first: {
+    readonly x: number;
+    readonly y: number;
+    readonly width: number;
+    readonly height: number;
+  },
+  second: {
+    readonly x: number;
+    readonly y: number;
+    readonly width: number;
+    readonly height: number;
+  },
 ): number {
   const overlapWidth = Math.max(
     0,
-    Math.min(first.x + first.width, second.x + second.width) - Math.max(first.x, second.x),
+    Math.min(first.x + first.width, second.x + second.width) -
+      Math.max(first.x, second.x),
   );
   const overlapHeight = Math.max(
     0,
-    Math.min(first.y + first.height, second.y + second.height) - Math.max(first.y, second.y),
+    Math.min(first.y + first.height, second.y + second.height) -
+      Math.max(first.y, second.y),
   );
   return overlapWidth * overlapHeight;
 }
 
 export function getCrossLayerOverlapRatios(
-  blocks: readonly { readonly x: number; readonly y: number; readonly z: number; readonly width: number; readonly height: number }[],
+  blocks: readonly {
+    readonly x: number;
+    readonly y: number;
+    readonly z: number;
+    readonly width: number;
+    readonly height: number;
+  }[],
 ): number[] {
   const ratios: number[] = [];
   for (let firstIndex = 0; firstIndex < blocks.length; firstIndex += 1) {
@@ -234,7 +278,9 @@ export function getCrossLayerOverlapRatios(
   return ratios;
 }
 
-export function isConnected(cells: readonly { readonly x: number; readonly y: number }[]): boolean {
+export function isConnected(
+  cells: readonly { readonly x: number; readonly y: number }[],
+): boolean {
   if (cells.length === 0) {
     return false;
   }
@@ -300,7 +346,9 @@ export function isReflectionSymmetric(
   const all = new Set(cells.map(cellKey));
   const maxX = Math.max(...cells.map((cell) => cell.x));
   const maxY = Math.max(...cells.map((cell) => cell.y));
-  const horizontal = cells.every((cell) => all.has(`${maxX - cell.x}:${cell.y}`));
+  const horizontal = cells.every((cell) =>
+    all.has(`${maxX - cell.x}:${cell.y}`),
+  );
   const vertical = cells.every((cell) => all.has(`${cell.x}:${maxY - cell.y}`));
   return horizontal || vertical;
 }

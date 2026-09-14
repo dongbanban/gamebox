@@ -41,31 +41,50 @@ describe("狗了个狗特殊状态增量渲染", () => {
     });
 
     try {
-      const board = root.querySelector<HTMLElement>('[data-testid="dog-board"]');
-      const target = root.querySelector<HTMLElement>('[data-block-id="illusion"]');
-      const ordinary = root.querySelector<HTMLElement>('[data-block-id="ordinary"]');
+      const board = root.querySelector<HTMLElement>(
+        '[data-testid="dog-board"]',
+      );
+      const target = root.querySelector<HTMLElement>(
+        '[data-block-id="illusion"]',
+      );
+      const ordinary = root.querySelector<HTMLElement>(
+        '[data-block-id="ordinary"]',
+      );
       if (board === null || target === null || ordinary === null) {
         throw new Error("Expected detector fixture DOM");
       }
 
       const mutationRecords: MutationRecord[] = [];
-      const observer = new MutationObserver((records) => mutationRecords.push(...records));
+      const observer = new MutationObserver((records) =>
+        mutationRecords.push(...records),
+      );
       observer.observe(board, { childList: true });
-      root.querySelector<HTMLButtonElement>('[data-item-id="detector"]')?.click();
+      root
+        .querySelector<HTMLButtonElement>('[data-item-id="detector"]')
+        ?.click();
       target.click();
 
-      expect(root.querySelector('[data-testid="dog-detector-reveal"]')?.parentElement).toBe(target);
+      expect(
+        root.querySelector('[data-testid="dog-detector-reveal"]')
+          ?.parentElement,
+      ).toBe(target);
       expect(game.getState().inputLocked).toBe(true);
 
       await vi.advanceTimersByTimeAsync(DOG_DETECTOR_REVEAL_DURATION_MS);
       await vi.runAllTimersAsync();
       observer.disconnect();
 
-      const replacement = root.querySelector<HTMLElement>('[data-block-id="illusion"]');
+      const replacement = root.querySelector<HTMLElement>(
+        '[data-block-id="illusion"]',
+      );
       expect(replacement).not.toBe(target);
       expect(root.querySelector('[data-block-id="ordinary"]')).toBe(ordinary);
-      expect(mutationRecords.flatMap((record) => [...record.removedNodes])).toEqual([target]);
-      expect(mutationRecords.flatMap((record) => [...record.addedNodes])).toEqual([replacement]);
+      expect(
+        mutationRecords.flatMap((record) => [...record.removedNodes]),
+      ).toEqual([target]);
+      expect(
+        mutationRecords.flatMap((record) => [...record.addedNodes]),
+      ).toEqual([replacement]);
       expect(game.getState().inputLocked).toBe(false);
     } finally {
       game.destroy();
@@ -87,41 +106,73 @@ describe("狗了个狗特殊状态增量渲染", () => {
     });
 
     try {
-      const board = root.querySelector<HTMLElement>('[data-testid="dog-board"]');
-      const tray = root.querySelector<HTMLOListElement>('[data-testid="dog-tray"]');
-      const target = root.querySelector<HTMLElement>('[data-block-id="illusion"]');
-      const ordinary = root.querySelector<HTMLElement>('[data-block-id="ordinary"]');
-      if (board === null || tray === null || target === null || ordinary === null) {
+      const board = root.querySelector<HTMLElement>(
+        '[data-testid="dog-board"]',
+      );
+      const tray = root.querySelector<HTMLOListElement>(
+        '[data-testid="dog-tray"]',
+      );
+      const target = root.querySelector<HTMLElement>(
+        '[data-block-id="illusion"]',
+      );
+      const ordinary = root.querySelector<HTMLElement>(
+        '[data-block-id="ordinary"]',
+      );
+      if (
+        board === null ||
+        tray === null ||
+        target === null ||
+        ordinary === null
+      ) {
         throw new Error("Expected illusion fixture DOM");
       }
 
       const initialSlots = [...tray.children];
       const boardRecords: MutationRecord[] = [];
       const trayRecords: MutationRecord[] = [];
-      const boardObserver = new MutationObserver((records) => boardRecords.push(...records));
-      const trayObserver = new MutationObserver((records) => trayRecords.push(...records));
+      const boardObserver = new MutationObserver((records) =>
+        boardRecords.push(...records),
+      );
+      const trayObserver = new MutationObserver((records) =>
+        trayRecords.push(...records),
+      );
       boardObserver.observe(board, { childList: true });
       trayObserver.observe(tray, { childList: true });
 
       game.selectBlock("illusion");
 
-      const pendingSlot = root.querySelector<HTMLElement>('[data-block-id="illusion"]');
+      const pendingSlot = root.querySelector<HTMLElement>(
+        '[data-block-id="illusion"]',
+      );
       expect(pendingSlot).not.toBeNull();
       expect(pendingSlot?.querySelector("img")?.getAttribute("src")).toBe(
         getDogPatternAssetUrl(SINGLE_DOG),
       );
-      expect(root.querySelector<HTMLElement>('[data-testid="dog-flight"] img')?.getAttribute("src"))
-        .toBe(getDogPatternAssetUrl(SINGLE_DOG));
+      expect(
+        root
+          .querySelector<HTMLElement>('[data-testid="dog-flight"] img')
+          ?.getAttribute("src"),
+      ).toBe(getDogPatternAssetUrl(SINGLE_DOG));
       expect(root.querySelector('[data-block-id="ordinary"]')).toBe(ordinary);
       await Promise.resolve();
-      expect(boardRecords.flatMap((record) => [...record.removedNodes])).toEqual([target]);
-      expect(boardRecords.flatMap((record) => [...record.addedNodes])).toEqual([]);
-      expect(trayRecords.flatMap((record) => [...record.removedNodes])).toEqual([]);
-      expect(trayRecords.flatMap((record) => [...record.addedNodes])).toEqual([]);
+      expect(
+        boardRecords.flatMap((record) => [...record.removedNodes]),
+      ).toEqual([target]);
+      expect(boardRecords.flatMap((record) => [...record.addedNodes])).toEqual(
+        [],
+      );
+      expect(trayRecords.flatMap((record) => [...record.removedNodes])).toEqual(
+        [],
+      );
+      expect(trayRecords.flatMap((record) => [...record.addedNodes])).toEqual(
+        [],
+      );
       expect([...tray.children]).toEqual(initialSlots);
 
       await vi.advanceTimersByTimeAsync(BLOCK_FLIGHT_DURATION_MS);
-      const revealedSlot = root.querySelector<HTMLElement>('[data-block-id="illusion"]');
+      const revealedSlot = root.querySelector<HTMLElement>(
+        '[data-block-id="illusion"]',
+      );
       expect(revealedSlot).toBe(pendingSlot);
       expect(revealedSlot?.dataset.specialMechanism).toBeUndefined();
       expect(revealedSlot?.querySelector("img")?.getAttribute("src")).toBe(
@@ -147,10 +198,15 @@ describe("狗了个狗特殊状态增量渲染", () => {
         }),
         createBlock("working-1", WORKING_DOG, undefined, { x: 4 }),
         createBlock("working-2", WORKING_DOG, undefined, { x: 8 }),
-        createBlock("illusion", WORKING_DOG, {
-          type: DOG_ILLUSION_MECHANISM_TYPE,
-          state: { status: "masked", disguisedPatternType: SINGLE_DOG },
-        }, { x: 12 }),
+        createBlock(
+          "illusion",
+          WORKING_DOG,
+          {
+            type: DOG_ILLUSION_MECHANISM_TYPE,
+            state: { status: "masked", disguisedPatternType: SINGLE_DOG },
+          },
+          { x: 12 },
+        ),
         createBlock("remaining", SINGLE_DOG, undefined, { x: 16 }),
       ]),
       loadout: ["detector", "wildcard", "torch"],
@@ -162,7 +218,9 @@ describe("狗了个狗特殊状态增量渲染", () => {
         await vi.runAllTimersAsync();
       }
 
-      const freezeSlot = root.querySelector<HTMLElement>('[data-block-id="freeze"]');
+      const freezeSlot = root.querySelector<HTMLElement>(
+        '[data-block-id="freeze"]',
+      );
       if (freezeSlot === null) {
         throw new Error("Expected illusion melt fixture slot");
       }
@@ -170,7 +228,7 @@ describe("狗了个狗特殊状态增量渲染", () => {
       game.selectBlock("illusion");
       await vi.advanceTimersByTimeAsync(BLOCK_FLIGHT_DURATION_MS);
 
-      expect(root.querySelector('.dog-melt-effect')).not.toBeNull();
+      expect(root.querySelector(".dog-melt-effect")).not.toBeNull();
       expect(root.querySelector('[data-block-id="freeze"]')).toBe(freezeSlot);
       expect(freezeSlot.dataset.specialMechanism).toBeUndefined();
 
@@ -188,10 +246,15 @@ describe("狗了个狗特殊状态增量渲染", () => {
       level: createLevel([
         createBlock("working-1", WORKING_DOG),
         createBlock("working-2", WORKING_DOG, undefined, { x: 4 }),
-        createBlock("illusion", WORKING_DOG, {
-          type: DOG_ILLUSION_MECHANISM_TYPE,
-          state: { status: "masked", disguisedPatternType: SINGLE_DOG },
-        }, { x: 8 }),
+        createBlock(
+          "illusion",
+          WORKING_DOG,
+          {
+            type: DOG_ILLUSION_MECHANISM_TYPE,
+            state: { status: "masked", disguisedPatternType: SINGLE_DOG },
+          },
+          { x: 8 },
+        ),
         createBlock("remaining", SINGLE_DOG, undefined, { x: 12 }),
       ]),
       loadout: ["detector", "wildcard", "torch"],
@@ -210,7 +273,9 @@ describe("狗了个狗特殊状态增量渲染", () => {
       await Promise.resolve();
 
       expect(root.querySelector('[data-block-id="illusion"]')).toBeNull();
-      expect(root.querySelector('[data-testid="dog-detector-reveal"]')).toBeNull();
+      expect(
+        root.querySelector('[data-testid="dog-detector-reveal"]'),
+      ).toBeNull();
       expect(game.getState().feedback).toBe("match");
 
       await vi.runAllTimersAsync();
@@ -229,10 +294,15 @@ describe("狗了个狗特殊状态增量渲染", () => {
           type: DOG_FREEZE_MECHANISM_TYPE,
           state: { status: "frozen", completedTriples: 1 },
         }),
-        createBlock("freeze-stays", SINGLE_DOG, {
-          type: DOG_FREEZE_MECHANISM_TYPE,
-          state: { status: "frozen", completedTriples: 0 },
-        }, { x: 4 }),
+        createBlock(
+          "freeze-stays",
+          SINGLE_DOG,
+          {
+            type: DOG_FREEZE_MECHANISM_TYPE,
+            state: { status: "frozen", completedTriples: 0 },
+          },
+          { x: 4 },
+        ),
         createBlock("working-1", WORKING_DOG, undefined, { x: 8 }),
         createBlock("working-2", WORKING_DOG, undefined, { x: 12 }),
         createBlock("working-3", WORKING_DOG, undefined, { x: 16 }),
@@ -241,23 +311,38 @@ describe("狗了个狗特殊状态增量渲染", () => {
     });
 
     try {
-      for (const blockId of ["freeze-melts", "freeze-stays", "working-1", "working-2"]) {
+      for (const blockId of [
+        "freeze-melts",
+        "freeze-stays",
+        "working-1",
+        "working-2",
+      ]) {
         game.selectBlock(blockId);
         await vi.runAllTimersAsync();
       }
 
-      const meltingSlot = root.querySelector<HTMLElement>('[data-block-id="freeze-melts"]');
-      const stayingSlot = root.querySelector<HTMLElement>('[data-block-id="freeze-stays"]');
+      const meltingSlot = root.querySelector<HTMLElement>(
+        '[data-block-id="freeze-melts"]',
+      );
+      const stayingSlot = root.querySelector<HTMLElement>(
+        '[data-block-id="freeze-stays"]',
+      );
       if (meltingSlot === null || stayingSlot === null) {
         throw new Error("Expected freeze fixture tray DOM");
       }
 
       game.selectBlock("working-3");
 
-      expect(root.querySelector('[data-block-id="freeze-melts"]')).toBe(meltingSlot);
-      expect(root.querySelector('[data-block-id="freeze-stays"]')).toBe(stayingSlot);
+      expect(root.querySelector('[data-block-id="freeze-melts"]')).toBe(
+        meltingSlot,
+      );
+      expect(root.querySelector('[data-block-id="freeze-stays"]')).toBe(
+        stayingSlot,
+      );
       expect(meltingSlot.dataset.specialMechanism).toBeUndefined();
-      expect(stayingSlot.dataset.specialMechanism).toBe(DOG_FREEZE_MECHANISM_TYPE);
+      expect(stayingSlot.dataset.specialMechanism).toBe(
+        DOG_FREEZE_MECHANISM_TYPE,
+      );
       expect(stayingSlot.dataset.specialMechanismProgress).toBe("1");
       expect(game.getState().inputLocked).toBe(true);
 
@@ -283,8 +368,12 @@ describe("狗了个狗特殊状态增量渲染", () => {
     });
 
     try {
-      const target = root.querySelector<HTMLElement>('[data-block-id="freeze"]');
-      const ordinary = root.querySelector<HTMLElement>('[data-block-id="ordinary"]');
+      const target = root.querySelector<HTMLElement>(
+        '[data-block-id="freeze"]',
+      );
+      const ordinary = root.querySelector<HTMLElement>(
+        '[data-block-id="ordinary"]',
+      );
       if (target === null || ordinary === null) {
         throw new Error("Expected torch board fixture DOM");
       }
@@ -294,13 +383,18 @@ describe("狗了个狗特殊状态增量渲染", () => {
 
       expect(game.getState().inputLocked).toBe(true);
       expect(target.dataset.specialMechanism).toBe(DOG_FREEZE_MECHANISM_TYPE);
-      expect(root.querySelector('[data-testid="dog-melt-effect"][data-item-id="torch"]'))
-        .not.toBeNull();
+      expect(
+        root.querySelector(
+          '[data-testid="dog-melt-effect"][data-item-id="torch"]',
+        ),
+      ).not.toBeNull();
 
       await vi.advanceTimersByTimeAsync(DOG_TORCH_MELT_DURATION_MS);
       await vi.runAllTimersAsync();
 
-      const replacement = root.querySelector<HTMLElement>('[data-block-id="freeze"]');
+      const replacement = root.querySelector<HTMLElement>(
+        '[data-block-id="freeze"]',
+      );
       expect(replacement).not.toBe(target);
       expect(replacement?.dataset.specialMechanism).toBeUndefined();
       expect(root.querySelector('[data-block-id="ordinary"]')).toBe(ordinary);
@@ -328,7 +422,9 @@ describe("狗了个狗特殊状态增量渲染", () => {
     try {
       game.selectBlock("freeze");
       await vi.runAllTimersAsync();
-      const target = root.querySelector<HTMLElement>('[data-block-id="freeze"]');
+      const target = root.querySelector<HTMLElement>(
+        '[data-block-id="freeze"]',
+      );
       if (target === null) {
         throw new Error("Expected torch tray fixture slot");
       }
@@ -360,28 +456,51 @@ describe("狗了个狗特殊状态增量渲染", () => {
           type: DOG_MAGNETIC_MECHANISM_TYPE,
           state: { status: DOG_MAGNETIC_MECHANISM_TYPE },
         }),
-        createBlock("freeze-target", SINGLE_DOG, {
-          type: DOG_FREEZE_MECHANISM_TYPE,
-          state: { status: "frozen", completedTriples: 0 },
-        }, { x: 4 }),
+        createBlock(
+          "freeze-target",
+          SINGLE_DOG,
+          {
+            type: DOG_FREEZE_MECHANISM_TYPE,
+            state: { status: "frozen", completedTriples: 0 },
+          },
+          { x: 4 },
+        ),
         createBlock("untouched", WORKING_DOG, undefined, { x: 8 }),
       ]),
       loadout: ["detector", "wildcard", "torch"],
     });
 
     try {
-      const board = root.querySelector<HTMLElement>('[data-testid="dog-board"]');
-      const tray = root.querySelector<HTMLOListElement>('[data-testid="dog-tray"]');
-      const magnetic = root.querySelector<HTMLElement>('[data-block-id="magnetic"]');
-      const target = root.querySelector<HTMLElement>('[data-block-id="freeze-target"]');
-      const untouched = root.querySelector<HTMLElement>('[data-block-id="untouched"]');
-      if (board === null || tray === null || magnetic === null || target === null || untouched === null) {
+      const board = root.querySelector<HTMLElement>(
+        '[data-testid="dog-board"]',
+      );
+      const tray = root.querySelector<HTMLOListElement>(
+        '[data-testid="dog-tray"]',
+      );
+      const magnetic = root.querySelector<HTMLElement>(
+        '[data-block-id="magnetic"]',
+      );
+      const target = root.querySelector<HTMLElement>(
+        '[data-block-id="freeze-target"]',
+      );
+      const untouched = root.querySelector<HTMLElement>(
+        '[data-block-id="untouched"]',
+      );
+      if (
+        board === null ||
+        tray === null ||
+        magnetic === null ||
+        target === null ||
+        untouched === null
+      ) {
         throw new Error("Expected magnetic fixture DOM");
       }
 
       game.selectBlock("prefix");
       await vi.runAllTimersAsync();
-      const prefixSlot = root.querySelector<HTMLElement>('[data-block-id="prefix"]');
+      const prefixSlot = root.querySelector<HTMLElement>(
+        '[data-block-id="prefix"]',
+      );
       if (prefixSlot === null) {
         throw new Error("Expected magnetic fixture prefix slots");
       }
@@ -391,24 +510,48 @@ describe("狗了个狗特殊状态增量渲染", () => {
 
       const initialSlots = [...tray.children];
       const boardRecords: MutationRecord[] = [];
-      const boardObserver = new MutationObserver((records) => boardRecords.push(...records));
+      const boardObserver = new MutationObserver((records) =>
+        boardRecords.push(...records),
+      );
       boardObserver.observe(board, { childList: true });
 
       game.selectBlock("magnetic");
 
-      expect(root.querySelector('[data-testid="dog-block"][data-block-id="magnetic"]')).toBeNull();
-      expect(root.querySelector('[data-testid="dog-block"][data-block-id="freeze-target"]')).toBe(target);
-      expect(root.querySelector('[data-testid="dog-block"][data-block-id="untouched"]')).toBe(untouched);
-      expect(root.querySelector('[data-testid="dog-tray-slot"][data-block-id="magnetic"]')).not.toBeNull();
+      expect(
+        root.querySelector(
+          '[data-testid="dog-block"][data-block-id="magnetic"]',
+        ),
+      ).toBeNull();
+      expect(
+        root.querySelector(
+          '[data-testid="dog-block"][data-block-id="freeze-target"]',
+        ),
+      ).toBe(target);
+      expect(
+        root.querySelector(
+          '[data-testid="dog-block"][data-block-id="untouched"]',
+        ),
+      ).toBe(untouched);
+      expect(
+        root.querySelector(
+          '[data-testid="dog-tray-slot"][data-block-id="magnetic"]',
+        ),
+      ).not.toBeNull();
       expect(game.getState().inputLocked).toBe(true);
 
       target.getBoundingClientRect = () => createTestRect(224, 4, 40, 40);
 
       await vi.advanceTimersByTimeAsync(BLOCK_FLIGHT_DURATION_MS);
-      const magneticEffect = root.querySelector<HTMLElement>('[data-testid="dog-magnetic-effect"]');
+      const magneticEffect = root.querySelector<HTMLElement>(
+        '[data-testid="dog-magnetic-effect"]',
+      );
       expect(magneticEffect).not.toBeNull();
       expect(magneticEffect?.style.width).toBe("20px");
-      expect(root.querySelector('[data-testid="dog-block"][data-block-id="freeze-target"]')).toBe(target);
+      expect(
+        root.querySelector(
+          '[data-testid="dog-block"][data-block-id="freeze-target"]',
+        ),
+      ).toBe(target);
       expect(game.getState().inputLocked).toBe(true);
 
       await vi.advanceTimersByTimeAsync(DOG_MAGNETIC_ATTRACTION_DURATION_MS);
@@ -425,28 +568,45 @@ describe("狗了个狗特殊状态增量渲染", () => {
       await vi.runAllTimersAsync();
       boardObserver.disconnect();
 
-      expect(game.getState().session.trayBlocks.map((block) => block.id)).toEqual([
-        "prefix",
-        "magnetic",
-        "freeze-target",
-      ]);
-      expect(root.querySelector('[data-testid="dog-block"][data-block-id="freeze-target"]')).toBeNull();
-      expect(root.querySelector('[data-testid="dog-block"][data-block-id="untouched"]')).toBe(untouched);
+      expect(
+        game.getState().session.trayBlocks.map((block) => block.id),
+      ).toEqual(["prefix", "magnetic", "freeze-target"]);
+      expect(
+        root.querySelector(
+          '[data-testid="dog-block"][data-block-id="freeze-target"]',
+        ),
+      ).toBeNull();
+      expect(
+        root.querySelector(
+          '[data-testid="dog-block"][data-block-id="untouched"]',
+        ),
+      ).toBe(untouched);
       expect(root.querySelector('[data-block-id="prefix"]')).toBe(prefixSlot);
-      expect(root.querySelector<HTMLElement>('[data-testid="dog-tray-slot"][data-block-id="freeze-target"]')?.dataset.specialMechanism)
-        .toBe(DOG_FREEZE_MECHANISM_TYPE);
+      expect(
+        root.querySelector<HTMLElement>(
+          '[data-testid="dog-tray-slot"][data-block-id="freeze-target"]',
+        )?.dataset.specialMechanism,
+      ).toBe(DOG_FREEZE_MECHANISM_TYPE);
       expect([...tray.children].slice(3)).toEqual(initialSlots.slice(3));
-      expect(boardRecords.flatMap((record) => [...record.removedNodes])).toEqual([magnetic, target]);
-      expect(boardRecords.flatMap((record) => [...record.addedNodes])).toEqual([]);
+      expect(
+        boardRecords.flatMap((record) => [...record.removedNodes]),
+      ).toEqual([magnetic, target]);
+      expect(boardRecords.flatMap((record) => [...record.addedNodes])).toEqual(
+        [],
+      );
       expect(game.getState().inputLocked).toBe(false);
     } finally {
       game.destroy();
     }
   });
-
 });
 
-function createTestRect(left: number, top: number, width: number, height: number): DOMRect {
+function createTestRect(
+  left: number,
+  top: number,
+  width: number,
+  height: number,
+): DOMRect {
   return {
     bottom: top + height,
     height,

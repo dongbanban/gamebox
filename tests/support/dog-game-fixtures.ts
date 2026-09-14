@@ -7,7 +7,10 @@ import type {
 } from "@/games/dog-lege-dog/levels/level-types";
 import { TEST_LEVEL, TEST_RUN_SEED } from "./dog-level-fixture";
 
-export function startTestGame(root: HTMLElement, options: GameLaunchContext = {}) {
+export function startTestGame(
+  root: HTMLElement,
+  options: GameLaunchContext = {},
+) {
   return startDogLegeDogGame(root, {
     runSeed: TEST_RUN_SEED,
     ...options,
@@ -15,7 +18,10 @@ export function startTestGame(root: HTMLElement, options: GameLaunchContext = {}
 }
 
 export function createWildcardUiLevel(): DogLegeDogLevel {
-  const patternTypes = ["打工狗", "单身狗"] as const satisfies readonly DogPatternType[];
+  const patternTypes = [
+    "打工狗",
+    "单身狗",
+  ] as const satisfies readonly DogPatternType[];
   const blocks: readonly DogBlock[] = [
     createTestBlock("working-hidden", "打工狗", 0),
     createTestBlock("single-cover", "单身狗", 1),
@@ -40,7 +46,12 @@ export function createWildcardUiLevel(): DogLegeDogLevel {
 }
 
 export function createKeyUiLevel(): DogLegeDogLevel {
-  const patternTypes = ["打工狗", "单身狗", "舔狗", "看门狗"] as const satisfies readonly DogPatternType[];
+  const patternTypes = [
+    "打工狗",
+    "单身狗",
+    "舔狗",
+    "看门狗",
+  ] as const satisfies readonly DogPatternType[];
   const blocks: readonly DogBlock[] = [
     createTestBlock("working-1", "打工狗", 0, 0),
     createTestBlock("working-2", "打工狗", 0, 4),
@@ -63,7 +74,10 @@ export function createKeyUiLevel(): DogLegeDogLevel {
 }
 
 export function createWildcardMatchUiLevel(): DogLegeDogLevel {
-  const patternTypes = ["打工狗", "单身狗"] as const satisfies readonly DogPatternType[];
+  const patternTypes = [
+    "打工狗",
+    "单身狗",
+  ] as const satisfies readonly DogPatternType[];
   const frozenMechanism = {
     type: "freeze",
     state: { status: "frozen", completedTriples: 1 },

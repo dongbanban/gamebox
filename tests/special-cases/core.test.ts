@@ -53,8 +53,9 @@ describe("特殊机制测试 · core", () => {
       ]);
     }
 
-    expect(getDogSpecialMechanismConfigs(16).find(({ type }) => type === "twin"))
-      .toMatchObject({ densityWeight: 2 });
+    expect(
+      getDogSpecialMechanismConfigs(16).find(({ type }) => type === "twin"),
+    ).toMatchObject({ densityWeight: 2 });
   });
 
   it("冻结方块进入暂存槽后不参与三消，并记录后续三消进度", () => {
@@ -84,27 +85,40 @@ describe("特殊机制测试 · core", () => {
     const beforeMatch = session.selectBlock("working-2");
 
     expect(beforeMatch.removedCount).toBe(0);
-    expect(beforeMatch.snapshot.trayBlocks.map((block) => block.patternType)).toEqual([
-      WORKING_DOG,
-      WORKING_DOG,
-      WORKING_DOG,
-    ]);
+    expect(
+      beforeMatch.snapshot.trayBlocks.map((block) => block.patternType),
+    ).toEqual([WORKING_DOG, WORKING_DOG, WORKING_DOG]);
     expect(beforeMatch.snapshot.trayBlocks[0]?.specialMechanism?.type).toBe(
       DOG_FREEZE_MECHANISM_TYPE,
     );
 
     const samePatternTriple = session.selectBlock("working-3");
     expect(samePatternTriple.removedCount).toBe(3);
-    expect(samePatternTriple.snapshot.trayBlocks[0]?.specialMechanism?.state.completedTriples).toBe(1);
+    expect(
+      samePatternTriple.snapshot.trayBlocks[0]?.specialMechanism?.state
+        .completedTriples,
+    ).toBe(1);
 
-    const firstTriple = selectAll(session, ["single-1", "single-2", "single-3"]);
+    const firstTriple = selectAll(session, [
+      "single-1",
+      "single-2",
+      "single-3",
+    ]);
     expect(firstTriple.meltedBlockIds).toEqual(["freeze"]);
-    expect(firstTriple.snapshot.trayBlocks[0]).not.toHaveProperty("specialMechanism");
+    expect(firstTriple.snapshot.trayBlocks[0]).not.toHaveProperty(
+      "specialMechanism",
+    );
 
-    const secondTriple = selectAll(session, ["licking-1", "licking-2", "licking-3"]);
+    const secondTriple = selectAll(session, [
+      "licking-1",
+      "licking-2",
+      "licking-3",
+    ]);
     expect(secondTriple.removedCount).toBe(3);
     expect(secondTriple.meltedBlockIds).toEqual([]);
-    expect(secondTriple.snapshot.trayBlocks.map((block) => block.patternType)).toEqual([WORKING_DOG]);
+    expect(
+      secondTriple.snapshot.trayBlocks.map((block) => block.patternType),
+    ).toEqual([WORKING_DOG]);
 
     const finalTriple = selectAll(session, ["working-4", "working-5"]);
     expect(finalTriple.removedCount).toBe(3);
@@ -120,10 +134,7 @@ describe("特殊机制测试 · core", () => {
       }),
     ];
 
-    const meltedBlockIds = applyDogTraySuccessfulTripleEffects(
-      tray,
-      1,
-    );
+    const meltedBlockIds = applyDogTraySuccessfulTripleEffects(tray, 1);
 
     expect(meltedBlockIds).toEqual(["freeze"]);
     expect(tray[0]).not.toHaveProperty("specialMechanism");
@@ -163,7 +174,11 @@ describe("特殊机制测试 · core", () => {
     });
 
     expect(resolution).toMatchObject({ removedCount: 0, tripleCount: 0 });
-    expect(tray.map((block) => block.id)).toEqual(["freeze", "single", "working-1"]);
+    expect(tray.map((block) => block.id)).toEqual([
+      "freeze",
+      "single",
+      "working-1",
+    ]);
   });
 
   it("终局结算先移除包含冻结方块的合法相邻三连", () => {
@@ -220,9 +235,7 @@ describe("特殊机制测试 · core", () => {
       createTrayBlock("single-3", SINGLE_DOG),
     ];
 
-    const resolution = resolveDogTrayMatches(
-      tray,
-    );
+    const resolution = resolveDogTrayMatches(tray);
 
     expect(resolution).toMatchObject({ removedCount: 6, tripleCount: 2 });
     expect(tray).toHaveLength(1);
@@ -283,7 +296,9 @@ describe("特殊机制测试 · core", () => {
 
     expect(game.getState().session.status).toBe("won");
     expect(game.getState().session.trayBlocks).toEqual([]);
-    expect(root.querySelector('[data-testid="dog-status"]')?.textContent).toContain("通关");
+    expect(
+      root.querySelector('[data-testid="dog-status"]')?.textContent,
+    ).toContain("通关");
     expect(results).toEqual(["won"]);
     game.destroy();
   });

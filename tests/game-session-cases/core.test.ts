@@ -1,10 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { GameSession } from "@/games/dog-lege-dog/game/game-session";
 import type { DogPatternType } from "@/games/dog-lege-dog/levels/level-types";
-import {
-  createBlock,
-  createLevel,
-} from "../support/game-session-fixtures";
+import { createBlock, createLevel } from "../support/game-session-fixtures";
 
 const WORKING_DOG: DogPatternType = "打工狗";
 const SINGLE_DOG: DogPatternType = "单身狗";
@@ -31,7 +28,9 @@ describe("GameSession · core", () => {
     expect(selected.removedCount).toBe(0);
     expect(selected.status).toBe("playing");
     expect(selected.snapshot.level).toBe(level);
-    expect(selected.snapshot.trayBlocks.map((block) => block.patternType)).toEqual([WORKING_DOG]);
+    expect(
+      selected.snapshot.trayBlocks.map((block) => block.patternType),
+    ).toEqual([WORKING_DOG]);
 
     const rejected = session.selectBlock("missing");
 
@@ -105,7 +104,9 @@ describe("GameSession · core", () => {
       SINGLE_DOG,
       WORKING_DOG,
     ]);
-    expect(state.remainingBlocks.map((block) => block.id)).toEqual(["remaining"]);
+    expect(state.remainingBlocks.map((block) => block.id)).toEqual([
+      "remaining",
+    ]);
     expect(state.status).toBe("playing");
   });
 
@@ -125,7 +126,9 @@ describe("GameSession · core", () => {
 
     expect(state.removedCount).toBe(3);
     expect(state.trayBlocks).toEqual([]);
-    expect(state.remainingBlocks.map((block) => block.id)).toEqual(["remaining"]);
+    expect(state.remainingBlocks.map((block) => block.id)).toEqual([
+      "remaining",
+    ]);
     expect(state.status).toBe("playing");
     expect(state.selectableBlockIds).toEqual(["remaining"]);
   });
@@ -214,7 +217,9 @@ describe("GameSession · core", () => {
 
     expect(state.status).toBe("lost");
     expect(state.trayBlocks).toHaveLength(7);
-    expect(state.remainingBlocks.map((block) => block.id)).toEqual(["remaining"]);
+    expect(state.remainingBlocks.map((block) => block.id)).toEqual([
+      "remaining",
+    ]);
     expect(session.canSelectBlock("remaining")).toBe(false);
   });
 

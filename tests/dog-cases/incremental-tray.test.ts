@@ -42,10 +42,19 @@ describe("狗了个狗增量暂存槽渲染", () => {
         await vi.runAllTimersAsync();
       }
 
-      const tray = root.querySelector<HTMLOListElement>('[data-testid="dog-tray"]');
-      const prefixSlot = root.querySelector<HTMLElement>('[data-block-id="prefix"]');
-      const suffixSlot = root.querySelector<HTMLElement>('[data-block-id="suffix"]');
-      const emptySlots = [...tray?.querySelectorAll<HTMLElement>('[data-slot-state="empty"]') ?? []];
+      const tray = root.querySelector<HTMLOListElement>(
+        '[data-testid="dog-tray"]',
+      );
+      const prefixSlot = root.querySelector<HTMLElement>(
+        '[data-block-id="prefix"]',
+      );
+      const suffixSlot = root.querySelector<HTMLElement>(
+        '[data-block-id="suffix"]',
+      );
+      const emptySlots = [
+        ...(tray?.querySelectorAll<HTMLElement>('[data-slot-state="empty"]') ??
+          []),
+      ];
       if (tray === null || prefixSlot === null || suffixSlot === null) {
         throw new Error("Expected triple fixture DOM");
       }
@@ -58,20 +67,24 @@ describe("狗了个狗增量暂存槽渲染", () => {
 
       expect(game.getState().inputLocked).toBe(true);
       expect(game.getState().feedback).toBe("match");
-      expect(game.getState().session.trayBlocks.map((block) => block.id)).toEqual([
-        "prefix",
-        "suffix",
-      ]);
+      expect(
+        game.getState().session.trayBlocks.map((block) => block.id),
+      ).toEqual(["prefix", "suffix"]);
       expect(root.querySelector('[data-block-id="prefix"]')).toBe(prefixSlot);
       expect(root.querySelector('[data-block-id="suffix"]')).toBe(suffixSlot);
       expect(prefixSlot.dataset.patternType).toBe(prefixPattern);
       expect(prefixSlot.getAttribute("aria-label")).toBe(prefixAccessibleName);
       expect(suffixSlot.dataset.patternType).toBe(suffixPattern);
       expect(suffixSlot.getAttribute("aria-label")).toBe(suffixAccessibleName);
-      expect([...tray.querySelectorAll<HTMLElement>('[data-block-id]')].map((slot) => slot.dataset.blockId))
-        .toEqual(["prefix", "suffix"]);
       expect(
-        [...tray.querySelectorAll<HTMLElement>('[data-slot-state="empty"]')].slice(-emptySlots.length),
+        [...tray.querySelectorAll<HTMLElement>("[data-block-id]")].map(
+          (slot) => slot.dataset.blockId,
+        ),
+      ).toEqual(["prefix", "suffix"]);
+      expect(
+        [
+          ...tray.querySelectorAll<HTMLElement>('[data-slot-state="empty"]'),
+        ].slice(-emptySlots.length),
       ).toEqual(emptySlots);
 
       await vi.advanceTimersByTimeAsync(BLOCK_FLIGHT_DURATION_MS);
@@ -89,10 +102,15 @@ describe("狗了个狗增量暂存槽渲染", () => {
     const game = startDogLegeDogGame(root, {
       level: createLevel([
         createBlock("prefix", LICKING_DOG, undefined, { x: 0 }),
-        createBlock("frozen", WORKING_DOG, {
-          type: DOG_FREEZE_MECHANISM_TYPE,
-          state: { status: "frozen", completedTriples: 1 },
-        }, { x: 4 }),
+        createBlock(
+          "frozen",
+          WORKING_DOG,
+          {
+            type: DOG_FREEZE_MECHANISM_TYPE,
+            state: { status: "frozen", completedTriples: 1 },
+          },
+          { x: 4 },
+        ),
         createBlock("working-1", WORKING_DOG, undefined, { x: 8 }),
         createBlock("working-2", WORKING_DOG, undefined, { x: 12 }),
         createBlock("single-1", SINGLE_DOG, undefined, { x: 16 }),
@@ -116,12 +134,16 @@ describe("狗了个狗增量暂存槽渲染", () => {
         await vi.runAllTimersAsync();
       }
 
-      const prefixSlot = root.querySelector<HTMLElement>('[data-block-id="prefix"]');
+      const prefixSlot = root.querySelector<HTMLElement>(
+        '[data-block-id="prefix"]',
+      );
       if (prefixSlot === null) {
         throw new Error("Expected cascade fixture prefix slot");
       }
 
-      const tray = root.querySelector<HTMLOListElement>('[data-testid="dog-tray"]');
+      const tray = root.querySelector<HTMLOListElement>(
+        '[data-testid="dog-tray"]',
+      );
       if (tray === null) {
         throw new Error("Expected cascade fixture tray");
       }
@@ -131,12 +153,16 @@ describe("狗了个狗增量暂存槽渲染", () => {
       const records = observer.takeRecords();
       observer.disconnect();
 
-      expect(game.getState().session.trayBlocks.map((block) => block.id)).toEqual([
-        "prefix",
-      ]);
+      expect(
+        game.getState().session.trayBlocks.map((block) => block.id),
+      ).toEqual(["prefix"]);
       expect(root.querySelector('[data-block-id="prefix"]')).toBe(prefixSlot);
-      expect(records.flatMap((record) => [...record.removedNodes])).toHaveLength(0);
-      expect(records.flatMap((record) => [...record.addedNodes])).toHaveLength(0);
+      expect(
+        records.flatMap((record) => [...record.removedNodes]),
+      ).toHaveLength(0);
+      expect(records.flatMap((record) => [...record.addedNodes])).toHaveLength(
+        0,
+      );
     } finally {
       game.destroy();
     }
@@ -154,7 +180,9 @@ describe("狗了个狗增量暂存槽渲染", () => {
         const state = game.getState();
         const itemState = state.items;
         const targetBlockId = itemState?.tripleRemovalTargetBlockIds[0];
-        const tripleRemoval = itemState?.items.find((item) => item.id === "triple-removal");
+        const tripleRemoval = itemState?.items.find(
+          (item) => item.id === "triple-removal",
+        );
         if (!tripleRemoval?.available || targetBlockId === undefined) {
           if (state.session.status !== "playing") {
             break;
@@ -165,57 +193,84 @@ describe("狗了个狗增量暂存槽渲染", () => {
         }
 
         const beforeBoard = new Map(
-          [...root.querySelectorAll<HTMLElement>('[data-testid="dog-block"]')]
-            .map((block) => [block.dataset.blockId, block] as const),
+          [
+            ...root.querySelectorAll<HTMLElement>('[data-testid="dog-block"]'),
+          ].map((block) => [block.dataset.blockId, block] as const),
         );
         const beforeTray = new Map(
-          [...root.querySelectorAll<HTMLElement>('[data-testid="dog-tray-slot"][data-block-id]')]
-            .map((slot) => [slot.dataset.blockId, slot] as const),
+          [
+            ...root.querySelectorAll<HTMLElement>(
+              '[data-testid="dog-tray-slot"][data-block-id]',
+            ),
+          ].map((slot) => [slot.dataset.blockId, slot] as const),
         );
-        const targetIndex = state.session.trayBlocks.findIndex((block) => block.id === targetBlockId);
+        const targetIndex = state.session.trayBlocks.findIndex(
+          (block) => block.id === targetBlockId,
+        );
         const adjacentTargetId = state.session.trayBlocks[targetIndex + 1]?.id;
         const targetTrayBlockIds = new Set([targetBlockId]);
         if (adjacentTargetId !== undefined) {
           targetTrayBlockIds.add(adjacentTargetId);
         }
 
-        root.querySelector<HTMLButtonElement>(
-          '[data-action="use-item"][data-item-id="triple-removal"]',
-        )?.click();
-        root.querySelector<HTMLElement>(
-          `[data-testid="dog-tray-slot"][data-block-id="${targetBlockId}"]`,
-        )?.click();
+        root
+          .querySelector<HTMLButtonElement>(
+            '[data-action="use-item"][data-item-id="triple-removal"]',
+          )
+          ?.click();
+        root
+          .querySelector<HTMLElement>(
+            `[data-testid="dog-tray-slot"][data-block-id="${targetBlockId}"]`,
+          )
+          ?.click();
         const expectedCompensatedBlockId = root.querySelector<HTMLElement>(
           '[data-testid="dog-item-effect"][data-item-id="triple-removal"]',
         )?.dataset.blockIds;
         await vi.runAllTimersAsync();
 
         const afterBoard = new Map(
-          [...root.querySelectorAll<HTMLElement>('[data-testid="dog-block"]')]
-            .map((block) => [block.dataset.blockId, block] as const),
+          [
+            ...root.querySelectorAll<HTMLElement>('[data-testid="dog-block"]'),
+          ].map((block) => [block.dataset.blockId, block] as const),
         );
         const afterTray = new Map(
-          [...root.querySelectorAll<HTMLElement>('[data-testid="dog-tray-slot"][data-block-id]')]
-            .map((slot) => [slot.dataset.blockId, slot] as const),
+          [
+            ...root.querySelectorAll<HTMLElement>(
+              '[data-testid="dog-tray-slot"][data-block-id]',
+            ),
+          ].map((slot) => [slot.dataset.blockId, slot] as const),
         );
-        const removedBoardIds = [...beforeBoard.keys()].filter((id) => !afterBoard.has(id));
+        const removedBoardIds = [...beforeBoard.keys()].filter(
+          (id) => !afterBoard.has(id),
+        );
 
         expect(removedBoardIds).toHaveLength(1);
         expect(expectedCompensatedBlockId).toBe(removedBoardIds[0]);
-        expect([...targetTrayBlockIds].every((id) => !afterTray.has(id))).toBe(true);
+        expect([...targetTrayBlockIds].every((id) => !afterTray.has(id))).toBe(
+          true,
+        );
         for (const [id, element] of beforeBoard) {
           if (!removedBoardIds.includes(id)) {
             expect(afterBoard.get(id)).toBe(element);
           }
         }
         for (const [id, element] of beforeTray) {
-          if (id !== undefined && !targetTrayBlockIds.has(id) && afterTray.has(id)) {
+          if (
+            id !== undefined &&
+            !targetTrayBlockIds.has(id) &&
+            afterTray.has(id)
+          ) {
             expect(afterTray.get(id)).toBe(element);
           }
         }
-        expect(game.getState().session.trayBlocks.map((block) => block.id)).toEqual(
-          [...root.querySelectorAll<HTMLElement>('[data-testid="dog-tray-slot"][data-block-id]')]
-            .map((slot) => slot.dataset.blockId),
+        expect(
+          game.getState().session.trayBlocks.map((block) => block.id),
+        ).toEqual(
+          [
+            ...root.querySelectorAll<HTMLElement>(
+              '[data-testid="dog-tray-slot"][data-block-id]',
+            ),
+          ].map((slot) => slot.dataset.blockId),
         );
         return;
       }
@@ -242,36 +297,57 @@ describe("狗了个狗增量暂存槽渲染", () => {
         '[data-testid="dog-tray-slot"][data-block-id="working-target"]',
       );
       const beforeBoard = new Map(
-        [...root.querySelectorAll<HTMLElement>('[data-testid="dog-block"]')]
-          .map((block) => [block.dataset.blockId, block] as const),
+        [
+          ...root.querySelectorAll<HTMLElement>('[data-testid="dog-block"]'),
+        ].map((block) => [block.dataset.blockId, block] as const),
       );
       if (targetSlot === null) {
         throw new Error("Expected wildcard fixture tray target");
       }
 
-      root.querySelector<HTMLButtonElement>('[data-action="use-item"][data-item-id="wildcard"]')?.click();
-      root.querySelector<HTMLElement>(
-        '[data-testid="dog-tray-slot"][data-block-id="working-target"]',
-      )?.click();
+      root
+        .querySelector<HTMLButtonElement>(
+          '[data-action="use-item"][data-item-id="wildcard"]',
+        )
+        ?.click();
+      root
+        .querySelector<HTMLElement>(
+          '[data-testid="dog-tray-slot"][data-block-id="working-target"]',
+        )
+        ?.click();
       await vi.runAllTimersAsync();
 
       const afterBoard = new Map(
-        [...root.querySelectorAll<HTMLElement>('[data-testid="dog-block"]')]
-          .map((block) => [block.dataset.blockId, block] as const),
+        [
+          ...root.querySelectorAll<HTMLElement>('[data-testid="dog-block"]'),
+        ].map((block) => [block.dataset.blockId, block] as const),
       );
-      expect(root.querySelector('[data-block-id="working-target"]')).toBe(targetSlot);
-      expect(root.querySelector('[data-testid="dog-tray-slot"][data-visual-marker="wildcard"]'))
-        .not.toBeNull();
-      expect(game.getState().session.trayBlocks.map((block) => block.id)).toEqual([
-        "working-target",
-        "wildcard-1",
-      ]);
-      const trayBlockIds = [...root.querySelectorAll<HTMLElement>(
-        '[data-testid="dog-tray-slot"][data-block-id]',
-      )].map((slot) => slot.dataset.blockId);
+      expect(root.querySelector('[data-block-id="working-target"]')).toBe(
+        targetSlot,
+      );
+      expect(
+        root.querySelector(
+          '[data-testid="dog-tray-slot"][data-visual-marker="wildcard"]',
+        ),
+      ).not.toBeNull();
+      expect(
+        game.getState().session.trayBlocks.map((block) => block.id),
+      ).toEqual(["working-target", "wildcard-1"]);
+      const trayBlockIds = [
+        ...root.querySelectorAll<HTMLElement>(
+          '[data-testid="dog-tray-slot"][data-block-id]',
+        ),
+      ].map((slot) => slot.dataset.blockId);
       expect(trayBlockIds.at(-1)).toBe("wildcard-1");
-      expect(root.querySelector('[data-testid="dog-tray-slot"][data-block-id="wildcard-1"]'))
-        .toBe(root.querySelector('[data-testid="dog-tray-slot"][data-block-id="working-target"]')?.nextElementSibling);
+      expect(
+        root.querySelector(
+          '[data-testid="dog-tray-slot"][data-block-id="wildcard-1"]',
+        ),
+      ).toBe(
+        root.querySelector(
+          '[data-testid="dog-tray-slot"][data-block-id="working-target"]',
+        )?.nextElementSibling,
+      );
       for (const [id, element] of beforeBoard) {
         if (id !== "working-hidden") {
           expect(afterBoard.get(id)).toBe(element);
@@ -295,27 +371,39 @@ describe("狗了个狗增量暂存槽渲染", () => {
       game.selectBlock("working-1");
       await vi.runAllTimersAsync();
 
-      const tray = root.querySelector<HTMLOListElement>('[data-testid="dog-tray"]');
-      const initialSlots = [...tray?.children ?? []] as HTMLElement[];
-      const workingSlot = root.querySelector<HTMLElement>('[data-block-id="working-1"]');
+      const tray = root.querySelector<HTMLOListElement>(
+        '[data-testid="dog-tray"]',
+      );
+      const initialSlots = [...(tray?.children ?? [])] as HTMLElement[];
+      const workingSlot = root.querySelector<HTMLElement>(
+        '[data-block-id="working-1"]',
+      );
       if (tray === null || workingSlot === null) {
         throw new Error("Expected capacity fixture DOM");
       }
 
-      root.querySelector<HTMLButtonElement>(
-        '[data-action="use-item"][data-item-id="tray-capacity"]',
-      )?.click();
+      root
+        .querySelector<HTMLButtonElement>(
+          '[data-action="use-item"][data-item-id="tray-capacity"]',
+        )
+        ?.click();
 
       expect(game.getState().session).toMatchObject({
         trayCapacity: 8,
         effectiveTrayCapacity: 6,
         lockedTraySlotCount: 2,
       });
-      expect([...tray.children].slice(0, initialSlots.length)).toEqual(initialSlots);
-      expect(root.querySelector('[data-block-id="working-1"]')).toBe(workingSlot);
+      expect([...tray.children].slice(0, initialSlots.length)).toEqual(
+        initialSlots,
+      );
+      expect(root.querySelector('[data-block-id="working-1"]')).toBe(
+        workingSlot,
+      );
       expect(tray.children).toHaveLength(8);
       expect(tray.lastElementChild).not.toBe(initialSlots.at(-1));
-      expect(tray.querySelectorAll('[data-slot-state="locked"]')).toHaveLength(2);
+      expect(tray.querySelectorAll('[data-slot-state="locked"]')).toHaveLength(
+        2,
+      );
       expect(tray.dataset.trayCapacity).toBe("8");
       expect(tray.dataset.effectiveTrayCapacity).toBe("6");
       expect(tray.dataset.trayFreeCapacity).toBe("5");
@@ -333,7 +421,11 @@ describe("狗了个狗增量暂存槽渲染", () => {
     });
 
     try {
-      for (const [index, blockId] of ["working-1", "working-2", "working-3"].entries()) {
+      for (const [index, blockId] of [
+        "working-1",
+        "working-2",
+        "working-3",
+      ].entries()) {
         game.selectBlock(blockId);
         if (index === 2) {
           await vi.advanceTimersByTimeAsync(700);
@@ -341,15 +433,22 @@ describe("狗了个狗增量暂存槽渲染", () => {
         await vi.runAllTimersAsync();
       }
 
-      const tray = root.querySelector<HTMLOListElement>('[data-testid="dog-tray"]');
-      const initialSlots = [...tray?.children ?? []] as HTMLElement[];
+      const tray = root.querySelector<HTMLOListElement>(
+        '[data-testid="dog-tray"]',
+      );
+      const initialSlots = [...(tray?.children ?? [])] as HTMLElement[];
       if (tray === null || initialSlots.length !== 7) {
         throw new Error("Expected key fixture tray DOM");
       }
-      expect(game.getState().items?.items.find((item) => item.id === "key"))
-        .toMatchObject({ remainingUses: 1, available: true });
+      expect(
+        game.getState().items?.items.find((item) => item.id === "key"),
+      ).toMatchObject({ remainingUses: 1, available: true });
 
-      root.querySelector<HTMLButtonElement>('[data-action="use-item"][data-item-id="key"]')?.click();
+      root
+        .querySelector<HTMLButtonElement>(
+          '[data-action="use-item"][data-item-id="key"]',
+        )
+        ?.click();
 
       expect(game.getState().session).toMatchObject({
         trayCapacity: 7,
@@ -361,16 +460,21 @@ describe("狗了个狗增量暂存槽渲染", () => {
       expect(tray.children[6]).toBe(initialSlots[6]);
       expect(tray.children[5]?.getAttribute("data-slot-state")).toBe("empty");
       expect(tray.children[6]?.getAttribute("data-slot-state")).toBe("locked");
-      expect(root.querySelector('[data-testid="dog-tray-unlock-effect"]')).not.toBeNull();
+      expect(
+        root.querySelector('[data-testid="dog-tray-unlock-effect"]'),
+      ).not.toBeNull();
       expect(tray.dataset.trayCapacity).toBe("7");
       expect(tray.dataset.effectiveTrayCapacity).toBe("6");
       expect(tray.dataset.trayFreeCapacity).toBe("6");
-      expect(game.getState().items?.items.find((item) => item.id === "key"))
-        .toMatchObject({ remainingUses: 0, available: false });
+      expect(
+        game.getState().items?.items.find((item) => item.id === "key"),
+      ).toMatchObject({ remainingUses: 0, available: false });
 
       await vi.runAllTimersAsync();
       expect([...tray.children]).toEqual(initialSlots);
-      expect(tray.querySelectorAll('[data-slot-state="locked"]')).toHaveLength(1);
+      expect(tray.querySelectorAll('[data-slot-state="locked"]')).toHaveLength(
+        1,
+      );
       expect(game.getState().inputLocked).toBe(false);
     } finally {
       game.destroy();

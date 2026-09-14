@@ -11,9 +11,7 @@ import {
 import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
 import { LevelGenerator } from "@/games/dog-lege-dog/levels/level-generation-engine";
 import { DOG_PATTERN_TYPES } from "@/games/dog-lege-dog/levels/level-types";
-import {
-  renderDogPatternAsset,
-} from "@/games/dog-lege-dog/assets/game-assets";
+import { renderDogPatternAsset } from "@/games/dog-lege-dog/assets/game-assets";
 import { TEST_LEVEL } from "../support/dog-level-fixture";
 import { startTestGame } from "../support/dog-game-fixtures";
 
@@ -37,10 +35,18 @@ describe("狗了个狗测试 · core", () => {
       "傻狗",
     ]);
 
-    const assets = DOG_PATTERN_TYPES.map((patternType) => renderDogPatternAsset(patternType));
+    const assets = DOG_PATTERN_TYPES.map((patternType) =>
+      renderDogPatternAsset(patternType),
+    );
     expect(new Set(assets)).toHaveLength(10);
-    expect(assets.every((asset) => asset.includes("<img") && !asset.includes("<image"))).toBe(true);
-    expect(assets.every((asset) => asset.includes('src="assets/dog-icons-square/'))).toBe(true);
+    expect(
+      assets.every(
+        (asset) => asset.includes("<img") && !asset.includes("<image"),
+      ),
+    ).toBe(true);
+    expect(
+      assets.every((asset) => asset.includes('src="assets/dog-icons-square/')),
+    ).toBe(true);
   });
 
   it("以直接图片节点渲染龇牙狗，避免 Safari 嵌套 SVG 丢失牙齿", () => {
@@ -59,7 +65,9 @@ describe("狗了个狗测试 · core", () => {
         "assets/dog-icons-square/07-snarling-dog.svg",
         " https://cdn.example.com/gamebox/v1/ ",
       ),
-    ).toBe("https://cdn.example.com/gamebox/v1/assets/dog-icons-square/07-snarling-dog.svg");
+    ).toBe(
+      "https://cdn.example.com/gamebox/v1/assets/dog-icons-square/07-snarling-dog.svg",
+    );
   });
 
   it("通过公共启动与状态 seam 暴露稳定的不规则棋盘", () => {
@@ -76,20 +84,41 @@ describe("狗了个狗测试 · core", () => {
     expect(state.level.board.shape).toBe("irregular");
     expect(state.level.board.logicalCellSize).toBe(4);
     expect(state.level.board.width / state.level.board.logicalCellSize).toBe(9);
-    expect(state.level.board.height / state.level.board.logicalCellSize).toBe(12);
-    expect(getDogLogicalBlockCount(state.level.blocks, state.level.specialMechanisms)).toBe(90);
-    expect(new Set(state.level.blocks.map((block) => block.patternType))).toHaveLength(6);
-    expect(new Set(state.level.blocks.map((block) => block.z))).toEqual(new Set([0, 1, 2]));
-    expect(state.level.blocks.every((block) => block.width === 4 && block.height === 4)).toBe(true);
+    expect(state.level.board.height / state.level.board.logicalCellSize).toBe(
+      12,
+    );
+    expect(
+      getDogLogicalBlockCount(
+        state.level.blocks,
+        state.level.specialMechanisms,
+      ),
+    ).toBe(90);
+    expect(
+      new Set(state.level.blocks.map((block) => block.patternType)),
+    ).toHaveLength(6);
+    expect(new Set(state.level.blocks.map((block) => block.z))).toEqual(
+      new Set([0, 1, 2]),
+    );
+    expect(
+      state.level.blocks.every(
+        (block) => block.width === 4 && block.height === 4,
+      ),
+    ).toBe(true);
     expect(
       [...new Set(state.level.blocks.map((block) => block.patternType))].every(
         (patternType) =>
           state.level.blocks
             .filter((block) => block.patternType === patternType)
             .reduce(
-              (total, block) => total + (block.specialMechanism?.type === DOG_TWIN_MECHANISM_TYPE ? 2 : 1),
+              (total, block) =>
+                total +
+                (block.specialMechanism?.type === DOG_TWIN_MECHANISM_TYPE
+                  ? 2
+                  : 1),
               0,
-            ) % 3 === 0,
+            ) %
+            3 ===
+          0,
       ),
     ).toBe(true);
     expect(new Set(state.level.blocks.map((block) => block.id))).toHaveLength(
@@ -106,7 +135,9 @@ describe("狗了个狗测试 · core", () => {
     const firstGame = startDogLegeDogGame(firstRoot);
     const secondGame = startDogLegeDogGame(secondRoot);
 
-    expect(firstGame.getState().level.runSeed).not.toBe(secondGame.getState().level.runSeed);
+    expect(firstGame.getState().level.runSeed).not.toBe(
+      secondGame.getState().level.runSeed,
+    );
     expect(firstGame.getState().level).not.toEqual(secondGame.getState().level);
 
     firstGame.destroy();
@@ -114,16 +145,20 @@ describe("狗了个狗测试 · core", () => {
   });
 
   it("公开直接启动在发布棋盘前执行回放验证", () => {
-    const replay = vi.spyOn(LevelGenerator.prototype, "replay").mockReturnValue({
-      ...TEST_LEVEL,
-      runSeed: "mismatched-replay-seed",
-    });
+    const replay = vi
+      .spyOn(LevelGenerator.prototype, "replay")
+      .mockReturnValue({
+        ...TEST_LEVEL,
+        runSeed: "mismatched-replay-seed",
+      });
     const root = document.createElement("div");
     let game: ReturnType<typeof startDogLegeDogGame> | undefined;
     let thrown: unknown;
 
     try {
-      game = startDogLegeDogGame(root, { runSeed: "direct-launch-verification" });
+      game = startDogLegeDogGame(root, {
+        runSeed: "direct-launch-verification",
+      });
     } catch (error) {
       thrown = error;
     }
@@ -131,7 +166,9 @@ describe("狗了个狗测试 · core", () => {
 
     expect(replay).toHaveBeenCalledOnce();
     expect(thrown).toEqual(
-      new Error("LevelGenerator replay verification did not reproduce the generated level"),
+      new Error(
+        "LevelGenerator replay verification did not reproduce the generated level",
+      ),
     );
     expect(root.querySelector('[data-testid="dog-board"]')).toBeNull();
   });
@@ -150,7 +187,11 @@ describe("狗了个狗测试 · core", () => {
     }
 
     for (let index = 0; index < blocks.length; index += 1) {
-      for (let otherIndex = index + 1; otherIndex < blocks.length; otherIndex += 1) {
+      for (
+        let otherIndex = index + 1;
+        otherIndex < blocks.length;
+        otherIndex += 1
+      ) {
         const block = blocks[index];
         const other = blocks[otherIndex];
         if (block.z !== other.z) {
@@ -172,7 +213,9 @@ describe("狗了个狗测试 · core", () => {
     const game = startTestGame(root);
 
     const board = root.querySelector<HTMLElement>('[data-testid="dog-board"]');
-    const firstBlock = root.querySelector<HTMLElement>('[data-testid="dog-block"]');
+    const firstBlock = root.querySelector<HTMLElement>(
+      '[data-testid="dog-block"]',
+    );
     expect(board).not.toBeNull();
     expect(board?.dataset.surfaceShape).toBe("rectangle");
     expect(board?.style.clipPath).toBe("");
@@ -181,12 +224,22 @@ describe("狗了个狗测试 · core", () => {
     expect(DOG_V13_CONFIG.ui.visual.blockSizePx).toBe(48);
     expect(firstBlock?.style.getPropertyValue("--block-width")).toBe("48px");
     expect(firstBlock?.style.getPropertyValue("--block-height")).toBe("48px");
-    expect(root.querySelectorAll('[data-testid="dog-block"]')).toHaveLength(TEST_LEVEL.blocks.length);
-    expect(root.querySelectorAll('[data-testid="dog-block"] img')).toHaveLength(TEST_LEVEL.blocks.length);
-    expect(parseFloat(firstBlock?.style.getPropertyValue("--block-width") ?? "0")).toBeGreaterThan(0);
-    expect(parseFloat(firstBlock?.style.getPropertyValue("--block-height") ?? "0")).toBeGreaterThan(0);
+    expect(root.querySelectorAll('[data-testid="dog-block"]')).toHaveLength(
+      TEST_LEVEL.blocks.length,
+    );
+    expect(root.querySelectorAll('[data-testid="dog-block"] img')).toHaveLength(
+      TEST_LEVEL.blocks.length,
+    );
+    expect(
+      parseFloat(firstBlock?.style.getPropertyValue("--block-width") ?? "0"),
+    ).toBeGreaterThan(0);
+    expect(
+      parseFloat(firstBlock?.style.getPropertyValue("--block-height") ?? "0"),
+    ).toBeGreaterThan(0);
     expect(root.querySelector(".dog-game__stats")).toBeNull();
-    expect(root.querySelector('[data-testid="dog-effects-canvas"]')).not.toBeNull();
+    expect(
+      root.querySelector('[data-testid="dog-effects-canvas"]'),
+    ).not.toBeNull();
     expect(root.textContent).not.toContain("打工狗");
     expect(root.textContent).not.toContain("单身狗");
     expect(root.textContent).not.toContain("倒计时");
@@ -202,8 +255,10 @@ describe("狗了个狗测试 · core", () => {
     const root = document.createElement("div");
     const game = startTestGame(root);
     const { board, blocks } = game.getState().level;
-    const visualUnitWidthPx = DOG_V13_CONFIG.ui.visual.blockSizePx / DOG_V13_CONFIG.board.blockWidth;
-    const visualUnitHeightPx = DOG_V13_CONFIG.ui.visual.blockSizePx / DOG_V13_CONFIG.board.blockHeight;
+    const visualUnitWidthPx =
+      DOG_V13_CONFIG.ui.visual.blockSizePx / DOG_V13_CONFIG.board.blockWidth;
+    const visualUnitHeightPx =
+      DOG_V13_CONFIG.ui.visual.blockSizePx / DOG_V13_CONFIG.board.blockHeight;
     const boardSafeMarginPx = DOG_V13_CONFIG.ui.visual.boardSafeMarginPx;
     expect(visualUnitWidthPx).toBe(12);
 
@@ -212,8 +267,12 @@ describe("狗了个狗测试 · core", () => {
         `[data-testid="dog-block"][data-block-id="${block.id}"]`,
       );
       expect(element).not.toBeNull();
-      const left = Number.parseFloat(element?.style.getPropertyValue("--block-left") ?? "NaN");
-      const top = Number.parseFloat(element?.style.getPropertyValue("--block-top") ?? "NaN");
+      const left = Number.parseFloat(
+        element?.style.getPropertyValue("--block-left") ?? "NaN",
+      );
+      const top = Number.parseFloat(
+        element?.style.getPropertyValue("--block-top") ?? "NaN",
+      );
       const blockWidth = block.width * visualUnitWidthPx;
       const blockHeight = block.height * visualUnitHeightPx;
       expect(left).toBe(
@@ -238,8 +297,12 @@ describe("狗了个狗测试 · core", () => {
   it("底层方块使用多个 4×4 细网格相位，避免初始行列完全对齐", () => {
     const bottomBlocks = TEST_LEVEL.blocks.filter((block) => block.z === 0);
 
-    expect(new Set(bottomBlocks.map((block) => block.x % 4)).size).toBeGreaterThan(1);
-    expect(new Set(bottomBlocks.map((block) => block.y % 4)).size).toBeGreaterThan(1);
+    expect(
+      new Set(bottomBlocks.map((block) => block.x % 4)).size,
+    ).toBeGreaterThan(1);
+    expect(
+      new Set(bottomBlocks.map((block) => block.y % 4)).size,
+    ).toBeGreaterThan(1);
   });
 
   it("只让可点击方块进入暂存槽，并在三消后移除", () => {
@@ -266,15 +329,23 @@ describe("狗了个狗测试 · core", () => {
     }
 
     expect(matched).toBe(true);
-    expect(root.querySelectorAll('[data-testid="dog-tray-slot"][data-pattern-type]')).toHaveLength(
-      game.getState().session.trayBlocks.length,
-    );
     expect(
-      [...root.querySelectorAll<HTMLElement>('[data-testid="dog-tray-slot"][data-pattern-type]')].every(
-        (slot) => slot.className.includes("dog-block--") && slot.querySelector("img") !== null,
+      root.querySelectorAll('[data-testid="dog-tray-slot"][data-pattern-type]'),
+    ).toHaveLength(game.getState().session.trayBlocks.length);
+    expect(
+      [
+        ...root.querySelectorAll<HTMLElement>(
+          '[data-testid="dog-tray-slot"][data-pattern-type]',
+        ),
+      ].every(
+        (slot) =>
+          slot.className.includes("dog-block--") &&
+          slot.querySelector("img") !== null,
       ),
     ).toBe(true);
-    expect(root.querySelector('[data-testid="dog-status"]')?.textContent).not.toContain("选择没有遮挡");
+    expect(
+      root.querySelector('[data-testid="dog-status"]')?.textContent,
+    ).not.toContain("选择没有遮挡");
 
     game.destroy();
 
@@ -289,10 +360,38 @@ describe("狗了个狗测试 · core", () => {
 
   it("普通选择只增量同步真实变化的棋盘和暂存槽节点", async () => {
     vi.useFakeTimers();
-    const covered = { ...TEST_LEVEL.blocks[0], id: "covered", x: 0, y: 0, z: 1, patternType: "打工狗" as const };
-    const exposed = { ...TEST_LEVEL.blocks[1], id: "exposed", x: 0, y: 0, z: 0, patternType: "单身狗" as const };
-    const other = { ...TEST_LEVEL.blocks[2], id: "other", x: 4, y: 0, z: 0, patternType: "舔狗" as const };
-    const unrelated = { ...TEST_LEVEL.blocks[3], id: "unrelated", x: 8, y: 0, z: 0, patternType: "疯狗" as const };
+    const covered = {
+      ...TEST_LEVEL.blocks[0],
+      id: "covered",
+      x: 0,
+      y: 0,
+      z: 1,
+      patternType: "打工狗" as const,
+    };
+    const exposed = {
+      ...TEST_LEVEL.blocks[1],
+      id: "exposed",
+      x: 0,
+      y: 0,
+      z: 0,
+      patternType: "单身狗" as const,
+    };
+    const other = {
+      ...TEST_LEVEL.blocks[2],
+      id: "other",
+      x: 4,
+      y: 0,
+      z: 0,
+      patternType: "舔狗" as const,
+    };
+    const unrelated = {
+      ...TEST_LEVEL.blocks[3],
+      id: "unrelated",
+      x: 8,
+      y: 0,
+      z: 0,
+      patternType: "疯狗" as const,
+    };
     const root = document.createElement("div");
     const game = startDogLegeDogGame(root, {
       level: { ...TEST_LEVEL, blocks: [covered, exposed, other, unrelated] },
@@ -303,44 +402,90 @@ describe("狗了个狗测试 · core", () => {
       await vi.advanceTimersByTimeAsync(BLOCK_FLIGHT_DURATION_MS);
       await vi.runAllTimersAsync();
 
-      const board = root.querySelector<HTMLElement>('[data-testid="dog-board"]');
-      const tray = root.querySelector<HTMLOListElement>('[data-testid="dog-tray"]');
-      const exposedElement = root.querySelector<HTMLButtonElement>('[data-block-id="exposed"]');
-      const unrelatedElement = root.querySelector<HTMLButtonElement>('[data-block-id="unrelated"]');
-      const firstTraySlot = root.querySelector<HTMLElement>('[data-block-id="other"]');
-      const initialTraySlots = [...(tray?.querySelectorAll<HTMLElement>('[data-testid="dog-tray-slot"]') ?? [])];
+      const board = root.querySelector<HTMLElement>(
+        '[data-testid="dog-board"]',
+      );
+      const tray = root.querySelector<HTMLOListElement>(
+        '[data-testid="dog-tray"]',
+      );
+      const exposedElement = root.querySelector<HTMLButtonElement>(
+        '[data-block-id="exposed"]',
+      );
+      const unrelatedElement = root.querySelector<HTMLButtonElement>(
+        '[data-block-id="unrelated"]',
+      );
+      const firstTraySlot = root.querySelector<HTMLElement>(
+        '[data-block-id="other"]',
+      );
+      const initialTraySlots = [
+        ...(tray?.querySelectorAll<HTMLElement>(
+          '[data-testid="dog-tray-slot"]',
+        ) ?? []),
+      ];
       const exposedAriaLabel = exposedElement?.getAttribute("aria-label");
-      if (board === null || tray === null || exposedElement === null || unrelatedElement === null || firstTraySlot === null) {
+      if (
+        board === null ||
+        tray === null ||
+        exposedElement === null ||
+        unrelatedElement === null ||
+        firstTraySlot === null
+      ) {
         throw new Error("Expected ordinary selection fixture DOM");
       }
 
       const observer = new MutationObserver(() => undefined);
       observer.observe(board, { childList: true });
       observer.observe(tray, { childList: true });
-      root.querySelector<HTMLElement>('[data-testid="dog-block"][data-block-id="covered"]')?.dispatchEvent(
-        new Event("pointerup", { bubbles: true, cancelable: true }),
-      );
+      root
+        .querySelector<HTMLElement>(
+          '[data-testid="dog-block"][data-block-id="covered"]',
+        )
+        ?.dispatchEvent(
+          new Event("pointerup", { bubbles: true, cancelable: true }),
+        );
 
       expect(game.getState().inputLocked).toBe(true);
-      expect(root.querySelector('[data-testid="dog-block"][data-block-id="covered"]')).toBeNull();
-      expect(root.querySelector('[data-block-id="exposed"]')).toBe(exposedElement);
-      expect(root.querySelector('[data-block-id="unrelated"]')).toBe(unrelatedElement);
+      expect(
+        root.querySelector(
+          '[data-testid="dog-block"][data-block-id="covered"]',
+        ),
+      ).toBeNull();
+      expect(root.querySelector('[data-block-id="exposed"]')).toBe(
+        exposedElement,
+      );
+      expect(root.querySelector('[data-block-id="unrelated"]')).toBe(
+        unrelatedElement,
+      );
       expect(exposedElement.disabled).toBe(true);
       expect(unrelatedElement.disabled).toBe(true);
       expect(exposedElement.getAttribute("aria-label")).toBe(exposedAriaLabel);
-      expect(root.querySelector('[data-testid="dog-tray-slot"][data-block-id="other"]')).toBe(firstTraySlot);
+      expect(
+        root.querySelector(
+          '[data-testid="dog-tray-slot"][data-block-id="other"]',
+        ),
+      ).toBe(firstTraySlot);
 
       const records = observer.takeRecords();
       observer.disconnect();
       const boardRecords = records.filter((record) => record.target === board);
       const trayRecords = records.filter((record) => record.target === tray);
-      const removedBoardNodes = boardRecords.flatMap((record) => [...record.removedNodes]);
+      const removedBoardNodes = boardRecords.flatMap((record) => [
+        ...record.removedNodes,
+      ]);
       expect(removedBoardNodes).toHaveLength(1);
       expect(removedBoardNodes[0]).toBeInstanceOf(HTMLElement);
-      expect((removedBoardNodes[0] as HTMLElement).dataset.blockId).toBe("covered");
-      expect(boardRecords.flatMap((record) => [...record.addedNodes])).toHaveLength(0);
-      expect(trayRecords.flatMap((record) => [...record.removedNodes])).toHaveLength(0);
-      expect(trayRecords.flatMap((record) => [...record.addedNodes])).toHaveLength(0);
+      expect((removedBoardNodes[0] as HTMLElement).dataset.blockId).toBe(
+        "covered",
+      );
+      expect(
+        boardRecords.flatMap((record) => [...record.addedNodes]),
+      ).toHaveLength(0);
+      expect(
+        trayRecords.flatMap((record) => [...record.removedNodes]),
+      ).toHaveLength(0);
+      expect(
+        trayRecords.flatMap((record) => [...record.addedNodes]),
+      ).toHaveLength(0);
 
       await vi.advanceTimersByTimeAsync(BLOCK_FLIGHT_DURATION_MS);
       await vi.runAllTimersAsync();
@@ -349,17 +494,25 @@ describe("狗了个狗测试 · core", () => {
       expect(exposedElement.disabled).toBe(false);
       expect(unrelatedElement.disabled).toBe(false);
       expect(exposedElement.getAttribute("aria-label")).toBe(exposedAriaLabel);
-      expect(game.getState().session.remainingBlocks.map((block) => block.id)).toEqual([
-        exposed.id,
-        unrelated.id,
-      ]);
-      expect(game.getState().session.trayBlocks.map((block) => block.id)).toEqual([
-        other.id,
-        covered.id,
-      ]);
-      expect(root.querySelector('[data-testid="dog-tray-slot"][data-block-id="other"]')).toBe(firstTraySlot);
-      expect(root.querySelector('[data-testid="dog-tray-slot"][data-block-id="covered"]')).toBe(initialTraySlots[1]);
-      expect([...tray.querySelectorAll<HTMLElement>('[data-testid="dog-tray-slot"]')]).toEqual(initialTraySlots);
+      expect(
+        game.getState().session.remainingBlocks.map((block) => block.id),
+      ).toEqual([exposed.id, unrelated.id]);
+      expect(
+        game.getState().session.trayBlocks.map((block) => block.id),
+      ).toEqual([other.id, covered.id]);
+      expect(
+        root.querySelector(
+          '[data-testid="dog-tray-slot"][data-block-id="other"]',
+        ),
+      ).toBe(firstTraySlot);
+      expect(
+        root.querySelector(
+          '[data-testid="dog-tray-slot"][data-block-id="covered"]',
+        ),
+      ).toBe(initialTraySlots[1]);
+      expect([
+        ...tray.querySelectorAll<HTMLElement>('[data-testid="dog-tray-slot"]'),
+      ]).toEqual(initialTraySlots);
     } finally {
       game.destroy();
     }

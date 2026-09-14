@@ -56,14 +56,20 @@ describe("LevelGenerator · core", () => {
     );
 
     expect(levels[0]?.reward).toBe(100);
-    expect(new Set(levels.map((level) => level.reward)).size).toBeGreaterThan(1);
+    expect(new Set(levels.map((level) => level.reward)).size).toBeGreaterThan(
+      1,
+    );
 
     for (const level of levels) {
       expect(Number.isSafeInteger(level.reward)).toBe(true);
       expect(level.reward).toBeGreaterThanOrEqual(0);
       expect(level.rewardConfigVersion).toBe(DOG_REWARD_CONFIG_VERSION);
-      expect(level.generation.replay.rewardConfigVersion).toBe(DOG_REWARD_CONFIG_VERSION);
-      expect(generator.replay(level.generation.replay).reward).toBe(level.reward);
+      expect(level.generation.replay.rewardConfigVersion).toBe(
+        DOG_REWARD_CONFIG_VERSION,
+      );
+      expect(generator.replay(level.generation.replay).reward).toBe(
+        level.reward,
+      );
     }
   });
 
@@ -108,10 +114,14 @@ describe("LevelGenerator · core", () => {
     console.info(
       `[性能回归] level=31 blocks=${level.blocks.length} generationMs=${generationMs.toFixed(1)} selectionMs=${selectionMs.toFixed(1)} stateReads=${getState.mock.calls.length}`,
     );
-    expect(getDogLogicalBlockCount(level.blocks, level.specialMechanisms)).toBe(180);
+    expect(getDogLogicalBlockCount(level.blocks, level.specialMechanisms)).toBe(
+      180,
+    );
     expect(selection.selected).toBe(true);
     expect(selection.snapshot.level).toBe(level);
-    expect(selection.snapshot.remainingBlocks).toHaveLength(level.blocks.length - 1);
+    expect(selection.snapshot.remainingBlocks).toHaveLength(
+      level.blocks.length - 1,
+    );
     expect(getState).toHaveBeenCalledTimes(1);
     expect(generationMs).toBeLessThan(10_000);
     expect(selectionMs).toBeLessThan(1_000);
@@ -135,7 +145,9 @@ describe("LevelGenerator · core", () => {
     expect(firstLevel).toEqual(generatedFirstLevel);
     expect(firstLevel.generation.replay.mode).toBe("generated");
     expect(getDogLegeDogLevel(1, firstRunSeed)).toEqual(firstLevel);
-    expect(getDogLegeDogLevel(secondLevel.number, firstRunSeed)).toEqual(secondLevel);
+    expect(getDogLegeDogLevel(secondLevel.number, firstRunSeed)).toEqual(
+      secondLevel,
+    );
   });
 
   it("首关 replay 返回相同的不规则棋盘", () => {
@@ -156,7 +168,9 @@ describe("LevelGenerator · core", () => {
       getDogTrayLockCount(runSeed),
     );
 
-    expect(counts.every((count) => count >= 0 && count <= MAX_LOCKED_TRAY_SLOTS)).toBe(true);
+    expect(
+      counts.every((count) => count >= 0 && count <= MAX_LOCKED_TRAY_SLOTS),
+    ).toBe(true);
     expect(getDogTrayLockCount("run-a")).toBe(counts[0]);
   });
 
@@ -194,29 +208,47 @@ describe("LevelGenerator · core", () => {
     const quarterOrHalfCount = crossLayerOverlaps.filter(
       ({ ratio }) => ratio === 0.25 || ratio === 0.5,
     ).length;
-    const quarterCount = crossLayerOverlaps.filter(({ ratio }) => ratio === 0.25).length;
-    const halfCount = crossLayerOverlaps.filter(({ ratio }) => ratio === 0.5).length;
-    const alignedCount = crossLayerOverlaps.filter(({ ratio }) => ratio === 1).length;
+    const quarterCount = crossLayerOverlaps.filter(
+      ({ ratio }) => ratio === 0.25,
+    ).length;
+    const halfCount = crossLayerOverlaps.filter(
+      ({ ratio }) => ratio === 0.5,
+    ).length;
+    const alignedCount = crossLayerOverlaps.filter(
+      ({ ratio }) => ratio === 1,
+    ).length;
 
     expect(level.board.shape).toBe("irregular");
     expect(level.board.logicalCellSize).toBe(4);
-    expect(getDogLogicalBlockCount(level.blocks, level.specialMechanisms)).toBe(90);
+    expect(getDogLogicalBlockCount(level.blocks, level.specialMechanisms)).toBe(
+      90,
+    );
     expect(new Set(level.blocks.map((block) => block.z))).toHaveLength(3);
-    expect(level.blocks.every((block) =>
-      block.width === 4 &&
-      block.height === 4 &&
-      block.rotation === 0 &&
-      Number.isInteger(block.x) &&
-      Number.isInteger(block.y) &&
-      Number.isInteger(block.z),
-    )).toBe(true);
+    expect(
+      level.blocks.every(
+        (block) =>
+          block.width === 4 &&
+          block.height === 4 &&
+          block.rotation === 0 &&
+          Number.isInteger(block.x) &&
+          Number.isInteger(block.y) &&
+          Number.isInteger(block.z),
+      ),
+    ).toBe(true);
     expect(level.patternTypes).toHaveLength(6);
-    expect(new Set(level.blocks.map((block) => block.patternType))).toHaveLength(6);
-    expect(level.patternTypes.every((patternType) =>
-      getLogicalPatternCount(level.blocks, patternType) % 3 === 0,
-    )).toBe(true);
+    expect(
+      new Set(level.blocks.map((block) => block.patternType)),
+    ).toHaveLength(6);
+    expect(
+      level.patternTypes.every(
+        (patternType) =>
+          getLogicalPatternCount(level.blocks, patternType) % 3 === 0,
+      ),
+    ).toBe(true);
     expect(isConnected(level.board.playableCells)).toBe(true);
-    expect(countInteriorConcavities(level.board.playableCells)).toBeGreaterThanOrEqual(2);
+    expect(
+      countInteriorConcavities(level.board.playableCells),
+    ).toBeGreaterThanOrEqual(2);
     expect(isReflectionSymmetric(level.board.playableCells)).toBe(false);
 
     for (const block of level.blocks) {
@@ -242,10 +274,16 @@ describe("LevelGenerator · core", () => {
     }
 
     expect(crossLayerOverlaps.length).toBeGreaterThan(0);
-    expect(quarterOrHalfCount / crossLayerOverlaps.length).toBeGreaterThanOrEqual(0.7);
-    expect(quarterCount / crossLayerOverlaps.length).toBeGreaterThanOrEqual(0.2);
+    expect(
+      quarterOrHalfCount / crossLayerOverlaps.length,
+    ).toBeGreaterThanOrEqual(0.7);
+    expect(quarterCount / crossLayerOverlaps.length).toBeGreaterThanOrEqual(
+      0.2,
+    );
     expect(halfCount / crossLayerOverlaps.length).toBeGreaterThanOrEqual(0.2);
     expect(alignedCount / crossLayerOverlaps.length).toBeLessThanOrEqual(0.1);
-    expect(new GameSession(level).selectBlock(level.solutionPath[0]!).selected).toBe(true);
+    expect(
+      new GameSession(level).selectBlock(level.solutionPath[0]!).selected,
+    ).toBe(true);
   });
 });

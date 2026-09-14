@@ -56,16 +56,18 @@ describe("特殊机制测试 · torch-ui", () => {
     expect(meltEffect).not.toBeNull();
     expect(meltEffect?.getAttribute("aria-hidden")).toBe("true");
     expect(meltEffect?.querySelector(".dog-melt-effect__flake")).not.toBeNull();
-    expect(meltEffect?.querySelectorAll(".dog-melt-effect__drop")).toHaveLength(4);
+    expect(meltEffect?.querySelectorAll(".dog-melt-effect__drop")).toHaveLength(
+      4,
+    );
 
     await vi.advanceTimersByTimeAsync(900);
     expect(game.getState().inputLocked).toBe(true);
     const blockedBlockId = game.getState().session.selectableBlockIds[0];
     if (blockedBlockId !== undefined) {
       game.selectBlock(blockedBlockId);
-      expect(game.getState().session.remainingBlocks.map((block) => block.id)).toContain(
-        blockedBlockId,
-      );
+      expect(
+        game.getState().session.remainingBlocks.map((block) => block.id),
+      ).toContain(blockedBlockId);
     }
     await vi.advanceTimersByTimeAsync(DOG_FREEZE_MELT_DURATION_MS - 900);
     await Promise.resolve();
@@ -113,47 +115,70 @@ describe("特殊机制测试 · torch-ui", () => {
     );
 
     expect(game.getState().items?.phase).toBe("targeting");
-    expect(root.querySelector('[data-testid="dog-item-targeting"]')).not.toBeNull();
     expect(
-      root.querySelector('[data-testid="dog-loadout-actions"] [data-action="edit-loadout"]'),
+      root.querySelector('[data-testid="dog-item-targeting"]'),
     ).not.toBeNull();
     expect(
-      root.querySelector('[data-testid="dog-loadout-actions"] [data-action="cancel-item-target"]'),
+      root.querySelector(
+        '[data-testid="dog-loadout-actions"] [data-action="edit-loadout"]',
+      ),
+    ).not.toBeNull();
+    expect(
+      root.querySelector(
+        '[data-testid="dog-loadout-actions"] [data-action="cancel-item-target"]',
+      ),
     ).not.toBeNull();
     const activeFreezeBlocks = root.querySelectorAll<HTMLElement>(
       '[data-testid="dog-block"][data-special-mechanism="freeze"]',
     );
-    const selectableBlockIds = new Set(game.getState().session.selectableBlockIds);
+    const selectableBlockIds = new Set(
+      game.getState().session.selectableBlockIds,
+    );
     const selectableFreezeBlocks = [...activeFreezeBlocks].filter((block) =>
       selectableBlockIds.has(block.dataset.blockId ?? ""),
     );
-    expect(root.querySelectorAll('[data-testid="dog-block"][data-item-targetable="true"]')).toHaveLength(
-      selectableFreezeBlocks.length,
-    );
     expect(
-      selectableFreezeBlocks.every((block) => block.dataset.itemTargetable === "true"),
+      root.querySelectorAll(
+        '[data-testid="dog-block"][data-item-targetable="true"]',
+      ),
+    ).toHaveLength(selectableFreezeBlocks.length);
+    expect(
+      selectableFreezeBlocks.every(
+        (block) => block.dataset.itemTargetable === "true",
+      ),
     ).toBe(true);
     expect(
-      selectableFreezeBlocks.every((block) => block.classList.contains("dog-block--item-targetable")),
+      selectableFreezeBlocks.every((block) =>
+        block.classList.contains("dog-block--item-targetable"),
+      ),
     ).toBe(true);
     expect(
-      [...root.querySelectorAll<HTMLElement>(
-        '[data-testid="dog-block"][data-special-mechanism="freeze"]',
-      )].every((block) =>
-        game.getState().session.selectableBlockIds.includes(block.dataset.blockId ?? "")
+      [
+        ...root.querySelectorAll<HTMLElement>(
+          '[data-testid="dog-block"][data-special-mechanism="freeze"]',
+        ),
+      ].every((block) =>
+        game
+          .getState()
+          .session.selectableBlockIds.includes(block.dataset.blockId ?? "")
           ? block.dataset.itemTargetable === "true"
           : block.dataset.itemTargetable === undefined,
       ),
     ).toBe(true);
     expect(ordinaryBlock?.dataset.itemTargetable).toBeUndefined();
-    expect(ordinaryBlock?.classList.contains("dog-block--item-targetable")).toBe(false);
+    expect(
+      ordinaryBlock?.classList.contains("dog-block--item-targetable"),
+    ).toBe(false);
     expect(ordinaryBlock?.hasAttribute("disabled")).toBe(true);
 
-    root.querySelector<HTMLButtonElement>('[data-action="cancel-item-target"]')?.click();
+    root
+      .querySelector<HTMLButtonElement>('[data-action="cancel-item-target"]')
+      ?.click();
 
     expect(game.getState().items?.phase).toBe("idle");
-    expect(game.getState().items?.items.find((item) => item.id === "torch"))
-      .toMatchObject({ remainingUses: 1 });
+    expect(
+      game.getState().items?.items.find((item) => item.id === "torch"),
+    ).toMatchObject({ remainingUses: 1 });
     game.destroy();
   });
 
@@ -181,9 +206,11 @@ describe("特殊机制测试 · torch-ui", () => {
       await vi.runAllTimersAsync();
     }
 
-    const trayFreezeBlocks = game.getState().session.trayBlocks.filter(
-      (block) => block.specialMechanism?.type === DOG_FREEZE_MECHANISM_TYPE,
-    );
+    const trayFreezeBlocks = game
+      .getState()
+      .session.trayBlocks.filter(
+        (block) => block.specialMechanism?.type === DOG_FREEZE_MECHANISM_TYPE,
+      );
     expect(trayFreezeBlocks.length).toBeGreaterThan(0);
 
     root.querySelector<HTMLButtonElement>('[data-item-id="torch"]')?.click();
@@ -200,19 +227,28 @@ describe("特殊机制测试 · torch-ui", () => {
     expect(
       [...root.querySelectorAll<HTMLElement>('[data-testid="dog-tray-slot"]')]
         .filter((slot) => slot.dataset.itemTargetable !== "true")
-        .every((slot) => !slot.classList.contains("dog-tray__slot--item-targetable")),
+        .every(
+          (slot) => !slot.classList.contains("dog-tray__slot--item-targetable"),
+        ),
     ).toBe(true);
     expect(
-      [...root.querySelectorAll<HTMLElement>('[data-testid="dog-tray-slot"][data-pattern-type]')]
+      [
+        ...root.querySelectorAll<HTMLElement>(
+          '[data-testid="dog-tray-slot"][data-pattern-type]',
+        ),
+      ]
         .filter((slot) => slot.dataset.itemTargetable !== "true")
-        .every((slot) =>
-          slot.dataset.itemTargetDisabled === "true" &&
-          slot.classList.contains("dog-tray__slot--item-target-disabled") &&
-          slot.getAttribute("aria-disabled") === "true",
+        .every(
+          (slot) =>
+            slot.dataset.itemTargetDisabled === "true" &&
+            slot.classList.contains("dog-tray__slot--item-target-disabled") &&
+            slot.getAttribute("aria-disabled") === "true",
         ),
     ).toBe(true);
 
-    root.querySelector<HTMLButtonElement>('[data-action="cancel-item-target"]')?.click();
+    root
+      .querySelector<HTMLButtonElement>('[data-action="cancel-item-target"]')
+      ?.click();
     expect(game.getState().items?.phase).toBe("idle");
     game.destroy();
   });
@@ -232,7 +268,9 @@ describe("特殊机制测试 · torch-ui", () => {
     }
 
     const level = game.getState().level;
-    const freezePathIndex = level.solutionPath.indexOf(freezeBlock.dataset.blockId ?? "");
+    const freezePathIndex = level.solutionPath.indexOf(
+      freezeBlock.dataset.blockId ?? "",
+    );
     if (freezePathIndex < 0) {
       throw new Error("Expected freeze block in solution path");
     }
@@ -240,7 +278,9 @@ describe("特殊机制测试 · torch-ui", () => {
       game.selectBlock(blockId);
       await vi.runAllTimersAsync();
     }
-    expect(game.getState().session.selectableBlockIds).toContain(freezeBlock.dataset.blockId);
+    expect(game.getState().session.selectableBlockIds).toContain(
+      freezeBlock.dataset.blockId,
+    );
 
     root.querySelector<HTMLButtonElement>('[data-item-id="torch"]')?.click();
     root
@@ -250,10 +290,13 @@ describe("特殊机制测试 · torch-ui", () => {
       ?.click();
 
     expect(game.getState().inputLocked).toBe(true);
-    expect(game.getState().items?.items.find((item) => item.id === "torch"))
-      .toMatchObject({ remainingUses: 0 });
     expect(
-      root.querySelector<HTMLElement>('[data-testid="dog-melt-effect"][data-item-id="torch"]'),
+      game.getState().items?.items.find((item) => item.id === "torch"),
+    ).toMatchObject({ remainingUses: 0 });
+    expect(
+      root.querySelector<HTMLElement>(
+        '[data-testid="dog-melt-effect"][data-item-id="torch"]',
+      ),
     ).not.toBeNull();
     expect(
       root.querySelector<HTMLElement>(
@@ -267,7 +310,11 @@ describe("特殊机制测试 · torch-ui", () => {
     await Promise.resolve();
 
     expect(game.getState().inputLocked).toBe(false);
-    expect(root.querySelector('[data-testid="dog-melt-effect"][data-item-id="torch"]')).toBeNull();
+    expect(
+      root.querySelector(
+        '[data-testid="dog-melt-effect"][data-item-id="torch"]',
+      ),
+    ).toBeNull();
     expect(
       root.querySelector<HTMLElement>(
         `[data-testid="dog-block"][data-block-id="${freezeBlock.dataset.blockId}"]`,

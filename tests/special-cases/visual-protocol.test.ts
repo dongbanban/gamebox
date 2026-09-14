@@ -52,11 +52,9 @@ describe("特殊机制测试 · visual-protocol", () => {
 
     expect(pending.selected).toBe(true);
     expect(pending.snapshot.status).toBe("playing");
-    expect(pending.snapshot.trayBlocks.map((block) => block.patternType)).toEqual([
-      WORKING_DOG,
-      WORKING_DOG,
-      WORKING_DOG,
-    ]);
+    expect(
+      pending.snapshot.trayBlocks.map((block) => block.patternType),
+    ).toEqual([WORKING_DOG, WORKING_DOG, WORKING_DOG]);
     expect(pending.snapshot.trayBlocks[2]).toMatchObject({
       id: "illusion",
       patternType: WORKING_DOG,
@@ -103,7 +101,9 @@ describe("特殊机制测试 · visual-protocol", () => {
     );
     expect(frozenBlock).not.toBeNull();
     expect(frozenBlock?.classList.contains("dog-block--special")).toBe(true);
-    expect(frozenBlock?.classList.contains("dog-block--special-freeze")).toBe(true);
+    expect(frozenBlock?.classList.contains("dog-block--special-freeze")).toBe(
+      true,
+    );
     expect(frozenBlock?.dataset.specialMechanismState).toBe("frozen");
     expect(frozenBlock?.dataset.specialMechanismProgress).toBe("0");
 
@@ -132,46 +132,67 @@ describe("特殊机制测试 · visual-protocol", () => {
     const boardMagnetic = root.querySelector<HTMLElement>(
       '[data-testid="dog-block"][data-block-id="magnetic"]',
     );
-    expect(boardMagnetic?.classList.contains("dog-block--special-magnetic")).toBe(true);
-    expect(boardMagnetic?.dataset.specialMechanismState).toBe(DOG_MAGNETIC_MECHANISM_TYPE);
+    expect(
+      boardMagnetic?.classList.contains("dog-block--special-magnetic"),
+    ).toBe(true);
+    expect(boardMagnetic?.dataset.specialMechanismState).toBe(
+      DOG_MAGNETIC_MECHANISM_TYPE,
+    );
 
     game.selectBlock("magnetic");
 
     expect(game.getState().inputLocked).toBe(true);
-    expect(root.querySelector<HTMLElement>('[data-testid="dog-flight"]')?.dataset.magneticFlight).toBe(
-      "true",
-    );
-    expect(game.getState().session.remainingBlocks.map((block) => block.id)).toContain("target");
-    expect(root.querySelector('[data-testid="dog-magnetic-effect"]')).toBeNull();
+    expect(
+      root.querySelector<HTMLElement>('[data-testid="dog-flight"]')?.dataset
+        .magneticFlight,
+    ).toBe("true");
+    expect(
+      game.getState().session.remainingBlocks.map((block) => block.id),
+    ).toContain("target");
+    expect(
+      root.querySelector('[data-testid="dog-magnetic-effect"]'),
+    ).toBeNull();
 
     await vi.advanceTimersByTimeAsync(BLOCK_FLIGHT_DURATION_MS);
     await Promise.resolve();
-    expect(root.querySelector<HTMLElement>('[data-testid="dog-magnetic-effect"]')?.dataset.sourceId).toBe(
-      "magnetic",
-    );
-    expect(root.querySelector<HTMLElement>('[data-testid="dog-magnetic-effect"]')?.dataset.targetId).toBe(
-      "target",
-    );
-    expect(game.getState().session.remainingBlocks.map((block) => block.id)).toContain("target");
+    expect(
+      root.querySelector<HTMLElement>('[data-testid="dog-magnetic-effect"]')
+        ?.dataset.sourceId,
+    ).toBe("magnetic");
+    expect(
+      root.querySelector<HTMLElement>('[data-testid="dog-magnetic-effect"]')
+        ?.dataset.targetId,
+    ).toBe("target");
+    expect(
+      game.getState().session.remainingBlocks.map((block) => block.id),
+    ).toContain("target");
 
     await vi.advanceTimersByTimeAsync(DOG_MAGNETIC_ATTRACTION_DURATION_MS);
     await Promise.resolve();
     expect(game.getState().inputLocked).toBe(true);
-    expect(game.getState().session.remainingBlocks.map((block) => block.id)).toContain("target");
-    expect(root.querySelector<HTMLElement>('[data-testid="dog-flight"]')?.dataset.patternType).toBe(
-      SINGLE_DOG,
-    );
+    expect(
+      game.getState().session.remainingBlocks.map((block) => block.id),
+    ).toContain("target");
+    expect(
+      root.querySelector<HTMLElement>('[data-testid="dog-flight"]')?.dataset
+        .patternType,
+    ).toBe(SINGLE_DOG);
 
     await vi.advanceTimersByTimeAsync(BLOCK_FLIGHT_DURATION_MS);
     await vi.runAllTimersAsync();
     expect(game.getState().inputLocked).toBe(false);
-    expect(game.getState().session.remainingBlocks.map((block) => block.id)).not.toContain("target");
-    expect(root.querySelector('[data-testid="dog-magnetic-effect"]')).toBeNull();
-    expect(game.getState().session.trayBlocks.map((block) => block.id)).toEqual([
-      "magnetic",
-      "target",
-    ]);
-    expect(game.getState().session.trayBlocks[0]).not.toHaveProperty("specialMechanism");
+    expect(
+      game.getState().session.remainingBlocks.map((block) => block.id),
+    ).not.toContain("target");
+    expect(
+      root.querySelector('[data-testid="dog-magnetic-effect"]'),
+    ).toBeNull();
+    expect(game.getState().session.trayBlocks.map((block) => block.id)).toEqual(
+      ["magnetic", "target"],
+    );
+    expect(game.getState().session.trayBlocks[0]).not.toHaveProperty(
+      "specialMechanism",
+    );
     expect(game.getState().session.trayBlocks[1]).toHaveProperty(
       "specialMechanism.type",
       DOG_FREEZE_MECHANISM_TYPE,
@@ -203,9 +224,9 @@ describe("特殊机制测试 · visual-protocol", () => {
     await vi.advanceTimersByTimeAsync(BLOCK_FLIGHT_DURATION_MS);
     await Promise.resolve();
 
-    expect(game.getState().session.remainingBlocks.map((block) => block.id)).not.toContain(
-      "illusion-target",
-    );
+    expect(
+      game.getState().session.remainingBlocks.map((block) => block.id),
+    ).not.toContain("illusion-target");
     expect(
       root.querySelector<HTMLElement>(
         '[data-testid="dog-tray-slot"][data-block-id="illusion-target"][data-illusion-reveal="true"]',
@@ -216,11 +237,12 @@ describe("特殊机制测试 · visual-protocol", () => {
     await vi.runAllTimersAsync();
 
     expect(game.getState().inputLocked).toBe(false);
-    expect(game.getState().session.trayBlocks.map((block) => block.id)).toEqual([
-      "magnetic",
-      "illusion-target",
-    ]);
-    expect(game.getState().session.trayBlocks[1]).not.toHaveProperty("specialMechanism");
+    expect(game.getState().session.trayBlocks.map((block) => block.id)).toEqual(
+      ["magnetic", "illusion-target"],
+    );
+    expect(game.getState().session.trayBlocks[1]).not.toHaveProperty(
+      "specialMechanism",
+    );
     game.destroy();
   });
 
@@ -256,8 +278,12 @@ describe("特殊机制测试 · visual-protocol", () => {
 
     expect(game.getState().inputLocked).toBe(false);
     expect(game.getState().session.status).toBe("playing");
-    expect(game.getState().session.remainingBlocks.map((block) => block.id)).toEqual(["remaining"]);
-    expect(game.getState().session.trayBlocks.map((block) => block.id)).toEqual(["target"]);
+    expect(
+      game.getState().session.remainingBlocks.map((block) => block.id),
+    ).toEqual(["remaining"]);
+    expect(game.getState().session.trayBlocks.map((block) => block.id)).toEqual(
+      ["target"],
+    );
     game.destroy();
   });
 
@@ -285,20 +311,22 @@ describe("特殊机制测试 · visual-protocol", () => {
     await vi.advanceTimersByTimeAsync(BLOCK_FLIGHT_DURATION_MS);
     await Promise.resolve();
 
-    expect(root.querySelector<HTMLElement>('[data-testid="dog-twin-split-effect"]')?.dataset.twinSourceId)
-      .toBe("twin-target");
-    expect(root.querySelector<HTMLElement>('[data-testid="dog-twin-split-effect"]')?.dataset.twinBlockIds)
-      .toBe("twin-target-1,twin-target-2");
+    expect(
+      root.querySelector<HTMLElement>('[data-testid="dog-twin-split-effect"]')
+        ?.dataset.twinSourceId,
+    ).toBe("twin-target");
+    expect(
+      root.querySelector<HTMLElement>('[data-testid="dog-twin-split-effect"]')
+        ?.dataset.twinBlockIds,
+    ).toBe("twin-target-1,twin-target-2");
 
     await vi.advanceTimersByTimeAsync(DOG_TWIN_SPLIT_DURATION_MS);
     await vi.runAllTimersAsync();
 
     expect(game.getState().inputLocked).toBe(false);
-    expect(game.getState().session.trayBlocks.map((block) => block.id)).toEqual([
-      "magnetic",
-      "twin-target-1",
-      "twin-target-2",
-    ]);
+    expect(game.getState().session.trayBlocks.map((block) => block.id)).toEqual(
+      ["magnetic", "twin-target-1", "twin-target-2"],
+    );
     game.destroy();
   });
 

@@ -32,7 +32,9 @@ describe("LevelGenerator 候选筛选失败", () => {
       level.difficulty.target.durationMinutes.min,
     );
     expect(level.difficulty.withinTarget).toBe(true);
-    expect(level.generation.failures).toHaveLength(MAX_LEVEL_GENERATION_ATTEMPTS);
+    expect(level.generation.failures).toHaveLength(
+      MAX_LEVEL_GENERATION_ATTEMPTS,
+    );
     expect(failure).toMatchObject({
       levelNumber: request.levelNumber,
       runSeed: request.runSeed,

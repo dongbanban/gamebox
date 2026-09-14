@@ -2,9 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { GameResult } from "@/catalog";
-import {
-  BLOCK_FLIGHT_DURATION_MS,
-} from "@/games/dog-lege-dog/assets/animation-effects";
+import { BLOCK_FLIGHT_DURATION_MS } from "@/games/dog-lege-dog/assets/animation-effects";
 import { DOG_ILLUSION_MECHANISM_TYPE } from "@/games/dog-lege-dog/game/special-mechanisms";
 import { TEST_LEVEL } from "../support/dog-level-fixture";
 import { startTestGame } from "../support/dog-game-fixtures";
@@ -24,33 +22,46 @@ describe("狗了个狗测试 · runtime", () => {
     });
 
     for (const blockId of game.getState().level.solutionPath) {
-      const block = [...root.querySelectorAll<HTMLButtonElement>('[data-testid="dog-block"]')].find(
-        (candidate) => candidate.dataset.blockId === blockId,
-      );
+      const block = [
+        ...root.querySelectorAll<HTMLButtonElement>(
+          '[data-testid="dog-block"]',
+        ),
+      ].find((candidate) => candidate.dataset.blockId === blockId);
 
       expect(block?.disabled).toBe(false);
-      const selectedLevelBlock = game.getState().level.blocks.find(
-        (candidate) => candidate.id === blockId,
-      );
+      const selectedLevelBlock = game
+        .getState()
+        .level.blocks.find((candidate) => candidate.id === blockId);
       const isIllusion =
-        selectedLevelBlock?.specialMechanism?.type === DOG_ILLUSION_MECHANISM_TYPE;
-      block?.dispatchEvent(new Event("pointerup", { bubbles: true, cancelable: true }));
+        selectedLevelBlock?.specialMechanism?.type ===
+        DOG_ILLUSION_MECHANISM_TYPE;
+      block?.dispatchEvent(
+        new Event("pointerup", { bubbles: true, cancelable: true }),
+      );
       const isTerminal = game.getState().session.status !== "playing";
       const isMatchAnimating = game.getState().feedback === "match";
       expect(game.getState().inputLocked).toBe(true);
       if (!isTerminal && !isMatchAnimating && !isIllusion) {
-        expect(root.querySelector('[data-testid="dog-block"]:not([disabled])')).toBeNull();
+        expect(
+          root.querySelector('[data-testid="dog-block"]:not([disabled])'),
+        ).toBeNull();
       }
-      expect(game.getState().session.remainingBlocks.some((candidate) => candidate.id === blockId)).toBe(
-        false,
-      );
+      expect(
+        game
+          .getState()
+          .session.remainingBlocks.some(
+            (candidate) => candidate.id === blockId,
+          ),
+      ).toBe(false);
 
       await vi.runAllTimersAsync();
       expect(game.getState().inputLocked).toBe(false);
       if (isTerminal) {
-        expect(root.querySelector<HTMLButtonElement>('[data-testid="dog-edit-loadout"]')?.disabled).toBe(
-          true,
-        );
+        expect(
+          root.querySelector<HTMLButtonElement>(
+            '[data-testid="dog-edit-loadout"]',
+          )?.disabled,
+        ).toBe(true);
       }
     }
 
@@ -88,18 +99,20 @@ describe("狗了个狗测试 · runtime", () => {
     expect(BLOCK_FLIGHT_DURATION_MS).toBeLessThan(240);
     expect(game.getState().inputLocked).toBe(true);
 
-    const secondBlockId = game.getState().session.selectableBlockIds.find(
-      (blockId) => blockId !== firstBlockId,
-    );
+    const secondBlockId = game
+      .getState()
+      .session.selectableBlockIds.find((blockId) => blockId !== firstBlockId);
     if (secondBlockId === undefined) {
       throw new Error("Expected another selectable block during flight");
     }
     dispatchPointerUp(secondBlockId);
 
     expect(game.getState().inputLocked).toBe(true);
-    expect(game.getState().session.remainingBlocks.some((block) => block.id === secondBlockId)).toBe(
-      true,
-    );
+    expect(
+      game
+        .getState()
+        .session.remainingBlocks.some((block) => block.id === secondBlockId),
+    ).toBe(true);
     expect(root.querySelectorAll('[data-testid="dog-flight"]')).toHaveLength(1);
 
     await vi.advanceTimersByTimeAsync(BLOCK_FLIGHT_DURATION_MS - 1);
@@ -110,12 +123,16 @@ describe("狗了个狗测试 · runtime", () => {
 
     dispatchPointerUp(secondBlockId);
     expect(game.getState().inputLocked).toBe(true);
-    expect(game.getState().session.remainingBlocks.some((block) => block.id === firstBlockId)).toBe(
-      false,
-    );
-    expect(game.getState().session.remainingBlocks.some((block) => block.id === secondBlockId)).toBe(
-      false,
-    );
+    expect(
+      game
+        .getState()
+        .session.remainingBlocks.some((block) => block.id === firstBlockId),
+    ).toBe(false);
+    expect(
+      game
+        .getState()
+        .session.remainingBlocks.some((block) => block.id === secondBlockId),
+    ).toBe(false);
     expect(root.querySelectorAll('[data-testid="dog-flight"]')).toHaveLength(1);
 
     await vi.advanceTimersByTimeAsync(BLOCK_FLIGHT_DURATION_MS);
@@ -129,7 +146,9 @@ describe("狗了个狗测试 · runtime", () => {
         .querySelector<HTMLButtonElement>(
           `[data-testid="dog-block"][data-block-id="${blockId}"]`,
         )
-        ?.dispatchEvent(new Event("pointerup", { bubbles: true, cancelable: true }));
+        ?.dispatchEvent(
+          new Event("pointerup", { bubbles: true, cancelable: true }),
+        );
     }
   });
 
@@ -149,22 +168,32 @@ describe("狗了个狗测试 · runtime", () => {
       const loadoutIconBeforeMatch = loadoutThumbnailBeforeMatch
         ?.querySelector("img")
         ?.getAttribute("src");
-      loadoutThumbnailBeforeMatch?.setAttribute("data-stable-loadout-probe", "true");
+      loadoutThumbnailBeforeMatch?.setAttribute(
+        "data-stable-loadout-probe",
+        "true",
+      );
       root
         .querySelector<HTMLButtonElement>(
           `[data-testid="dog-block"][data-block-id="${blockId}"]`,
         )
-        ?.dispatchEvent(new Event("pointerup", { bubbles: true, cancelable: true }));
+        ?.dispatchEvent(
+          new Event("pointerup", { bubbles: true, cancelable: true }),
+        );
       const afterTrayLength = game.getState().session.trayBlocks.length;
       if (afterTrayLength < beforeTrayLength + 1) {
         matched = true;
-        const loadoutThumbnailDuringMatch = root.querySelector<HTMLButtonElement>(
-          '[data-testid="dog-loadout-thumbnail"][data-loadout-id="tray-capacity"]',
+        const loadoutThumbnailDuringMatch =
+          root.querySelector<HTMLButtonElement>(
+            '[data-testid="dog-loadout-thumbnail"][data-loadout-id="tray-capacity"]',
+          );
+        expect(loadoutThumbnailDuringMatch?.dataset.stableLoadoutProbe).toBe(
+          "true",
         );
-        expect(loadoutThumbnailDuringMatch?.dataset.stableLoadoutProbe).toBe("true");
-        expect(loadoutThumbnailDuringMatch?.querySelector("img")?.getAttribute("src")).toBe(
-          loadoutIconBeforeMatch,
-        );
+        expect(
+          loadoutThumbnailDuringMatch
+            ?.querySelector("img")
+            ?.getAttribute("src"),
+        ).toBe(loadoutIconBeforeMatch);
         expect(loadoutThumbnailDuringMatch?.disabled).toBe(true);
         expect(
           loadoutThumbnailDuringMatch?.querySelector(
@@ -183,14 +212,20 @@ describe("狗了个狗测试 · runtime", () => {
     const matchEffect = root.querySelector('[data-testid="dog-match-effect"]');
     expect(matchEffect?.getAttribute("role")).toBe("status");
     expect(matchEffect?.getAttribute("aria-label")).toBe("三消成功");
-    expect(matchEffect?.closest('[data-testid="dog-tray-region"]')).not.toBeNull();
-    expect(root.querySelector('.dog-board-frame [data-testid="dog-match-effect"]')).toBeNull();
-    expect(root.querySelectorAll('.dog-match-effect__spark')).toHaveLength(8);
+    expect(
+      matchEffect?.closest('[data-testid="dog-tray-region"]'),
+    ).not.toBeNull();
+    expect(
+      root.querySelector('.dog-board-frame [data-testid="dog-match-effect"]'),
+    ).toBeNull();
+    expect(root.querySelectorAll(".dog-match-effect__spark")).toHaveLength(8);
     expect(root.textContent).not.toContain("三消");
     expect(game.getState().session.trayBlocks.length).toBeLessThan(7);
 
     await vi.advanceTimersByTimeAsync(BLOCK_FLIGHT_DURATION_MS);
-    expect(root.querySelector('[data-testid="dog-match-effect"]')).toBe(matchEffect);
+    expect(root.querySelector('[data-testid="dog-match-effect"]')).toBe(
+      matchEffect,
+    );
 
     await vi.runAllTimersAsync();
 
@@ -215,16 +250,29 @@ describe("狗了个狗测试 · runtime", () => {
 
     const level = game.getState().level;
     const selectedPatterns: string[] = [];
-    for (let selectionNumber = 0; selectionNumber < 20 && game.getState().status !== "lost"; selectionNumber += 1) {
-      const candidateId = game.getState().session.selectableBlockIds.find((blockId) => {
-        const block = level.blocks.find((candidate) => candidate.id === blockId);
-        const patternType = block?.patternType;
-        return patternType !== undefined &&
-          block?.specialMechanism === undefined &&
-          selectedPatterns.filter((selected) => selected === patternType).length < 2;
-      });
+    for (
+      let selectionNumber = 0;
+      selectionNumber < 20 && game.getState().status !== "lost";
+      selectionNumber += 1
+    ) {
+      const candidateId = game
+        .getState()
+        .session.selectableBlockIds.find((blockId) => {
+          const block = level.blocks.find(
+            (candidate) => candidate.id === blockId,
+          );
+          const patternType = block?.patternType;
+          return (
+            patternType !== undefined &&
+            block?.specialMechanism === undefined &&
+            selectedPatterns.filter((selected) => selected === patternType)
+              .length < 2
+          );
+        });
       expect(candidateId).toBeDefined();
-      const patternType = level.blocks.find((block) => block.id === candidateId)?.patternType;
+      const patternType = level.blocks.find(
+        (block) => block.id === candidateId,
+      )?.patternType;
       if (patternType !== undefined) {
         selectedPatterns.push(patternType);
       }
@@ -232,7 +280,9 @@ describe("狗了个狗测试 · runtime", () => {
         .querySelector<HTMLButtonElement>(
           `[data-testid="dog-block"][data-block-id="${candidateId}"]`,
         )
-        ?.dispatchEvent(new Event("pointerup", { bubbles: true, cancelable: true }));
+        ?.dispatchEvent(
+          new Event("pointerup", { bubbles: true, cancelable: true }),
+        );
       if (game.getState().status === "playing") {
         await vi.runAllTimersAsync();
       }
@@ -242,20 +292,29 @@ describe("狗了个狗测试 · runtime", () => {
     expect(game.getState().feedback).toBe("lost");
     expect(game.getState().inputLocked).toBe(true);
     expect(results).toEqual([]);
-    const lossStatus = root.querySelector<HTMLElement>('[data-testid="dog-status"]');
-    const traySlots = root.querySelector<HTMLElement>('[data-testid="dog-tray"]');
+    const lossStatus = root.querySelector<HTMLElement>(
+      '[data-testid="dog-status"]',
+    );
+    const traySlots = root.querySelector<HTMLElement>(
+      '[data-testid="dog-tray"]',
+    );
     expect(lossStatus?.textContent).toContain("失败！暂存槽已满。");
-    expect(lossStatus?.closest('[data-testid="dog-tray-region"]')).not.toBeNull();
+    expect(
+      lossStatus?.closest('[data-testid="dog-tray-region"]'),
+    ).not.toBeNull();
     expect(traySlots?.nextElementSibling).toBe(lossStatus);
-    expect(root.querySelector('.dog-board-frame [data-testid="dog-feedback"]')).toBeNull();
+    expect(
+      root.querySelector('.dog-board-frame [data-testid="dog-feedback"]'),
+    ).toBeNull();
     expect(root.textContent).not.toContain("失败反馈");
 
     await vi.runAllTimersAsync();
 
     expect(game.getState().inputLocked).toBe(false);
-    expect(root.querySelector<HTMLButtonElement>('[data-testid="dog-edit-loadout"]')?.disabled).toBe(
-      true,
-    );
+    expect(
+      root.querySelector<HTMLButtonElement>('[data-testid="dog-edit-loadout"]')
+        ?.disabled,
+    ).toBe(true);
     expect(results).toEqual([
       expect.objectContaining({
         gameId: "dog-lege-dog",

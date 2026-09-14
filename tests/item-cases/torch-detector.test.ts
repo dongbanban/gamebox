@@ -5,10 +5,12 @@ import {
   DOG_ILLUSION_MECHANISM_TYPE,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
 import type { DogPatternType } from "@/games/dog-lege-dog/levels/level-types";
-import { createBlock, createLevel, createTargetDefinition } from "../support/item-fixtures";
 import {
-  DOG_ITEM_DEFINITIONS,
-} from "@/games/dog-lege-dog/game/dog-loadout";
+  createBlock,
+  createLevel,
+  createTargetDefinition,
+} from "../support/item-fixtures";
+import { DOG_ITEM_DEFINITIONS } from "@/games/dog-lege-dog/game/dog-loadout";
 import {
   DogItemRuntime,
   type DogItemRuntimeDefinition,
@@ -21,7 +23,9 @@ const GUARD_DOG: DogPatternType = "看门狗";
 
 describe("DogItemRuntime · torch-detector", () => {
   it("执行提交失败时不扣次数，并保持目标选择状态等待重试或取消", () => {
-    const session = new GameSession(createLevel([createBlock("remaining", WORKING_DOG)]));
+    const session = new GameSession(
+      createLevel([createBlock("remaining", WORKING_DOG)]),
+    );
     const definition: DogItemRuntimeDefinition = {
       ...createTargetDefinition(),
       execute: () => ({
@@ -38,7 +42,10 @@ describe("DogItemRuntime · torch-detector", () => {
     });
 
     runtime.begin("triple-removal");
-    const action = runtime.confirmTarget({ type: "block", blockId: "remaining" });
+    const action = runtime.confirmTarget({
+      type: "block",
+      blockId: "remaining",
+    });
 
     expect(action).toMatchObject({ accepted: false, success: false });
     expect(runtime.getState().phase).toBe("targeting");
@@ -51,21 +58,25 @@ describe("DogItemRuntime · torch-detector", () => {
       level: createLevel([createBlock("remaining", WORKING_DOG)]),
       initialTrayBlocks: [{ id: "target-working", patternType: WORKING_DOG }],
     });
-    const wildcardDefinition = DOG_ITEM_DEFINITIONS.find((item) => item.id === "wildcard")!;
+    const wildcardDefinition = DOG_ITEM_DEFINITIONS.find(
+      (item) => item.id === "wildcard",
+    )!;
     const runtime = new DogItemRuntime({
       level: session.getState().level,
       session,
       loadout: ["wildcard"],
-      definitions: [{
-        definition: wildcardDefinition,
-        getUses: () => 1,
-        canUse: () => true,
-        execute: () => ({
-          success: true,
-          visualFeedback: "wildcard",
-          commitAfterAnimation: () => ({ success: false }),
-        }),
-      }],
+      definitions: [
+        {
+          definition: wildcardDefinition,
+          getUses: () => 1,
+          canUse: () => true,
+          execute: () => ({
+            success: true,
+            visualFeedback: "wildcard",
+            commitAfterAnimation: () => ({ success: false }),
+          }),
+        },
+      ],
     });
     const initial = session.getState();
 
@@ -112,33 +123,57 @@ describe("DogItemRuntime · torch-detector", () => {
       success: false,
       requiresTarget: true,
     });
-    expect(runtime.confirmTarget({ type: "block", blockId: "ordinary" })).toMatchObject({
+    expect(
+      runtime.confirmTarget({ type: "block", blockId: "ordinary" }),
+    ).toMatchObject({
       accepted: false,
       success: false,
     });
     expect(runtime.getState().items[0]?.remainingUses).toBe(1);
     expect(runtime.cancel().phase).toBe("idle");
-    expect(session.getState().remainingBlocks.find((block) => block.id === "freeze"))
-      .toHaveProperty("specialMechanism.type", DOG_FREEZE_MECHANISM_TYPE);
+    expect(
+      session.getState().remainingBlocks.find((block) => block.id === "freeze"),
+    ).toHaveProperty("specialMechanism.type", DOG_FREEZE_MECHANISM_TYPE);
   });
 
   it("火把与检测仪不能选择被遮挡的棋盘方块", () => {
     const session = new GameSession(
       createLevel([
-        createBlock("freeze", WORKING_DOG, {
-          type: DOG_FREEZE_MECHANISM_TYPE,
-          state: { status: "frozen", completedTriples: 0 },
-        }, { x: 0, y: 0, z: 0 }),
-        createBlock("freeze-cover", SINGLE_DOG, undefined, { x: 0, y: 0, z: 1 }),
-        createBlock("illusion", LICKING_DOG, {
-          type: DOG_ILLUSION_MECHANISM_TYPE,
-          state: { status: "masked", disguisedPatternType: SINGLE_DOG },
-        }, { x: 8, y: 0, z: 0 }),
-        createBlock("illusion-cover", GUARD_DOG, undefined, { x: 8, y: 0, z: 1 }),
+        createBlock(
+          "freeze",
+          WORKING_DOG,
+          {
+            type: DOG_FREEZE_MECHANISM_TYPE,
+            state: { status: "frozen", completedTriples: 0 },
+          },
+          { x: 0, y: 0, z: 0 },
+        ),
+        createBlock("freeze-cover", SINGLE_DOG, undefined, {
+          x: 0,
+          y: 0,
+          z: 1,
+        }),
+        createBlock(
+          "illusion",
+          LICKING_DOG,
+          {
+            type: DOG_ILLUSION_MECHANISM_TYPE,
+            state: { status: "masked", disguisedPatternType: SINGLE_DOG },
+          },
+          { x: 8, y: 0, z: 0 },
+        ),
+        createBlock("illusion-cover", GUARD_DOG, undefined, {
+          x: 8,
+          y: 0,
+          z: 1,
+        }),
       ]),
     );
 
-    expect(session.getState().selectableBlockIds).toEqual(["freeze-cover", "illusion-cover"]);
+    expect(session.getState().selectableBlockIds).toEqual([
+      "freeze-cover",
+      "illusion-cover",
+    ]);
     expect(session.canMeltFrozenBlock("freeze", "board")).toBe(false);
     expect(session.canRevealIllusionBlock("illusion")).toBe(false);
 
@@ -153,10 +188,22 @@ describe("DogItemRuntime · torch-detector", () => {
       loadout: ["detector"],
     });
 
-    expect(torch.getState().items[0]).toMatchObject({ available: false, remainingUses: 1 });
-    expect(detector.getState().items[0]).toMatchObject({ available: false, remainingUses: 1 });
-    expect(torch.begin("torch")).toMatchObject({ accepted: false, success: false });
-    expect(detector.begin("detector")).toMatchObject({ accepted: false, success: false });
+    expect(torch.getState().items[0]).toMatchObject({
+      available: false,
+      remainingUses: 1,
+    });
+    expect(detector.getState().items[0]).toMatchObject({
+      available: false,
+      remainingUses: 1,
+    });
+    expect(torch.begin("torch")).toMatchObject({
+      accepted: false,
+      success: false,
+    });
+    expect(detector.begin("detector")).toMatchObject({
+      accepted: false,
+      success: false,
+    });
   });
 
   it("火把成功融化棋盘冻结方块后扣次并锁定至动画完成", () => {
@@ -189,14 +236,19 @@ describe("DogItemRuntime · torch-detector", () => {
       },
     });
     expect(runtime.getState()).toMatchObject({ phase: "animating" });
-    expect(runtime.getState().items[0]).toMatchObject({ remainingUses: 0, available: false });
-    expect(session.getState().remainingBlocks.find((block) => block.id === "freeze"))
-      .toHaveProperty("specialMechanism.type", DOG_FREEZE_MECHANISM_TYPE);
+    expect(runtime.getState().items[0]).toMatchObject({
+      remainingUses: 0,
+      available: false,
+    });
+    expect(
+      session.getState().remainingBlocks.find((block) => block.id === "freeze"),
+    ).toHaveProperty("specialMechanism.type", DOG_FREEZE_MECHANISM_TYPE);
 
     runtime.completeAnimation();
 
     expect(runtime.getState().phase).toBe("idle");
-    expect(session.getState().remainingBlocks.find((block) => block.id === "freeze"))
-      .not.toHaveProperty("specialMechanism");
+    expect(
+      session.getState().remainingBlocks.find((block) => block.id === "freeze"),
+    ).not.toHaveProperty("specialMechanism");
   });
 });

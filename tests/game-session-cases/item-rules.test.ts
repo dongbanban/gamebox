@@ -114,13 +114,15 @@ describe("GameSession · item-rules", () => {
       removedCount: 0,
       tripleCount: 0,
     });
-    expect(session.getState().remainingBlocks.map((block) => block.id)).toEqual([
-      "working-hidden",
-      "single-cover",
-      "working-final",
-      "single-2",
-      "single-3",
-    ]);
+    expect(session.getState().remainingBlocks.map((block) => block.id)).toEqual(
+      [
+        "working-hidden",
+        "single-cover",
+        "working-final",
+        "single-2",
+        "single-3",
+      ],
+    );
     expect(session.getState().trayBlocks).toEqual([
       { id: "initial-tray-1", patternType: WORKING_DOG },
     ]);
@@ -191,7 +193,11 @@ describe("GameSession · item-rules", () => {
 
     const result = session.useWildcard(WORKING_DOG);
 
-    expect(result).toMatchObject({ used: true, removedCount: 3, tripleCount: 1 });
+    expect(result).toMatchObject({
+      used: true,
+      removedCount: 3,
+      tripleCount: 1,
+    });
     expect(result.snapshot.trayBlocks).toEqual([
       { id: "ordinary-working", patternType: WORKING_DOG },
     ]);
@@ -224,7 +230,11 @@ describe("GameSession · item-rules", () => {
       throw new Error("expected wildcard use to succeed");
     }
 
-    expect(result).toMatchObject({ used: true, removedCount: 0, tripleCount: 0 });
+    expect(result).toMatchObject({
+      used: true,
+      removedCount: 0,
+      tripleCount: 0,
+    });
     expect(result.snapshot.trayBlocks).toEqual([
       createFrozenTrayBlock("frozen-working-1", WORKING_DOG),
       createFrozenTrayBlock("frozen-working-2", WORKING_DOG),
@@ -261,9 +271,11 @@ describe("GameSession · item-rules", () => {
     expect(result).toMatchObject({ used: false, patternType: WORKING_DOG });
     expect(result).not.toHaveProperty("wildcardBlockId");
     expect(result).not.toHaveProperty("compensatedBlockId");
-    expect(session.getState().remainingBlocks.find(
-      (block) => block.id === "working-hidden",
-    )).toHaveProperty("specialMechanism.type", "freeze");
+    expect(
+      session
+        .getState()
+        .remainingBlocks.find((block) => block.id === "working-hidden"),
+    ).toHaveProperty("specialMechanism.type", "freeze");
   });
 
   it("万能方块不把双生方块按单个逻辑单位补偿删除", () => {
@@ -288,8 +300,11 @@ describe("GameSession · item-rules", () => {
 
     expect(session.getWildcardPlan(WORKING_DOG)).toBeNull();
     expect(session.useWildcard(WORKING_DOG)).toMatchObject({ used: false });
-    expect(session.getState().remainingBlocks.find((block) => block.id === "twin-hidden"))
-      .toHaveProperty("specialMechanism.type", "twin");
+    expect(
+      session
+        .getState()
+        .remainingBlocks.find((block) => block.id === "twin-hidden"),
+    ).toHaveProperty("specialMechanism.type", "twin");
   });
 
   it("万能方块可以把被遮挡幻化同款作为棋盘补偿", () => {
@@ -328,10 +343,12 @@ describe("GameSession · item-rules", () => {
       ],
     });
 
-    expect(session.getTripleRemovalPlanForTrayBlock("working-1")).toMatchObject({
-      patternType: WORKING_DOG,
-      tripleCount: 1,
-    });
+    expect(session.getTripleRemovalPlanForTrayBlock("working-1")).toMatchObject(
+      {
+        patternType: WORKING_DOG,
+        tripleCount: 1,
+      },
+    );
 
     const result = session.removeTripleForTrayBlock("working-1");
 

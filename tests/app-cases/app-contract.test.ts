@@ -61,16 +61,30 @@ describe("通用游戏定义与结果契约", () => {
     root.querySelector<HTMLButtonElement>('[data-action="register"]')?.click();
     root.querySelector<HTMLButtonElement>('[data-action="register"]')?.click();
 
-    expect(root.querySelector(".catalog-item__heading h2")?.textContent).toBe("测试游戏");
-    expect(root.querySelector(".catalog-item__description")?.textContent).toContain("用于验证公共层契约。");
-    expect(root.querySelector(".catalog-item__level")?.textContent).toContain("最高解锁关卡");
+    expect(root.querySelector(".catalog-item__heading h2")?.textContent).toBe(
+      "测试游戏",
+    );
+    expect(
+      root.querySelector(".catalog-item__description")?.textContent,
+    ).toContain("用于验证公共层契约。");
+    expect(root.querySelector(".catalog-item__level")?.textContent).toContain(
+      "最高解锁关卡",
+    );
     expect(root.querySelector(".catalog-item__actions")).not.toBeNull();
-    expect(root.querySelector('.catalog-item__actions [data-action="enter-game"]')).not.toBeNull();
-    expect(root.querySelector('[data-view="catalog"]')?.textContent).not.toContain("累计积分");
+    expect(
+      root.querySelector('.catalog-item__actions [data-action="enter-game"]'),
+    ).not.toBeNull();
+    expect(
+      root.querySelector('[data-view="catalog"]')?.textContent,
+    ).not.toContain("累计积分");
     expect(root.querySelector(".status-dot")).toBeNull();
-    expect(root.querySelector('[data-action="enter-game"]')?.textContent?.trim()).toBe("开始游戏");
+    expect(
+      root.querySelector('[data-action="enter-game"]')?.textContent?.trim(),
+    ).toBe("开始游戏");
 
-    root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
+    root
+      .querySelector<HTMLButtonElement>('[data-action="enter-game"]')
+      ?.click();
     expect(dispatchBeforeUnload().defaultPrevented).toBe(true);
     expect(launchContext?.runSeed).toBe("test-run-1");
     launchContext?.onResultConfirmed?.({
@@ -126,16 +140,29 @@ describe("通用游戏定义与结果契约", () => {
     expect(root.textContent).toContain("通关奖励");
     expect(root.textContent).toContain("25");
     expect(root.querySelector('[data-action="next-level"]')).not.toBeNull();
-    const wonActions = root.querySelector<HTMLElement>(".game-result-card__actions--split");
-    const wonCatalogAction = root.querySelector<HTMLElement>('[data-action="catalog"]');
-    const nextLevelAction = root.querySelector<HTMLElement>('[data-action="next-level"]');
+    const wonActions = root.querySelector<HTMLElement>(
+      ".game-result-card__actions--split",
+    );
+    const wonCatalogAction = root.querySelector<HTMLElement>(
+      '[data-action="catalog"]',
+    );
+    const nextLevelAction = root.querySelector<HTMLElement>(
+      '[data-action="next-level"]',
+    );
     expect(wonActions).not.toBeNull();
-    expect([...wonActions?.children ?? []]).toEqual([wonCatalogAction, nextLevelAction]);
+    expect([...(wonActions?.children ?? [])]).toEqual([
+      wonCatalogAction,
+      nextLevelAction,
+    ]);
     expect(wonCatalogAction?.classList.contains("icon-button")).toBe(true);
-    expect(nextLevelAction?.classList.contains("primary-button--next")).toBe(true);
+    expect(nextLevelAction?.classList.contains("primary-button--next")).toBe(
+      true,
+    );
     expect(dispatchBeforeUnload().defaultPrevented).toBe(false);
 
-    root.querySelector<HTMLButtonElement>('[data-action="next-level"]')?.click();
+    root
+      .querySelector<HTMLButtonElement>('[data-action="next-level"]')
+      ?.click();
     expect(launchedLevels).toEqual([1, 1, 2]);
     expect(launchedSeeds).toEqual(["test-run-1", "test-run-2", "test-run-3"]);
     expect(root.querySelector('[data-view="game-entry"]')).not.toBeNull();
@@ -146,8 +173,16 @@ describe("通用游戏定义与结果契约", () => {
   it("下一关启动失败时返回目录，不伪装成生成失败", () => {
     const root = document.createElement("div");
     const resultDisplay = {
-      won: { eyebrow: "测试游戏 · 结果", title: "测试通关", description: "完成。" },
-      lost: { eyebrow: "测试游戏 · 结果", title: "测试失败", description: "失败。" },
+      won: {
+        eyebrow: "测试游戏 · 结果",
+        title: "测试通关",
+        description: "完成。",
+      },
+      lost: {
+        eyebrow: "测试游戏 · 结果",
+        title: "测试失败",
+        description: "失败。",
+      },
     } as const;
     const launchedLevels: number[] = [];
     const launchContexts: GameLaunchContext[] = [];
@@ -180,7 +215,9 @@ describe("通用游戏定义与结果契约", () => {
     });
 
     root.querySelector<HTMLButtonElement>('[data-action="register"]')?.click();
-    root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
+    root
+      .querySelector<HTMLButtonElement>('[data-action="enter-game"]')
+      ?.click();
     launchContexts[0]?.onResultConfirmed?.({
       gameId: GAME_ID,
       levelNumber: 1,
@@ -198,11 +235,15 @@ describe("通用游戏定义与结果契约", () => {
       actions: ["next-level", "catalog"],
     });
 
-    root.querySelector<HTMLButtonElement>('[data-action="next-level"]')?.click();
+    root
+      .querySelector<HTMLButtonElement>('[data-action="next-level"]')
+      ?.click();
     expect(launchedLevels).toEqual([1, 2]);
     expect(root.querySelector('[data-view="catalog"]')).not.toBeNull();
     expect(root.querySelector('[data-view="game-entry"]')).toBeNull();
-    expect(root.querySelector('[data-testid="game-generation-error"]')).toBeNull();
+    expect(
+      root.querySelector('[data-testid="game-generation-error"]'),
+    ).toBeNull();
     expect(root.querySelector('[data-testid="dog-game"]')).toBeNull();
     app.destroy();
   });
@@ -210,16 +251,32 @@ describe("通用游戏定义与结果契约", () => {
   it("第 99 关通关后展示最终称号页且不提供下一关", () => {
     const root = document.createElement("div");
     const resultDisplay = {
-      won: { eyebrow: "测试游戏 · 结果", title: "测试通关", description: "完成。" },
-      final: { eyebrow: "狗了个狗 · 最终通关", title: "你就是最狗的玩家", description: "全部 99 关完成。" },
-      lost: { eyebrow: "测试游戏 · 结果", title: "测试失败", description: "失败。" },
+      won: {
+        eyebrow: "测试游戏 · 结果",
+        title: "测试通关",
+        description: "完成。",
+      },
+      final: {
+        eyebrow: "狗了个狗 · 最终通关",
+        title: "你就是最狗的玩家",
+        description: "全部 99 关完成。",
+      },
+      lost: {
+        eyebrow: "测试游戏 · 结果",
+        title: "测试失败",
+        description: "失败。",
+      },
     } as const;
     const store = new ProgressStore({
       storage: new MemoryStorage(),
       userIdFactory: () => "123e4567-e89b-12d3-a456-426614174000",
     });
     store.register();
-    for (let levelNumber = 1; levelNumber < DOG_V13_CONFIG.game.maxLevelNumber; levelNumber += 1) {
+    for (
+      let levelNumber = 1;
+      levelNumber < DOG_V13_CONFIG.game.maxLevelNumber;
+      levelNumber += 1
+    ) {
       store.recordLevelCompletion({ gameId: GAME_ID, levelNumber, reward: 0 });
     }
 
@@ -238,7 +295,9 @@ describe("通用游戏定义与结果契约", () => {
       },
     };
     const app = mountApp(root, { store, catalog: [testGame] });
-    root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
+    root
+      .querySelector<HTMLButtonElement>('[data-action="enter-game"]')
+      ?.click();
 
     const finalResult: GameResult = {
       gameId: GAME_ID,
@@ -253,7 +312,9 @@ describe("通用游戏定义与结果契约", () => {
     launchContext?.onResult?.(finalResult);
 
     expect(root.querySelector('[data-final="true"]')).not.toBeNull();
-    expect(root.querySelector("#game-result-title")?.textContent).toBe("你就是最狗的玩家");
+    expect(root.querySelector("#game-result-title")?.textContent).toBe(
+      "你就是最狗的玩家",
+    );
     expect(root.querySelector('[data-action="next-level"]')).toBeNull();
     expect(root.textContent).toContain("99 / 99");
     expect(store.snapshot().state?.games[GAME_ID]).toMatchObject({

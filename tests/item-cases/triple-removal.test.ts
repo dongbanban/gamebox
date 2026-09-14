@@ -3,9 +3,7 @@ import { GameSession } from "@/games/dog-lege-dog/game/game-session";
 import { DOG_FREEZE_MECHANISM_TYPE } from "@/games/dog-lege-dog/game/special-mechanisms";
 import type { DogPatternType } from "@/games/dog-lege-dog/levels/level-types";
 import { createBlock, createLevel } from "../support/item-fixtures";
-import {
-  DogItemRuntime,
-} from "@/games/dog-lege-dog/game/dog-item-runtime";
+import { DogItemRuntime } from "@/games/dog-lege-dog/game/dog-item-runtime";
 
 const WORKING_DOG: DogPatternType = "打工狗";
 const SINGLE_DOG: DogPatternType = "单身狗";
@@ -95,11 +93,12 @@ describe("DogItemRuntime · triple-removal", () => {
       success: false,
       requiresTarget: false,
     });
-    expect(session.getState().remainingBlocks.map((block) => block.id)).toEqual([
-      "working-1",
-      "working-2",
-    ]);
-    expect(session.getState().trayBlocks.map((block) => block.patternType)).toEqual([WORKING_DOG]);
+    expect(session.getState().remainingBlocks.map((block) => block.id)).toEqual(
+      ["working-1", "working-2"],
+    );
+    expect(
+      session.getState().trayBlocks.map((block) => block.patternType),
+    ).toEqual([WORKING_DOG]);
   });
 
   it("道具选择暂存槽内任意位置的相邻图案对，并自动补 1 个棋盘方块", () => {
@@ -129,7 +128,10 @@ describe("DogItemRuntime · triple-removal", () => {
       "initial-tray-2",
     ]);
     runtime.begin("triple-removal");
-    const action = runtime.confirmTarget({ type: "tray-block", blockId: "initial-tray-1" });
+    const action = runtime.confirmTarget({
+      type: "tray-block",
+      blockId: "initial-tray-1",
+    });
 
     expect(action).toMatchObject({
       accepted: true,
@@ -148,7 +150,9 @@ describe("DogItemRuntime · triple-removal", () => {
       "initial-tray-3",
     ]);
     runtime.completeAnimation();
-    expect(session.getState().trayBlocks.map((block) => block.id)).toEqual(["initial-tray-3"]);
+    expect(session.getState().trayBlocks.map((block) => block.id)).toEqual([
+      "initial-tray-3",
+    ]);
   });
 
   it("三消道具成功后计入暂存槽冻结方块的后续三消进度", () => {
@@ -182,7 +186,9 @@ describe("DogItemRuntime · triple-removal", () => {
 
     expect(runtime.getState().items[0]?.available).toBe(true);
     runtime.begin("triple-removal");
-    expect(runtime.confirmTarget({ type: "tray-block", blockId: "working-1" })).toMatchObject({
+    expect(
+      runtime.confirmTarget({ type: "tray-block", blockId: "working-1" }),
+    ).toMatchObject({
       accepted: true,
       success: true,
     });
@@ -217,21 +223,20 @@ describe("DogItemRuntime · triple-removal", () => {
     });
 
     expect(runtime.getState().tripleRemovalTargetBlockIds).toEqual([]);
-    expect(runtime.getState().items[0]).toMatchObject({ available: false, remainingUses: 1 });
+    expect(runtime.getState().items[0]).toMatchObject({
+      available: false,
+      remainingUses: 1,
+    });
     expect(runtime.begin("triple-removal")).toMatchObject({
       accepted: false,
       success: false,
     });
-    expect(session.getState().trayBlocks.map((block) => block.patternType)).toEqual([
-      WORKING_DOG,
-      SINGLE_DOG,
-      WORKING_DOG,
-    ]);
-    expect(session.getState().remainingBlocks.map((block) => block.id)).toEqual([
-      "working-board",
-      "single-1",
-      "single-2",
-    ]);
+    expect(
+      session.getState().trayBlocks.map((block) => block.patternType),
+    ).toEqual([WORKING_DOG, SINGLE_DOG, WORKING_DOG]);
+    expect(session.getState().remainingBlocks.map((block) => block.id)).toEqual(
+      ["working-board", "single-1", "single-2"],
+    );
   });
 
   it("多个同类补充方案均可解时按关卡稳定顺序选择", () => {
@@ -257,7 +262,10 @@ describe("DogItemRuntime · triple-removal", () => {
     });
 
     runtime.begin("triple-removal");
-    const action = runtime.confirmTarget({ type: "tray-block", blockId: "initial-tray-1" });
+    const action = runtime.confirmTarget({
+      type: "tray-block",
+      blockId: "initial-tray-1",
+    });
 
     expect(action).toMatchObject({
       accepted: true,

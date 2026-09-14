@@ -29,14 +29,20 @@ describe(`狗了个狗 ${profileName} generation profile`, () => {
     for (const [index, levelNumber] of profile.levelNumbers.entries()) {
       const logicalBlockCount = getDogV13LogicalBlockCount(levelNumber);
       const budget = getDogV13SpecialMechanismBudget(logicalBlockCount);
-      const plan = getDogV13MechanismPlan(logicalBlockCount, DOG_V13_CONFIG, levelNumber);
+      const plan = getDogV13MechanismPlan(
+        logicalBlockCount,
+        DOG_V13_CONFIG,
+        levelNumber,
+      );
       const expectedBudget = expectedBudgets.get(levelNumber);
 
       if (expectedBudget !== undefined) {
         expect(budget, `level=${levelNumber}`).toBe(expectedBudget);
       }
       expect(plan.logicalUnitCount, `level=${levelNumber}`).toBe(budget);
-      expect(plan.logicalUnitCount).toBeLessThanOrEqual(logicalBlockCount * 0.3);
+      expect(plan.logicalUnitCount).toBeLessThanOrEqual(
+        logicalBlockCount * 0.3,
+      );
       expect(
         plan.counts.freeze > 0 &&
           plan.counts.illusion > 0 &&
@@ -53,8 +59,14 @@ describe(`狗了个狗 ${profileName} generation profile`, () => {
         `level=${levelNumber}`,
       ).toBe(plan.logicalUnitCount);
 
-      const testCase = createDogGenerationTestCase(profileName, levelNumber, index);
-      expect(formatDogGenerationTestReport(testCase)).toContain(`runSeed=${testCase.runSeed}`);
+      const testCase = createDogGenerationTestCase(
+        profileName,
+        levelNumber,
+        index,
+      );
+      expect(formatDogGenerationTestReport(testCase)).toContain(
+        `runSeed=${testCase.runSeed}`,
+      );
     }
 
     const boundaryPlans = [1, 6, 16, 31].map((levelNumber) =>
@@ -66,7 +78,11 @@ describe(`狗了个狗 ${profileName} generation profile`, () => {
     );
     for (const type of ["freeze", "illusion", "magnetic", "twin"] as const) {
       const counts = boundaryPlans.map((plan) => plan.counts[type]);
-      expect(counts.every((count, index) => index === 0 || count >= counts[index - 1]!)).toBe(true);
+      expect(
+        counts.every(
+          (count, index) => index === 0 || count >= counts[index - 1]!,
+        ),
+      ).toBe(true);
       expect(counts.at(-1)).toBeGreaterThan(counts[0]!);
     }
   });
@@ -74,7 +90,11 @@ describe(`狗了个狗 ${profileName} generation profile`, () => {
   it("生成 profile 关卡并保留完整 replay metadata", () => {
     const generator = new LevelGenerator();
     for (const [index, levelNumber] of profile.levelNumbers.entries()) {
-      const testCase = createDogGenerationTestCase(profileName, levelNumber, index);
+      const testCase = createDogGenerationTestCase(
+        profileName,
+        levelNumber,
+        index,
+      );
       const level = generator.generate({
         levelNumber: testCase.levelNumber,
         runSeed: testCase.runSeed,
@@ -90,17 +110,23 @@ describe(`狗了个狗 ${profileName} generation profile`, () => {
         accepted: true,
       });
       expect(level.generation.replay.randomSeed).toBeTruthy();
-      expect(level.generation.failures.every((failure) =>
-        failure.testSeed === testCase.testSeed &&
-        failure.runSeed === testCase.runSeed &&
-        failure.levelNumber === levelNumber &&
-        failure.generatorVersion === DOG_V13_CONFIG.game.generatorVersion,
-      )).toBe(true);
+      expect(
+        level.generation.failures.every(
+          (failure) =>
+            failure.testSeed === testCase.testSeed &&
+            failure.runSeed === testCase.runSeed &&
+            failure.levelNumber === levelNumber &&
+            failure.generatorVersion === DOG_V13_CONFIG.game.generatorVersion,
+        ),
+      ).toBe(true);
     }
   });
 
   it("fallback profile 保留失败诊断与可重放入口", () => {
-    const testCase = createDogGenerationTestCase(profileName, profile.levelNumbers[0] ?? 1);
+    const testCase = createDogGenerationTestCase(
+      profileName,
+      profile.levelNumbers[0] ?? 1,
+    );
     const generator = new LevelGenerator({ candidateFilter: () => false });
     const level = generator.generate({
       levelNumber: testCase.levelNumber,

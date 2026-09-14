@@ -34,8 +34,14 @@ describe("狗了个狗 UI rendering seams", () => {
       state: { status: "twin" },
     });
 
-    const ordinary = renderDogBlock(ordinaryBlock, createBlockRenderOptions(ordinaryBlock));
-    const illusion = renderDogBlock(illusionBlock, createBlockRenderOptions(illusionBlock));
+    const ordinary = renderDogBlock(
+      ordinaryBlock,
+      createBlockRenderOptions(ordinaryBlock),
+    );
+    const illusion = renderDogBlock(
+      illusionBlock,
+      createBlockRenderOptions(illusionBlock),
+    );
     const twin = renderDogBlock(twinBlock, createBlockRenderOptions(twinBlock));
 
     expect(ordinary).toContain('data-block-id="ordinary"');
@@ -43,7 +49,7 @@ describe("狗了个狗 UI rendering seams", () => {
     expect(ordinary).toContain("dog-block--board");
     expect(ordinary).not.toContain("data-special-mechanism=");
     expect(illusion).toContain('data-special-mechanism="illusion"');
-    expect(illusion).toContain("data-disguised-pattern-type=\"打工狗\"");
+    expect(illusion).toContain('data-disguised-pattern-type="打工狗"');
     expect(illusion).toContain("dog-block--board");
     expect(illusion).toContain("dog-block--working-dog");
     expect(illusion).toContain("dog-block--special-illusion");
@@ -73,9 +79,13 @@ describe("狗了个狗 UI rendering seams", () => {
     const thumbnail = renderDogSpecialMechanismThumbnail(twinBlock);
     const illusionThumbnail = renderDogSpecialMechanismThumbnail(illusionBlock);
 
-    expect(tray.match(/data-testid="dog-tray-slot"/g)).toHaveLength(session.trayCapacity);
+    expect(tray.match(/data-testid="dog-tray-slot"/g)).toHaveLength(
+      session.trayCapacity,
+    );
     expect(tray).toContain('data-slot-state="empty"');
-    expect(thumbnail).toContain('data-testid="dog-special-mechanism-thumbnail"');
+    expect(thumbnail).toContain(
+      'data-testid="dog-special-mechanism-thumbnail"',
+    );
     expect(thumbnail).toContain('data-special-mechanism="twin"');
     expect(thumbnail).toContain("dog-block--single-dog");
     expect(thumbnail).toContain("dog-block--special-twin");
@@ -129,9 +139,18 @@ describe("狗了个狗 UI rendering seams", () => {
       confirming: false,
       config,
     });
-    const summary = renderDogLoadoutSummary(["key"], false, [], undefined, false, config);
+    const summary = renderDogLoadoutSummary(
+      ["key"],
+      false,
+      [],
+      undefined,
+      false,
+      config,
+    );
 
-    expect(getDogPatternAssetUrl("傻狗", config)).toContain("custom-silly-dog.svg");
+    expect(getDogPatternAssetUrl("傻狗", config)).toContain(
+      "custom-silly-dog.svg",
+    );
     expect(renderDogItemAsset("key", config)).toContain("custom-key.svg");
     expect(editor).toContain("定制道具选择");
     expect(editor).toContain("定制钥匙");

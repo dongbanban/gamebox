@@ -16,12 +16,8 @@ import type {
 } from "@/games/dog-lege-dog/levels/level-types";
 import { TEST_LEVEL } from "../support/dog-level-fixture";
 import { createBlock, createLevel } from "../support/item-fixtures";
-import {
-  DOG_ITEM_IDS,
-} from "@/games/dog-lege-dog/game/dog-loadout";
-import {
-  DogItemRuntime,
-} from "@/games/dog-lege-dog/game/dog-item-runtime";
+import { DOG_ITEM_IDS } from "@/games/dog-lege-dog/game/dog-loadout";
+import { DogItemRuntime } from "@/games/dog-lege-dog/game/dog-item-runtime";
 
 const WORKING_DOG: DogPatternType = "打工狗";
 const SINGLE_DOG: DogPatternType = "单身狗";
@@ -42,7 +38,9 @@ describe("DogItemRuntime · basic", () => {
     } satisfies DogLegeDogLevel;
 
     const nonKeyItemIds = DOG_ITEM_IDS.filter((itemId) => itemId !== "key");
-    expect(nonKeyItemIds.every((itemId) => getDogV13ItemUses(itemId) === 1)).toBe(true);
+    expect(
+      nonKeyItemIds.every((itemId) => getDogV13ItemUses(itemId) === 1),
+    ).toBe(true);
     expect(getDogV13ItemUses("key")).toBe(0);
 
     const session = new GameSession(level);
@@ -53,7 +51,9 @@ describe("DogItemRuntime · basic", () => {
     });
     expect(runtime.getState().items).toEqual(
       expect.arrayContaining(
-        nonKeyItemIds.map((id) => expect.objectContaining({ id, remainingUses: 1 })),
+        nonKeyItemIds.map((id) =>
+          expect.objectContaining({ id, remainingUses: 1 }),
+        ),
       ),
     );
   });
@@ -97,7 +97,9 @@ describe("DogItemRuntime · basic", () => {
         createBlock("working-2", WORKING_DOG, undefined, { x: 4 }),
         createBlock("working-3", WORKING_DOG, undefined, { x: 8 }),
         ...Array.from({ length: 6 }, (_, index) =>
-          createBlock(`remaining-${index + 1}`, SINGLE_DOG, undefined, { x: 12 + index * 4 }),
+          createBlock(`remaining-${index + 1}`, SINGLE_DOG, undefined, {
+            x: 12 + index * 4,
+          }),
         ),
       ]),
       runSeed: "key-drop-seed-0",
@@ -110,7 +112,9 @@ describe("DogItemRuntime · basic", () => {
       loadout: ["key", "torch", "detector"],
     });
 
-    expect(runtime.getState().items.find((item) => item.id === "key")).toMatchObject({
+    expect(
+      runtime.getState().items.find((item) => item.id === "key"),
+    ).toMatchObject({
       remainingUses: 0,
       available: false,
     });
@@ -123,7 +127,9 @@ describe("DogItemRuntime · basic", () => {
       dropped: true,
       remainingUses: 1,
     });
-    expect(runtime.getState().items.find((item) => item.id === "key")).toMatchObject({
+    expect(
+      runtime.getState().items.find((item) => item.id === "key"),
+    ).toMatchObject({
       remainingUses: 1,
       available: true,
     });
@@ -139,7 +145,9 @@ describe("DogItemRuntime · basic", () => {
       lockedTraySlotCount: 1,
     });
     runtime.completeAnimation();
-    expect(runtime.getState().items.find((item) => item.id === "key")).toMatchObject({
+    expect(
+      runtime.getState().items.find((item) => item.id === "key"),
+    ).toMatchObject({
       remainingUses: 0,
       available: false,
     });
@@ -152,7 +160,9 @@ describe("DogItemRuntime · basic", () => {
         createBlock("working-2", WORKING_DOG, undefined, { x: 4 }),
         createBlock("working-3", WORKING_DOG, undefined, { x: 8 }),
         ...Array.from({ length: remainingCount }, (_, index) =>
-          createBlock(`remaining-${index + 1}`, SINGLE_DOG, undefined, { x: 12 + index * 4 }),
+          createBlock(`remaining-${index + 1}`, SINGLE_DOG, undefined, {
+            x: 12 + index * 4,
+          }),
         ),
       ];
       const level = {
@@ -174,14 +184,21 @@ describe("DogItemRuntime · basic", () => {
 
     const terminal = createKeyRuntime(0, "key-drop-seed-0");
     expect(terminal.triple.snapshot.status).toBe("won");
-    expect(terminal.runtime.settleSuccessfulTriples(terminal.triple.tripleCount).dropped).toBe(false);
+    expect(
+      terminal.runtime.settleSuccessfulTriples(terminal.triple.tripleCount)
+        .dropped,
+    ).toBe(false);
 
     const lowPressure = createKeyRuntime(2, "key-drop-seed-0");
     expect(lowPressure.triple.snapshot.remainingLogicalUnitCount).toBe(2);
-    expect(lowPressure.runtime.settleSuccessfulTriples(lowPressure.triple.tripleCount).dropped).toBe(
+    expect(
+      lowPressure.runtime.settleSuccessfulTriples(
+        lowPressure.triple.tripleCount,
+      ).dropped,
+    ).toBe(false);
+    expect(lowPressure.runtime.settleSuccessfulTriples(0.5).dropped).toBe(
       false,
     );
-    expect(lowPressure.runtime.settleSuccessfulTriples(0.5).dropped).toBe(false);
   });
 
   it("钥匙掉落判定不会推进磁吸目标随机流", () => {
@@ -192,7 +209,9 @@ describe("DogItemRuntime · basic", () => {
           state: { status: DOG_MAGNETIC_MECHANISM_TYPE },
         }),
         ...Array.from({ length: 6 }, (_, index) =>
-          createBlock(`candidate-${index + 1}`, SINGLE_DOG, undefined, { x: 4 + index * 4 }),
+          createBlock(`candidate-${index + 1}`, SINGLE_DOG, undefined, {
+            x: 4 + index * 4,
+          }),
         ),
       ]),
       runSeed: "independent-rng-seed",
@@ -206,9 +225,15 @@ describe("DogItemRuntime · basic", () => {
       loadout: ["key", "torch", "detector"],
     });
 
-    expect(runtime.settleSuccessfulTriples(1).snapshot.remainingLogicalUnitCount).toBe(7);
-    expect(withKeyDrop.beginBlockSelection("magnetic").magneticResolution?.targetBlockId).toBe(
-      withoutKeyDrop.beginBlockSelection("magnetic").magneticResolution?.targetBlockId,
+    expect(
+      runtime.settleSuccessfulTriples(1).snapshot.remainingLogicalUnitCount,
+    ).toBe(7);
+    expect(
+      withKeyDrop.beginBlockSelection("magnetic").magneticResolution
+        ?.targetBlockId,
+    ).toBe(
+      withoutKeyDrop.beginBlockSelection("magnetic").magneticResolution
+        ?.targetBlockId,
     );
   });
 
@@ -221,10 +246,15 @@ describe("DogItemRuntime · basic", () => {
       createBlock("magnetic-clickable", WORKING_DOG, magneticMechanism),
       createBlock("magnetic-blocked", SINGLE_DOG, magneticMechanism, { x: 8 }),
       createBlock("magnetic-cover", LICKING_DOG, undefined, { x: 8, z: 1 }),
-      createBlock("freeze", GUARD_DOG, {
-        type: DOG_FREEZE_MECHANISM_TYPE,
-        state: { status: "frozen", completedTriples: 0 },
-      }, { x: 16 }),
+      createBlock(
+        "freeze",
+        GUARD_DOG,
+        {
+          type: DOG_FREEZE_MECHANISM_TYPE,
+          state: { status: "frozen", completedTriples: 0 },
+        },
+        { x: 16 },
+      ),
       createBlock("ordinary", "疯狗", undefined, { x: 24 }),
     ]);
     const session = new GameSession({
@@ -339,14 +369,15 @@ describe("DogItemRuntime · basic", () => {
       success: false,
     });
     expect(runtime.getState().items[0]?.remainingUses).toBe(1);
-    expect(session.getState().remainingBlocks.map((block) => block.id)).toEqual([
-      "magnetic-blocked",
-      "cover",
-    ]);
+    expect(session.getState().remainingBlocks.map((block) => block.id)).toEqual(
+      ["magnetic-blocked", "cover"],
+    );
   });
 
   it("容量提升无目标直执行，成功扣次并在动画完成后重新计算可用性", () => {
-    const session = new GameSession(createLevel([createBlock("remaining", WORKING_DOG)]));
+    const session = new GameSession(
+      createLevel([createBlock("remaining", WORKING_DOG)]),
+    );
     const runtime = new DogItemRuntime({
       level: session.getState().level,
       session,
@@ -382,5 +413,4 @@ describe("DogItemRuntime · basic", () => {
     expect(runtime.getState().phase).toBe("idle");
     expect(runtime.getState().items[0]?.available).toBe(false);
   });
-
 });

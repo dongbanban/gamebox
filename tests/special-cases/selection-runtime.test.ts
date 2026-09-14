@@ -46,7 +46,9 @@ describe("特殊机制测试 · selection-runtime", () => {
       id: "illusion",
       patternType: WORKING_DOG,
     });
-    expect(firstSelection.snapshot.trayBlocks[0]).not.toHaveProperty("specialMechanism");
+    expect(firstSelection.snapshot.trayBlocks[0]).not.toHaveProperty(
+      "specialMechanism",
+    );
 
     session.selectBlock("working-1");
     const triple = session.selectBlock("working-2");
@@ -104,15 +106,16 @@ describe("特殊机制测试 · selection-runtime", () => {
       "twin-1",
       "twin-2",
     ]);
-    expect(split.snapshot.trayBlocks.map((block) => block.patternType)).toEqual([
-      WORKING_DOG,
-      WORKING_DOG,
-    ]);
+    expect(split.snapshot.trayBlocks.map((block) => block.patternType)).toEqual(
+      [WORKING_DOG, WORKING_DOG],
+    );
     expect(split.snapshot.trayLogicalUnitCount).toBe(2);
     expect(split.snapshot.remainingLogicalUnitCount).toBe(1);
-    expect(split.snapshot.trayBlocks.every((block) => block.specialMechanism === undefined)).toBe(
-      true,
-    );
+    expect(
+      split.snapshot.trayBlocks.every(
+        (block) => block.specialMechanism === undefined,
+      ),
+    ).toBe(true);
 
     const triple = session.selectBlock("working-3");
     expect(triple.removedCount).toBe(3);
@@ -193,7 +196,9 @@ describe("特殊机制测试 · selection-runtime", () => {
       source.id,
       target.id,
     ]);
-    expect(result.snapshot.trayBlocks[0]).not.toHaveProperty("specialMechanism");
+    expect(result.snapshot.trayBlocks[0]).not.toHaveProperty(
+      "specialMechanism",
+    );
     expect(result.snapshot.trayBlocks[1]).toHaveProperty(
       "specialMechanism.type",
       DOG_FREEZE_MECHANISM_TYPE,
@@ -214,7 +219,11 @@ describe("特殊机制测试 · selection-runtime", () => {
       state: { status: "frozen", completedTriples: 0 },
     });
     const session = new GameSession({
-      level: createLevel([source, target, createBlock("remaining", 8, 0, LICKING_DOG)]),
+      level: createLevel([
+        source,
+        target,
+        createBlock("remaining", 8, 0, LICKING_DOG),
+      ]),
       initialTrayBlocks: [
         { id: "initial-tray-1", patternType: WORKING_DOG },
         { id: "initial-tray-2", patternType: WORKING_DOG },
@@ -243,7 +252,9 @@ describe("特殊机制测试 · selection-runtime", () => {
     const resolved = session.resolveMagneticEntry();
 
     expect(resolved.removedCount).toBe(3);
-    expect(resolved.snapshot.trayBlocks.map((block) => block.id)).toEqual([target.id]);
+    expect(resolved.snapshot.trayBlocks.map((block) => block.id)).toEqual([
+      target.id,
+    ]);
     expect(resolved.snapshot.status).toBe("playing");
   });
 
@@ -277,9 +288,11 @@ describe("特殊机制测试 · selection-runtime", () => {
       `${target.id}-1`,
       `${target.id}-2`,
     ]);
-    expect(result.snapshot.trayBlocks.every((block) => block.specialMechanism === undefined)).toBe(
-      true,
-    );
+    expect(
+      result.snapshot.trayBlocks.every(
+        (block) => block.specialMechanism === undefined,
+      ),
+    ).toBe(true);
   });
 
   it("磁吸排除同图案与其他磁吸方块，没有合法目标时独自普通入槽", () => {
@@ -292,7 +305,9 @@ describe("特殊机制测试 · selection-runtime", () => {
       type: DOG_MAGNETIC_MECHANISM_TYPE,
       state: { status: DOG_MAGNETIC_MECHANISM_TYPE },
     });
-    const session = new GameSession(createLevel([source, samePattern, otherMagnetic]));
+    const session = new GameSession(
+      createLevel([source, samePattern, otherMagnetic]),
+    );
 
     const result = session.selectBlock(source.id);
 
@@ -301,8 +316,12 @@ describe("特殊机制测试 · selection-runtime", () => {
       targetBlockId: null,
       targetTrayBlockIds: [],
     });
-    expect(result.snapshot.trayBlocks.map((block) => block.id)).toEqual([source.id]);
-    expect(result.snapshot.trayBlocks[0]).not.toHaveProperty("specialMechanism");
+    expect(result.snapshot.trayBlocks.map((block) => block.id)).toEqual([
+      source.id,
+    ]);
+    expect(result.snapshot.trayBlocks[0]).not.toHaveProperty(
+      "specialMechanism",
+    );
     expect(result.snapshot.remainingBlocks.map((block) => block.id)).toEqual([
       samePattern.id,
       otherMagnetic.id,
@@ -323,12 +342,18 @@ describe("特殊机制测试 · selection-runtime", () => {
     });
 
     const first = new GameSession(createMagneticLevel("magnetic-replay-seed"));
-    const repeated = new GameSession(createMagneticLevel("magnetic-replay-seed"));
+    const repeated = new GameSession(
+      createMagneticLevel("magnetic-replay-seed"),
+    );
     const firstResult = first.selectBlock("magnetic");
     const repeatedResult = repeated.selectBlock("magnetic");
 
-    expect(repeatedResult.magneticResolution).toEqual(firstResult.magneticResolution);
-    expect(repeatedResult.snapshot.trayBlocks).toEqual(firstResult.snapshot.trayBlocks);
+    expect(repeatedResult.magneticResolution).toEqual(
+      firstResult.magneticResolution,
+    );
+    expect(repeatedResult.snapshot.trayBlocks).toEqual(
+      firstResult.snapshot.trayBlocks,
+    );
 
     const createMultiMagneticLevel = (runSeed: string): DogLegeDogLevel => ({
       ...createLevel([
@@ -345,8 +370,12 @@ describe("特殊机制测试 · selection-runtime", () => {
       ]),
       runSeed,
     });
-    const firstPathSession = new GameSession(createMultiMagneticLevel("magnetic-path-seed"));
-    const repeatedPathSession = new GameSession(createMultiMagneticLevel("magnetic-path-seed"));
+    const firstPathSession = new GameSession(
+      createMultiMagneticLevel("magnetic-path-seed"),
+    );
+    const repeatedPathSession = new GameSession(
+      createMultiMagneticLevel("magnetic-path-seed"),
+    );
     const firstPath = [
       firstPathSession.selectBlock("magnetic-1"),
       firstPathSession.selectBlock("magnetic-2"),
@@ -356,10 +385,12 @@ describe("特殊机制测试 · selection-runtime", () => {
       repeatedPathSession.selectBlock("magnetic-2"),
     ];
 
-    expect(repeatedPath.map(({ magneticResolution }) => magneticResolution)).toEqual(
-      firstPath.map(({ magneticResolution }) => magneticResolution),
+    expect(
+      repeatedPath.map(({ magneticResolution }) => magneticResolution),
+    ).toEqual(firstPath.map(({ magneticResolution }) => magneticResolution));
+    expect(repeatedPathSession.getState().trayBlocks).toEqual(
+      firstPathSession.getState().trayBlocks,
     );
-    expect(repeatedPathSession.getState().trayBlocks).toEqual(firstPathSession.getState().trayBlocks);
 
     const failureSession = new GameSession({
       level: createMagneticLevel("magnetic-failure-seed"),

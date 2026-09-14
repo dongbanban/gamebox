@@ -45,12 +45,14 @@ test.describe("狗了个狗完整浏览器闭环 · lifecycle", () => {
         ".game-result-card--won .eyebrow",
       );
       const catalogButton = document.querySelector<HTMLElement>(
-        ".game-result-card--won [data-action=\"catalog\"]",
+        '.game-result-card--won [data-action="catalog"]',
       );
       return {
         eyebrowColor: eyebrow === null ? "" : getComputedStyle(eyebrow).color,
         catalogBorderColor:
-          catalogButton === null ? "" : getComputedStyle(catalogButton).borderTopColor,
+          catalogButton === null
+            ? ""
+            : getComputedStyle(catalogButton).borderTopColor,
       };
     });
     expect(resultVisuals.eyebrowColor).toBe("rgb(63, 148, 195)");
@@ -75,8 +77,12 @@ test.describe("狗了个狗完整浏览器闭环 · lifecycle", () => {
     await leaveActiveGame(page, true);
     await expect(page.getByRole("heading", { name: "游戏目录" })).toBeVisible();
     await reset(page);
-    await expect(page.getByRole("heading", { name: "开始你的第一局" })).toBeVisible();
-    await expect(page.evaluate(() => window.localStorage.getItem("gamebox.state"))).resolves.toBeNull();
+    await expect(
+      page.getByRole("heading", { name: "开始你的第一局" }),
+    ).toBeVisible();
+    await expect(
+      page.evaluate(() => window.localStorage.getItem("gamebox.state")),
+    ).resolves.toBeNull();
   });
 
   test("首关优先使用 Worker，并在发布候选后终止", async ({ page }) => {
@@ -104,10 +110,13 @@ test.describe("狗了个狗完整浏览器闭环 · lifecycle", () => {
     await page.getByRole("button", { name: "开始游戏" }).click();
 
     await expect(page.getByTestId("dog-board")).toBeVisible();
-    const lifecycle = await page.evaluate(() =>
-      (window as Window & {
-        __dogWorkerLifecycle?: { created: number; terminated: number };
-      }).__dogWorkerLifecycle,
+    const lifecycle = await page.evaluate(
+      () =>
+        (
+          window as Window & {
+            __dogWorkerLifecycle?: { created: number; terminated: number };
+          }
+        ).__dogWorkerLifecycle,
     );
     expect(lifecycle).toEqual({ created: 1, terminated: 1 });
   });

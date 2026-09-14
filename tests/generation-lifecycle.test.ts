@@ -7,10 +7,7 @@ import {
   type DogLevelGenerationWorkerRequest,
   type DogLevelGenerationWorkerResponse,
 } from "@/games/dog-lege-dog/levels/level-generation-service";
-import {
-  TEST_LEVEL,
-  TEST_RUN_SEED,
-} from "./support/dog-level-fixture";
+import { TEST_LEVEL, TEST_RUN_SEED } from "./support/dog-level-fixture";
 
 describe("关卡生成 Worker 生命周期", () => {
   it("Worker 完整验证候选后发布并立即终止", async () => {
@@ -22,7 +19,9 @@ describe("关卡生成 Worker 生命周期", () => {
         replayVerified: true,
       });
     });
-    const service = new DogLevelGenerationService({ workerFactory: () => worker });
+    const service = new DogLevelGenerationService({
+      workerFactory: () => worker,
+    });
 
     const prepared = await service.prepare({
       levelNumber: 1,
@@ -49,7 +48,9 @@ describe("关卡生成 Worker 生命周期", () => {
     const worker = new FakeGenerationWorker((_request, target) => {
       target.fail("worker exploded");
     });
-    const service = new DogLevelGenerationService({ workerFactory: () => worker });
+    const service = new DogLevelGenerationService({
+      workerFactory: () => worker,
+    });
 
     const prepared = await service.prepare({
       levelNumber: 1,
@@ -74,13 +75,17 @@ describe("关卡生成 Worker 生命周期", () => {
     const worker = new FakeGenerationWorker((_request, target) => {
       target.fail("worker exploded");
     });
-    const service = new DogLevelGenerationService({ workerFactory: () => worker });
+    const service = new DogLevelGenerationService({
+      workerFactory: () => worker,
+    });
 
-    const error = await Promise.resolve(service.prepare({
-      levelNumber: DOG_V13_CONFIG.game.maxLevelNumber + 1,
-      runSeed: "failed-generation-seed",
-      config: DOG_V13_CONFIG,
-    })).catch((failure: unknown) => failure);
+    const error = await Promise.resolve(
+      service.prepare({
+        levelNumber: DOG_V13_CONFIG.game.maxLevelNumber + 1,
+        runSeed: "failed-generation-seed",
+        config: DOG_V13_CONFIG,
+      }),
+    ).catch((failure: unknown) => failure);
 
     expect(error).toMatchObject({
       name: GamePreparationError.name,
@@ -100,7 +105,9 @@ describe("关卡生成 Worker 生命周期", () => {
 
   it("离开加载页会终止 Worker，不把 abort 当作生成失败重试", async () => {
     const worker = new FakeGenerationWorker(() => undefined);
-    const service = new DogLevelGenerationService({ workerFactory: () => worker });
+    const service = new DogLevelGenerationService({
+      workerFactory: () => worker,
+    });
     const abortController = new AbortController();
     const preparation = service.prepare({
       levelNumber: DOG_V13_CONFIG.game.maxLevelNumber + 1,
@@ -117,7 +124,9 @@ describe("关卡生成 Worker 生命周期", () => {
 });
 
 class FakeGenerationWorker implements DogLevelGenerationWorker {
-  onmessage: ((event: MessageEvent<DogLevelGenerationWorkerResponse>) => void) | null = null;
+  onmessage:
+    | ((event: MessageEvent<DogLevelGenerationWorkerResponse>) => void)
+    | null = null;
   onerror: ((event: ErrorEvent) => void) | null = null;
   onmessageerror: ((event: MessageEvent<unknown>) => void) | null = null;
   terminated = false;
@@ -138,7 +147,9 @@ class FakeGenerationWorker implements DogLevelGenerationWorker {
   }
 
   respond(response: DogLevelGenerationWorkerResponse): void {
-    this.onmessage?.({ data: response } as MessageEvent<DogLevelGenerationWorkerResponse>);
+    this.onmessage?.({
+      data: response,
+    } as MessageEvent<DogLevelGenerationWorkerResponse>);
   }
 
   fail(message: string): void {

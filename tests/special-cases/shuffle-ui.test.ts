@@ -31,13 +31,20 @@ describe("特殊机制测试 · shuffle-ui", () => {
       onLoadoutConfirmed: vi.fn(),
     });
 
-    expect(root.querySelector<HTMLButtonElement>('[data-testid="dog-replay-current-level"]')?.disabled)
-      .toBe(true);
+    expect(
+      root.querySelector<HTMLButtonElement>(
+        '[data-testid="dog-replay-current-level"]',
+      )?.disabled,
+    ).toBe(true);
 
     for (const itemId of ["tray-capacity", "wildcard", "torch"]) {
-      root.querySelector<HTMLButtonElement>(`[data-loadout-id="${itemId}"]`)?.click();
+      root
+        .querySelector<HTMLButtonElement>(`[data-loadout-id="${itemId}"]`)
+        ?.click();
     }
-    root.querySelector<HTMLButtonElement>('[data-action="confirm-loadout"]')?.click();
+    root
+      .querySelector<HTMLButtonElement>('[data-action="confirm-loadout"]')
+      ?.click();
 
     const replayButton = root.querySelector<HTMLButtonElement>(
       '[data-testid="dog-replay-current-level"]',
@@ -50,11 +57,17 @@ describe("特殊机制测试 · shuffle-ui", () => {
     expect(replayButton?.closest(".dog-game__level-tools")).not.toBeNull();
 
     game.selectBlock("single-1");
-    expect(root.querySelector<HTMLButtonElement>('[data-testid="dog-replay-current-level"]')?.disabled)
-      .toBe(true);
+    expect(
+      root.querySelector<HTMLButtonElement>(
+        '[data-testid="dog-replay-current-level"]',
+      )?.disabled,
+    ).toBe(true);
     await vi.runAllTimersAsync();
-    expect(root.querySelector<HTMLButtonElement>('[data-testid="dog-replay-current-level"]')?.disabled)
-      .toBe(false);
+    expect(
+      root.querySelector<HTMLButtonElement>(
+        '[data-testid="dog-replay-current-level"]',
+      )?.disabled,
+    ).toBe(false);
     game.destroy();
   });
 
@@ -71,23 +84,39 @@ describe("特殊机制测试 · shuffle-ui", () => {
     const boardBlock = root.querySelector<HTMLElement>(
       '[data-testid="dog-block"][data-block-id="shuffle"]',
     );
-    const trayRegion = root.querySelector<HTMLElement>('[data-testid="dog-tray-region"]');
+    const trayRegion = root.querySelector<HTMLElement>(
+      '[data-testid="dog-tray-region"]',
+    );
 
-    expect(boardBlock?.dataset.specialMechanism).toBe(DOG_SHUFFLE_MECHANISM_TYPE);
+    expect(boardBlock?.dataset.specialMechanism).toBe(
+      DOG_SHUFFLE_MECHANISM_TYPE,
+    );
     expect(boardBlock?.dataset.specialMechanismState).toBe("dormant");
-    expect(boardBlock?.classList.contains("dog-block--special-shuffle")).toBe(false);
+    expect(boardBlock?.classList.contains("dog-block--special-shuffle")).toBe(
+      false,
+    );
     expect(boardBlock?.classList.contains("dog-block--special")).toBe(false);
     expect(boardBlock?.querySelector(".dog-block__mechanism-icon")).toBeNull();
-    expect(trayRegion?.style.getPropertyValue("--dog-shuffle-armed-duration")).toBe("");
-    expect(trayRegion?.style.getPropertyValue("--dog-shuffle-triggerable-duration")).toBe("");
+    expect(
+      trayRegion?.style.getPropertyValue("--dog-shuffle-armed-duration"),
+    ).toBe("");
+    expect(
+      trayRegion?.style.getPropertyValue("--dog-shuffle-triggerable-duration"),
+    ).toBe("");
 
     game.selectBlock("shuffle");
 
     expect(game.getState().inputLocked).toBe(true);
-    expect(root.querySelector<HTMLButtonElement>('[data-testid="dog-replay-current-level"]')?.disabled)
-      .toBe(true);
-    expect(root.querySelector('[data-testid="dog-tray-slot"][data-block-id="shuffle"]'))
-      .not.toBeNull();
+    expect(
+      root.querySelector<HTMLButtonElement>(
+        '[data-testid="dog-replay-current-level"]',
+      )?.disabled,
+    ).toBe(true);
+    expect(
+      root.querySelector(
+        '[data-testid="dog-tray-slot"][data-block-id="shuffle"]',
+      ),
+    ).not.toBeNull();
 
     await vi.advanceTimersByTimeAsync(BLOCK_FLIGHT_DURATION_MS);
     await vi.runAllTimersAsync();
@@ -101,10 +130,14 @@ describe("特殊机制测试 · shuffle-ui", () => {
       status: "armed",
       threshold: 5,
     });
-    expect(shuffleSlot?.dataset.specialMechanism).toBe(DOG_SHUFFLE_MECHANISM_TYPE);
+    expect(shuffleSlot?.dataset.specialMechanism).toBe(
+      DOG_SHUFFLE_MECHANISM_TYPE,
+    );
     expect(shuffleSlot?.dataset.specialMechanismState).toBe("armed");
     expect(shuffleSlot?.dataset.shuffleState).toBe("armed");
-    expect(shuffleSlot?.classList.contains("dog-tray__slot--shuffle-armed")).toBe(true);
+    expect(
+      shuffleSlot?.classList.contains("dog-tray__slot--shuffle-armed"),
+    ).toBe(true);
     expect(shuffleSlot?.getAttribute("aria-label")).toContain("待乱序");
     game.destroy();
   });
@@ -135,13 +168,22 @@ describe("特殊机制测试 · shuffle-ui", () => {
         status: "triggerable",
       });
       expect(shuffleSlot?.dataset.shuffleState).toBe("triggerable");
-      expect(shuffleSlot?.classList.contains("dog-tray__slot--shuffle-triggerable")).toBe(true);
-      expect(root.querySelector('[data-testid="dog-shuffle-status"]')?.textContent)
-        .toContain("可触发乱序");
-      expect(game.getState().items?.items.find((item) => item.id === "restore-whistle"))
-        .toMatchObject({ available: false, remainingUses: 1 });
-      expect(root.querySelector<HTMLButtonElement>('[data-item-id="restore-whistle"]')?.disabled)
-        .toBe(true);
+      expect(
+        shuffleSlot?.classList.contains("dog-tray__slot--shuffle-triggerable"),
+      ).toBe(true);
+      expect(
+        root.querySelector('[data-testid="dog-shuffle-status"]')?.textContent,
+      ).toContain("可触发乱序");
+      expect(
+        game
+          .getState()
+          .items?.items.find((item) => item.id === "restore-whistle"),
+      ).toMatchObject({ available: false, remainingUses: 1 });
+      expect(
+        root.querySelector<HTMLButtonElement>(
+          '[data-item-id="restore-whistle"]',
+        )?.disabled,
+      ).toBe(true);
     } finally {
       game.destroy();
     }
@@ -153,13 +195,26 @@ describe("特殊机制测试 · shuffle-ui", () => {
       runSeed: "shuffle-ui-level-three",
     });
     const root = document.createElement("div");
-    const game = startDogLegeDogGame(root, { level, loadout: ["tray-capacity", "wildcard", "torch"] });
-    root.querySelector<HTMLButtonElement>('[data-testid="dog-special-mechanism-button"]')?.click();
+    const game = startDogLegeDogGame(root, {
+      level,
+      loadout: ["tray-capacity", "wildcard", "torch"],
+    });
+    root
+      .querySelector<HTMLButtonElement>(
+        '[data-testid="dog-special-mechanism-button"]',
+      )
+      ?.click();
 
-    expect(root.querySelector('[data-testid="dog-special-mechanism"][data-special-mechanism="shuffle"]'))
-      .not.toBeNull();
-    expect(root.querySelector('[data-testid="dog-special-mechanism"][data-special-mechanism="shuffle"]')?.textContent)
-      .toContain("乱序方块");
+    expect(
+      root.querySelector(
+        '[data-testid="dog-special-mechanism"][data-special-mechanism="shuffle"]',
+      ),
+    ).not.toBeNull();
+    expect(
+      root.querySelector(
+        '[data-testid="dog-special-mechanism"][data-special-mechanism="shuffle"]',
+      )?.textContent,
+    ).toContain("乱序方块");
     game.destroy();
   });
 
@@ -174,18 +229,25 @@ describe("特殊机制测试 · shuffle-ui", () => {
       "疯狗",
     ];
     const game = startDogLegeDogGame(root, {
-      level: createLevel(patterns.map((patternType, index) =>
-        createBlock(
-          index === 0 ? "shuffle" : `ordinary-${index}`,
-          patternType,
-          index === 0 ? createDogShuffleMechanism() : undefined,
-          { x: index * 4 },
+      level: createLevel(
+        patterns.map((patternType, index) =>
+          createBlock(
+            index === 0 ? "shuffle" : `ordinary-${index}`,
+            patternType,
+            index === 0 ? createDogShuffleMechanism() : undefined,
+            { x: index * 4 },
+          ),
         ),
-      )),
+      ),
       loadout: ["restore-whistle", "tray-capacity", "torch"],
     });
 
-    for (const blockId of ["shuffle", "ordinary-1", "ordinary-2", "ordinary-3"]) {
+    for (const blockId of [
+      "shuffle",
+      "ordinary-1",
+      "ordinary-2",
+      "ordinary-3",
+    ]) {
       game.selectBlock(blockId);
       await vi.runAllTimersAsync();
     }
@@ -193,11 +255,14 @@ describe("特殊机制测试 · shuffle-ui", () => {
     const shuffleSlotBeforeTrigger = root.querySelector<HTMLElement>(
       '[data-testid="dog-tray-slot"][data-block-id="shuffle"]',
     );
-    const shuffleGlyphBeforeTrigger = shuffleSlotBeforeTrigger?.querySelector(".dog-block__glyph");
+    const shuffleGlyphBeforeTrigger =
+      shuffleSlotBeforeTrigger?.querySelector(".dog-block__glyph");
     const shuffleStatusBeforeTrigger = root.querySelector<HTMLElement>(
       '[data-testid="dog-shuffle-status"]',
     );
-    const trayBeforeTrigger = root.querySelector<HTMLOListElement>('[data-testid="dog-tray"]');
+    const trayBeforeTrigger = root.querySelector<HTMLOListElement>(
+      '[data-testid="dog-tray"]',
+    );
     if (trayBeforeTrigger === null) {
       throw new Error("Expected stable shuffle tray");
     }
@@ -212,38 +277,61 @@ describe("特殊机制测试 · shuffle-ui", () => {
     const shuffleSlot = root.querySelector<HTMLElement>(
       '[data-testid="dog-tray-slot"][data-block-id="shuffle"]',
     );
-    expect(stableTrayMutations.flatMap((record) => [...record.removedNodes])).toHaveLength(0);
-    expect(stableTrayMutations.flatMap((record) => [...record.addedNodes])).toHaveLength(0);
+    expect(
+      stableTrayMutations.flatMap((record) => [...record.removedNodes]),
+    ).toHaveLength(0);
+    expect(
+      stableTrayMutations.flatMap((record) => [...record.addedNodes]),
+    ).toHaveLength(0);
     expect([...trayBeforeTrigger.children]).toEqual(trayChildrenBeforeTrigger);
     expect(shuffleSlot).toBe(shuffleSlotBeforeTrigger);
-    expect(shuffleSlot?.querySelector(".dog-block__glyph")).toBe(shuffleGlyphBeforeTrigger);
-    expect(root.querySelector('[data-testid="dog-shuffle-status"]')).toBe(shuffleStatusBeforeTrigger);
+    expect(shuffleSlot?.querySelector(".dog-block__glyph")).toBe(
+      shuffleGlyphBeforeTrigger,
+    );
+    expect(root.querySelector('[data-testid="dog-shuffle-status"]')).toBe(
+      shuffleStatusBeforeTrigger,
+    );
     expect(game.getState().session.shuffle).toMatchObject({
       status: "consumed",
       threshold: 5,
     });
     expect(shuffleSlot?.dataset.shuffleState).toBe("consumed");
-    expect(shuffleSlot?.classList.contains("dog-tray__slot--shuffle-triggerable")).toBe(false);
+    expect(
+      shuffleSlot?.classList.contains("dog-tray__slot--shuffle-triggerable"),
+    ).toBe(false);
     expect(shuffleSlot?.getAttribute("aria-label")).toContain("已消耗");
-    const shuffleEffect = root.querySelector<HTMLElement>('[data-testid="dog-shuffle-effect"]');
+    const shuffleEffect = root.querySelector<HTMLElement>(
+      '[data-testid="dog-shuffle-effect"]',
+    );
     expect(shuffleEffect?.dataset.shuffleOutcome).toBe("stable");
     expect(game.getState().inputLocked).toBe(true);
-    expect(root.querySelector<HTMLButtonElement>('[data-testid="dog-replay-current-level"]')?.disabled ?? true)
-      .toBe(true);
-    expect(game.getState().items?.items.find((item) => item.id === "restore-whistle"))
-      .toMatchObject({ available: false, remainingUses: 1 });
-    const shuffleStatus = root.querySelector<HTMLElement>('[data-testid="dog-shuffle-status"]');
+    expect(
+      root.querySelector<HTMLButtonElement>(
+        '[data-testid="dog-replay-current-level"]',
+      )?.disabled ?? true,
+    ).toBe(true);
+    expect(
+      game
+        .getState()
+        .items?.items.find((item) => item.id === "restore-whistle"),
+    ).toMatchObject({ available: false, remainingUses: 1 });
+    const shuffleStatus = root.querySelector<HTMLElement>(
+      '[data-testid="dog-shuffle-status"]',
+    );
     expect(shuffleStatus?.dataset.shuffleState).toBe("consumed");
-    expect(shuffleStatus?.textContent)
-      .toContain("已消耗");
+    expect(shuffleStatus?.textContent).toContain("已消耗");
     await vi.runAllTimersAsync();
     expect(game.getState().inputLocked).toBe(false);
     expect(game.getState().session.status).toBe("lost");
-    expect(game.getState().items?.items.find((item) => item.id === "restore-whistle"))
-      .toMatchObject({ available: false, remainingUses: 1 });
-    expect(root.querySelector<HTMLButtonElement>('[data-item-id="restore-whistle"]')?.disabled)
-      .toBe(true);
+    expect(
+      game
+        .getState()
+        .items?.items.find((item) => item.id === "restore-whistle"),
+    ).toMatchObject({ available: false, remainingUses: 1 });
+    expect(
+      root.querySelector<HTMLButtonElement>('[data-item-id="restore-whistle"]')
+        ?.disabled,
+    ).toBe(true);
     game.destroy();
   });
-
 });

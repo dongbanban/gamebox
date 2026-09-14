@@ -80,7 +80,9 @@ describe("LevelGenerator · shape-and-progression", () => {
     expect(first).toEqual(repeated);
     expect(first.generation.replay.runSeed).toBe(firstRequest.runSeed);
     expect(generator.replay(first.generation.replay)).toEqual(first);
-    expect(levelShape(sameRunSeedWithDifferentTestSeed)).toEqual(levelShape(first));
+    expect(levelShape(sameRunSeedWithDifferentTestSeed)).toEqual(
+      levelShape(first),
+    );
     expect(different.runSeed).toBe("first-run-seed-b");
     expect(levelShape(different)).not.toEqual(levelShape(first));
 
@@ -101,7 +103,18 @@ describe("LevelGenerator · shape-and-progression", () => {
   it("全部固定检查点统一生成不规则棋盘与阶段图案数量", () => {
     const generator = new LevelGenerator();
 
-    for (const levelNumber of [1, 2, 5, 6, 10, 15, 16, 30, 31, MAX_LEVEL_NUMBER]) {
+    for (const levelNumber of [
+      1,
+      2,
+      5,
+      6,
+      10,
+      15,
+      16,
+      30,
+      31,
+      MAX_LEVEL_NUMBER,
+    ]) {
       const level = generator.generate({
         levelNumber,
         runSeed: `irregular-checkpoint-${levelNumber}`,
@@ -110,71 +123,67 @@ describe("LevelGenerator · shape-and-progression", () => {
 
       expect(level.board.shape).toBe("irregular");
       expect(level.patternTypes).toHaveLength(getPatternTypeCount(levelNumber));
-      expect(new Set(level.blocks.map((block) => block.patternType))).toHaveLength(
-        getPatternTypeCount(levelNumber),
-      );
+      expect(
+        new Set(level.blocks.map((block) => block.patternType)),
+      ).toHaveLength(getPatternTypeCount(levelNumber));
     }
   });
 
   it("全部检查点跨层重叠以四分之一或二分之一为主", () => {
     const generator = new LevelGenerator();
 
-    for (const levelNumber of [1, 2, 5, 6, 10, 15, 16, 30, 31, 60, MAX_LEVEL_NUMBER]) {
+    for (const levelNumber of [
+      1,
+      2,
+      5,
+      6,
+      10,
+      15,
+      16,
+      30,
+      31,
+      60,
+      MAX_LEVEL_NUMBER,
+    ]) {
       const level = generator.generate({
         levelNumber,
         runSeed: `overlap-checkpoint-${levelNumber}`,
         generatorVersion: CURRENT_GENERATOR_VERSION,
       });
       const ratios = getCrossLayerOverlapRatios(level.blocks);
-      const partialCount = ratios.filter((ratio) => ratio === 0.25 || ratio === 0.5).length;
+      const partialCount = ratios.filter(
+        (ratio) => ratio === 0.25 || ratio === 0.5,
+      ).length;
       const alignedCount = ratios.filter((ratio) => ratio === 1).length;
 
       expect(ratios.length).toBeGreaterThan(0);
-      expect(partialCount / ratios.length, `level ${levelNumber}`).toBeGreaterThanOrEqual(0.7);
-      expect(alignedCount / ratios.length, `level ${levelNumber}`).toBeLessThanOrEqual(0.1);
+      expect(
+        partialCount / ratios.length,
+        `level ${levelNumber}`,
+      ).toBeGreaterThanOrEqual(0.7);
+      expect(
+        alignedCount / ratios.length,
+        `level ${levelNumber}`,
+      ).toBeLessThanOrEqual(0.1);
     }
   });
 
   it("按关卡阶段递增方块数量、层数与图案池", () => {
-    expect([1, 5, 6, 10, 11, 15, 16, 20, 21, 25, 26].map((levelNumber) =>
-      getBlockCount(levelNumber),
-    )).toEqual([
-      90,
-      90,
-      108,
-      108,
-      126,
-      126,
-      144,
-      144,
-      162,
-      162,
-      180,
-    ]);
-    expect([1, 5, 6, 15, 16, 30, 31, MAX_LEVEL_NUMBER].map((levelNumber) =>
-      getMaxLayers(levelNumber),
-    )).toEqual([
-      3,
-      3,
-      4,
-      4,
-      5,
-      5,
-      6,
-      6,
-    ]);
-    expect([1, 5, 6, 15, 16, 30, 31, MAX_LEVEL_NUMBER].map((levelNumber) =>
-      getPatternTypeCount(levelNumber),
-    )).toEqual([
-      6,
-      6,
-      8,
-      8,
-      10,
-      10,
-      10,
-      10,
-    ]);
+    expect(
+      [1, 5, 6, 10, 11, 15, 16, 20, 21, 25, 26].map((levelNumber) =>
+        getBlockCount(levelNumber),
+      ),
+    ).toEqual([90, 90, 108, 108, 126, 126, 144, 144, 162, 162, 180]);
+    expect(
+      [1, 5, 6, 15, 16, 30, 31, MAX_LEVEL_NUMBER].map((levelNumber) =>
+        getMaxLayers(levelNumber),
+      ),
+    ).toEqual([3, 3, 4, 4, 5, 5, 6, 6]);
+    expect(
+      [1, 5, 6, 15, 16, 30, 31, MAX_LEVEL_NUMBER].map((levelNumber) =>
+        getPatternTypeCount(levelNumber),
+      ),
+    ).toEqual([6, 6, 8, 8, 10, 10, 10, 10]);
   });
 
   it("为不规则形提供多个预定义网格变体", () => {
@@ -184,18 +193,27 @@ describe("LevelGenerator · shape-and-progression", () => {
       variants.add(template.id);
       variantsByShape.set(template.shape, variants);
       expect(template.rows).toHaveLength(template.height);
-      expect(template.rows.every((row) => row.length === template.width)).toBe(true);
+      expect(template.rows.every((row) => row.length === template.width)).toBe(
+        true,
+      );
     }
 
     expect([...variantsByShape.keys()].sort()).toEqual(["irregular"]);
-    expect([...variantsByShape.values()].every((variants) => variants.size >= 2)).toBe(true);
+    expect(
+      [...variantsByShape.values()].every((variants) => variants.size >= 2),
+    ).toBe(true);
   });
 
   it("每个不规则模板保持连通、非对称并包含凹口", () => {
     for (const template of DOG_SHAPE_TEMPLATES) {
       expect(isConnected(template.playableCells), template.id).toBe(true);
-      expect(countInteriorConcavities(template.playableCells), template.id).toBeGreaterThanOrEqual(2);
-      expect(isReflectionSymmetric(template.playableCells), template.id).toBe(false);
+      expect(
+        countInteriorConcavities(template.playableCells),
+        template.id,
+      ).toBeGreaterThanOrEqual(2);
+      expect(isReflectionSymmetric(template.playableCells), template.id).toBe(
+        false,
+      );
     }
   });
 });

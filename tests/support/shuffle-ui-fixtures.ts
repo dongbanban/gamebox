@@ -1,5 +1,8 @@
 import { createDogShuffleMechanism } from "@/games/dog-lege-dog/game/special-mechanisms";
-import type { DogLegeDogLevel, DogPatternType } from "@/games/dog-lege-dog/levels/level-types";
+import type {
+  DogLegeDogLevel,
+  DogPatternType,
+} from "@/games/dog-lege-dog/levels/level-types";
 import { createBlock, createLevel } from "./item-fixtures";
 
 const WORKING_DOG: DogPatternType = "打工狗";

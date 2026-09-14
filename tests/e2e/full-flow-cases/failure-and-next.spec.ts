@@ -30,7 +30,10 @@ test.describe("狗了个狗完整浏览器闭环 · failure-and-next", () => {
     await page.getByRole("button", { name: "重新挑战" }).click();
     await expect(page.getByTestId("dog-board")).toBeVisible();
 
-    await page.locator('[data-testid="dog-block"]:not([disabled])').first().click();
+    await page
+      .locator('[data-testid="dog-block"]:not([disabled])')
+      .first()
+      .click();
     const cancelledDialog = page.waitForEvent("dialog");
     const cancelledNavigation = page.goBack();
     const firstDialog = await cancelledDialog;
@@ -62,7 +65,9 @@ test.describe("狗了个狗完整浏览器闭环 · failure-and-next", () => {
       .locator('[data-testid="dog-block"][data-special-mechanism="twin"]')
       .count();
     expect(nextLevelPhysicalBlockCount + nextLevelTwinCount).toBe(90);
-    await expect(page.locator('[data-testid="dog-tray-slot"][data-pattern-type]')).toHaveCount(0);
+    await expect(
+      page.locator('[data-testid="dog-tray-slot"][data-pattern-type]'),
+    ).toHaveCount(0);
     const nextLevelBlockIds = await getBlockIds(page);
     expect(nextLevelBlockIds).not.toEqual(firstLevelBlockIds);
   });

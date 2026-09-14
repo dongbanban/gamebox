@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 import { GameSession } from "@/games/dog-lege-dog/game/game-session";
 import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
 import type { DogPatternType } from "@/games/dog-lege-dog/levels/level-types";
-import { createBlock, createLevel, createTargetDefinition } from "../support/item-fixtures";
 import {
-  DogItemRuntime,
-} from "@/games/dog-lege-dog/game/dog-item-runtime";
+  createBlock,
+  createLevel,
+  createTargetDefinition,
+} from "../support/item-fixtures";
+import { DogItemRuntime } from "@/games/dog-lege-dog/game/dog-item-runtime";
 
 const WORKING_DOG: DogPatternType = "打工狗";
 const SINGLE_DOG: DogPatternType = "单身狗";
@@ -14,7 +16,9 @@ const GUARD_DOG: DogPatternType = "看门狗";
 
 describe("DogItemRuntime · wildcard", () => {
   it("目标道具确认前可取消，取消与无效目标不改变次数和棋盘", () => {
-    const session = new GameSession(createLevel([createBlock("remaining", WORKING_DOG)]));
+    const session = new GameSession(
+      createLevel([createBlock("remaining", WORKING_DOG)]),
+    );
     const runtime = new DogItemRuntime({
       level: session.getState().level,
       session,
@@ -31,7 +35,9 @@ describe("DogItemRuntime · wildcard", () => {
     expect(runtime.getState().phase).toBe("targeting");
     expect(session.getState()).toEqual(initial);
 
-    expect(runtime.confirmTarget({ type: "tray-block", blockId: "missing" })).toMatchObject({
+    expect(
+      runtime.confirmTarget({ type: "tray-block", blockId: "missing" }),
+    ).toMatchObject({
       accepted: false,
       success: false,
     });
@@ -51,10 +57,17 @@ describe("DogItemRuntime · wildcard", () => {
       createBlock("single-cover", SINGLE_DOG, undefined, { z: 1 }),
     ]);
     const session = new GameSession(level);
-    const runtime = new DogItemRuntime({ level, session, loadout: ["wildcard"] });
+    const runtime = new DogItemRuntime({
+      level,
+      session,
+      loadout: ["wildcard"],
+    });
 
     expect(runtime.getState().items[0]).toMatchObject({ available: false });
-    expect(runtime.begin("wildcard")).toMatchObject({ accepted: false, success: false });
+    expect(runtime.begin("wildcard")).toMatchObject({
+      accepted: false,
+      success: false,
+    });
   });
 
   it("万能方块点击槽内方块选择已有图案，取消无副作用，确认后原子提交", () => {
@@ -95,7 +108,10 @@ describe("DogItemRuntime · wildcard", () => {
     expect(
       runtime.confirmTarget({ type: "block", blockId: "single-cover" }),
     ).toMatchObject({ accepted: false, success: false, requiresTarget: true });
-    const action = runtime.confirmTarget({ type: "tray-block", blockId: "target-working" });
+    const action = runtime.confirmTarget({
+      type: "tray-block",
+      blockId: "target-working",
+    });
 
     expect(action).toMatchObject({
       accepted: true,
@@ -117,17 +133,17 @@ describe("DogItemRuntime · wildcard", () => {
     runtime.completeAnimation();
 
     expect(runtime.getState().phase).toBe("idle");
-    expect(session.getState().remainingBlocks.map((block) => block.id)).toEqual([
-      "single-cover",
-      "working-final",
-      "single-2",
-      "single-3",
-    ]);
-    expect(session.getState().trayBlocks.find((block) => block.visualMarker === "wildcard"))
-      .toMatchObject({
-        patternType: WORKING_DOG,
-        visualMarker: "wildcard",
-      });
+    expect(session.getState().remainingBlocks.map((block) => block.id)).toEqual(
+      ["single-cover", "working-final", "single-2", "single-3"],
+    );
+    expect(
+      session
+        .getState()
+        .trayBlocks.find((block) => block.visualMarker === "wildcard"),
+    ).toMatchObject({
+      patternType: WORKING_DOG,
+      visualMarker: "wildcard",
+    });
     expect(runtime.getLastCompletedEffect()).toMatchObject({
       type: "wildcard",
       removedCount: 0,
@@ -151,7 +167,11 @@ describe("DogItemRuntime · wildcard", () => {
       level,
       initialTrayBlocks: [{ id: "target-working", patternType: WORKING_DOG }],
     });
-    const runtime = new DogItemRuntime({ level, session, loadout: ["wildcard"] });
+    const runtime = new DogItemRuntime({
+      level,
+      session,
+      loadout: ["wildcard"],
+    });
 
     expect(runtime.begin("wildcard")).toMatchObject({
       accepted: true,
@@ -161,13 +181,19 @@ describe("DogItemRuntime · wildcard", () => {
       runtime.confirmTarget({ type: "tray-block", blockId: "target-working" }),
     ).toMatchObject({ accepted: true, success: true });
     runtime.completeAnimation();
-    expect(runtime.getState().items[0]).toMatchObject({ remainingUses: 0, available: false });
+    expect(runtime.getState().items[0]).toMatchObject({
+      remainingUses: 0,
+      available: false,
+    });
 
     expect(session.getState().trayBlocks).toMatchObject([
       { id: "target-working", patternType: WORKING_DOG },
       { patternType: WORKING_DOG, visualMarker: "wildcard" },
     ]);
-    expect(runtime.begin("wildcard")).toMatchObject({ accepted: false, success: false });
+    expect(runtime.begin("wildcard")).toMatchObject({
+      accepted: false,
+      success: false,
+    });
   });
 
   it("万能方块所选图案没有不可点击补偿方块时失败且不扣次数", () => {
@@ -187,10 +213,17 @@ describe("DogItemRuntime · wildcard", () => {
         { id: "target-working-2", patternType: WORKING_DOG },
       ],
     });
-    const runtime = new DogItemRuntime({ level, session, loadout: ["wildcard"] });
+    const runtime = new DogItemRuntime({
+      level,
+      session,
+      loadout: ["wildcard"],
+    });
     const initial = session.getState();
 
-    expect(runtime.begin("wildcard")).toMatchObject({ accepted: true, requiresTarget: true });
+    expect(runtime.begin("wildcard")).toMatchObject({
+      accepted: true,
+      requiresTarget: true,
+    });
     expect(
       runtime.confirmTarget({ type: "tray-block", blockId: "target-single" }),
     ).toMatchObject({ accepted: false, success: false, requiresTarget: true });

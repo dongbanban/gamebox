@@ -34,9 +34,11 @@ describe("狗了个狗 v13 关卡生成 seam", () => {
 
       expect(shuffleBlocks).toHaveLength(levelNumber >= 3 ? 1 : 0);
       expect(plan.counts.shuffle).toBe(levelNumber >= 3 ? 1 : 0);
-      expect(getDogSpecialMechanismConfigs(levelNumber).some(
-        (configuration) => configuration.type === "shuffle",
-      )).toBe(levelNumber >= 3);
+      expect(
+        getDogSpecialMechanismConfigs(levelNumber).some(
+          (configuration) => configuration.type === "shuffle",
+        ),
+      ).toBe(levelNumber >= 3);
       expect(level.difficulty.solvabilityStatus).toBe("solvable");
     }
   });
@@ -63,13 +65,13 @@ describe("狗了个狗 v13 关卡生成 seam", () => {
     expect(level.difficulty.specialMechanismDensity).toBe(
       plan.logicalUnitCount / getDogV13LogicalBlockCount(level.number),
     );
-    expect(new Set(
-      level.blocks
-        .map((block) => block.specialMechanism?.type)
-        .filter((type): type is string => type !== undefined),
-    )).toEqual(
-      new Set(["freeze", "illusion", "magnetic", "twin"]),
-    );
+    expect(
+      new Set(
+        level.blocks
+          .map((block) => block.specialMechanism?.type)
+          .filter((type): type is string => type !== undefined),
+      ),
+    ).toEqual(new Set(["freeze", "illusion", "magnetic", "twin"]));
   });
 
   it("相同 runSeed 可重放，其他 runSeed 产生不同候选", () => {
@@ -96,8 +98,8 @@ describe("狗了个狗 v13 关卡生成 seam", () => {
       ...DOG_V13_CONFIG,
       levels: {
         ...DOG_V13_CONFIG.levels,
-        structureStages: DOG_V13_CONFIG.levels.structureStages.map((stage, index) =>
-          index === 0 ? { ...stage, maxLayers: 4 } : stage,
+        structureStages: DOG_V13_CONFIG.levels.structureStages.map(
+          (stage, index) => (index === 0 ? { ...stage, maxLayers: 4 } : stage),
         ),
       },
     };
@@ -129,16 +131,20 @@ describe("狗了个狗 v13 关卡生成 seam", () => {
       );
       expect(level.generatorVersion).toBe(DOG_V13_CONFIG.game.generatorVersion);
       expect(countMechanisms(level.blocks)).toEqual(plan.counts);
-      expect(getDogLogicalBlockCount(level.blocks, level.specialMechanisms)).toBe(
-        getDogV13LogicalBlockCount(levelNumber),
-      );
+      expect(
+        getDogLogicalBlockCount(level.blocks, level.specialMechanisms),
+      ).toBe(getDogV13LogicalBlockCount(levelNumber));
       expect(level.lockedTraySlotCount).toBeGreaterThanOrEqual(0);
       expect(level.lockedTraySlotCount).toBeLessThanOrEqual(
         DOG_V13_CONFIG.tray.maxLockedSlotCount,
       );
-      expect(level.blocks.every((block) =>
-        block.specialMechanism === undefined || typeof block.specialMechanism.type === "string",
-      )).toBe(true);
+      expect(
+        level.blocks.every(
+          (block) =>
+            block.specialMechanism === undefined ||
+            typeof block.specialMechanism.type === "string",
+        ),
+      ).toBe(true);
       expect(level.difficulty.solvabilityStatus).toBe("solvable");
       expect(isDifficultyWithinTarget(level.difficulty)).toBe(true);
       expect(level.difficulty.trayPeakPressure).toBeGreaterThanOrEqual(
@@ -150,7 +156,9 @@ describe("狗了个狗 v13 关卡生成 seam", () => {
       expect(level.difficulty.mistakeRisk).toBeGreaterThanOrEqual(
         level.difficulty.target.mistakeRisk!.min,
       );
-      expect(level.solutionPath.length).toBeLessThanOrEqual(level.blocks.length);
+      expect(level.solutionPath.length).toBeLessThanOrEqual(
+        level.blocks.length,
+      );
       expect(generator.findSolvability(level).path).toEqual(level.solutionPath);
     }
   });
@@ -243,7 +251,9 @@ describe("狗了个狗 v13 关卡生成 seam", () => {
 
     const triggerPath = findShuffleTriggerPath(level, DOG_V13_CONFIG);
     if (triggerPath === undefined) {
-      throw new Error("Expected generated level to expose a shuffle trigger path");
+      throw new Error(
+        "Expected generated level to expose a shuffle trigger path",
+      );
     }
     const firstPlay = play(level, triggerPath);
     const replayedPlay = play(replayed, triggerPath);
@@ -255,7 +265,6 @@ describe("狗了个狗 v13 关卡生成 seam", () => {
     expect(firstPlay.events).toHaveLength(1);
     expect(completedPlay.status).toBe("won");
   });
-
 });
 
 function countMechanisms(

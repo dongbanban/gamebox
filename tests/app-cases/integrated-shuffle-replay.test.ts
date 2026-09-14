@@ -30,7 +30,13 @@ describe("乱序与重玩综合生命周期", () => {
   it("乱序和复原动画期间拒绝重玩，复原完成后创建新关卡尝试", async () => {
     vi.useFakeTimers();
     const level = createRestoreLevel();
-    const triggerPath = ["shuffle", "single-1", "licking-1", "guard-1", "mad-1"];
+    const triggerPath = [
+      "shuffle",
+      "single-1",
+      "licking-1",
+      "guard-1",
+      "mad-1",
+    ];
 
     const launches: GameLaunchContext[] = [];
     const handles: GameLaunchHandle[] = [];
@@ -40,7 +46,11 @@ describe("乱序与重玩综合生命周期", () => {
       userIdFactory: () => "123e4567-e89b-12d3-a456-426614174000",
     });
     store.register();
-    store.setGameLoadout(GAME_ID, ["restore-whistle", "tray-capacity", "torch"]);
+    store.setGameLoadout(GAME_ID, [
+      "restore-whistle",
+      "tray-capacity",
+      "torch",
+    ]);
     const root = document.createElement("div");
     const app = mountApp(root, {
       store,
@@ -52,7 +62,9 @@ describe("乱序与重玩综合生命周期", () => {
       })(),
     });
 
-    root.querySelector<HTMLButtonElement>('[data-action="enter-game"]')?.click();
+    root
+      .querySelector<HTMLButtonElement>('[data-action="enter-game"]')
+      ?.click();
     for (const blockId of triggerPath.slice(0, -1)) {
       dispatchPointerUp(root, blockId);
       await vi.runAllTimersAsync();
@@ -63,9 +75,13 @@ describe("乱序与重玩综合生命周期", () => {
     const replayDuringShuffle = root.querySelector<HTMLButtonElement>(
       '[data-testid="dog-replay-current-level"]',
     );
-    expect(root.querySelector('[data-testid="dog-shuffle-effect"]')).not.toBeNull();
+    expect(
+      root.querySelector('[data-testid="dog-shuffle-effect"]'),
+    ).not.toBeNull();
     expect(replayDuringShuffle?.disabled ?? true).toBe(true);
-    replayDuringShuffle?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    replayDuringShuffle?.dispatchEvent(
+      new MouseEvent("click", { bubbles: true }),
+    );
     expect(launches).toHaveLength(1);
 
     await vi.runAllTimersAsync();
@@ -79,20 +95,29 @@ describe("乱序与重玩综合生命周期", () => {
       '[data-testid="dog-replay-current-level"]',
     );
     expect(replayDuringRestore?.disabled ?? true).toBe(true);
-    replayDuringRestore?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    replayDuringRestore?.dispatchEvent(
+      new MouseEvent("click", { bubbles: true }),
+    );
     expect(launches).toHaveLength(1);
 
     await vi.runAllTimersAsync();
     const destroy = vi.spyOn(handles[0]!, "destroy");
-    root.querySelector<HTMLButtonElement>('[data-testid="dog-replay-current-level"]')?.click();
+    root
+      .querySelector<HTMLButtonElement>(
+        '[data-testid="dog-replay-current-level"]',
+      )
+      ?.click();
 
     expect(launches).toHaveLength(2);
     expect(destroy).toHaveBeenCalledOnce();
     expect(launches[1]?.runSeed).toBe("integrated-replay-after-restore");
-    expect(root.querySelector<HTMLElement>('[data-testid="dog-game"]')?.dataset.runSeed)
-      .toBe("integrated-replay-after-restore");
-    expect(root.querySelectorAll('[data-testid="dog-tray-slot"][data-pattern-type]'))
-      .toHaveLength(0);
+    expect(
+      root.querySelector<HTMLElement>('[data-testid="dog-game"]')?.dataset
+        .runSeed,
+    ).toBe("integrated-replay-after-restore");
+    expect(
+      root.querySelectorAll('[data-testid="dog-tray-slot"][data-pattern-type]'),
+    ).toHaveLength(0);
     expect(vi.getTimerCount()).toBe(0);
     app.destroy();
   });
@@ -136,8 +161,12 @@ function createAnimatedDogGame(
 
 function dispatchPointerUp(root: HTMLElement, blockId: string): void {
   root
-    .querySelector<HTMLElement>(`[data-testid="dog-block"][data-block-id="${blockId}"]`)
-    ?.dispatchEvent(new Event("pointerup", { bubbles: true, cancelable: true }));
+    .querySelector<HTMLElement>(
+      `[data-testid="dog-block"][data-block-id="${blockId}"]`,
+    )
+    ?.dispatchEvent(
+      new Event("pointerup", { bubbles: true, cancelable: true }),
+    );
 }
 
 function createRestoreLevel(): DogLegeDogLevel {

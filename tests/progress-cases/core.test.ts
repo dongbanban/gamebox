@@ -74,7 +74,9 @@ describe("ProgressStore · core", () => {
       "torch",
       "detector",
     ]);
-    expect(JSON.parse(storage.getItem("gamebox.state") ?? "null")).toMatchObject({
+    expect(
+      JSON.parse(storage.getItem("gamebox.state") ?? "null"),
+    ).toMatchObject({
       games: {
         [GAME_ID]: {
           loadout: ["triple-removal", "torch", "detector"],
@@ -100,9 +102,9 @@ describe("ProgressStore · core", () => {
     expect(() => store.setGameLoadout(GAME_ID, ["one", "two"])).toThrow(
       "Game loadout requires unique non-empty item ids",
     );
-    expect(() => store.setGameLoadout(GAME_ID, ["one", "two", "three", "four"])).toThrow(
-      "Game loadout requires unique non-empty item ids",
-    );
+    expect(() =>
+      store.setGameLoadout(GAME_ID, ["one", "two", "three", "four"]),
+    ).toThrow("Game loadout requires unique non-empty item ids");
   });
 
   it("其他游戏保留不透明道具组，不受狗了个狗三项约束", () => {
@@ -119,10 +121,10 @@ describe("ProgressStore · core", () => {
       "alpha",
       "beta",
     ]);
-    expect(new ProgressStore({ storage }).snapshot().state?.games["other-game"]?.loadout).toEqual([
-      "alpha",
-      "beta",
-    ]);
+    expect(
+      new ProgressStore({ storage }).snapshot().state?.games["other-game"]
+        ?.loadout,
+    ).toEqual(["alpha", "beta"]);
   });
 
   it("loads a valid user so a returning user can skip registration", () => {
@@ -144,7 +146,9 @@ describe("ProgressStore · core", () => {
     expect(store.snapshot().state?.userId).toBe(userId);
     expect(store.snapshot().state?.games[GAME_ID].highestUnlockedLevel).toBe(4);
     expect(store.snapshot().state?.games[GAME_ID].totalScore).toBe(120);
-    expect(store.snapshot().state?.games[GAME_ID].completedLevels).toEqual([1, 2, 3]);
+    expect(store.snapshot().state?.games[GAME_ID].completedLevels).toEqual([
+      1, 2, 3,
+    ]);
     expect(store.snapshot().state?.settings.soundEnabled).toBe(false);
   });
 
@@ -283,7 +287,11 @@ describe("ProgressStore · core", () => {
     });
     store.register();
 
-    for (let levelNumber = 1; levelNumber < MAX_LEVEL_NUMBER; levelNumber += 1) {
+    for (
+      let levelNumber = 1;
+      levelNumber < MAX_LEVEL_NUMBER;
+      levelNumber += 1
+    ) {
       store.recordLevelCompletion({
         gameId: GAME_ID,
         levelNumber,
@@ -312,9 +320,9 @@ describe("ProgressStore · core", () => {
         reward: 999,
       }).firstCompletion,
     ).toBe(false);
-    expect(new ProgressStore({ storage }).snapshot().state?.games[GAME_ID]).toMatchObject(
-      finalCompletion.progress,
-    );
+    expect(
+      new ProgressStore({ storage }).snapshot().state?.games[GAME_ID],
+    ).toMatchObject(finalCompletion.progress);
   });
 
   it("拒绝超过 99 关的通关记录", () => {
@@ -397,6 +405,8 @@ describe("ProgressStore · core", () => {
     store.setSoundEnabled(false);
 
     expect(store.snapshot().state?.settings.soundEnabled).toBe(false);
-    expect(new ProgressStore({ storage }).snapshot().state?.settings.soundEnabled).toBe(false);
+    expect(
+      new ProgressStore({ storage }).snapshot().state?.settings.soundEnabled,
+    ).toBe(false);
   });
 });

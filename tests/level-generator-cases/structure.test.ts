@@ -31,16 +31,22 @@ describe("LevelGenerator · structure", () => {
         runSeed: `invariant-${levelNumber}`,
         generatorVersion: CURRENT_GENERATOR_VERSION,
       });
-      const playableCells = new Set(level.board.playableCells.map((cell) => `${cell.x}:${cell.y}`));
+      const playableCells = new Set(
+        level.board.playableCells.map((cell) => `${cell.x}:${cell.y}`),
+      );
 
-      expect(getDogLogicalBlockCount(level.blocks, level.specialMechanisms)).toBe(
-        getBlockCount(levelNumber),
+      expect(
+        getDogLogicalBlockCount(level.blocks, level.specialMechanisms),
+      ).toBe(getBlockCount(levelNumber));
+      expect(new Set(level.blocks.map((block) => block.z))).toHaveLength(
+        getMaxLayers(levelNumber),
       );
-      expect(new Set(level.blocks.map((block) => block.z))).toHaveLength(getMaxLayers(levelNumber));
       expect(level.patternTypes).toHaveLength(getPatternTypeCount(levelNumber));
-      expect(level.patternTypes.every((patternType) => DOG_PATTERN_TYPES.includes(patternType))).toBe(
-        true,
-      );
+      expect(
+        level.patternTypes.every((patternType) =>
+          DOG_PATTERN_TYPES.includes(patternType),
+        ),
+      ).toBe(true);
 
       for (const patternType of level.patternTypes) {
         expect(getLogicalPatternCount(level.blocks, patternType) % 3).toBe(0);
@@ -59,7 +65,11 @@ describe("LevelGenerator · structure", () => {
 
       for (let index = 0; index < level.blocks.length; index += 1) {
         const block = level.blocks[index];
-        for (let otherIndex = index + 1; otherIndex < level.blocks.length; otherIndex += 1) {
+        for (
+          let otherIndex = index + 1;
+          otherIndex < level.blocks.length;
+          otherIndex += 1
+        ) {
           const other = level.blocks[otherIndex];
           if (block.z === other.z) {
             expect(hasPositiveAreaOverlap(block, other)).toBe(false);
@@ -85,8 +95,12 @@ describe("LevelGenerator · structure", () => {
       } as const;
       const level = generator.generate(request);
       const replayed = generator.generate(request);
-      const regions = level.blocks.map((block) => classifySpatialRegion(block, level.board));
-      const centerCount = regions.filter((region) => region === "center").length;
+      const regions = level.blocks.map((block) =>
+        classifySpatialRegion(block, level.board),
+      );
+      const centerCount = regions.filter(
+        (region) => region === "center",
+      ).length;
 
       expect(level.generatorVersion).toBe(CURRENT_GENERATOR_VERSION);
       expect(level).toEqual(replayed);
@@ -98,17 +112,28 @@ describe("LevelGenerator · structure", () => {
         "bottom-right",
         "edge",
       ] as const) {
-        expect(regions.filter((candidate) => candidate === region).length).toBeGreaterThan(0);
-        expect(hasRegionalCrossLayerOverlap(level.blocks, level.board, region)).toBe(true);
+        expect(
+          regions.filter((candidate) => candidate === region).length,
+        ).toBeGreaterThan(0);
+        expect(
+          hasRegionalCrossLayerOverlap(level.blocks, level.board, region),
+        ).toBe(true);
       }
-      expect(hasCrossRegionOverlap(level.blocks, level.board), `level ${levelNumber}`).toBe(true);
+      expect(
+        hasCrossRegionOverlap(level.blocks, level.board),
+        `level ${levelNumber}`,
+      ).toBe(true);
     }
   });
 
   it("可稳定加载第 2–99 关，不因模板选择抛错", () => {
     const generator = new LevelGenerator();
 
-    for (let levelNumber = 2; levelNumber <= MAX_LEVEL_NUMBER; levelNumber += 1) {
+    for (
+      let levelNumber = 2;
+      levelNumber <= MAX_LEVEL_NUMBER;
+      levelNumber += 1
+    ) {
       const level = generator.generate({
         levelNumber,
         runSeed: `range-${levelNumber}`,

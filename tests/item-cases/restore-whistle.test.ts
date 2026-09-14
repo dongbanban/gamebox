@@ -6,9 +6,7 @@ import type {
   DogLegeDogLevel,
   DogPatternType,
 } from "@/games/dog-lege-dog/levels/level-types";
-import {
-  DogItemRuntime,
-} from "@/games/dog-lege-dog/game/dog-item-runtime";
+import { DogItemRuntime } from "@/games/dog-lege-dog/game/dog-item-runtime";
 import type { DogItemId } from "@/games/dog-lege-dog/game/dog-loadout";
 import { createBlock, createLevel } from "../support/item-fixtures";
 
@@ -30,13 +28,20 @@ describe("DogItemRuntime · restore-whistle", () => {
       remainingUses: 1,
       available: false,
     });
-    expect(runtime.begin("restore-whistle")).toMatchObject({ accepted: false, success: false });
+    expect(runtime.begin("restore-whistle")).toMatchObject({
+      accepted: false,
+      success: false,
+    });
 
     const selection = triggerShuffle(session);
     const shuffled = session.getState();
-    expect(runtime.settleSuccessfulTriples(selection.tripleCount + 1))
-      .toMatchObject({ dropped: true, remainingUses: 1 });
-    expect(runtime.getState().items[0]).toMatchObject({ available: true, remainingUses: 1 });
+    expect(
+      runtime.settleSuccessfulTriples(selection.tripleCount + 1),
+    ).toMatchObject({ dropped: true, remainingUses: 1 });
+    expect(runtime.getState().items[0]).toMatchObject({
+      available: true,
+      remainingUses: 1,
+    });
 
     expect(runtime.begin("restore-whistle")).toMatchObject({
       accepted: true,
@@ -57,26 +62,46 @@ describe("DogItemRuntime · restore-whistle", () => {
       "licking-1",
       "shuffle",
     ]);
-    expect(session.getState().trayBlocks.find((block) => block.id === "shuffle")?.specialMechanism)
-      .toBeUndefined();
-    expect(runtime.getState().items.find((item) => item.id === "key"))
-      .toMatchObject({ remainingUses: 0 });
-    expect(runtime.getState().items[0]).toMatchObject({ available: false, remainingUses: 0 });
-    expect(runtime.begin("restore-whistle")).toMatchObject({ accepted: false, success: false });
+    expect(
+      session.getState().trayBlocks.find((block) => block.id === "shuffle")
+        ?.specialMechanism,
+    ).toBeUndefined();
+    expect(
+      runtime.getState().items.find((item) => item.id === "key"),
+    ).toMatchObject({ remainingUses: 0 });
+    expect(runtime.getState().items[0]).toMatchObject({
+      available: false,
+      remainingUses: 0,
+    });
+    expect(runtime.begin("restore-whistle")).toMatchObject({
+      accepted: false,
+      success: false,
+    });
   });
 
   it("下一次其他道具成功使用后快照失效且复原哨不扣次", () => {
-    const { runtime, session } = createRestoreFixture(["restore-whistle", "torch", "key"]);
+    const { runtime, session } = createRestoreFixture([
+      "restore-whistle",
+      "torch",
+      "key",
+    ]);
     triggerShuffle(session);
     expect(runtime.getState().items[0]?.available).toBe(true);
 
-    expect(runtime.begin("torch")).toMatchObject({ accepted: true, requiresTarget: true });
-    expect(runtime.confirmTarget({ type: "tray-block", blockId: "frozen" }))
-      .toMatchObject({ accepted: true, success: true });
+    expect(runtime.begin("torch")).toMatchObject({
+      accepted: true,
+      requiresTarget: true,
+    });
+    expect(
+      runtime.confirmTarget({ type: "tray-block", blockId: "frozen" }),
+    ).toMatchObject({ accepted: true, success: true });
     runtime.completeAnimation();
 
     expect(session.canRestoreLastShuffle()).toBe(false);
-    expect(runtime.getState().items[0]).toMatchObject({ available: false, remainingUses: 1 });
+    expect(runtime.getState().items[0]).toMatchObject({
+      available: false,
+      remainingUses: 1,
+    });
   });
 });
 
@@ -94,7 +119,9 @@ function createRestoreFixture(loadout: readonly DogItemId[]) {
       createBlock("single-1", SINGLE_DOG, undefined, { x: 4 }),
       createBlock("working-2", WORKING_DOG, undefined, { x: 8 }),
       createBlock("licking-1", LICKING_DOG, undefined, { x: 12 }),
-      createBlock("shuffle", WORKING_DOG, createDogShuffleMechanism(), { x: 16 }),
+      createBlock("shuffle", WORKING_DOG, createDogShuffleMechanism(), {
+        x: 16,
+      }),
       createBlock("single-2", SINGLE_DOG, undefined, { x: 20 }),
       createBlock("single-3", SINGLE_DOG, undefined, { x: 24 }),
       createBlock("licking-2", LICKING_DOG, undefined, { x: 28 }),
@@ -109,14 +136,16 @@ function createRestoreFixture(loadout: readonly DogItemId[]) {
     config,
     level,
     initialTrayCapacity: 8,
-    initialTrayBlocks: [{
-      id: "frozen",
-      patternType: GUARD_DOG,
-      specialMechanism: {
-        type: "freeze",
-        state: { status: "frozen", completedTriples: 0 },
+    initialTrayBlocks: [
+      {
+        id: "frozen",
+        patternType: GUARD_DOG,
+        specialMechanism: {
+          type: "freeze",
+          state: { status: "frozen", completedTriples: 0 },
+        },
       },
-    }],
+    ],
   });
   return {
     runtime: new DogItemRuntime({ config, level, session, loadout }),
@@ -124,7 +153,9 @@ function createRestoreFixture(loadout: readonly DogItemId[]) {
   };
 }
 
-function triggerShuffle(session: GameSession): ReturnType<GameSession["selectBlock"]> {
+function triggerShuffle(
+  session: GameSession,
+): ReturnType<GameSession["selectBlock"]> {
   let result = session.selectBlock("working-1");
   for (const blockId of ["single-1", "working-2", "licking-1", "shuffle"]) {
     result = session.selectBlock(blockId);

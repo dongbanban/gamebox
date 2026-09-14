@@ -95,7 +95,9 @@ describe("狗了个狗 runtime config seam", () => {
         target: null,
       });
 
-      expect(meltEffect?.style.getPropertyValue("--dog-animation-duration")).toBe("2ms");
+      expect(
+        meltEffect?.style.getPropertyValue("--dog-animation-duration"),
+      ).toBe("2ms");
 
       await vi.advanceTimersByTimeAsync(1);
 
@@ -107,9 +109,11 @@ describe("狗了个狗 runtime config seam", () => {
   });
 
   it("uses supplied v13 audio profile at the sound seam", () => {
-    const previousAudioContext = (globalThis as typeof globalThis & {
-      AudioContext?: unknown;
-    }).AudioContext;
+    const previousAudioContext = (
+      globalThis as typeof globalThis & {
+        AudioContext?: unknown;
+      }
+    ).AudioContext;
     const oscillator = {
       type: "sine" as OscillatorType,
       frequency: { setValueAtTime: vi.fn() },
@@ -166,7 +170,10 @@ describe("狗了个狗 runtime config seam", () => {
       sound.play("select");
 
       expect(oscillator.frequency.setValueAtTime).toHaveBeenCalledWith(123, 10);
-      expect(gain.gain.exponentialRampToValueAtTime).toHaveBeenCalledWith(0.9, 10.012);
+      expect(gain.gain.exponentialRampToValueAtTime).toHaveBeenCalledWith(
+        0.9,
+        10.012,
+      );
       sound.destroy();
     } finally {
       if (previousAudioContext === undefined) {
@@ -199,15 +206,29 @@ describe("狗了个狗 runtime config seam", () => {
       onLoadoutConfirmed: vi.fn(),
     });
 
-    expect(root.querySelector('[data-testid="dog-loadout-count"]')?.textContent).toBe("0/4");
-    expect(root.querySelector('[data-testid="dog-loadout-option"]')?.textContent).toContain("本关 1 次");
+    expect(
+      root.querySelector('[data-testid="dog-loadout-count"]')?.textContent,
+    ).toBe("0/4");
+    expect(
+      root.querySelector('[data-testid="dog-loadout-option"]')?.textContent,
+    ).toContain("本关 1 次");
 
-    for (const itemId of ["triple-removal", "tray-capacity", "wildcard", "torch"]) {
+    for (const itemId of [
+      "triple-removal",
+      "tray-capacity",
+      "wildcard",
+      "torch",
+    ]) {
       root.querySelector<HTMLElement>(`[data-loadout-id="${itemId}"]`)?.click();
     }
 
-    expect(root.querySelector('[data-testid="dog-loadout-count"]')?.textContent).toBe("4/4");
-    expect(root.querySelector<HTMLButtonElement>("[data-testid=dog-loadout-confirm]")?.disabled).toBe(false);
+    expect(
+      root.querySelector('[data-testid="dog-loadout-count"]')?.textContent,
+    ).toBe("4/4");
+    expect(
+      root.querySelector<HTMLButtonElement>("[data-testid=dog-loadout-confirm]")
+        ?.disabled,
+    ).toBe(false);
     game.destroy();
   });
 });
@@ -216,7 +237,11 @@ function createLevel(blocks: readonly DogBlock[]) {
   return { ...TEST_LEVEL, blocks };
 }
 
-function createBlock(id: string, patternType: DogBlock["patternType"], x = 0): DogBlock {
+function createBlock(
+  id: string,
+  patternType: DogBlock["patternType"],
+  x = 0,
+): DogBlock {
   return {
     id,
     x,

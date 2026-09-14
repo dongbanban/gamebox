@@ -66,6 +66,9 @@ function createBlock(
   };
 }
 
-function createTrayBlock(id: string, patternType: DogPatternType): DogTrayBlock {
+function createTrayBlock(
+  id: string,
+  patternType: DogPatternType,
+): DogTrayBlock {
   return { id, patternType };
 }
