@@ -1,3 +1,4 @@
+import type { DogV13Config } from "@/games/dog-lege-dog/game/v13-config";
 import type { DogDifficultyTarget, DogLevelDifficulty } from "@/games/dog-lege-dog/levels/level-types";
 
 export interface LevelGeneratorRequest {
@@ -24,6 +25,6 @@ export type LevelCandidateFilter = (
 export interface LevelGeneratorOptions {
   readonly gameId?: string;
   readonly candidateFilter?: LevelCandidateFilter;
-  /** Optional validated-config seam for generator and test callers. */
-  readonly config?: unknown;
+  /** Optional type-correct config seam for generator and test callers. */
+  readonly config?: DogV13Config;
 }

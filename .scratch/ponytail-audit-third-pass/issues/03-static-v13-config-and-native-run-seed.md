@@ -4,17 +4,25 @@
 
 **Blocked by:** 01 — 迁移生成器与局内规则测试的直接导入；02 — 迁移应用与游戏 UI 测试的直接导入
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] v13 配置源继续由完整配置类型约束，字段缺失、类型错误与错误枚举由 TypeScript 构建发现。
-- [ ] 默认配置在模块初始化时只复制并深度冻结一次，主线程、游戏运行时、关卡生成器与 Worker 共享同一行为来源。
-- [ ] 应用、游戏启动、关卡生成与准备服务不再接受或重复解析任意 `unknown` 配置。
-- [ ] 测试确有需要时只能注入类型正确的替代配置，不保留畸形配置错误聚合契约。
-- [ ] 删除手写字段遍历、分区 schema 校验、配置问题列表、配置错误类及只验证这些实现的测试。
-- [ ] 保留配置 helper 对关卡号、逻辑方块数、容量等运行时参数的局部前置条件检查。
-- [ ] 保留持久化状态、UUID、关卡请求、回放、Worker 生命周期、道具目标和局内操作等真实信任边界校验。
-- [ ] 新的 `runSeed` 使用 `crypto.randomUUID()`；显式传入相同 `runSeed` 时关卡生成与回放继续确定。
-- [ ] 同步更新 ADR-0007，明确完整运行时 schema 决策被静态类型与一次性冻结覆盖，同时保留集中配置作为唯一行为来源。
-- [ ] 配置行为值、关卡边界、机制预算、道具次数、动画、音频和不可变性仍由现有高层行为测试覆盖。
-- [ ] 运行严格 TypeScript 未使用诊断与 `pnpm test:qa`，并记录结果。
+- [x] v13 配置源继续由完整配置类型约束，字段缺失、类型错误与错误枚举由 TypeScript 构建发现。
+- [x] 默认配置在模块初始化时只复制并深度冻结一次，主线程、游戏运行时、关卡生成器与 Worker 共享同一行为来源。
+- [x] 应用、游戏启动、关卡生成与准备服务不再接受或重复解析任意 `unknown` 配置。
+- [x] 测试确有需要时只能注入类型正确的替代配置，不保留畸形配置错误聚合契约。
+- [x] 删除手写字段遍历、分区 schema 校验、配置问题列表、配置错误类及只验证这些实现的测试。
+- [x] 保留配置 helper 对关卡号、逻辑方块数、容量等运行时参数的局部前置条件检查。
+- [x] 保留持久化状态、UUID、关卡请求、回放、Worker 生命周期、道具目标和局内操作等真实信任边界校验。
+- [x] 新的 `runSeed` 使用 `crypto.randomUUID()`；显式传入相同 `runSeed` 时关卡生成与回放继续确定。
+- [x] 同步更新 ADR-0007，明确完整运行时 schema 决策被静态类型与一次性冻结覆盖，同时保留集中配置作为唯一行为来源。
+- [x] 配置行为值、关卡边界、机制预算、道具次数、动画、音频和不可变性仍由现有高层行为测试覆盖。
+- [x] 运行严格 TypeScript 未使用诊断与 `pnpm test:qa`，并记录结果。
 
+## Comments
+
+- 删除运行时配置 schema 与错误聚合；默认配置在模块初始化时经 `structuredClone` 和深度冻结生成一次。通用游戏目录契约保持通用，Dog 目录适配器传入共享默认配置。
+- `pnpm typecheck`：通过。
+- `pnpm vitest run tests/level-random.test.ts tests/dog-config.test.ts tests/game-runtime-modules.test.ts tests/app-cases/integrated-shuffle-replay.test.ts`：4 个文件、7 个用例通过。
+- `pnpm test:qa`：通过；完整 profile 覆盖 core、Worker fallback、1–99 随机回归、Chromium、跨浏览器、Pages build、diff 与文件行数检查。
+- Standards 与 Spec review 均无遗留问题；依赖未变。
+- 本 ticket staged diff：+118 / -1,130，净删 1,012 行。

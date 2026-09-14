@@ -4,7 +4,7 @@ import {
   type GamePreparationResult,
 } from "@/game-contracts";
 import {
-  loadDogV13Config,
+  DOG_V13_CONFIG,
   type DogV13Config,
 } from "@/games/dog-lege-dog/game/v13-config";
 import type {
@@ -28,7 +28,7 @@ export type {
 export interface DogLevelPreparationRequest {
   readonly levelNumber: number;
   readonly runSeed: string;
-  readonly config?: unknown;
+  readonly config?: DogV13Config;
   readonly signal?: AbortSignal;
 }
 
@@ -52,7 +52,7 @@ export class DogLevelGenerationService {
   }
 
   prepare(request: DogLevelPreparationRequest): GamePreparationResult {
-    const config = loadDogV13Config(request.config);
+    const config = request.config ?? DOG_V13_CONFIG;
     const generatorRequest: LevelGeneratorRequest = {
       levelNumber: request.levelNumber,
       runSeed: request.runSeed,

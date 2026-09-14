@@ -1,7 +1,6 @@
 import {
   DOG_V13_MECHANISM_TYPES,
   type DogV13Config,
-  type DogV13ConfigIssue,
   type DogV13DifficultyTarget,
   type DogV13ItemId,
   type DogV13MechanismDefinition,
@@ -9,30 +8,11 @@ import {
   type DogV13MechanismType,
   type DogV13StructureStage,
 } from "@/games/dog-lege-dog/game/v13-config-types";
-import { DOG_V13_CONFIG_SOURCE } from "@/games/dog-lege-dog/game/v13-config-source";
-import { collectConfigIssues } from "@/games/dog-lege-dog/game/v13-config-validation";
-import { cloneAndFreeze } from "@/games/dog-lege-dog/game/v13-config-validation-primitives";
+import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config-source";
 
 export * from "@/games/dog-lege-dog/game/v13-config-types";
 
-export class DogV13ConfigError extends Error {
-  readonly issues: readonly DogV13ConfigIssue[];
-
-  constructor(issues: readonly DogV13ConfigIssue[]) {
-    super(`狗了个狗 v13 配置无效：${issues.map((issue) => `${issue.path}（${issue.message}）`).join("；")}`);
-    this.name = "DogV13ConfigError";
-    this.issues = Object.freeze([...issues]);
-    Object.setPrototypeOf(this, new.target.prototype);
-  }
-}
-
-export function loadDogV13Config(input: unknown = DOG_V13_CONFIG_SOURCE): DogV13Config {
-  const issues = collectConfigIssues(input);
-  if (issues.length > 0) throw new DogV13ConfigError(issues);
-  return cloneAndFreeze(input) as DogV13Config;
-}
-
-export const DOG_V13_CONFIG = loadDogV13Config();
+export { DOG_V13_CONFIG };
 
 export function getDogV13LevelStage(
   levelNumber: number,
@@ -156,7 +136,7 @@ export function getDogV13DifficultyTarget(
     (candidate) => levelNumber >= candidate.minLevel && levelNumber <= candidate.maxLevel,
   );
   if (target === undefined) throw new Error(`狗了个狗 v13 difficulty target is unavailable for level ${levelNumber}`);
-  return cloneAndFreeze(target) as DogV13DifficultyTarget;
+  return target;
 }
 
 export function getDogV13ItemUses(

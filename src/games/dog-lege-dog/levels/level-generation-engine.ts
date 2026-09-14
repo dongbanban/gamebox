@@ -1,4 +1,4 @@
-import { loadDogV13Config } from "@/games/dog-lege-dog/game/v13-config";
+import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
 import type { DogV13Config } from "@/games/dog-lege-dog/game/v13-config";
 import {
   DOG_SHAPE_TEMPLATES,
@@ -57,7 +57,7 @@ export class LevelGenerator {
   private readonly candidateFilter: LevelCandidateFilter;
 
   constructor(options: LevelGeneratorOptions = {}) {
-    this.config = loadDogV13Config(options.config);
+    this.config = options.config ?? DOG_V13_CONFIG;
     this.gameId = options.gameId ?? this.config.game.id;
     this.candidateFilter =
       options.candidateFilter ??

@@ -1,17 +1,11 @@
-// @vitest-environment jsdom
-
 import { describe, expect, it } from "vitest";
 import {
   DOG_V13_CONFIG,
-  DogV13ConfigError,
   getDogV13DifficultyTarget,
   getDogV13LogicalBlockCount,
   getDogV13MechanismPlan,
   getDogV13SpecialMechanismBudget,
-  loadDogV13Config,
 } from "@/games/dog-lege-dog/game/v13-config";
-import { LevelGenerator } from "@/games/dog-lege-dog/levels/level-generation-engine";
-import { createDogLegeDogGame } from "@/games/dog-lege-dog/game/game-controller";
 
 describe("狗了个狗 v13 集中配置", () => {
   it("覆盖边界、预算、权重、道具、动画与资源", () => {
@@ -19,6 +13,8 @@ describe("狗了个狗 v13 集中配置", () => {
     expect(Object.isFrozen(DOG_V13_CONFIG)).toBe(true);
     expect(DOG_V13_CONFIG).not.toHaveProperty("testProfiles");
     expect(Object.isFrozen(DOG_V13_CONFIG.specialMechanisms.mechanisms)).toBe(true);
+    expect(Object.isFrozen(DOG_V13_CONFIG.specialMechanisms.mechanisms[0])).toBe(true);
+    expect(Object.isFrozen(DOG_V13_CONFIG.ui.copy.items)).toBe(true);
     expect(DOG_V13_CONFIG.game.maxLevelNumber).toBe(99);
     expect([1, 5, 6, 15, 16, 30, 31, 99].map((levelNumber) => getDogV13LogicalBlockCount(levelNumber))).toEqual([
       90,
@@ -129,170 +125,4 @@ describe("狗了个狗 v13 集中配置", () => {
     });
   });
 
-  it("配置错误提供路径、类别与消息，并阻止配置加载", () => {
-    const invalid = {
-      ...DOG_V13_CONFIG,
-      game: {
-        ...DOG_V13_CONFIG.game,
-        maxLevelNumber: 0,
-      },
-      tray: {
-        ...DOG_V13_CONFIG.tray,
-        baseCapacity: 0,
-      },
-      generation: {
-        ...DOG_V13_CONFIG.generation,
-        workerTimeoutMs: 0,
-      },
-      specialMechanisms: {
-        ...DOG_V13_CONFIG.specialMechanisms,
-        shuffle: {
-          ...DOG_V13_CONFIG.specialMechanisms.shuffle,
-          candidateCount: 7,
-        },
-      },
-    };
-
-    expect(() => loadDogV13Config(invalid)).toThrow(DogV13ConfigError);
-    try {
-      loadDogV13Config(invalid);
-      throw new Error("expected config validation to fail");
-    } catch (error) {
-      expect(error).toBeInstanceOf(DogV13ConfigError);
-      const configError = error as DogV13ConfigError;
-      expect(configError.issues.map((issue) => issue.path)).toEqual(
-        expect.arrayContaining([
-          "game.maxLevelNumber",
-          "tray.baseCapacity",
-          "generation.workerTimeoutMs",
-          "specialMechanisms.shuffle.candidateCount",
-        ]),
-      );
-      expect(configError.message).toContain("game.maxLevelNumber");
-      expect(configError.message).toContain("tray.baseCapacity");
-      expect(configError.message).toContain("generation.workerTimeoutMs");
-      expect(configError.message).toContain("specialMechanisms.shuffle.candidateCount");
-    }
-  });
-
-  it("拒绝已移除的顶层测试 profile 字段", () => {
-    expect(() => loadDogV13Config({
-      ...DOG_V13_CONFIG,
-      testProfiles: {},
-    })).toThrow(DogV13ConfigError);
-  });
-
-  it("拒绝缺失 item 资源与反向关卡区间", () => {
-    const assetsWithoutKey = Object.fromEntries(
-      Object.entries(DOG_V13_CONFIG.assets.items).filter(([itemId]) => itemId !== "key"),
-    );
-    const invalid = {
-      ...DOG_V13_CONFIG,
-      assets: {
-        ...DOG_V13_CONFIG.assets,
-        items: assetsWithoutKey,
-      },
-      levels: {
-        ...DOG_V13_CONFIG.levels,
-        structureStages: DOG_V13_CONFIG.levels.structureStages.map((stage, index) =>
-          index === 0 ? { ...stage, minLevel: 2, maxLevel: 1 } : stage,
-        ),
-      },
-      difficulty: {
-        ...DOG_V13_CONFIG.difficulty,
-        targets: DOG_V13_CONFIG.difficulty.targets.map((target, index) =>
-          index === 0 ? { ...target, minLevel: 2, maxLevel: 1 } : target,
-        ),
-      },
-    };
-
-    expect(() => loadDogV13Config(invalid)).toThrow(DogV13ConfigError);
-    try {
-      loadDogV13Config(invalid);
-      throw new Error("expected config validation to fail");
-    } catch (error) {
-      const configError = error as DogV13ConfigError;
-      expect(configError.issues.map((issue) => issue.path)).toEqual(
-        expect.arrayContaining([
-          "assets.items.key",
-          "levels.structureStages[0].maxLevel",
-          "difficulty.targets[0].maxLevel",
-        ]),
-      );
-    }
-  });
-
-  it("拒绝越界难度值与不完整道具集合", () => {
-    const invalid = {
-      ...DOG_V13_CONFIG,
-      items: {
-        ...DOG_V13_CONFIG.items,
-        ids: DOG_V13_CONFIG.items.ids.slice(0, 2),
-        loadoutSize: 8,
-      },
-      difficulty: {
-        ...DOG_V13_CONFIG.difficulty,
-        targets: DOG_V13_CONFIG.difficulty.targets.map((target, index) =>
-          index === 0
-            ? {
-                ...target,
-                safeChoiceCount: { min: 1.5, max: 2 },
-                safeChoiceRate: { min: 0, max: 2 },
-                mistakeRisk: { min: 0, max: 1.5 },
-              }
-            : target,
-        ),
-        scoring: {
-          ...DOG_V13_CONFIG.difficulty.scoring,
-          mistakeRisk: {
-            ...DOG_V13_CONFIG.difficulty.scoring.mistakeRisk,
-            base: 1.5,
-          },
-        },
-      },
-    };
-
-    expect(() => loadDogV13Config(invalid)).toThrow(DogV13ConfigError);
-    try {
-      loadDogV13Config(invalid);
-      throw new Error("expected config validation to fail");
-    } catch (error) {
-      const configError = error as DogV13ConfigError;
-      expect(configError.issues.map((issue) => issue.path)).toEqual(
-        expect.arrayContaining([
-          "items.ids",
-          "items.loadoutSize",
-          "difficulty.targets[0].safeChoiceCount.min",
-          "difficulty.targets[0].safeChoiceRate.max",
-          "difficulty.targets[0].mistakeRisk.max",
-          "difficulty.scoring.mistakeRisk.base",
-        ]),
-      );
-    }
-  });
-
-  it("生成器在候选棋盘前拒绝无效配置", () => {
-    const invalid = {
-      ...DOG_V13_CONFIG,
-      specialMechanisms: {
-        ...DOG_V13_CONFIG.specialMechanisms,
-        logicalBudgetRatio: 1.2,
-      },
-    };
-
-    expect(() => new LevelGenerator({ config: invalid })).toThrow(DogV13ConfigError);
-  });
-
-  it("游戏启动在展示棋盘前拒绝无效配置", () => {
-    const invalid = {
-      ...DOG_V13_CONFIG,
-      tray: {
-        ...DOG_V13_CONFIG.tray,
-        maxCapacity: 6,
-      },
-    };
-
-    expect(() => createDogLegeDogGame(document.createElement("div"), { config: invalid }))
-      .toThrow(DogV13ConfigError);
-  });
 });

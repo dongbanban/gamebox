@@ -6,6 +6,7 @@ import {
 import { getDogPatternAssetUrl } from "@/games/dog-lege-dog/assets/game-assets";
 import type {
   GameDefinition,
+  GameLaunchContext,
   GamePreparationContext,
 } from "@/game-contracts";
 
@@ -39,10 +40,13 @@ export const DOG_GAME_DEFINITION: GameDefinition = Object.freeze({
   prepareLaunch: (context: GamePreparationContext) => dogLevelGeneration.prepare({
     levelNumber: context.levelNumber,
     runSeed: context.runSeed,
-    config: context.config,
+    config: DOG_V13_CONFIG,
     signal: context.signal,
   }),
-  launch: startDogLegeDogGame,
+  launch: (root: HTMLElement, context: GameLaunchContext = {}) => startDogLegeDogGame(root, {
+    ...context,
+    config: DOG_V13_CONFIG,
+  }),
   resultDisplay: DOG_V13_CONFIG.ui.copy.result,
 });
 

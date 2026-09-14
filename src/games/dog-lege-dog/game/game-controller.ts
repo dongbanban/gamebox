@@ -1,5 +1,6 @@
 import type { GameResult } from "@/game-contracts";
-import { loadDogV13Config } from "@/games/dog-lege-dog/game/v13-config";
+import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
+import type { DogV13Config } from "@/games/dog-lege-dog/game/v13-config";
 import { generateVerifiedDogLevel } from "@/games/dog-lege-dog/levels/level-generation-verification";
 import { getPreparedDogLevel } from "@/games/dog-lege-dog/levels/level-generation-service";
 import type { DogLegeDogLevel } from "@/games/dog-lege-dog/levels/level-types";
@@ -57,7 +58,7 @@ export function createDogLegeDogGame(
   root: HTMLElement,
   options: DogLegeDogGameOptions = {},
 ): DogLegeDogGame {
-  const config = loadDogV13Config(options.config);
+  const config = options.config ?? DOG_V13_CONFIG;
   const level = options.level ?? createLevel(options, config);
   const managesLoadout =
     options.loadout !== undefined || options.onLoadoutConfirmed !== undefined;
@@ -359,7 +360,7 @@ export function startDogLegeDogGame(
 
 function createLevel(
   options: DogLegeDogGameOptions,
-  config: ReturnType<typeof loadDogV13Config>,
+  config: DogV13Config,
 ): DogLegeDogLevel {
   const levelNumber = options.levelNumber ?? config.game.firstLevelNumber;
   const runSeed = options.runSeed ?? createRunSeed();

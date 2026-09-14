@@ -147,6 +147,7 @@ function createAnimatedDogGame(
       launches.push(context);
       const game = startDogLegeDogGame(mount, {
         ...context,
+        config: DOG_V13_CONFIG,
         level: {
           ...level,
           number: context.levelNumber ?? level.number,

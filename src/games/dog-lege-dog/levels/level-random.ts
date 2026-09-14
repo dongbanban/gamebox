@@ -18,22 +18,9 @@ export function getCandidateRandomSeed(
   return `${gameId}:${levelSeed}:attempt-${attempt}`;
 }
 
-let generatedRunSeedCount = 0;
-
 /** Creates an external attempt seed; generation itself remains fully seeded. */
 export function createRunSeed(): string {
-  generatedRunSeedCount += 1;
-  const counter = generatedRunSeedCount.toString(36);
-  const timestamp = Date.now().toString(36);
-  const cryptoApi = globalThis.crypto;
-
-  if (cryptoApi?.getRandomValues !== undefined) {
-    const values = new Uint32Array(2);
-    cryptoApi.getRandomValues(values);
-    return `run-${timestamp}-${counter}-${values[0]!.toString(36)}-${values[1]!.toString(36)}`;
-  }
-
-  return `run-${timestamp}-${counter}`;
+  return crypto.randomUUID();
 }
 
 export class SeededRandom {

@@ -10,7 +10,7 @@ import {
   type StoreSnapshot,
 } from "@/progress-store";
 import {
-  loadDogV13Config,
+  DOG_V13_CONFIG,
   type DogV13Config,
 } from "@/games/dog-lege-dog/game/v13-config";
 import { createRunSeed } from "@/games/dog-lege-dog/levels/level-random";
@@ -36,7 +36,6 @@ export interface MountAppOptions {
   store?: ProgressStore;
   catalog?: readonly GameDefinition[];
   runSeedFactory?: () => string;
-  config?: unknown;
 }
 
 interface ResultViewState {
@@ -65,7 +64,7 @@ export class GameboxApp {
     this.root = root;
     this.store = options.store ?? new ProgressStore();
     this.catalog = options.catalog ?? GAME_CATALOG;
-    this.config = loadDogV13Config(options.config);
+    this.config = DOG_V13_CONFIG;
     this.runSeedFactory = options.runSeedFactory;
     this.resultLoadout = new ResultLoadoutController({
       root,

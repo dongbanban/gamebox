@@ -134,13 +134,10 @@ export {
   getDogV13MechanismPlan,
   getDogV13SpecialMechanismBudget,
   getDogShuffleThreshold,
-  loadDogV13Config,
-  DogV13ConfigError,
 } from "@/games/dog-lege-dog/game/v13-config";
 export type {
   DogV13AppCopy,
   DogV13Config,
-  DogV13ConfigIssue,
   DogV13DifficultyScoring,
   DogV13DifficultyTarget,
   DogV13ItemId,

@@ -31,8 +31,6 @@ const ITEM_ASSET_PATHS: Readonly<Record<DogV13ItemId, string>> = {
   "restore-whistle": "assets/dog-item-icons/restore-whistle.svg",
 };
 
-export const SUPPORTED_ITEM_IDS: readonly DogV13ItemId[] = DOG_V13_ITEM_COPY_KEYS;
-
 const DIFFICULTY_TARGETS: readonly DogV13DifficultyTarget[] = [
   createDifficultyTarget(1, 2, [0.18, 0.28], [9, 10], [0.78, 0.98]),
   createDifficultyTarget(3, 4, [0.1, 0.28], [9, 10], [0.78, 1]),
@@ -46,7 +44,7 @@ const DIFFICULTY_TARGETS: readonly DogV13DifficultyTarget[] = [
   createDifficultyTarget(31, 99, [0.01, 0.18], [13, 16], [0.88, 1]),
 ];
 
-export const DOG_V13_CONFIG_SOURCE: DogV13Config = {
+const DOG_V13_CONFIG_SOURCE: DogV13Config = {
   schemaVersion: DOG_V13_SCHEMA_VERSION,
   game: {
     id: "dog-lege-dog",
@@ -400,6 +398,8 @@ export const DOG_V13_CONFIG_SOURCE: DogV13Config = {
   },
 };
 
+export const DOG_V13_CONFIG = deepFreeze(structuredClone(DOG_V13_CONFIG_SOURCE));
+
 function createDifficultyTarget(
   minLevel: number,
   maxLevel: number,
@@ -418,4 +418,11 @@ function createDifficultyTarget(
     operationCost: { min: 0.3, max: 1 },
     mistakeRisk: { min: 0.1, max: 0.99 },
   };
+}
+
+function deepFreeze<T extends object>(value: T): T {
+  for (const child of Object.values(value)) {
+    if (child !== null && typeof child === "object") deepFreeze(child);
+  }
+  return Object.freeze(value);
 }

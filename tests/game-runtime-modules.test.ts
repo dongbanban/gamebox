@@ -5,7 +5,6 @@ import { startDogLegeDogGame } from "@/games/dog-lege-dog/game/game-controller";
 import { GameSession } from "@/games/dog-lege-dog/game/game-session";
 import {
   DOG_V13_CONFIG,
-  loadDogV13Config,
 } from "@/games/dog-lege-dog/game/v13-config";
 import type { DogBlock } from "@/games/dog-lege-dog/levels/level-types";
 import { TEST_LEVEL } from "./support/dog-level-fixture";
@@ -17,7 +16,7 @@ import { createSoundEffects } from "@/games/dog-lege-dog/assets/sound-effects";
 
 describe("狗了个狗 runtime config seam", () => {
   it("uses supplied v13 tray capacity and freeze state rules", () => {
-    const config = loadDogV13Config({
+    const config = {
       ...DOG_V13_CONFIG,
       tray: {
         ...DOG_V13_CONFIG.tray,
@@ -27,7 +26,7 @@ describe("狗了个狗 runtime config seam", () => {
         ...DOG_V13_CONFIG.specialMechanisms,
         freezeMeltTripleCount: 1,
       },
-    });
+    };
     const session = new GameSession({
       level: createLevel([
         createBlock("single-1", "单身狗"),
@@ -65,14 +64,14 @@ describe("狗了个狗 runtime config seam", () => {
   it("uses supplied v13 animation timing at the animation seam", async () => {
     vi.useFakeTimers();
     try {
-      const config = loadDogV13Config({
+      const config = {
         ...DOG_V13_CONFIG,
         animation: {
           ...DOG_V13_CONFIG.animation,
           blockFlightMs: 1,
           freezeMeltMs: 2,
         },
-      });
+      };
       const root = document.createElement("div");
       const layer = document.createElement("div");
       layer.dataset.testid = "dog-animation-layer";
@@ -151,7 +150,7 @@ describe("狗了个狗 runtime config seam", () => {
       value: FakeAudioContext,
     });
     try {
-      const config = loadDogV13Config({
+      const config = {
         ...DOG_V13_CONFIG,
         audio: {
           ...DOG_V13_CONFIG.audio,
@@ -164,7 +163,7 @@ describe("狗了个狗 runtime config seam", () => {
             },
           },
         },
-      });
+      };
       const sound = createSoundEffects(true, config);
       sound.initialize();
       sound.play("select");
@@ -188,13 +187,13 @@ describe("狗了个狗 runtime config seam", () => {
   });
 
   it("uses supplied v13 loadout size and item quota in runtime UI", () => {
-    const config = loadDogV13Config({
+    const config = {
       ...DOG_V13_CONFIG,
       items: {
         ...DOG_V13_CONFIG.items,
         loadoutSize: 4,
       },
-    });
+    };
     const root = document.createElement("div");
     const game = startDogLegeDogGame(root, {
       config,

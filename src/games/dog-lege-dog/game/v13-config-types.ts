@@ -209,49 +209,49 @@ export interface DogV13Config {
   readonly schemaVersion: typeof DOG_V13_SCHEMA_VERSION;
   readonly game: {
     readonly id: "dog-lege-dog";
-    readonly firstLevelNumber: 1;
-    readonly maxLevelNumber: 99;
-    readonly generatorVersion: 13;
+    readonly firstLevelNumber: number;
+    readonly maxLevelNumber: number;
+    readonly generatorVersion: number;
     readonly defaultReward: number;
   };
   readonly generation: {
-    readonly preferWorker: true;
+    readonly preferWorker: boolean;
     readonly workerTimeoutMs: number;
-    readonly preGenerateNextLevel: true;
-    readonly verifyReplayBeforePublish: true;
+    readonly preGenerateNextLevel: boolean;
+    readonly verifyReplayBeforePublish: boolean;
   };
   readonly board: {
     readonly shape: "irregular";
-    readonly blockWidth: 4;
-    readonly blockHeight: 4;
+    readonly blockWidth: number;
+    readonly blockHeight: number;
   };
   readonly levels: {
     readonly logicalBlockCount: {
-      readonly start: 90;
-      readonly increment: 18;
-      readonly incrementEveryLevels: 5;
-      readonly cap: 180;
+      readonly start: number;
+      readonly increment: number;
+      readonly incrementEveryLevels: number;
+      readonly cap: number;
     };
     readonly structureStages: readonly DogV13StructureStage[];
   };
   readonly tray: {
-    readonly baseCapacity: 7;
-    readonly maxCapacity: 8;
-    readonly maxLockedSlotCount: 2;
+    readonly baseCapacity: number;
+    readonly maxCapacity: number;
+    readonly maxLockedSlotCount: number;
   };
   readonly items: {
     readonly ids: readonly DogV13ItemId[];
-    readonly loadoutSize: 3;
-    readonly maxSuccessfulUsesPerLevel: 1;
+    readonly loadoutSize: number;
+    readonly maxSuccessfulUsesPerLevel: number;
     readonly key: {
       readonly id: "key";
-      readonly initialUses: 0;
+      readonly initialUses: number;
       readonly dropRate: number;
     };
   };
   readonly specialMechanisms: {
-    readonly logicalBudgetRatio: 0.3;
-    readonly requireAllTypes: true;
+    readonly logicalBudgetRatio: number;
+    readonly requireAllTypes: boolean;
     readonly freezeMeltTripleCount: number;
     readonly shuffle: DogV13ShuffleConfig;
     readonly mechanisms: readonly DogV13MechanismDefinition[];
@@ -270,7 +270,7 @@ export interface DogV13Config {
     readonly keyDropMs: number;
     readonly trayUnlockMs: number;
     readonly shuffleFeedbackMs: number;
-    readonly inputLockedDuringAnimation: true;
+    readonly inputLockedDuringAnimation: boolean;
   };
   readonly assets: {
     readonly patterns: Readonly<Record<DogPatternType, string>>;
@@ -318,12 +318,6 @@ export interface DogV13Config {
     };
     readonly particles: Readonly<Record<DogV13ParticleEffectName, DogV13ParticleEffectProfile>>;
   };
-}
-
-export interface DogV13ConfigIssue {
-  readonly path: string;
-  readonly code: "required" | "type" | "range" | "value" | "duplicate" | "relation";
-  readonly message: string;
 }
 
 export interface DogV13MechanismPlan {
