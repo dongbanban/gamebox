@@ -5,10 +5,8 @@ import {
   ProgressStore,
   type StorageLike,
 } from "@/progress-store";
-import {
-  DOG_V13_CONFIG,
-  LevelGenerator,
-} from "@/games/dog-lege-dog";
+import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
+import { LevelGenerator } from "@/games/dog-lege-dog/levels/level-generation-engine";
 
 const MAX_LEVEL_NUMBER = DOG_V13_CONFIG.game.maxLevelNumber;
 

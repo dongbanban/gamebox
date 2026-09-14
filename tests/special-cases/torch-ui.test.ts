@@ -5,10 +5,8 @@ import {
   DOG_FREEZE_MELT_DURATION_MS,
   DOG_TORCH_MELT_DURATION_MS,
 } from "@/games/dog-lege-dog/assets/animation-effects";
-import {
-  DOG_FREEZE_MECHANISM_TYPE,
-  startDogLegeDogGame,
-} from "@/games/dog-lege-dog";
+import { startDogLegeDogGame } from "@/games/dog-lege-dog/game/game-controller";
+import { DOG_FREEZE_MECHANISM_TYPE } from "@/games/dog-lege-dog/game/special-mechanisms";
 
 describe("特殊机制测试 · torch-ui", () => {
   afterEach(() => {

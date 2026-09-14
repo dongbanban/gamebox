@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { describe, expect, it } from "vitest";
-import type { DogBlock } from "@/games/dog-lege-dog";
+import type { DogBlock } from "@/games/dog-lege-dog/levels/level-types";
 import { TEST_LEVEL } from "./support/dog-level-fixture";
 import { getDogPatternAssetUrl } from "@/games/dog-lege-dog/assets/game-assets";
 import { renderDogItemAsset } from "@/games/dog-lege-dog/assets/item-assets";
@@ -20,7 +20,7 @@ import {
   renderDogLoadoutSummary,
 } from "@/games/dog-lege-dog/game/dog-loadout";
 import { renderRegistrationView } from "@/app/app-views";
-import { startDogLegeDogGame } from "@/games/dog-lege-dog";
+import { startDogLegeDogGame } from "@/games/dog-lege-dog/game/game-controller";
 
 describe("狗了个狗 UI rendering seams", () => {
   it("renders ordinary and mechanism blocks through independent block seam", () => {

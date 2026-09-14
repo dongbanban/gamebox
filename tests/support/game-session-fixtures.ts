@@ -1,8 +1,8 @@
-import {
-  type DogBlock,
-  type DogLegeDogLevel,
-  type DogPatternType,
-} from "@/games/dog-lege-dog";
+import type {
+  DogBlock,
+  DogLegeDogLevel,
+  DogPatternType,
+} from "@/games/dog-lege-dog/levels/level-types";
 import { TEST_LEVEL, TEST_PATTERN_TYPES } from "./dog-level-fixture";
 
 export function createLevel(blocks: readonly DogBlock[]): DogLegeDogLevel {

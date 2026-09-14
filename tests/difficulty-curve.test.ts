@@ -1,14 +1,16 @@
 import { describe, expect, it } from "vitest";
+import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
+import { getDogLogicalBlockCount } from "@/games/dog-lege-dog/game/special-mechanisms";
+import {
+  isDifficultyWithinTarget,
+} from "@/games/dog-lege-dog/levels/level-difficulty";
+import { LevelGenerator } from "@/games/dog-lege-dog/levels/level-generation-engine";
 import {
   getBlockCount,
-  DOG_V13_CONFIG,
   getDifficultyTarget,
-  getDogLogicalBlockCount,
   getMaxLayers,
   getPatternTypeCount,
-  isDifficultyWithinTarget,
-  LevelGenerator,
-} from "@/games/dog-lege-dog";
+} from "@/games/dog-lege-dog/levels/level-progression";
 
 describe("狗了个狗难度曲线", () => {
   it("前五关使用有限且逐步收紧的安全选择/时长目标", () => {

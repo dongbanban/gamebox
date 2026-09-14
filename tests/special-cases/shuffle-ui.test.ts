@@ -2,22 +2,14 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { BLOCK_FLIGHT_DURATION_MS } from "@/games/dog-lege-dog/assets/animation-effects";
+import { startDogLegeDogGame } from "@/games/dog-lege-dog/game/game-controller";
 import {
-  BLOCK_HEIGHT,
-  BLOCK_WIDTH,
-  DOG_V13_CONFIG,
-  DOG_FREEZE_MECHANISM_TYPE,
   DOG_SHUFFLE_MECHANISM_TYPE,
-  LevelGenerator,
   createDogShuffleMechanism,
-  startDogLegeDogGame,
-} from "@/games/dog-lege-dog";
-import type {
-  DogBlock,
-  DogLegeDogLevel,
-  DogPatternType,
-} from "@/games/dog-lege-dog";
-import { TEST_LEVEL, TEST_PATTERN_TYPES } from "../support/dog-level-fixture";
+} from "@/games/dog-lege-dog/game/special-mechanisms";
+import { LevelGenerator } from "@/games/dog-lege-dog/levels/level-generation-engine";
+import type { DogPatternType } from "@/games/dog-lege-dog/levels/level-types";
+import { createBlock, createLevel } from "../support/item-fixtures";
 
 const WORKING_DOG: DogPatternType = "打工狗";
 const SINGLE_DOG: DogPatternType = "单身狗";
@@ -33,8 +25,8 @@ describe("特殊机制测试 · shuffle-ui", () => {
     const root = document.createElement("div");
     const game = startDogLegeDogGame(root, {
       level: createLevel([
-        createBlock("single-1", 0, 0, SINGLE_DOG),
-        createBlock("licking-1", 4, 0, LICKING_DOG),
+        createBlock("single-1", SINGLE_DOG),
+        createBlock("licking-1", LICKING_DOG, undefined, { x: 4 }),
       ]),
       onLoadoutConfirmed: vi.fn(),
     });
@@ -71,8 +63,8 @@ describe("特殊机制测试 · shuffle-ui", () => {
     const root = document.createElement("div");
     const game = startDogLegeDogGame(root, {
       level: createLevel([
-        createBlock("shuffle", 0, 0, WORKING_DOG, createDogShuffleMechanism()),
-        createBlock("remaining", 4, 0, SINGLE_DOG),
+        createBlock("shuffle", WORKING_DOG, createDogShuffleMechanism()),
+        createBlock("remaining", SINGLE_DOG, undefined, { x: 4 }),
       ]),
       loadout: ["tray-capacity", "wildcard", "torch"],
     });
@@ -122,11 +114,11 @@ describe("特殊机制测试 · shuffle-ui", () => {
     const root = document.createElement("div");
     const game = startDogLegeDogGame(root, {
       level: createLevel([
-        createBlock("shuffle", 0, 0, WORKING_DOG, {
+        createBlock("shuffle", WORKING_DOG, {
           type: DOG_SHUFFLE_MECHANISM_TYPE,
           state: { status: "triggerable" },
         }),
-        createBlock("remaining", 4, 0, SINGLE_DOG),
+        createBlock("remaining", SINGLE_DOG, undefined, { x: 4 }),
       ]),
       loadout: ["restore-whistle", "tray-capacity", "torch"],
     });
@@ -185,10 +177,9 @@ describe("特殊机制测试 · shuffle-ui", () => {
       level: createLevel(patterns.map((patternType, index) =>
         createBlock(
           index === 0 ? "shuffle" : `ordinary-${index}`,
-          index * 4,
-          0,
           patternType,
           index === 0 ? createDogShuffleMechanism() : undefined,
+          { x: index * 4 },
         ),
       )),
       loadout: ["restore-whistle", "tray-capacity", "torch"],
@@ -255,327 +246,4 @@ describe("特殊机制测试 · shuffle-ui", () => {
     game.destroy();
   });
 
-  it("复原哨在乱序动画后开放，反向反馈期间锁定输入并在结束后复原", async () => {
-    vi.useFakeTimers();
-    const root = document.createElement("div");
-    const game = startDogLegeDogGame(root, {
-      level: createRestoreUiLevel(),
-      loadout: ["restore-whistle", "tray-capacity", "torch"],
-    });
-
-    for (const blockId of ["shuffle", "single-1", "licking-1", "guard-1"]) {
-      game.selectBlock(blockId);
-      await vi.runAllTimersAsync();
-    }
-    game.selectBlock("mad-1");
-
-    expect(game.getState().inputLocked).toBe(true);
-    expect(root.querySelector<HTMLButtonElement>('[data-testid="dog-replay-current-level"]')?.disabled)
-      .toBe(true);
-    expect(root.querySelector<HTMLButtonElement>('[data-item-id="restore-whistle"]')?.disabled)
-      .toBe(true);
-    await vi.runAllTimersAsync();
-
-    const shuffledIds = game.getState().session.trayBlocks.map((block) => block.id);
-    expect(game.getState().items?.items.find((item) => item.id === "restore-whistle"))
-      .toMatchObject({ available: true, remainingUses: 1 });
-    const whistle = root.querySelector<HTMLButtonElement>('[data-item-id="restore-whistle"]');
-    expect(whistle?.disabled).toBe(false);
-    expect(whistle?.getAttribute("aria-label")).toContain("复原哨");
-
-    whistle?.click();
-
-    expect(game.getState().inputLocked).toBe(true);
-    expect(game.getState().session.trayBlocks.map((block) => block.id)).toEqual(shuffledIds);
-    expect(root.querySelector<HTMLElement>('[data-testid="dog-shuffle-effect"]')?.dataset.shuffleOutcome)
-      .toBe("restored");
-
-    await vi.runAllTimersAsync();
-
-    expect(game.getState().inputLocked).toBe(false);
-    expect(root.querySelector<HTMLButtonElement>('[data-testid="dog-replay-current-level"]')?.disabled)
-      .toBe(false);
-    expect(game.getState().session.trayBlocks.map((block) => block.id)).toEqual([
-      "shuffle",
-      "single-1",
-      "licking-1",
-      "guard-1",
-      "mad-1",
-    ]);
-    expect(game.getState().session.trayBlocks[0]?.specialMechanism).toBeUndefined();
-    expect(game.getState().items?.items.find((item) => item.id === "restore-whistle"))
-      .toMatchObject({ available: false, remainingUses: 0 });
-    game.destroy();
-  });
-
-  it("下一次公开棋盘选择后使复原哨事务失效", async () => {
-    vi.useFakeTimers();
-    const root = document.createElement("div");
-    const game = startDogLegeDogGame(root, {
-      level: createRestoreUiLevel(),
-      loadout: ["restore-whistle", "tray-capacity", "torch"],
-    });
-
-    try {
-      for (const blockId of ["shuffle", "single-1", "licking-1", "guard-1", "mad-1"]) {
-        game.selectBlock(blockId);
-        await vi.runAllTimersAsync();
-      }
-
-      expect(game.getState().items?.items.find((item) => item.id === "restore-whistle"))
-        .toMatchObject({ available: true, remainingUses: 1 });
-      game.selectBlock("working-2");
-
-      expect(game.getState().inputLocked).toBe(true);
-      expect(game.getState().items?.items.find((item) => item.id === "restore-whistle"))
-        .toMatchObject({ available: false, remainingUses: 1 });
-      await vi.runAllTimersAsync();
-      expect(game.getState().items?.items.find((item) => item.id === "restore-whistle"))
-        .toMatchObject({ available: false, remainingUses: 1 });
-    } finally {
-      game.destroy();
-    }
-  });
-
-  it("乱序重排和复原只移动既有暂存槽节点", async () => {
-    vi.useFakeTimers();
-    const root = document.createElement("div");
-    const game = startDogLegeDogGame(root, {
-      level: createRestoreUiLevel(),
-      loadout: ["restore-whistle", "tray-capacity", "torch"],
-    });
-
-    try {
-      for (const blockId of ["shuffle", "single-1", "licking-1", "guard-1"]) {
-        game.selectBlock(blockId);
-        await vi.runAllTimersAsync();
-      }
-
-      const tray = root.querySelector<HTMLOListElement>('[data-testid="dog-tray"]');
-      if (tray === null) {
-        throw new Error("Expected restore fixture tray");
-      }
-      const beforeShuffleIds = game.getState().session.trayBlocks.map((block) => block.id);
-      const beforeShuffleChildren = [...tray.children];
-      const beforeShuffleSlots = new Map(
-        [...tray.querySelectorAll<HTMLElement>("[data-block-id]")]
-          .map((slot) => [slot.dataset.blockId, slot] as const),
-      );
-
-      const reorderObserver = new MutationObserver(() => undefined);
-      reorderObserver.observe(tray, { childList: true });
-      game.selectBlock("mad-1");
-      const reorderMutations = reorderObserver.takeRecords();
-      reorderObserver.disconnect();
-
-      const shuffledIds = game.getState().session.trayBlocks.map((block) => block.id);
-      expect(shuffledIds).not.toEqual([...beforeShuffleIds, "mad-1"]);
-      expect([...tray.querySelectorAll<HTMLElement>("[data-block-id]")]
-        .map((slot) => slot.dataset.blockId)).toEqual(shuffledIds);
-      expect(new Set(tray.children)).toEqual(new Set(beforeShuffleChildren));
-      expect(reorderMutations.flatMap((record) => [
-        ...record.addedNodes,
-        ...record.removedNodes,
-      ]).every((node) => node instanceof HTMLElement && beforeShuffleChildren.includes(node)))
-        .toBe(true);
-      for (const [blockId, slot] of beforeShuffleSlots) {
-        expect(root.querySelector(`[data-block-id="${blockId}"]`)).toBe(slot);
-      }
-
-      await vi.runAllTimersAsync();
-      const shuffledChildren = [...tray.children];
-      const beforeRestoreSlots = new Map(
-        [...tray.querySelectorAll<HTMLElement>("[data-block-id]")]
-          .map((slot) => [slot.dataset.blockId, slot] as const),
-      );
-      const restoreObserver = new MutationObserver(() => undefined);
-      restoreObserver.observe(tray, { childList: true });
-      root.querySelector<HTMLButtonElement>('[data-item-id="restore-whistle"]')?.click();
-      await vi.runAllTimersAsync();
-      const restoreMutations = restoreObserver.takeRecords();
-      restoreObserver.disconnect();
-
-      const restoredIds = game.getState().session.trayBlocks.map((block) => block.id);
-      expect(restoredIds).toEqual([
-        ...beforeShuffleIds,
-        "mad-1",
-      ]);
-      expect([...tray.querySelectorAll<HTMLElement>("[data-block-id]")]
-        .map((slot) => slot.dataset.blockId)).toEqual(restoredIds);
-      expect(new Set(tray.children)).toEqual(new Set(shuffledChildren));
-      expect(restoreMutations.flatMap((record) => [
-        ...record.addedNodes,
-        ...record.removedNodes,
-      ]).every((node) => node instanceof HTMLElement && shuffledChildren.includes(node)))
-        .toBe(true);
-      for (const [blockId, slot] of beforeRestoreSlots) {
-        expect(root.querySelector(`[data-block-id="${blockId}"]`)).toBe(slot);
-      }
-    } finally {
-      game.destroy();
-    }
-  });
-
-  it("乱序结算使用最终快照并保留冻结进度与稳定节点", async () => {
-    vi.useFakeTimers();
-    const root = document.createElement("div");
-    const config = {
-      ...DOG_V13_CONFIG,
-      items: {
-        ...DOG_V13_CONFIG.items,
-        key: { ...DOG_V13_CONFIG.items.key, dropRate: 1 },
-      },
-    } satisfies typeof DOG_V13_CONFIG;
-    const game = startDogLegeDogGame(root, {
-      config,
-      level: {
-        ...createLevel([
-          createBlock("frozen", 0, 0, "看门狗", {
-            type: DOG_FREEZE_MECHANISM_TYPE,
-            state: { status: "frozen", completedTriples: 0 },
-          }),
-          createBlock("working-1", 4, 0, WORKING_DOG),
-          createBlock("single-1", 8, 0, SINGLE_DOG),
-          createBlock("working-2", 12, 0, WORKING_DOG),
-          createBlock("licking-1", 16, 0, LICKING_DOG),
-          createBlock("shuffle", 20, 0, WORKING_DOG, createDogShuffleMechanism()),
-          createBlock("single-2", 24, 0, SINGLE_DOG),
-          createBlock("single-3", 28, 0, SINGLE_DOG),
-          createBlock("licking-2", 32, 0, LICKING_DOG),
-          createBlock("licking-3", 36, 0, LICKING_DOG),
-          createBlock("guard-2", 40, 0, "看门狗"),
-          createBlock("guard-3", 44, 0, "看门狗"),
-        ]),
-        lockedTraySlotCount: 1,
-      },
-      loadout: ["restore-whistle", "key", "tray-capacity"],
-    });
-
-    try {
-      for (const blockId of [
-        "frozen",
-        "working-1",
-        "single-1",
-        "working-2",
-        "licking-1",
-      ]) {
-        game.selectBlock(blockId);
-        await vi.runAllTimersAsync();
-      }
-
-      const tray = root.querySelector<HTMLOListElement>('[data-testid="dog-tray"]');
-      const beforeSlots = new Map(
-        [...tray?.querySelectorAll<HTMLElement>("[data-block-id]") ?? []]
-          .map((slot) => [slot.dataset.blockId, slot] as const),
-      );
-      if (tray === null) {
-        throw new Error("Expected shuffle settlement tray");
-      }
-
-      game.selectBlock("shuffle");
-
-      expect(game.getState().session.trayBlocks.find((block) => block.id === "frozen"))
-        .toMatchObject({
-          specialMechanism: {
-            type: DOG_FREEZE_MECHANISM_TYPE,
-            state: { completedTriples: 1 },
-          },
-        });
-      expect(game.getState().session.trayBlocks.length).toBeLessThan(6);
-      expect([...tray.querySelectorAll<HTMLElement>("[data-block-id]")]
-        .map((slot) => slot.dataset.blockId)).toEqual(
-        game.getState().session.trayBlocks.map((block) => block.id),
-      );
-      for (const [blockId, slot] of beforeSlots) {
-        if (root.querySelector(`[data-block-id="${blockId}"]`) !== null) {
-          expect(root.querySelector(`[data-block-id="${blockId}"]`)).toBe(slot);
-        }
-      }
-      expect(root.querySelector('[data-block-id="frozen"]')).toBe(
-        beforeSlots.get("frozen"),
-      );
-      expect(tray.querySelector<HTMLElement>('[data-block-id="frozen"]')?.dataset.specialMechanismProgress)
-        .toBe("1");
-
-      await vi.runAllTimersAsync();
-      expect(game.getState().items?.items.find((item) => item.id === "restore-whistle"))
-        .toMatchObject({ available: true, remainingUses: 1 });
-      expect(game.getState().items?.items.find((item) => item.id === "key"))
-        .toMatchObject({ available: true, remainingUses: 1 });
-      const afterShuffleSlots = new Map(
-        [...tray.querySelectorAll<HTMLElement>("[data-block-id]")]
-          .map((slot) => [slot.dataset.blockId, slot] as const),
-      );
-      root.querySelector<HTMLButtonElement>('[data-item-id="restore-whistle"]')?.click();
-      expect(game.getState().inputLocked).toBe(true);
-      await vi.runAllTimersAsync();
-
-      expect(game.getState().session.trayBlocks.map((block) => block.id)).toEqual([
-        ...beforeSlots.keys(),
-        "shuffle",
-      ]);
-      expect(game.getState().session.trayBlocks.find((block) => block.id === "frozen"))
-        .toMatchObject({ specialMechanism: { state: { completedTriples: 0 } } });
-      expect(game.getState().session.trayBlocks.find((block) => block.id === "shuffle")?.specialMechanism)
-        .toBeUndefined();
-      expect(game.getState().items?.items.find((item) => item.id === "key"))
-        .toMatchObject({ available: false, remainingUses: 0 });
-      for (const [blockId, slot] of afterShuffleSlots) {
-        expect(root.querySelector(`[data-block-id="${blockId}"]`)).toBe(slot);
-      }
-    } finally {
-      game.destroy();
-    }
-  });
 });
-
-function createRestoreUiLevel(): DogLegeDogLevel {
-  return {
-    ...createLevel([
-      createBlock("shuffle", 0, 0, WORKING_DOG, createDogShuffleMechanism()),
-      createBlock("single-1", 4, 0, SINGLE_DOG),
-      createBlock("licking-1", 8, 0, LICKING_DOG),
-      createBlock("guard-1", 12, 0, "看门狗"),
-      createBlock("mad-1", 16, 0, "疯狗"),
-      createBlock("working-2", 20, 0, WORKING_DOG),
-      createBlock("working-3", 24, 0, WORKING_DOG),
-      createBlock("single-2", 28, 0, SINGLE_DOG),
-      createBlock("single-3", 32, 0, SINGLE_DOG),
-      createBlock("licking-2", 36, 0, LICKING_DOG),
-      createBlock("licking-3", 40, 0, LICKING_DOG),
-      createBlock("guard-2", 44, 0, "看门狗"),
-      createBlock("guard-3", 48, 0, "看门狗"),
-      createBlock("mad-2", 52, 0, "疯狗"),
-      createBlock("mad-3", 56, 0, "疯狗"),
-    ]),
-    runSeed: "restore-whistle-ui",
-  };
-}
-
-function createLevel(blocks: readonly DogBlock[]): DogLegeDogLevel {
-  return {
-    ...TEST_LEVEL,
-    patternTypes: TEST_PATTERN_TYPES,
-    blocks,
-  };
-}
-
-function createBlock(
-  id: string,
-  x: number,
-  y: number,
-  patternType: DogPatternType,
-  specialMechanism?: DogBlock["specialMechanism"],
-): DogBlock {
-  return {
-    id,
-    x,
-    y,
-    z: 0,
-    width: BLOCK_WIDTH,
-    height: BLOCK_HEIGHT,
-    rotation: 0,
-    patternType,
-    ...(specialMechanism === undefined ? {} : { specialMechanism }),
-  };
-}

@@ -3,14 +3,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { resolveAssetUrl } from "@/asset-url";
 import { BLOCK_FLIGHT_DURATION_MS } from "@/games/dog-lege-dog/assets/animation-effects";
+import { startDogLegeDogGame } from "@/games/dog-lege-dog/game/game-controller";
 import {
-  DOG_PATTERN_TYPES,
   DOG_TWIN_MECHANISM_TYPE,
-  DOG_V13_CONFIG,
-  LevelGenerator,
   getDogLogicalBlockCount,
-  startDogLegeDogGame,
-} from "@/games/dog-lege-dog";
+} from "@/games/dog-lege-dog/game/special-mechanisms";
+import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
+import { LevelGenerator } from "@/games/dog-lege-dog/levels/level-generation-engine";
+import { DOG_PATTERN_TYPES } from "@/games/dog-lege-dog/levels/level-types";
 import {
   renderDogPatternAsset,
 } from "@/games/dog-lege-dog/assets/game-assets";

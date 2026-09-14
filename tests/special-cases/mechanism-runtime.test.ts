@@ -1,25 +1,27 @@
 // @vitest-environment jsdom
 
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { startDogLegeDogGame } from "@/games/dog-lege-dog/game/game-controller";
+import { GameSession } from "@/games/dog-lege-dog/game/game-session";
 import {
-  BLOCK_HEIGHT,
-  BLOCK_WIDTH,
   DOG_ILLUSION_MECHANISM_TYPE,
-  DOG_PATTERN_TYPES,
   DOG_FREEZE_MECHANISM_TYPE,
   DOG_TWIN_MECHANISM_TYPE,
-  GameSession,
-  LevelGenerator,
   createDogSpecialMechanism,
-  getBlockCount,
   getDogLogicalBlockCount,
   getDogSpecialMechanismComposition,
   validateDogSpecialMechanismComposition,
+} from "@/games/dog-lege-dog/game/special-mechanisms";
+import { LevelGenerator } from "@/games/dog-lege-dog/levels/level-generation-engine";
+import { getBlockCount } from "@/games/dog-lege-dog/levels/level-progression";
+import {
+  BLOCK_HEIGHT,
+  BLOCK_WIDTH,
+  DOG_PATTERN_TYPES,
   type DogBlock,
   type DogLegeDogLevel,
   type DogPatternType,
-  startDogLegeDogGame,
-} from "@/games/dog-lege-dog";
+} from "@/games/dog-lege-dog/levels/level-types";
 import { TEST_LEVEL, TEST_PATTERN_TYPES } from "../support/dog-level-fixture";
 
 const WORKING_DOG: DogPatternType = "打工狗";

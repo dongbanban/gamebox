@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
 import {
-  DOG_V13_CONFIG,
   MAX_LEVEL_GENERATION_ATTEMPTS,
   LevelGenerator,
-} from "@/games/dog-lege-dog";
+} from "@/games/dog-lege-dog/levels/level-generation-engine";
 
 describe("LevelGenerator 候选筛选失败", () => {
   it("筛选全部失败时保留 replay metadata，并可重放失败候选", () => {

@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
+import { GamePreparationError } from "@/game-contracts";
+import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
 import {
-  DOG_V13_CONFIG,
   DogLevelGenerationService,
-  GamePreparationError,
   type DogLevelGenerationWorker,
   type DogLevelGenerationWorkerRequest,
   type DogLevelGenerationWorkerResponse,
-} from "@/games/dog-lege-dog";
+} from "@/games/dog-lege-dog/levels/level-generation-service";
 import {
   TEST_LEVEL,
   TEST_RUN_SEED,

@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
 
 import { describe, expect, it, vi } from "vitest";
+import { startDogLegeDogGame } from "@/games/dog-lege-dog/game/game-controller";
+import { GameSession } from "@/games/dog-lege-dog/game/game-session";
 import {
   DOG_V13_CONFIG,
-  GameSession,
   loadDogV13Config,
-  startDogLegeDogGame,
-  type DogBlock,
-} from "@/games/dog-lege-dog";
+} from "@/games/dog-lege-dog/game/v13-config";
+import type { DogBlock } from "@/games/dog-lege-dog/levels/level-types";
 import { TEST_LEVEL } from "./support/dog-level-fixture";
 import {
   animateBlockFlight,

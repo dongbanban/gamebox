@@ -7,6 +7,15 @@ export async function enterGame(page: Page): Promise<void> {
   await confirmDogLoadout(page);
 }
 
+export async function useDeterministicRunSeed(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    Object.defineProperty(window.crypto, "randomUUID", {
+      configurable: true,
+      value: () => "fixture-1",
+    });
+  });
+}
+
 export async function getBlockIds(page: Page): Promise<(string | null)[]> {
   return page
     .locator('[data-testid="dog-block"]')

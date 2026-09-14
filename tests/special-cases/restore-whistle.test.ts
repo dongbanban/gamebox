@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
+import { GameSession } from "@/games/dog-lege-dog/game/game-session";
+import { createDogShuffleMechanism } from "@/games/dog-lege-dog/game/special-mechanisms";
 import {
   BLOCK_HEIGHT,
   BLOCK_WIDTH,
-  GameSession,
-  createDogShuffleMechanism,
   type DogBlock,
   type DogLegeDogLevel,
   type DogPatternType,
   type DogTrayBlock,
-} from "@/games/dog-lege-dog";
+} from "@/games/dog-lege-dog/levels/level-types";
 import { TEST_LEVEL, TEST_PATTERN_TYPES } from "../support/dog-level-fixture";
 
 const WORKING_DOG: DogPatternType = "打工狗";

@@ -1,15 +1,17 @@
 import { describe, expect, it, vi } from "vitest";
+import { GameSession } from "@/games/dog-lege-dog/game/game-session";
+import { getDogLogicalBlockCount } from "@/games/dog-lege-dog/game/special-mechanisms";
+import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
+import {
+  LevelGenerator,
+  getDogLegeDogLevel,
+} from "@/games/dog-lege-dog/levels/level-generation-engine";
+import { getDogTrayLockCount } from "@/games/dog-lege-dog/levels/level-random";
+import { DOG_REWARD_CONFIG_VERSION } from "@/games/dog-lege-dog/levels/level-reward";
 import {
   BLOCK_HEIGHT,
   BLOCK_WIDTH,
-  DOG_V13_CONFIG,
-  GameSession,
-  LevelGenerator,
-  getDogLegeDogLevel,
-  getDogLogicalBlockCount,
-  DOG_REWARD_CONFIG_VERSION,
-  getDogTrayLockCount,
-} from "@/games/dog-lege-dog";
+} from "@/games/dog-lege-dog/levels/level-types";
 
 const MAX_LEVEL_NUMBER = DOG_V13_CONFIG.game.maxLevelNumber;
 const CURRENT_GENERATOR_VERSION = DOG_V13_CONFIG.game.generatorVersion;

@@ -1,20 +1,24 @@
 import { describe, expect, it } from "vitest";
+import { GameSession } from "@/games/dog-lege-dog/game/game-session";
 import {
   DOG_V13_CONFIG,
-  DOG_PATTERN_TYPES,
-  GameSession,
-  getBlockCount,
-  getDogLogicalBlockCount,
-  getMaxLayers,
-  getPatternTypeCount,
-  findSolvability,
   getDogV13LogicalBlockCount,
   getDogV13MechanismPlan,
   getDogV13SpecialMechanismBudget,
-  isDifficultyWithinTarget,
-  LevelGenerator,
+} from "@/games/dog-lege-dog/game/v13-config";
+import { getDogLogicalBlockCount } from "@/games/dog-lege-dog/game/special-mechanisms";
+import { isDifficultyWithinTarget } from "@/games/dog-lege-dog/levels/level-difficulty";
+import { LevelGenerator } from "@/games/dog-lege-dog/levels/level-generation-engine";
+import {
+  getBlockCount,
+  getMaxLayers,
+  getPatternTypeCount,
+} from "@/games/dog-lege-dog/levels/level-progression";
+import { findSolvability } from "@/games/dog-lege-dog/levels/level-solvability";
+import {
+  DOG_PATTERN_TYPES,
   type DogLegeDogLevel,
-} from "@/games/dog-lege-dog";
+} from "@/games/dog-lege-dog/levels/level-types";
 import {
   formatDogGenerationTestReport,
   type DogGenerationTestCase,

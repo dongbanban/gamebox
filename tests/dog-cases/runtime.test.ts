@@ -5,9 +5,7 @@ import type { GameResult } from "@/catalog";
 import {
   BLOCK_FLIGHT_DURATION_MS,
 } from "@/games/dog-lege-dog/assets/animation-effects";
-import {
-  DOG_ILLUSION_MECHANISM_TYPE,
-} from "@/games/dog-lege-dog";
+import { DOG_ILLUSION_MECHANISM_TYPE } from "@/games/dog-lege-dog/game/special-mechanisms";
 import { TEST_LEVEL } from "../support/dog-level-fixture";
 import { startTestGame } from "../support/dog-game-fixtures";
 

@@ -1,10 +1,10 @@
 import type { GameLaunchContext } from "@/game-contracts";
-import {
-  startDogLegeDogGame,
-  type DogBlock,
-  type DogLegeDogLevel,
-  type DogPatternType,
-} from "@/games/dog-lege-dog";
+import { startDogLegeDogGame } from "@/games/dog-lege-dog/game/game-controller";
+import type {
+  DogBlock,
+  DogLegeDogLevel,
+  DogPatternType,
+} from "@/games/dog-lege-dog/levels/level-types";
 import { TEST_LEVEL, TEST_RUN_SEED } from "./dog-level-fixture";
 
 export function startTestGame(root: HTMLElement, options: GameLaunchContext = {}) {

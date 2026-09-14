@@ -4,6 +4,7 @@ import {
   winCurrentLevel,
   leaveActiveGame,
   reset,
+  useDeterministicRunSeed,
 } from "../support/full-flow-fixtures";
 import { resetPage } from "../support/common";
 
@@ -19,6 +20,7 @@ test.describe("狗了个狗完整浏览器闭环 · lifecycle", () => {
     await expect(page.getByRole("heading", { name: "游戏目录" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "狗了个狗" })).toBeVisible();
 
+    await useDeterministicRunSeed(page);
     await enterGame(page);
     await expect(page.getByTestId("dog-board")).toBeVisible();
     await expect(page.getByRole("button", { name: "音效开启" })).toBeVisible();
@@ -27,6 +29,7 @@ test.describe("狗了个狗完整浏览器闭环 · lifecycle", () => {
     await expect(page.getByRole("button", { name: "音效关闭" })).toBeVisible();
     await page.reload();
     await expect(page.getByRole("heading", { name: "游戏目录" })).toBeVisible();
+    await useDeterministicRunSeed(page);
     await enterGame(page);
     await expect(page.getByRole("button", { name: "音效关闭" })).toBeVisible();
 

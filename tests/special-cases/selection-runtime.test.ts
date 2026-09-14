@@ -1,18 +1,20 @@
 // @vitest-environment jsdom
 
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { GameSession } from "@/games/dog-lege-dog/game/game-session";
 import {
-  BLOCK_HEIGHT,
-  BLOCK_WIDTH,
   DOG_ILLUSION_MECHANISM_TYPE,
   DOG_FREEZE_MECHANISM_TYPE,
   DOG_MAGNETIC_MECHANISM_TYPE,
   DOG_TWIN_MECHANISM_TYPE,
-  GameSession,
+} from "@/games/dog-lege-dog/game/special-mechanisms";
+import {
+  BLOCK_HEIGHT,
+  BLOCK_WIDTH,
   type DogBlock,
   type DogLegeDogLevel,
   type DogPatternType,
-} from "@/games/dog-lege-dog";
+} from "@/games/dog-lege-dog/levels/level-types";
 import { TEST_LEVEL, TEST_PATTERN_TYPES } from "../support/dog-level-fixture";
 
 const WORKING_DOG: DogPatternType = "打工狗";

@@ -1,13 +1,17 @@
 import { describe, expect, it } from "vitest";
+import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
 import {
   calculateDifficultyMetrics,
-  DOG_PATTERN_TYPES,
-  DOG_V13_CONFIG,
+} from "@/games/dog-lege-dog/levels/level-difficulty";
+import {
   MAX_LEVEL_GENERATION_ATTEMPTS,
   LevelGenerator,
-  getDifficultyTarget,
-  findSolvabilityFromState,
-} from "@/games/dog-lege-dog";
+} from "@/games/dog-lege-dog/levels/level-generation-engine";
+import { getDifficultyTarget } from "@/games/dog-lege-dog/levels/level-progression";
+import { findSolvabilityFromState } from "@/games/dog-lege-dog/levels/level-solvability";
+import {
+  DOG_PATTERN_TYPES,
+} from "@/games/dog-lege-dog/levels/level-types";
 
 const MAX_LEVEL_NUMBER = DOG_V13_CONFIG.game.maxLevelNumber;
 const CURRENT_GENERATOR_VERSION = DOG_V13_CONFIG.game.generatorVersion;

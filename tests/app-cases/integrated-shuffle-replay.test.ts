@@ -7,16 +7,16 @@ import type {
   GameLaunchContext,
   GameLaunchPreparation,
 } from "@/catalog";
+import { startDogLegeDogGame } from "@/games/dog-lege-dog/game/game-controller";
+import { createDogShuffleMechanism } from "@/games/dog-lege-dog/game/special-mechanisms";
+import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
 import {
   BLOCK_HEIGHT,
   BLOCK_WIDTH,
-  DOG_V13_CONFIG,
-  createDogShuffleMechanism,
-  startDogLegeDogGame,
   type DogBlock,
   type DogLegeDogLevel,
   type DogPatternType,
-} from "@/games/dog-lege-dog";
+} from "@/games/dog-lege-dog/levels/level-types";
 import { BLOCK_FLIGHT_DURATION_MS } from "@/games/dog-lege-dog/assets/animation-effects";
 import { GAME_ID, ProgressStore } from "@/progress-store";
 import { MemoryStorage, mountApp } from "../support/app-fixtures";

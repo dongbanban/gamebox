@@ -2,8 +2,8 @@ import {
   BLOCK_HEIGHT,
   BLOCK_WIDTH,
   DOG_PATTERN_TYPES,
-  LevelGenerator,
-} from "@/games/dog-lege-dog";
+} from "@/games/dog-lege-dog/levels/level-types";
+import { LevelGenerator } from "@/games/dog-lege-dog/levels/level-generation-engine";
 
 type SolvabilityFixture = Parameters<LevelGenerator["findSolvability"]>[0];
 export function createLongSearchFixture(): SolvabilityFixture {

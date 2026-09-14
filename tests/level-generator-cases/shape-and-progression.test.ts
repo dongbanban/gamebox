@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
+import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
+import { LevelGenerator } from "@/games/dog-lege-dog/levels/level-generation-engine";
 import {
-  DOG_SHAPE_TEMPLATES,
-  DOG_V13_CONFIG,
-  LevelGenerator,
   getBlockCount,
   getMaxLayers,
   getPatternTypeCount,
-} from "@/games/dog-lege-dog";
+} from "@/games/dog-lege-dog/levels/level-progression";
+import { DOG_SHAPE_TEMPLATES } from "@/games/dog-lege-dog/levels/level-shapes";
 
 const MAX_LEVEL_NUMBER = DOG_V13_CONFIG.game.maxLevelNumber;
 const CURRENT_GENERATOR_VERSION = DOG_V13_CONFIG.game.generatorVersion;

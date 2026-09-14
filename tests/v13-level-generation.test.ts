@@ -1,15 +1,17 @@
 import { describe, expect, it } from "vitest";
+import { GameSession } from "@/games/dog-lege-dog/game/game-session";
 import {
   DOG_V13_CONFIG,
-  GameSession,
-  findShuffleTriggerPath,
   getDogV13LogicalBlockCount,
   getDogV13MechanismPlan,
+} from "@/games/dog-lege-dog/game/v13-config";
+import {
   getDogSpecialMechanismConfigs,
   getDogLogicalBlockCount,
-  isDifficultyWithinTarget,
-  LevelGenerator,
-} from "@/games/dog-lege-dog";
+} from "@/games/dog-lege-dog/game/special-mechanisms";
+import { isDifficultyWithinTarget } from "@/games/dog-lege-dog/levels/level-difficulty";
+import { LevelGenerator } from "@/games/dog-lege-dog/levels/level-generation-engine";
+import { findShuffleTriggerPath } from "@/games/dog-lege-dog/levels/level-solvability";
 
 describe("狗了个狗 v13 关卡生成 seam", () => {
   it("正式生成在第 3 关启用乱序且每关最多一个", () => {

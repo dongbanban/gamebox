@@ -3,11 +3,11 @@ import {
   type DogItemDefinition,
 } from "@/games/dog-lege-dog/game/dog-loadout";
 import type { DogItemRuntimeDefinition } from "@/games/dog-lege-dog/game/dog-item-runtime";
-import {
-  type DogBlock,
-  type DogLegeDogLevel,
-  type DogPatternType,
-} from "@/games/dog-lege-dog";
+import type {
+  DogBlock,
+  DogLegeDogLevel,
+  DogPatternType,
+} from "@/games/dog-lege-dog/levels/level-types";
 import { TEST_LEVEL, TEST_PATTERN_TYPES } from "./dog-level-fixture";
 
 export function createTargetDefinition(): DogItemRuntimeDefinition {

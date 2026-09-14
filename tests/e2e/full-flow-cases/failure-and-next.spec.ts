@@ -5,6 +5,7 @@ import {
   winCurrentLevel,
   leaveActiveGame,
   getBlockIds,
+  useDeterministicRunSeed,
 } from "../support/full-flow-fixtures";
 import { resetPage } from "../support/common";
 
@@ -44,6 +45,7 @@ test.describe("狗了个狗完整浏览器闭环 · failure-and-next", () => {
 
   test("通关后直接进入下一关并创建空的新局内状态", async ({ page }) => {
     await page.getByRole("button", { name: "匿名注册" }).click();
+    await useDeterministicRunSeed(page);
     await enterGame(page);
     const firstLevelBlockIds = await getBlockIds(page);
 

@@ -2,11 +2,9 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { BLOCK_FLIGHT_DURATION_MS } from "@/games/dog-lege-dog/assets/animation-effects";
-import {
-  DOG_FREEZE_MECHANISM_TYPE,
-  startDogLegeDogGame,
-  type DogPatternType,
-} from "@/games/dog-lege-dog";
+import { startDogLegeDogGame } from "@/games/dog-lege-dog/game/game-controller";
+import { DOG_FREEZE_MECHANISM_TYPE } from "@/games/dog-lege-dog/game/special-mechanisms";
+import type { DogPatternType } from "@/games/dog-lege-dog/levels/level-types";
 import {
   createKeyUiLevel,
   createWildcardUiLevel,

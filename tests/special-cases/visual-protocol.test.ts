@@ -7,20 +7,22 @@ import {
   DOG_ILLUSION_REVEAL_DURATION_MS,
   DOG_TWIN_SPLIT_DURATION_MS,
 } from "@/games/dog-lege-dog/assets/animation-effects";
+import { startDogLegeDogGame } from "@/games/dog-lege-dog/game/game-controller";
+import { GameSession } from "@/games/dog-lege-dog/game/game-session";
 import {
-  BLOCK_HEIGHT,
-  BLOCK_WIDTH,
   DOG_ILLUSION_MECHANISM_TYPE,
   DOG_FREEZE_MECHANISM_TYPE,
   DOG_MAGNETIC_MECHANISM_TYPE,
   DOG_TWIN_MECHANISM_TYPE,
-  GameSession,
-  LevelGenerator,
+} from "@/games/dog-lege-dog/game/special-mechanisms";
+import { LevelGenerator } from "@/games/dog-lege-dog/levels/level-generation-engine";
+import {
+  BLOCK_HEIGHT,
+  BLOCK_WIDTH,
   type DogBlock,
   type DogLegeDogLevel,
   type DogPatternType,
-  startDogLegeDogGame,
-} from "@/games/dog-lege-dog";
+} from "@/games/dog-lege-dog/levels/level-types";
 import { TEST_LEVEL, TEST_PATTERN_TYPES } from "../support/dog-level-fixture";
 
 const WORKING_DOG: DogPatternType = "打工狗";

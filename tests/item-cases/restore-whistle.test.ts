@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import {
-  DOG_V13_CONFIG,
-  GameSession,
-  createDogShuffleMechanism,
-  type DogLegeDogLevel,
-  type DogPatternType,
-} from "@/games/dog-lege-dog";
+import { GameSession } from "@/games/dog-lege-dog/game/game-session";
+import { createDogShuffleMechanism } from "@/games/dog-lege-dog/game/special-mechanisms";
+import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
+import type {
+  DogLegeDogLevel,
+  DogPatternType,
+} from "@/games/dog-lege-dog/levels/level-types";
 import {
   DogItemRuntime,
 } from "@/games/dog-lege-dog/game/dog-item-runtime";

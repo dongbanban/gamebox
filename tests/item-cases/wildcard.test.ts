@@ -1,9 +1,7 @@
 import { describe, expect, it } from "vitest";
-import {
-  GameSession,
-  type DogPatternType,
-} from "@/games/dog-lege-dog";
-import { DOG_V13_CONFIG } from "@/games/dog-lege-dog";
+import { GameSession } from "@/games/dog-lege-dog/game/game-session";
+import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
+import type { DogPatternType } from "@/games/dog-lege-dog/levels/level-types";
 import { createBlock, createLevel, createTargetDefinition } from "../support/item-fixtures";
 import {
   DogItemRuntime,

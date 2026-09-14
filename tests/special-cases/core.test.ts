@@ -1,20 +1,24 @@
 // @vitest-environment jsdom
 
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { startDogLegeDogGame } from "@/games/dog-lege-dog/game/game-controller";
+import { GameSession } from "@/games/dog-lege-dog/game/game-session";
+import {
+  DOG_FREEZE_MECHANISM_TYPE,
+  getDogSpecialMechanismConfigs,
+} from "@/games/dog-lege-dog/game/special-mechanisms";
+import {
+  getDogV13LogicalBlockCount,
+  getDogV13MechanismPlan,
+} from "@/games/dog-lege-dog/game/v13-config";
 import {
   BLOCK_HEIGHT,
   BLOCK_WIDTH,
-  DOG_FREEZE_MECHANISM_TYPE,
-  GameSession,
-  getDogV13LogicalBlockCount,
-  getDogV13MechanismPlan,
-  getDogSpecialMechanismConfigs,
   type DogBlock,
   type DogLegeDogLevel,
   type DogPatternType,
   type DogTrayBlock,
-  startDogLegeDogGame,
-} from "@/games/dog-lege-dog";
+} from "@/games/dog-lege-dog/levels/level-types";
 import { TEST_LEVEL, TEST_PATTERN_TYPES } from "../support/dog-level-fixture";
 import {
   applyDogTraySuccessfulTripleEffects,

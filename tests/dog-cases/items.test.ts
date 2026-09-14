@@ -4,11 +4,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   DOG_ITEM_FEEDBACK_DURATION_MS,
 } from "@/games/dog-lege-dog/assets/animation-effects";
+import { startDogLegeDogGame } from "@/games/dog-lege-dog/game/game-controller";
 import {
   DOG_ILLUSION_MECHANISM_TYPE,
   DOG_TWIN_MECHANISM_TYPE,
-  startDogLegeDogGame,
-} from "@/games/dog-lege-dog";
+} from "@/games/dog-lege-dog/game/special-mechanisms";
 import {
   getDogPatternClassName,
 } from "@/games/dog-lege-dog/assets/game-assets";

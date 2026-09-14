@@ -1,4 +1,4 @@
-import { getDogLegeDogLevel } from "@/games/dog-lege-dog";
+import { getDogLegeDogLevel } from "@/games/dog-lege-dog/levels/level-generation-engine";
 
 export const TEST_RUN_SEED = "fixture-1";
 export const TEST_PATTERN_TYPES = [

@@ -1,15 +1,19 @@
 import { describe, expect, it } from "vitest";
+import { GameSession } from "@/games/dog-lege-dog/game/game-session";
 import {
   DOG_FREEZE_MECHANISM_TYPE,
   DOG_ILLUSION_MECHANISM_TYPE,
   DOG_MAGNETIC_MECHANISM_TYPE,
+} from "@/games/dog-lege-dog/game/special-mechanisms";
+import {
+  DOG_V13_CONFIG,
   getDogV13ItemUses,
-  GameSession,
-  type DogBlock,
-  type DogLegeDogLevel,
-  type DogPatternType,
-} from "@/games/dog-lege-dog";
-import { DOG_V13_CONFIG } from "@/games/dog-lege-dog";
+} from "@/games/dog-lege-dog/game/v13-config";
+import type {
+  DogBlock,
+  DogLegeDogLevel,
+  DogPatternType,
+} from "@/games/dog-lege-dog/levels/level-types";
 import { TEST_LEVEL } from "../support/dog-level-fixture";
 import { createBlock, createLevel } from "../support/item-fixtures";
 import {

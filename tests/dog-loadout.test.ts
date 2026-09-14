@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   DOG_ITEM_DEFINITIONS,
   DOG_ITEM_IDS,
-  DOG_V13_CONFIG,
   areDogLoadoutsEqual,
   isValidDogLoadout,
-} from "@/games/dog-lege-dog";
+} from "@/games/dog-lege-dog/game/dog-loadout";
+import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
 import {
   renderDogLoadoutEditor,
   renderDogLoadoutSummary,

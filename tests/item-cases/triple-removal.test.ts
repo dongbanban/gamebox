@@ -1,9 +1,7 @@
 import { describe, expect, it } from "vitest";
-import {
-  DOG_FREEZE_MECHANISM_TYPE,
-  GameSession,
-  type DogPatternType,
-} from "@/games/dog-lege-dog";
+import { GameSession } from "@/games/dog-lege-dog/game/game-session";
+import { DOG_FREEZE_MECHANISM_TYPE } from "@/games/dog-lege-dog/game/special-mechanisms";
+import type { DogPatternType } from "@/games/dog-lege-dog/levels/level-types";
 import { createBlock, createLevel } from "../support/item-fixtures";
 import {
   DogItemRuntime,

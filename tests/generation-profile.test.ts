@@ -4,8 +4,8 @@ import {
   getDogV13LogicalBlockCount,
   getDogV13MechanismPlan,
   getDogV13SpecialMechanismBudget,
-  LevelGenerator,
-} from "@/games/dog-lege-dog";
+} from "@/games/dog-lege-dog/game/v13-config";
+import { LevelGenerator } from "@/games/dog-lege-dog/levels/level-generation-engine";
 import {
   createDogGenerationTestCase,
   formatDogGenerationTestReport,

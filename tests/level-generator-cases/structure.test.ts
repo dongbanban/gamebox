@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
+import { GameSession } from "@/games/dog-lege-dog/game/game-session";
+import { getDogLogicalBlockCount } from "@/games/dog-lege-dog/game/special-mechanisms";
+import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
+import { LevelGenerator } from "@/games/dog-lege-dog/levels/level-generation-engine";
 import {
-  DOG_PATTERN_TYPES,
-  DOG_V13_CONFIG,
-  GameSession,
-  LevelGenerator,
   getDifficultyTarget,
   getBlockCount,
   getMaxLayers,
   getPatternTypeCount,
-  getDogLogicalBlockCount,
-} from "@/games/dog-lege-dog";
+} from "@/games/dog-lege-dog/levels/level-progression";
+import { DOG_PATTERN_TYPES } from "@/games/dog-lege-dog/levels/level-types";
 
 const MAX_LEVEL_NUMBER = DOG_V13_CONFIG.game.maxLevelNumber;
 const CURRENT_GENERATOR_VERSION = DOG_V13_CONFIG.game.generatorVersion;

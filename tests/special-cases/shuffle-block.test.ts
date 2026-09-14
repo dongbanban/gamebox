@@ -1,20 +1,22 @@
 import { describe, expect, it } from "vitest";
+import { GameSession } from "@/games/dog-lege-dog/game/game-session";
+import {
+  DOG_SHUFFLE_MECHANISM_TYPE,
+  createDogShuffleMechanism,
+} from "@/games/dog-lege-dog/game/special-mechanisms";
+import {
+  DOG_V13_CONFIG,
+  getDogShuffleThreshold,
+  getDogV13MechanismPlan,
+} from "@/games/dog-lege-dog/game/v13-config";
 import {
   BLOCK_HEIGHT,
   BLOCK_WIDTH,
-  DOG_V13_CONFIG,
-  DOG_SHUFFLE_MECHANISM_TYPE,
-  GameSession,
-  createDogShuffleMechanism,
-  getDogShuffleThreshold,
-  getDogV13MechanismPlan,
-} from "@/games/dog-lege-dog";
-import type {
-  DogBlock,
-  DogLegeDogLevel,
-  DogPatternType,
-  DogTrayBlock,
-} from "@/games/dog-lege-dog";
+  type DogBlock,
+  type DogLegeDogLevel,
+  type DogPatternType,
+  type DogTrayBlock,
+} from "@/games/dog-lege-dog/levels/level-types";
 import { TEST_LEVEL, TEST_PATTERN_TYPES } from "../support/dog-level-fixture";
 
 const WORKING_DOG: DogPatternType = "打工狗";
