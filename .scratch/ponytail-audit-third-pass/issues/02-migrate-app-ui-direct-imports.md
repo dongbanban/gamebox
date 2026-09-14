@@ -4,13 +4,18 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] 应用注册、目录、导航、结果、道具组和生成生命周期测试不再从目录模块获取通用游戏契约。
-- [ ] 游戏启动、渲染、动画、音效、粒子与视觉协议测试不再通过「狗了个狗」宽公共入口获取内部符号。
-- [ ] UI fixture 与 support helper 使用行为所属模块，不新增聚合导入层。
-- [ ] 旧公共出口在本 ticket 中继续保留，避免调用方迁移与删除同时扩大 diff。
-- [ ] DOM、ARIA、文案、History State、游戏进度和游戏启动断言保持原意。
-- [ ] 测试收集数量不因 import 调整而下降。
-- [ ] 运行 `pnpm test:ui` 并记录结果；若实际改动触及公共契约或游戏启动生产代码，则改为运行 `pnpm test:qa`。
+- [x] 应用注册、目录、导航、结果、道具组和生成生命周期测试不再从目录模块获取通用游戏契约。
+- [x] 游戏启动、渲染、动画、音效、粒子与视觉协议测试不再通过「狗了个狗」宽公共入口获取内部符号。
+- [x] UI fixture 与 support helper 使用行为所属模块，不新增聚合导入层。
+- [x] 旧公共出口在本 ticket 中继续保留，避免调用方迁移与删除同时扩大 diff。
+- [x] DOM、ARIA、文案、History State、游戏进度和游戏启动断言保持原意。
+- [x] 测试收集数量不因 import 调整而下降。
+- [x] 运行 `pnpm test:ui` 并记录结果；若实际改动触及公共契约或游戏启动生产代码，则改为运行 `pnpm test:qa`。
 
+## Comments
+
+- 迁移 5 个 UI 测试的通用游戏契约到 `@/game-contracts`；`@/games/dog-lege-dog` 与 `@/catalog` 的旧公共出口未改动。
+- 静态检查确认 tests/support/e2e 未从目录或「狗了个狗」宽入口导入；导入前后 `pnpm test:ui` 都收集 20 个文件、114 个测试。
+- 验证通过：`pnpm typecheck`；`pnpm test:ui`（20 files, 114 tests）。未运行 `pnpm test:qa`，因为未触及公共契约或游戏启动生产代码。

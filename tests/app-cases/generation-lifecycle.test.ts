@@ -7,8 +7,8 @@ import type {
   GameLaunchPreparation,
   GamePreparationContext,
   GameResult,
-} from "@/catalog";
-import { GamePreparationError } from "@/catalog";
+} from "@/game-contracts";
+import { GamePreparationError } from "@/game-contracts";
 import { ProgressStore } from "@/progress-store";
 import { MemoryStorage, mountApp } from "../support/app-fixtures";
 

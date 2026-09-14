@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { GameDefinition, GameLaunchContext, GameResult } from "@/catalog";
+import type { GameDefinition, GameLaunchContext, GameResult } from "@/game-contracts";
 import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
 import { GAME_ID, ProgressStore } from "@/progress-store";
 import {

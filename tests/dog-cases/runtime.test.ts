@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { GameResult } from "@/catalog";
+import type { GameResult } from "@/game-contracts";
 import { BLOCK_FLIGHT_DURATION_MS } from "@/games/dog-lege-dog/assets/animation-effects";
 import { DOG_ILLUSION_MECHANISM_TYPE } from "@/games/dog-lege-dog/game/special-mechanisms";
 import { TEST_LEVEL } from "../support/dog-level-fixture";

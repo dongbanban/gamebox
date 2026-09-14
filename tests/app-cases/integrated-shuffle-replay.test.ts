@@ -6,7 +6,7 @@ import type {
   GameLaunchHandle,
   GameLaunchContext,
   GameLaunchPreparation,
-} from "@/catalog";
+} from "@/game-contracts";
 import { startDogLegeDogGame } from "@/games/dog-lege-dog/game/game-controller";
 import { createDogShuffleMechanism } from "@/games/dog-lege-dog/game/special-mechanisms";
 import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
