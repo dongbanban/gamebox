@@ -1,9 +1,6 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import { selectProfileForChangedFiles } from "./test-profile.mjs";
-import {
-  isHighRiskTestFile,
-  isUiOnlyTestFile,
-} from "./test-paths.mjs";
+import { isHighRiskTestFile, isUiOnlyTestFile } from "./test-paths.mjs";
 
 const root = process.cwd();
 const focusedOnly = process.argv.includes("--focused");
@@ -22,13 +19,16 @@ for (const file of changedFiles) {
 const selectedProfile = selectProfileForChangedFiles(changedFiles);
 
 if (isUiOnlyChange(changedFiles)) {
-  console.log("检测到 UI-only 改动：运行 UI 单测，跳过相关测试、E2E 与重复构建。\n");
+  console.log(
+    "检测到 UI-only 改动：运行 UI 单测，跳过相关测试、E2E 与重复构建。\n",
+  );
   runOrExit("pnpm", ["test:ui"]);
   process.exit(0);
 }
 
 if (focusedOnly && selectedProfile !== "focused") {
-  const requiredCommand = selectedProfile === "smoke" ? "pnpm test:smoke" : "pnpm test:qa";
+  const requiredCommand =
+    selectedProfile === "smoke" ? "pnpm test:smoke" : "pnpm test:qa";
   console.error(
     `当前改动需要 ${selectedProfile} profile；test:focused 拒绝通过，请运行 ${requiredCommand}。`,
   );
@@ -36,7 +36,9 @@ if (focusedOnly && selectedProfile !== "focused") {
 }
 
 if (!focusedOnly && selectedProfile === "full") {
-  console.log("检测到生成器/公共契约/启动或测试基础设施改动：自动升级 full profile。\n");
+  console.log(
+    "检测到生成器/公共契约/启动或测试基础设施改动：自动升级 full profile。\n",
+  );
   runOrExit("pnpm", ["test:full"]);
   process.exit(0);
 }
@@ -48,9 +50,7 @@ if (!focusedOnly && selectedProfile === "smoke") {
 }
 
 const vitestTargets = changedFiles.filter(
-  (file) =>
-    /^src\/.*\.ts$/.test(file) ||
-    /^tests\/(?!e2e\/).*\.ts$/.test(file),
+  (file) => /^src\/.*\.ts$/.test(file) || /^tests\/(?!e2e\/).*\.ts$/.test(file),
 );
 
 if (vitestTargets.length > 0) {
@@ -82,7 +82,9 @@ if (vitestTargets.length > 0) {
 }
 
 if (focusedOnly) {
-  console.log("聚焦验证完成：跳过随机回归、Chromium E2E 与构建，等待批量 QA。\n");
+  console.log(
+    "聚焦验证完成：跳过随机回归、Chromium E2E 与构建，等待批量 QA。\n",
+  );
   process.exit(0);
 }
 
@@ -115,7 +117,9 @@ function readGit(args) {
     });
     return output.split(/\r?\n/).filter(Boolean);
   } catch (error) {
-    console.error(`读取 Git 改动失败：${error instanceof Error ? error.message : error}`);
+    console.error(
+      `读取 Git 改动失败：${error instanceof Error ? error.message : error}`,
+    );
     process.exit(1);
   }
 }
@@ -124,7 +128,9 @@ function requiresRandomRegression(files) {
   return files.some(
     (file) =>
       /^src\/games\/dog-lege-dog\/levels\//.test(file) ||
-      /^src\/games\/dog-lege-dog\/game\/(?:special-mechanisms|v13-config(?:-[^/]+)?)\.ts$/.test(file) ||
+      /^src\/games\/dog-lege-dog\/game\/(?:special-mechanisms|v13-config(?:-[^/]+)?)\.ts$/.test(
+        file,
+      ) ||
       isHighRiskTestFile(file) ||
       file === "tests/random-regression.test.ts",
   );
@@ -138,7 +144,9 @@ function isUiOnlyChange(files) {
         file === "src/style.css" ||
         /^src\/styles\/[^/]+\.css$/.test(file) ||
         /^src\/app\/[^/]+\.ts$/.test(file) ||
-        /^src\/games\/dog-lege-dog\/(?:visual-metrics\.ts|assets\/(?:animation-effects|animation-lifecycle|animation-timing|block-animation-effects|game-assets|item-animation-effects|item-assets|particle-effects|sound-effects)\.ts|game\/game-renderer(?:-[^/]+)?\.ts)$/.test(file) ||
+        /^src\/games\/dog-lege-dog\/(?:visual-metrics\.ts|assets\/(?:animation-effects|animation-lifecycle|animation-timing|block-animation-effects|game-assets|item-animation-effects|item-assets|particle-effects|sound-effects)\.ts|game\/game-renderer(?:-[^/]+)?\.ts)$/.test(
+          file,
+        ) ||
         isUiOnlyTestFile(file) ||
         /^public\/audio\//.test(file),
     )

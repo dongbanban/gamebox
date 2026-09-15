@@ -29,15 +29,22 @@ export function classifyChangedFiles(files) {
       areas.add(testArea);
       continue;
     }
-    if (file.startsWith("src/games/dog-lege-dog/levels/") ||
-        file === "src/games/dog-lege-dog/game/special-mechanisms.ts" ||
-        /^src\/games\/dog-lege-dog\/game\/v13-config(?:-[^/]+)?\.ts$/.test(file) ||
-        file === "tests/support/test-profile.ts" ||
-        file === "tests/generation-profile.test.ts") {
+    if (
+      file.startsWith("src/games/dog-lege-dog/levels/") ||
+      file === "src/games/dog-lege-dog/game/special-mechanisms.ts" ||
+      /^src\/games\/dog-lege-dog\/game\/v13-config(?:-[^/]+)?\.ts$/.test(
+        file,
+      ) ||
+      file === "tests/support/test-profile.ts" ||
+      file === "tests/generation-profile.test.ts"
+    ) {
       areas.add("generator");
       continue;
     }
-    if (file === "src/games/dog-lege-dog/index.ts" || file === "src/game-contracts.ts") {
+    if (
+      file === "src/games/dog-lege-dog/index.ts" ||
+      file === "src/game-contracts.ts"
+    ) {
       areas.add("public-contract");
       continue;
     }
@@ -63,10 +70,14 @@ export function classifyChangedFiles(files) {
 }
 
 export function selectProfileForAreas(areas) {
-  if (areas.some((area) => DOG_TEST_PROFILES.selection.fullAreas.includes(area))) {
+  if (
+    areas.some((area) => DOG_TEST_PROFILES.selection.fullAreas.includes(area))
+  ) {
     return "full";
   }
-  if (areas.some((area) => DOG_TEST_PROFILES.selection.smokeAreas.includes(area))) {
+  if (
+    areas.some((area) => DOG_TEST_PROFILES.selection.smokeAreas.includes(area))
+  ) {
     return "smoke";
   }
   return "focused";
