@@ -1,8 +1,5 @@
-import {
-  GAME_CATALOG,
-  type GameDefinition,
-  type GameResult,
-} from "@/catalog";
+import { GAME_CATALOG } from "@/catalog";
+import type { GameDefinition, GameResult } from "@/game-contracts";
 import {
   createInitialGameProgress,
   ProgressStore,

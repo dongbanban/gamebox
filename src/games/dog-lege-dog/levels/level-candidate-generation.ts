@@ -1,8 +1,8 @@
-import type { DogV13Config } from "@/games/dog-lege-dog/game/v13-config";
 import {
-  getBlockCount,
-  getMaxLayers,
-} from "@/games/dog-lege-dog/levels/level-progression";
+  getDogV13LevelStage,
+  getDogV13LogicalBlockCount,
+  type DogV13Config,
+} from "@/games/dog-lege-dog/game/v13-config";
 import {
   createBoard,
   DOG_SHAPE_TEMPLATES,
@@ -93,7 +93,7 @@ export function createLevelCandidate(
     request.levelNumber,
     options.config,
   );
-  const logicalBlockCount = getBlockCount(request.levelNumber, options.config);
+  const logicalBlockCount = getDogV13LogicalBlockCount(request.levelNumber, options.config);
   const mechanismCounts = selectDogSpecialMechanismCounts(
     specialMechanisms,
     random,
@@ -351,7 +351,7 @@ function createGenerationPlan(
 ): CandidateGenerationPlan {
   return {
     blockCount,
-    maxLayers: getMaxLayers(request.levelNumber, config),
+    maxLayers: getDogV13LevelStage(request.levelNumber, config).maxLayers,
     templateFactory,
     placementFactory,
     patternTypesFactory: (random) =>

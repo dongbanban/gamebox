@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
+import {
+  DOG_V13_CONFIG,
+  getDogV13DifficultyTarget,
+} from "@/games/dog-lege-dog/game/v13-config";
 import { calculateDifficultyMetrics } from "@/games/dog-lege-dog/levels/level-difficulty";
 import {
   MAX_LEVEL_GENERATION_ATTEMPTS,
   LevelGenerator,
 } from "@/games/dog-lege-dog/levels/level-generation-engine";
-import { getDifficultyTarget } from "@/games/dog-lege-dog/levels/level-progression";
 import { findSolvabilityFromState } from "@/games/dog-lege-dog/levels/level-solvability";
 import { DOG_PATTERN_TYPES } from "@/games/dog-lege-dog/levels/level-types";
 
@@ -28,7 +30,7 @@ describe("LevelGenerator · solvability", () => {
         testSeed: `test-seed-${levelNumber}`,
         generatorVersion: CURRENT_GENERATOR_VERSION,
       });
-      const target = getDifficultyTarget(levelNumber);
+      const target = getDogV13DifficultyTarget(levelNumber);
 
       expect(generator.isSolvable(level)).toBe(true);
       expect(

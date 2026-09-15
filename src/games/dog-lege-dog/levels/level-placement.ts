@@ -1,7 +1,9 @@
 import { DOG_PATTERN_TYPES, type DogPatternType } from "@/games/dog-lege-dog/levels/level-types";
-import { getPatternTypeCount } from "@/games/dog-lege-dog/levels/level-progression";
-import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
-import type { DogV13Config } from "@/games/dog-lege-dog/game/v13-config";
+import {
+  DOG_V13_CONFIG,
+  getDogV13LevelStage,
+  type DogV13Config,
+} from "@/games/dog-lege-dog/game/v13-config";
 import { SeededRandom } from "@/games/dog-lege-dog/levels/level-random";
 import type { DogShapeTemplate } from "@/games/dog-lege-dog/levels/level-shapes";
 import {
@@ -32,7 +34,10 @@ export function selectPatternTypes(
   random: SeededRandom,
   config: DogV13Config = DOG_V13_CONFIG,
 ): readonly DogPatternType[] {
-  return random.shuffle([...DOG_PATTERN_TYPES]).slice(0, getPatternTypeCount(levelNumber, config));
+  return random.shuffle([...DOG_PATTERN_TYPES]).slice(
+    0,
+    getDogV13LevelStage(levelNumber, config).patternTypeCount,
+  );
 }
 
 export function createSolvableBlockPlacements(

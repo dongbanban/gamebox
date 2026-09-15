@@ -3,6 +3,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { startDogLegeDogGame } from "@/games/dog-lege-dog/game/game-controller";
 import { GameSession } from "@/games/dog-lege-dog/game/game-session";
+import { getDogV13LogicalBlockCount } from "@/games/dog-lege-dog/game/v13-config";
 import {
   DOG_ILLUSION_MECHANISM_TYPE,
   DOG_FREEZE_MECHANISM_TYPE,
@@ -13,7 +14,6 @@ import {
   validateDogSpecialMechanismComposition,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
 import { LevelGenerator } from "@/games/dog-lege-dog/levels/level-generation-engine";
-import { getBlockCount } from "@/games/dog-lege-dog/levels/level-progression";
 import {
   BLOCK_HEIGHT,
   BLOCK_WIDTH,
@@ -276,11 +276,11 @@ describe("特殊机制测试 · mechanism-runtime", () => {
 
       expect(twinBlocks.length).toBeGreaterThan(0);
       expect(level.blocks.length + twinBlocks.length).toBe(
-        getBlockCount(levelNumber),
+        getDogV13LogicalBlockCount(levelNumber),
       );
       expect(
         getDogLogicalBlockCount(level.blocks, level.specialMechanisms),
-      ).toBe(getBlockCount(levelNumber));
+      ).toBe(getDogV13LogicalBlockCount(levelNumber));
       for (const patternType of level.patternTypes) {
         const logicalPatternCount = level.blocks
           .filter((block) => block.patternType === patternType)
@@ -295,7 +295,7 @@ describe("特殊机制测试 · mechanism-runtime", () => {
         expect(logicalPatternCount % 3).toBe(0);
       }
       expect(level.difficulty.logicalBlockCount).toBe(
-        getBlockCount(levelNumber),
+        getDogV13LogicalBlockCount(levelNumber),
       );
       expect(generator.findSolvability(level).status).toBe("solvable");
       expect(repeated).toEqual(level);

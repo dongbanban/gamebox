@@ -1,4 +1,4 @@
-import type { GameResult } from "@/catalog";
+import type { GameResult } from "@/game-contracts";
 import { ProgressStore } from "@/progress-store";
 import {
   areDogLoadoutsEqual,

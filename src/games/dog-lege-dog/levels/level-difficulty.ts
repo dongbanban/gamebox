@@ -9,7 +9,6 @@ import {
   getDogV13DifficultyTarget,
 } from "@/games/dog-lege-dog/game/v13-config";
 import type { DogV13Config } from "@/games/dog-lege-dog/game/v13-config";
-import { getDifficultyTarget } from "@/games/dog-lege-dog/levels/level-progression";
 import {
   countSafeChoiceMetrics,
   findSolvability,
@@ -98,7 +97,7 @@ export function calculateDifficultyMetrics(
         : toPathVerification(discoveredSolvability));
   const graph = createBlockGraph(level.blocks);
   const initialSelectable = graph.higherBlockCounts.filter((count) => count === 0).length;
-  const target = getDifficultyTarget(level.number, config);
+  const target = getDogV13DifficultyTarget(level.number, config);
   const solvabilityStatus =
     discoveredSolvability?.status ?? verification.status;
   const safeChoiceMetrics =

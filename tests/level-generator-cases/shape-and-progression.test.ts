@@ -1,11 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
-import { LevelGenerator } from "@/games/dog-lege-dog/levels/level-generation-engine";
 import {
-  getBlockCount,
-  getMaxLayers,
-  getPatternTypeCount,
-} from "@/games/dog-lege-dog/levels/level-progression";
+  DOG_V13_CONFIG,
+  getDogV13LevelStage,
+  getDogV13LogicalBlockCount,
+} from "@/games/dog-lege-dog/game/v13-config";
+import { LevelGenerator } from "@/games/dog-lege-dog/levels/level-generation-engine";
 import { DOG_SHAPE_TEMPLATES } from "@/games/dog-lege-dog/levels/level-shapes";
 
 const MAX_LEVEL_NUMBER = DOG_V13_CONFIG.game.maxLevelNumber;
@@ -122,10 +121,10 @@ describe("LevelGenerator · shape-and-progression", () => {
       });
 
       expect(level.board.shape).toBe("irregular");
-      expect(level.patternTypes).toHaveLength(getPatternTypeCount(levelNumber));
+      expect(level.patternTypes).toHaveLength(getDogV13LevelStage(levelNumber).patternTypeCount);
       expect(
         new Set(level.blocks.map((block) => block.patternType)),
-      ).toHaveLength(getPatternTypeCount(levelNumber));
+      ).toHaveLength(getDogV13LevelStage(levelNumber).patternTypeCount);
     }
   });
 
@@ -171,17 +170,17 @@ describe("LevelGenerator · shape-and-progression", () => {
   it("按关卡阶段递增方块数量、层数与图案池", () => {
     expect(
       [1, 5, 6, 10, 11, 15, 16, 20, 21, 25, 26].map((levelNumber) =>
-        getBlockCount(levelNumber),
+        getDogV13LogicalBlockCount(levelNumber),
       ),
     ).toEqual([90, 90, 108, 108, 126, 126, 144, 144, 162, 162, 180]);
     expect(
       [1, 5, 6, 15, 16, 30, 31, MAX_LEVEL_NUMBER].map((levelNumber) =>
-        getMaxLayers(levelNumber),
+        getDogV13LevelStage(levelNumber).maxLayers,
       ),
     ).toEqual([3, 3, 4, 4, 5, 5, 6, 6]);
     expect(
       [1, 5, 6, 15, 16, 30, 31, MAX_LEVEL_NUMBER].map((levelNumber) =>
-        getPatternTypeCount(levelNumber),
+        getDogV13LevelStage(levelNumber).patternTypeCount,
       ),
     ).toEqual([6, 6, 8, 8, 10, 10, 10, 10]);
   });

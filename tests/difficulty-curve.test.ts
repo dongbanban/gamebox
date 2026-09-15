@@ -1,19 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
+import {
+  DOG_V13_CONFIG,
+  getDogV13DifficultyTarget,
+  getDogV13LevelStage,
+  getDogV13LogicalBlockCount,
+} from "@/games/dog-lege-dog/game/v13-config";
 import { getDogLogicalBlockCount } from "@/games/dog-lege-dog/game/special-mechanisms";
 import { isDifficultyWithinTarget } from "@/games/dog-lege-dog/levels/level-difficulty";
 import { LevelGenerator } from "@/games/dog-lege-dog/levels/level-generation-engine";
-import {
-  getBlockCount,
-  getDifficultyTarget,
-  getMaxLayers,
-  getPatternTypeCount,
-} from "@/games/dog-lege-dog/levels/level-progression";
 
 describe("狗了个狗难度曲线", () => {
   it("前五关使用有限且逐步收紧的安全选择/时长目标", () => {
     const targets = [1, 2, 3, 4, 5].map((levelNumber) =>
-      getDifficultyTarget(levelNumber),
+      getDogV13DifficultyTarget(levelNumber),
     );
 
     expect(targets.map((target) => target.safeChoiceCount.min)).toEqual([
@@ -41,7 +40,7 @@ describe("狗了个狗难度曲线", () => {
   });
 
   it("v13 难度验收包含压力、机制密度、操作成本与误操作风险", () => {
-    const target = getDifficultyTarget(1);
+    const target = getDogV13DifficultyTarget(1);
     expect(target).toMatchObject({
       trayPeakPressure: { min: 0.78, max: 0.98 },
       mechanismDensity: { min: 0.29, max: 0.3 },
@@ -129,9 +128,9 @@ describe("狗了个狗难度曲线", () => {
         const { difficulty } = level;
         return (
           getDogLogicalBlockCount(level.blocks, level.specialMechanisms) ===
-            getBlockCount(level.number) &&
-          level.maxLayers === getMaxLayers(level.number) &&
-          level.patternTypes.length === getPatternTypeCount(level.number) &&
+            getDogV13LogicalBlockCount(level.number) &&
+          level.maxLayers === getDogV13LevelStage(level.number).maxLayers &&
+          level.patternTypes.length === getDogV13LevelStage(level.number).patternTypeCount &&
           difficulty.solutionPathLength > 0 &&
           difficulty.solutionPathLength <= level.blocks.length &&
           difficulty.crossLayerOverlapCount > 0 &&
@@ -144,7 +143,7 @@ describe("狗了个狗难度曲线", () => {
 
     const boundaryLevels = [1, 5, 6, 10, 11, 15, 16, 20, 21, 25, 26, 30, 31];
     const boundaryTargets = boundaryLevels.map((levelNumber) =>
-      getDifficultyTarget(levelNumber),
+      getDogV13DifficultyTarget(levelNumber),
     );
     expect(
       boundaryTargets.every(
@@ -175,7 +174,7 @@ describe("狗了个狗难度曲线", () => {
     expect(level.generation.fallbackUsed).toBe(false);
     expect(isDifficultyWithinTarget(level.difficulty)).toBe(true);
     expect(level.difficulty.logicalBlockCount).toBe(
-      getBlockCount(level.number),
+      getDogV13LogicalBlockCount(level.number),
     );
     expect(level.difficulty.solutionPathLength).toBeGreaterThan(0);
     expect(level.difficulty.solutionPathLength).toBeLessThanOrEqual(

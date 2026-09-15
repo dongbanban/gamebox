@@ -1,5 +1,4 @@
 import {
-  DOG_V13_ITEM_COPY_KEYS,
   DOG_V13_SCHEMA_VERSION,
   type DogV13Config,
   type DogV13DifficultyTarget,

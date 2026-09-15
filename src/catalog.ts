@@ -10,24 +10,6 @@ import type {
   GamePreparationContext,
 } from "@/game-contracts";
 
-export type {
-  GameDefinition,
-  GameLaunchContext,
-  GameLaunchHandle,
-  GameLaunchPreparation,
-  GameLauncher,
-  GamePreparer,
-  GamePreparationContext,
-  GamePreparationFailureDetails,
-  GamePreparationResult,
-  GameResult,
-  GameResultAction,
-  GameResultDisplay,
-  GameResultDisplayMetadata,
-  GameResultStatus,
-} from "@/game-contracts";
-export { GamePreparationError } from "@/game-contracts";
-
 const dogLevelGeneration = new DogLevelGenerationService();
 
 export const DOG_GAME_DEFINITION: GameDefinition = Object.freeze({

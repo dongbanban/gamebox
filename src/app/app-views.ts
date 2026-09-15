@@ -3,7 +3,7 @@ import {
   type GamePreparationFailureDetails,
   type GameResult,
   type GameResultAction,
-} from "@/catalog";
+} from "@/game-contracts";
 import {
   createInitialGameProgress,
   type LevelCompletionResult,

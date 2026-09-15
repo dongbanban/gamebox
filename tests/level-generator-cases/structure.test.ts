@@ -1,14 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { GameSession } from "@/games/dog-lege-dog/game/game-session";
 import { getDogLogicalBlockCount } from "@/games/dog-lege-dog/game/special-mechanisms";
-import { DOG_V13_CONFIG } from "@/games/dog-lege-dog/game/v13-config";
-import { LevelGenerator } from "@/games/dog-lege-dog/levels/level-generation-engine";
 import {
-  getDifficultyTarget,
-  getBlockCount,
-  getMaxLayers,
-  getPatternTypeCount,
-} from "@/games/dog-lege-dog/levels/level-progression";
+  DOG_V13_CONFIG,
+  getDogV13DifficultyTarget,
+  getDogV13LevelStage,
+  getDogV13LogicalBlockCount,
+} from "@/games/dog-lege-dog/game/v13-config";
+import { LevelGenerator } from "@/games/dog-lege-dog/levels/level-generation-engine";
 import { DOG_PATTERN_TYPES } from "@/games/dog-lege-dog/levels/level-types";
 
 const MAX_LEVEL_NUMBER = DOG_V13_CONFIG.game.maxLevelNumber;
@@ -37,11 +36,11 @@ describe("LevelGenerator · structure", () => {
 
       expect(
         getDogLogicalBlockCount(level.blocks, level.specialMechanisms),
-      ).toBe(getBlockCount(levelNumber));
+      ).toBe(getDogV13LogicalBlockCount(levelNumber));
       expect(new Set(level.blocks.map((block) => block.z))).toHaveLength(
-        getMaxLayers(levelNumber),
+        getDogV13LevelStage(levelNumber).maxLayers,
       );
-      expect(level.patternTypes).toHaveLength(getPatternTypeCount(levelNumber));
+      expect(level.patternTypes).toHaveLength(getDogV13LevelStage(levelNumber).patternTypeCount);
       expect(
         level.patternTypes.every((patternType) =>
           DOG_PATTERN_TYPES.includes(patternType),
@@ -161,7 +160,7 @@ describe("LevelGenerator · structure", () => {
     const level = generator.generate(request);
     const solvability = generator.findSolvability(level);
     const path = solvability.path;
-    const target = getDifficultyTarget(request.levelNumber);
+    const target = getDogV13DifficultyTarget(request.levelNumber);
 
     expect(solvability.status).toBe("solvable");
     expect(path).toEqual(level.solutionPath);

@@ -1,19 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { GameSession } from "@/games/dog-lege-dog/game/game-session";
 import {
-  DOG_V13_CONFIG,
-  getDogV13LogicalBlockCount,
-  getDogV13MechanismPlan,
-  getDogV13SpecialMechanismBudget,
+  DOG_V13_CONFIG, getDogV13LevelStage, getDogV13LogicalBlockCount,
+  getDogV13MechanismPlan, getDogV13SpecialMechanismBudget,
 } from "@/games/dog-lege-dog/game/v13-config";
 import { getDogLogicalBlockCount } from "@/games/dog-lege-dog/game/special-mechanisms";
 import { isDifficultyWithinTarget } from "@/games/dog-lege-dog/levels/level-difficulty";
 import { LevelGenerator } from "@/games/dog-lege-dog/levels/level-generation-engine";
-import {
-  getBlockCount,
-  getMaxLayers,
-  getPatternTypeCount,
-} from "@/games/dog-lege-dog/levels/level-progression";
 import { findSolvability } from "@/games/dog-lege-dog/levels/level-solvability";
 import {
   DOG_PATTERN_TYPES,
@@ -25,7 +18,6 @@ import {
 } from "./support/test-profile";
 
 const MAX_LEVEL_NUMBER = DOG_V13_CONFIG.game.maxLevelNumber;
-
 const RANDOM_TEST_SEED =
   process.env.DOG_RANDOM_TEST_SEED ?? "random-regression-default-v1";
 
@@ -201,12 +193,10 @@ function assertLevelInvariants(
 
   expect(level.number).toBeGreaterThanOrEqual(1);
   expect(getDogLogicalBlockCount(blocks, level.specialMechanisms)).toBe(
-    getBlockCount(level.number),
+    getDogV13LogicalBlockCount(level.number),
   );
-  expect(level.maxLayers).toBe(getMaxLayers(level.number));
-  expect(level.patternTypes).toHaveLength(
-    level.number === 1 ? 6 : getPatternTypeCount(level.number),
-  );
+  expect(level.maxLayers).toBe(getDogV13LevelStage(level.number).maxLayers);
+  expect(level.patternTypes).toHaveLength(level.number === 1 ? 6 : getDogV13LevelStage(level.number).patternTypeCount);
   expect(board.shape).toBe("irregular");
   expect(
     level.patternTypes.every((patternType) =>
@@ -265,7 +255,7 @@ function assertLevelInvariants(
   expect(solvability.status).toBe("solvable");
   expect(solvability.path).toEqual(level.solutionPath);
   expect(difficulty.blockCount).toBe(blocks.length);
-  expect(difficulty.logicalBlockCount).toBe(getBlockCount(level.number));
+  expect(difficulty.logicalBlockCount).toBe(getDogV13LogicalBlockCount(level.number));
   expect(difficulty.maxLayers).toBe(level.maxLayers);
   expect(difficulty.patternTypeCount).toBe(level.patternTypes.length);
   expect(difficulty.safeChoiceCount).toBeGreaterThanOrEqual(
@@ -390,12 +380,10 @@ function assertStressLevel(level: DogLegeDogLevel): void {
     level.blocks.length,
   );
   expect(getDogLogicalBlockCount(level.blocks, level.specialMechanisms)).toBe(
-    getBlockCount(level.number),
+    getDogV13LogicalBlockCount(level.number),
   );
-  expect(level.maxLayers).toBe(getMaxLayers(level.number));
-  expect(level.patternTypes).toHaveLength(
-    level.number === 1 ? 6 : getPatternTypeCount(level.number),
-  );
+  expect(level.maxLayers).toBe(getDogV13LevelStage(level.number).maxLayers);
+  expect(level.patternTypes).toHaveLength(level.number === 1 ? 6 : getDogV13LevelStage(level.number).patternTypeCount);
   expect(level.board.shape).toBe("irregular");
   expect(level.solutionPath.length).toBeGreaterThan(0);
   expect(level.solutionPath.length).toBeLessThanOrEqual(level.blocks.length);
