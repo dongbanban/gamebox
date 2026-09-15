@@ -90,7 +90,7 @@ export interface GameSessionShuffleResolution {
   readonly meltedBlockIds: readonly string[];
 }
 
-export interface GameSessionUnlockResult extends GameSessionSnapshot {
+export interface GameSessionUnlockResult {
   readonly unlocked: boolean;
   readonly unlockedSlotIndex: number | null;
   readonly snapshot: GameSessionSnapshot;
@@ -108,7 +108,7 @@ export interface GameSessionMagneticResolution {
   readonly targetTrayBlockIds: readonly string[];
 }
 
-export interface GameSessionSelectionResult extends GameSessionSnapshot {
+export interface GameSessionSelectionResult {
   readonly magneticResolution: GameSessionMagneticResolution | null;
   readonly shuffleResolution: GameSessionShuffleResolution | null;
   readonly selected: boolean;
@@ -120,7 +120,7 @@ export interface GameSessionSelectionResult extends GameSessionSnapshot {
 
 export type GameSessionMeltLocation = "board" | "tray";
 
-export interface GameSessionMeltResult extends GameSessionSnapshot {
+export interface GameSessionMeltResult {
   readonly melted: boolean;
   readonly location: GameSessionMeltLocation;
   readonly blockId: string;
@@ -130,13 +130,13 @@ export interface GameSessionMeltResult extends GameSessionSnapshot {
   readonly snapshot: GameSessionSnapshot;
 }
 
-export interface GameSessionRevealResult extends GameSessionSnapshot {
+export interface GameSessionRevealResult {
   readonly revealed: boolean;
   readonly blockId: string;
   readonly snapshot: GameSessionSnapshot;
 }
 
-export interface GameSessionDemagnetizeResult extends GameSessionSnapshot {
+export interface GameSessionDemagnetizeResult {
   readonly demagnetized: boolean;
   readonly blockId: string;
   readonly snapshot: GameSessionSnapshot;
@@ -150,7 +150,7 @@ export interface GameSessionTripleRemovalPlan {
   readonly tripleCount: 1;
 }
 
-export interface GameSessionTripleRemovalResult extends GameSessionSnapshot {
+export interface GameSessionTripleRemovalResult {
   readonly removed: boolean;
   readonly patternType: DogPatternType;
   readonly trayBlockIds: readonly string[];
@@ -172,7 +172,7 @@ export interface GameSessionWildcardResolution {
 
 export type GameSessionWildcardPlan = GameSessionWildcardResolution;
 
-export interface GameSessionWildcardResultBase extends GameSessionSnapshot {
+export interface GameSessionWildcardResultBase {
   readonly patternType: DogPatternType;
   readonly snapshot: GameSessionSnapshot;
 }

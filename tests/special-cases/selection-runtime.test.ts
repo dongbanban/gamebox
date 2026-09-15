@@ -76,12 +76,12 @@ describe("特殊机制测试 · selection-runtime", () => {
     session.selectBlock("illusion");
     const state = session.selectBlock("ordinary");
 
-    expect(state.trayBlocks.map((block) => block.id)).toEqual([
+    expect(state.snapshot.trayBlocks.map((block) => block.id)).toEqual([
       "freeze",
       "illusion",
       "ordinary",
     ]);
-    expect(state.trayBlocks[1]).not.toHaveProperty("specialMechanism");
+    expect(state.snapshot.trayBlocks[1]).not.toHaveProperty("specialMechanism");
   });
 
   it("双生方块占一个棋盘对象，入槽后分裂为相邻的两个普通方块", () => {

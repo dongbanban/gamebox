@@ -368,7 +368,7 @@ function assertLevelInvariants(
   const session = new GameSession(level);
   let state = session.getState();
   for (const blockId of level.solutionPath) {
-    state = session.selectBlock(blockId);
+    state = session.selectBlock(blockId).snapshot;
   }
   expect(state.status).toBe("won");
   expect(state.remainingBlocks).toEqual([]);
@@ -394,7 +394,7 @@ function assertStressLevel(level: DogLegeDogLevel): void {
 
   let state = loadedSession.getState();
   for (const blockId of level.solutionPath) {
-    state = loadedSession.selectBlock(blockId);
+    state = loadedSession.selectBlock(blockId).snapshot;
   }
   expect(state.status).toBe("won");
   expect(state.remainingBlocks).toEqual([]);

@@ -30,7 +30,7 @@ export function createSelectionResult(
     removedCount,
     tripleCount,
     meltedBlockIds: Object.freeze([...meltedBlockIds]),
-  }, "snapshot");
+  });
 }
 
 export function createTripleRemovalResult(
@@ -51,7 +51,7 @@ export function createTripleRemovalResult(
     removedCount,
     tripleCount,
     meltedBlockIds: Object.freeze([...meltedBlockIds]),
-  }, "snapshot");
+  });
 }
 
 export function createMeltResult(
@@ -70,7 +70,7 @@ export function createMeltResult(
     removedCount,
     tripleCount,
     meltedBlockIds: Object.freeze([...meltedBlockIds]),
-  }, "snapshot");
+  });
 }
 
 export function createRevealResult(
@@ -78,7 +78,7 @@ export function createRevealResult(
   revealed: boolean,
   blockId: string,
 ): GameSessionRevealResult {
-  return freezeResult(snapshot, { revealed, blockId }, "snapshot");
+  return freezeResult(snapshot, { revealed, blockId });
 }
 
 export function createDemagnetizeResult(
@@ -86,7 +86,7 @@ export function createDemagnetizeResult(
   demagnetized: boolean,
   blockId: string,
 ): GameSessionDemagnetizeResult {
-  return freezeResult(snapshot, { demagnetized, blockId }, "snapshot");
+  return freezeResult(snapshot, { demagnetized, blockId });
 }
 
 export function createUnlockResult(
@@ -94,7 +94,7 @@ export function createUnlockResult(
   unlocked: boolean,
   unlockedSlotIndex: number | null,
 ): GameSessionUnlockResult {
-  return freezeResult(snapshot, { unlocked, unlockedSlotIndex }, "snapshot");
+  return freezeResult(snapshot, { unlocked, unlockedSlotIndex });
 }
 
 export function createWildcardResult(
@@ -109,40 +109,19 @@ export function createWildcardResult(
     removedCount: resolution.removedCount,
     tripleCount: resolution.tripleCount,
     meltedBlockIds: Object.freeze([...resolution.meltedBlockIds]),
-  }, "snapshot");
+  });
 }
 
 export function createFailedWildcardResult(
   snapshot: GameSessionSnapshot,
   patternType: DogPatternType,
 ): GameSessionWildcardResult {
-  return freezeResult(snapshot, { used: false, patternType }, "snapshot");
+  return freezeResult(snapshot, { used: false, patternType });
 }
 
 function freezeResult<T extends object>(
   snapshot: GameSessionSnapshot,
   properties: T,
-  snapshotProperty: "snapshot",
-): T & GameSessionSnapshot & { readonly snapshot: GameSessionSnapshot } {
-  const result = { ...snapshot } as T & GameSessionSnapshot & {
-    readonly snapshot: GameSessionSnapshot;
-  };
-  Object.defineProperties(result, {
-    ...Object.fromEntries(Object.entries(properties).map(([key, value]) => [
-      key,
-      {
-        configurable: false,
-        enumerable: false,
-        value,
-        writable: false,
-      },
-    ])),
-    [snapshotProperty]: {
-      configurable: false,
-      enumerable: false,
-      value: snapshot,
-      writable: false,
-    },
-  });
-  return Object.freeze(result);
+): T & { readonly snapshot: GameSessionSnapshot } {
+  return Object.freeze({ ...properties, snapshot });
 }

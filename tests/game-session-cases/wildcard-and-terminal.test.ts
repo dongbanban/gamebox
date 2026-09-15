@@ -124,10 +124,10 @@ describe("GameSession · wildcard-and-terminal", () => {
     session.selectBlock("working-2");
     const state = session.selectBlock("working-3");
 
-    expect(state.status).toBe("won");
-    expect(state.remainingBlocks).toEqual([]);
-    expect(state.trayBlocks).toEqual([]);
-    expect(session.selectBlock("working-1")).toEqual(state);
+    expect(state.snapshot.status).toBe("won");
+    expect(state.snapshot.remainingBlocks).toEqual([]);
+    expect(state.snapshot.trayBlocks).toEqual([]);
+    expect(session.selectBlock("working-1").snapshot).toEqual(state.snapshot);
   });
 
   it("万能方块后不同图案的终局暂存槽不应直接通关", () => {

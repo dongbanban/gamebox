@@ -187,7 +187,7 @@ describe("狗了个狗 v13 关卡生成 seam", () => {
 
     let state = session.getState();
     for (const blockId of level.solutionPath) {
-      state = session.selectBlock(blockId);
+      state = session.selectBlock(blockId).snapshot;
     }
 
     expect(state.status).toBe("won");
@@ -241,7 +241,7 @@ describe("狗了个狗 v13 关卡生成 seam", () => {
       const session = new GameSession(candidate);
       let state = session.getState();
       for (const blockId of path) {
-        state = session.selectBlock(blockId);
+        state = session.selectBlock(blockId).snapshot;
       }
       return {
         events: session.getShuffleReplayEvents(),

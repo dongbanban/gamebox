@@ -36,8 +36,10 @@ describe("GameSession · item-rules", () => {
     expect(first).toMatchObject({
       unlocked: true,
       unlockedSlotIndex: 5,
-      effectiveTrayCapacity: 6,
-      lockedTraySlotCount: 1,
+      snapshot: {
+        effectiveTrayCapacity: 6,
+        lockedTraySlotCount: 1,
+      },
     });
     expect(session.getState().trayFreeCapacity).toBe(6);
 
@@ -45,8 +47,10 @@ describe("GameSession · item-rules", () => {
     expect(second).toMatchObject({
       unlocked: true,
       unlockedSlotIndex: 6,
-      effectiveTrayCapacity: 7,
-      lockedTraySlotCount: 0,
+      snapshot: {
+        effectiveTrayCapacity: 7,
+        lockedTraySlotCount: 0,
+      },
     });
     expect(session.canUnlockTraySlot()).toBe(false);
     expect(session.unlockTraySlot().unlocked).toBe(false);

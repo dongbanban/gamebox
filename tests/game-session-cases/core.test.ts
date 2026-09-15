@@ -26,8 +26,12 @@ describe("GameSession · core", () => {
 
     expect(selected.selected).toBe(true);
     expect(selected.removedCount).toBe(0);
-    expect(selected.status).toBe("playing");
+    expect(selected.snapshot.status).toBe("playing");
     expect(selected.snapshot.level).toBe(level);
+    expect(Object.isFrozen(selected)).toBe(true);
+    expect(Object.isFrozen(selected.snapshot)).toBe(true);
+    expect(selected).not.toHaveProperty("remainingBlocks");
+    expect(selected).not.toHaveProperty("trayBlocks");
     expect(
       selected.snapshot.trayBlocks.map((block) => block.patternType),
     ).toEqual([WORKING_DOG]);
@@ -99,15 +103,15 @@ describe("GameSession · core", () => {
     const state = session.selectBlock("working-2");
 
     expect(state.removedCount).toBe(0);
-    expect(state.trayBlocks.map((block) => block.patternType)).toEqual([
+    expect(state.snapshot.trayBlocks.map((block) => block.patternType)).toEqual([
       WORKING_DOG,
       SINGLE_DOG,
       WORKING_DOG,
     ]);
-    expect(state.remainingBlocks.map((block) => block.id)).toEqual([
+    expect(state.snapshot.remainingBlocks.map((block) => block.id)).toEqual([
       "remaining",
     ]);
-    expect(state.status).toBe("playing");
+    expect(state.snapshot.status).toBe("playing");
   });
 
   it("三个相同图案类型自动消除，并解锁下层方块", () => {
@@ -125,12 +129,12 @@ describe("GameSession · core", () => {
     const state = session.selectBlock("working-3");
 
     expect(state.removedCount).toBe(3);
-    expect(state.trayBlocks).toEqual([]);
-    expect(state.remainingBlocks.map((block) => block.id)).toEqual([
+    expect(state.snapshot.trayBlocks).toEqual([]);
+    expect(state.snapshot.remainingBlocks.map((block) => block.id)).toEqual([
       "remaining",
     ]);
-    expect(state.status).toBe("playing");
-    expect(state.selectableBlockIds).toEqual(["remaining"]);
+    expect(state.snapshot.status).toBe("playing");
+    expect(state.snapshot.selectableBlockIds).toEqual(["remaining"]);
   });
 
   it("一次结算处理多个完整三连", () => {
@@ -178,14 +182,14 @@ describe("GameSession · core", () => {
     session.selectBlock("working-2");
     const state = session.selectBlock("working-3");
 
-    expect(state.status).toBe("playing");
-    expect(state.trayBlocks.map((block) => block.patternType)).toEqual([
+    expect(state.snapshot.status).toBe("playing");
+    expect(state.snapshot.trayBlocks.map((block) => block.patternType)).toEqual([
       SINGLE_DOG,
       SINGLE_DOG,
       LICKING_DOG,
       GUARD_DOG,
     ]);
-    expect(state.trayBlocks).toHaveLength(4);
+    expect(state.snapshot.trayBlocks).toHaveLength(4);
   });
 
   it("暂存槽满且无法三消时失败", () => {
@@ -215,9 +219,9 @@ describe("GameSession · core", () => {
 
     const state = session.selectBlock("licking-2");
 
-    expect(state.status).toBe("lost");
-    expect(state.trayBlocks).toHaveLength(7);
-    expect(state.remainingBlocks.map((block) => block.id)).toEqual([
+    expect(state.snapshot.status).toBe("lost");
+    expect(state.snapshot.trayBlocks).toHaveLength(7);
+    expect(state.snapshot.remainingBlocks.map((block) => block.id)).toEqual([
       "remaining",
     ]);
     expect(session.canSelectBlock("remaining")).toBe(false);

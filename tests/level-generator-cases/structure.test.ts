@@ -141,7 +141,7 @@ describe("LevelGenerator · structure", () => {
       const session = new GameSession(level);
       let state = session.getState();
       for (const blockId of level.solutionPath) {
-        state = session.selectBlock(blockId);
+        state = session.selectBlock(blockId).snapshot;
       }
 
       expect(state.status).toBe("won");
@@ -169,7 +169,7 @@ describe("LevelGenerator · structure", () => {
     const session = new GameSession(level);
     let replayedState = session.getState();
     for (const blockId of path ?? []) {
-      replayedState = session.selectBlock(blockId);
+      replayedState = session.selectBlock(blockId).snapshot;
     }
     expect(replayedState.status).toBe("won");
     expect(level.difficulty).toMatchObject({

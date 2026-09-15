@@ -43,21 +43,21 @@ export class GameSessionSelectionRuntime {
 
   beginBlockSelection(blockId: string): GameSessionPendingSelectionResult {
     if (!this.startBlockSelection(blockId)) {
-      return {
+      return Object.freeze({
         selected: false,
         magneticResolution: null,
         snapshot: this.getSnapshot(),
-      };
+      });
     }
 
     const pendingSelection = this.state.pendingSelection;
-    return {
+    return Object.freeze({
       selected: true,
       magneticResolution: pendingSelection === null
         ? null
         : createPendingMagneticResolution(pendingSelection),
       snapshot: this.getSnapshot(),
-    };
+    });
   }
 
   completeBlockSelection(): GameSessionSelectionResult {
