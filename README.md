@@ -8,7 +8,7 @@ pnpm test:focused      # 普通 ticket：受影响核心单测，不含随机回
 pnpm test:affected     # 按 Git 改动执行受影响测试、E2E 与 build
 pnpm test:smoke        # v13 smoke：关键关卡、固定 seed、生成校验、单个 Chromium 流程
 pnpm test:full         # v13 full：核心、随机、浏览器、构建、diff、行数守卫
-pnpm test:profile:unit # profile 计划、报告、fail-fast 回归
+pnpm test:profile:unit # 受影响档位分类与行数守卫单测
 pnpm test              # 核心 Vitest 测试
 pnpm test:random       # 固定 seed 驱动的 1–99 连续前缀、检查点、99 关压力档
 pnpm test:e2e          # Chromium 浏览器流程
@@ -26,7 +26,7 @@ UI 文案、DOM、渲染器、样式、视觉资源或游戏音效改动运行 `
 
 `pnpm test:affected` 仅用于需要按当前 diff 同时检查相关 E2E 与构建、但尚未触发完整 QA 的场景。命令会识别纯 UI 改动并只运行 `pnpm test:ui`；其他改动按影响范围追加随机回归、Chromium E2E，最后运行一次 `build`，其内部已包含 `tsc --noEmit`。它不属于普通 ticket 默认门槛，也不与 `pnpm test:qa` 叠加。
 
-`pnpm test:smoke` 与 `pnpm test:full` 读取测试基础设施的 `scripts/v13-test-profiles.json`。profile 选择、固定 `testSeed`、关键关卡号与生成 fallback 诊断来自同一配置；步骤失败立即短路，报告打印 profile、seed、关卡边界与下一步重放命令。生成器、可解性、难度、公共契约、游戏启动、运行时、Worker、E2E 或对应原生测试文件改动由 `pnpm test:affected` 自动升级到 full profile；随机回归改动进入 smoke profile。
+`pnpm test:smoke` 与 `pnpm test:full` 由 package script、Vitest、Playwright、Git 与 shell 用 `&&` 编排，任一步失败立即停止并保留退出状态。固定关卡、seed 与压力参数来自测试专用 profile；生成器、可解性、难度、公共契约、游戏启动、运行时、Worker、E2E 或对应原生测试文件改动由 `pnpm test:affected` 自动升级到 full profile，随机回归改动升级到 smoke profile。
 
 测试失败后立即停止后续步骤，避免错误后的重复全量运行。
 

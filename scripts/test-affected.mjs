@@ -41,6 +41,12 @@ if (!focusedOnly && selectedProfile === "full") {
   process.exit(0);
 }
 
+if (!focusedOnly && selectedProfile === "smoke") {
+  console.log("检测到随机回归改动：自动升级 smoke profile。\n");
+  runOrExit("pnpm", ["test:smoke"]);
+  process.exit(0);
+}
+
 const vitestTargets = changedFiles.filter(
   (file) =>
     /^src\/.*\.ts$/.test(file) ||

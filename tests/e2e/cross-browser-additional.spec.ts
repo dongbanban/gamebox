@@ -1,6 +1,14 @@
 import { expect, test } from "@playwright/test";
-import { enterGame, leaveActiveGame } from "./support/full-flow-fixtures";
+import {
+  enterGame,
+  leaveActiveGame,
+  useDeterministicRunSeed,
+} from "./support/full-flow-fixtures";
 import { resetPage } from "./support/common";
+
+test.beforeEach(async ({ page }) => {
+  await useDeterministicRunSeed(page);
+});
 
 test("跨浏览器减少动态效果并保留静态识别信息", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });

@@ -8,10 +8,12 @@ export async function enterGame(page: Page): Promise<void> {
 }
 
 export async function useDeterministicRunSeed(page: Page): Promise<void> {
-  await page.evaluate(() => {
+  await page.addInitScript(() => {
+    let nextRunSeed = 1;
     Object.defineProperty(window.crypto, "randomUUID", {
       configurable: true,
-      value: () => "fixture-1",
+      value: () =>
+        `00000000-0000-4000-8000-${String(nextRunSeed++).padStart(12, "0")}`,
     });
   });
 }

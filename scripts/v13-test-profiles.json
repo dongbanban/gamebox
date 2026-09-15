@@ -1,35 +1,28 @@
 {
-  "default": "focused",
   "selection": {
     "fullAreas": [
       "runtime",
       "generator",
-      "solvability",
-      "difficulty",
       "public-contract",
       "game-startup",
-      "worker",
       "cross-browser"
     ],
     "smokeAreas": ["random-regression"]
   },
   "profiles": {
     "focused": {
-      "name": "focused",
       "levelNumbers": [1],
       "fixedSeeds": ["v13-focused"],
       "randomLevelPrefix": 0,
       "stressLevelCount": 0
     },
     "smoke": {
-      "name": "smoke",
       "levelNumbers": [1, 2, 3, 6, 16, 31, 99],
       "fixedSeeds": ["v13-smoke-a", "v13-smoke-b"],
       "randomLevelPrefix": 5,
       "stressLevelCount": 5
     },
     "full": {
-      "name": "full",
       "levelNumbers": [1, 2, 3, 6, 16, 31, 99],
       "fixedSeeds": ["v13-full-a", "v13-full-b"],
       "randomLevelPrefix": 99,

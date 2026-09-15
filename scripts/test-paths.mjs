@@ -6,7 +6,7 @@ const UI_TEST_PATTERNS = [
 ];
 
 const HIGH_RISK_TEST_PATTERNS = [
-  /^tests\/(?:difficulty-curve|dog-config|generation-failure|generation-lifecycle|generation-profile|v13-level-generation)\.test\.ts$/,
+  /^tests\/(?:difficulty-curve|dog-config|generation-failure|generation-lifecycle|generation-profile|level-random|v13-level-generation)\.test\.ts$/,
   /^tests\/level-generator-cases\/.*\.test\.ts$/,
   /^tests\/support\/level-generator-fixtures\.ts$/,
   /^tests\/special-cases\/(?:core|mechanism-runtime|restore-whistle|selection-runtime|shuffle-block)\.test\.ts$/,

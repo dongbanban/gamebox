@@ -13,7 +13,7 @@ export interface DogGenerationTestCase {
 }
 
 export function resolveDogTestProfileName(rawProfile: string | undefined): DogV13TestProfileName {
-  const profileName = rawProfile ?? DOG_TEST_PROFILES.default;
+  const profileName = rawProfile ?? "focused";
   if (Object.hasOwn(DOG_TEST_PROFILES.profiles, profileName)) {
     return profileName as DogV13TestProfileName;
   }

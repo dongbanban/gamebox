@@ -3,8 +3,13 @@ import {
   clickBlock,
   enterGame,
   loseCurrentLevel,
+  useDeterministicRunSeed,
 } from "./support/full-flow-fixtures";
 import { resetPage } from "./support/common";
+
+test.beforeEach(async ({ page }) => {
+  await useDeterministicRunSeed(page);
+});
 
 test("跨浏览器核心 smoke：注册、目录与首关入口可用", async ({ page }) => {
   await page.setViewportSize({ width: 430, height: 932 });
@@ -230,6 +235,7 @@ test("跨浏览器乱序与复原反馈期间锁定重玩并保持窄屏布局",
   await page.setViewportSize({ width: 390, height: 844 });
   await resetPage(page);
   await page.getByRole("button", { name: "匿名注册" }).click();
+  await expect(page.getByRole("heading", { name: "游戏目录" })).toBeVisible();
   await page.evaluate(() => {
     const state = JSON.parse(window.localStorage.getItem("gamebox.state") ?? "{}");
     state.games["dog-lege-dog"] = {

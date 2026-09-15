@@ -72,9 +72,9 @@ pnpm test:affected
 pnpm test:qa
 ```
 
-当前 v13 升级由 ticket 22–28、20、11 收口。ticket 23、24、25、26、28 已完成 profile、生成器、运行时、UI 拆分与旧逻辑清理；ticket 11 继续跟踪加载、预生成与 Worker 生命周期剩余工作。`test:core` 已排除 E2E 与随机回归，其余 Vitest 文件由框架原生发现；旧 hardening ticket 19 已归档，不再作为实现入口。
+当前 v13 生成器、profile、运行时、UI 拆分与旧逻辑清理已收口；加载、预生成与 Worker 生命周期继续由现有测试覆盖。`test:core` 已排除 E2E 与随机回归，其余 Vitest 文件由框架原生发现；历史 hardening 记录不作为实现入口。
 
-v13 测试 profile：focused 只跑受影响核心或 UI；smoke 覆盖 1/6/16/31/99 关与少量 seed；full 入口覆盖核心、随机 1–99 前缀、Chromium、WebKit、移动 Chromium、Worker/fallback、页面构建、diff 检查与文件行数检查。profile 数据与选择只属于测试基础设施，具体入口与自动选择见 `scripts/v13-test-profiles.json`、`scripts/test-profile.mjs`、`scripts/test-paths.mjs`；当前领域最大关卡为 99，v13 生成器机制与密度断言已收口。
+v13 测试 profile：focused 只跑受影响核心或 UI；smoke 覆盖 1/6/16/31/99 关、固定 seed、小规模随机压力与一个 Chromium 核心流程；full 入口覆盖核心、Worker/fallback、随机 1–99 前缀、Chromium、WebKit、移动 Chromium、页面构建、diff 检查与文件行数检查。`pnpm test:affected` 通过 Git 改动和 `scripts/test-paths.mjs` 分类：UI-only 运行 UI 单测，随机回归升级 smoke，生成器、公共契约、启动、运行时、Worker、E2E 与浏览器基础设施升级 full；当前领域最大关卡为 99，v13 生成器机制与密度断言已收口。
 
 响应式或浏览器兼容改动追加：
 
