@@ -6,21 +6,14 @@ import type {
   GameSessionWildcardResolution,
 } from "@/games/dog-lege-dog/game/game-session";
 import {
-  DOG_ITEM_DEFINITIONS,
-  getDogItemDefinition,
   type DogItemId,
 } from "@/games/dog-lege-dog/game/dog-loadout";
-import {
-  DOG_V13_CONFIG,
-  type DogV13Config,
-} from "@/games/dog-lege-dog/game/v13-config";
 import type {
   DogItemAnimationCompletion,
   DogItemAvailabilityContext,
   DogItemEffect,
   DogItemExecutionContext,
   DogItemExecutionResult,
-  DogItemRuntimeDefinition,
   DogItemTarget,
 } from "@/games/dog-lege-dog/game/dog-item-contracts";
 
@@ -29,7 +22,7 @@ interface DogItemBehavior {
   readonly execute: (context: DogItemExecutionContext) => DogItemExecutionResult;
 }
 
-const DOG_ITEM_BEHAVIORS: Readonly<Record<DogItemId, DogItemBehavior>> = {
+export const DOG_ITEM_BEHAVIORS: Readonly<Record<DogItemId, DogItemBehavior>> = Object.freeze({
   "triple-removal": {
     canUse: ({ session, target }) => {
       const targetBlockId = getTripleRemovalTarget(target);
@@ -246,21 +239,7 @@ const DOG_ITEM_BEHAVIORS: Readonly<Record<DogItemId, DogItemBehavior>> = {
       }),
     }),
   },
-};
-
-export function createDogItemRuntimeDefinitions(
-  config: DogV13Config = DOG_V13_CONFIG,
-): readonly DogItemRuntimeDefinition[] {
-  return Object.freeze(
-    DOG_ITEM_DEFINITIONS.map((baseDefinition) => {
-      const definition = getDogItemDefinition(baseDefinition.id, config);
-      return Object.freeze({
-        definition,
-        ...DOG_ITEM_BEHAVIORS[definition.id],
-      });
-    }),
-  );
-}
+});
 
 function toWildcardEffect(
   resolution: GameSessionWildcardResolution,

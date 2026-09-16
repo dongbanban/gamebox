@@ -5,7 +5,6 @@ import type { DogPatternType } from "@/games/dog-lege-dog/levels/level-types";
 import {
   createBlock,
   createLevel,
-  createTargetDefinition,
 } from "../support/item-fixtures";
 import { DogItemRuntime } from "@/games/dog-lege-dog/game/dog-item-runtime";
 
@@ -17,13 +16,18 @@ const GUARD_DOG: DogPatternType = "看门狗";
 describe("DogItemRuntime · wildcard", () => {
   it("目标道具确认前可取消，取消与无效目标不改变次数和棋盘", () => {
     const session = new GameSession(
-      createLevel([createBlock("remaining", WORKING_DOG)]),
+      {
+        level: createLevel([createBlock("remaining", WORKING_DOG)]),
+        initialTrayBlocks: [
+          { id: "target-working-1", patternType: WORKING_DOG },
+          { id: "target-working-2", patternType: WORKING_DOG },
+        ],
+      },
     );
     const runtime = new DogItemRuntime({
       level: session.getState().level,
       session,
       loadout: ["triple-removal"],
-      definitions: [createTargetDefinition()],
     });
     const initial = session.getState();
 
@@ -36,7 +40,7 @@ describe("DogItemRuntime · wildcard", () => {
     expect(session.getState()).toEqual(initial);
 
     expect(
-      runtime.confirmTarget({ type: "tray-block", blockId: "missing" }),
+      runtime.confirmTarget({ type: "block", blockId: "remaining" }),
     ).toMatchObject({
       accepted: false,
       success: false,

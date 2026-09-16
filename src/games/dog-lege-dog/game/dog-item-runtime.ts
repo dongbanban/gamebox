@@ -6,6 +6,7 @@ import type {
   DogLegeDogLevel,
 } from "@/games/dog-lege-dog/levels/level-types";
 import {
+  getDogItemDefinition,
   type DogItemId,
 } from "@/games/dog-lege-dog/game/dog-loadout";
 import {
@@ -14,14 +15,10 @@ import {
   type DogV13Config,
 } from "@/games/dog-lege-dog/game/v13-config";
 import { SeededRandom } from "@/games/dog-lege-dog/levels/level-random";
-import {
-  createDogItemRuntimeDefinitions,
-} from "@/games/dog-lege-dog/game/dog-item-behaviors";
-import { normalizeDogItemUses } from "@/games/dog-lege-dog/game/dog-item-quota";
+import { DOG_ITEM_BEHAVIORS } from "@/games/dog-lege-dog/game/dog-item-behaviors";
 import type {
   DogItemActionResult,
   DogItemExecutionResult,
-  DogItemRuntimeDefinition,
   DogItemRuntimeOptions,
   DogItemRuntimePhase,
   DogItemRuntimeSnapshot,
@@ -36,7 +33,6 @@ export class DogItemRuntime {
   private readonly level: DogLegeDogLevel;
   private readonly session: GameSession;
   private readonly loadout: readonly DogItemId[];
-  private readonly definitions: ReadonlyMap<DogItemId, DogItemRuntimeDefinition>;
   private keyDropRandom: SeededRandom;
   private readonly maxUses = new Map<DogItemId, number>();
   private readonly remainingUses = new Map<DogItemId, number>();
@@ -54,28 +50,15 @@ export class DogItemRuntime {
     this.session = options.session;
     this.loadout = Object.freeze([...options.loadout]);
     this.keyDropRandom = new SeededRandom(`${options.level.runSeed}:key-drop`);
-    this.definitions = new Map(
-      (options.definitions ?? createDogItemRuntimeDefinitions(this.config)).map((definition) => [
-        definition.definition.id,
-        definition,
-      ]),
-    );
 
     for (const itemId of this.loadout) {
       if (this.remainingUses.has(itemId)) {
         throw new Error(`Duplicate 狗了个狗 item id in runtime loadout: ${itemId}`);
       }
 
-      const definition = this.definitions.get(itemId);
-      if (definition === undefined) {
-        throw new Error(`狗了个狗 item runtime definition is missing: ${itemId}`);
-      }
-
       const maxUses = itemId === "key"
         ? this.session.getState().lockedTraySlotCount
-        : definition.getUses === undefined
-          ? getDogV13ItemUses(itemId, this.config)
-          : normalizeDogItemUses(definition.getUses(this.level, this.config));
+        : getDogV13ItemUses(itemId, this.config);
       this.maxUses.set(itemId, maxUses);
       this.remainingUses.set(
         itemId,
@@ -95,13 +78,13 @@ export class DogItemRuntime {
       : [];
     const sessionState = this.session.getState();
     const items = this.loadout.map((itemId) => {
-      const runtimeDefinition = this.getDefinition(itemId);
-      const { definition } = runtimeDefinition;
+      const definition = getDogItemDefinition(itemId, this.config);
+      const behavior = DOG_ITEM_BEHAVIORS[itemId];
       const remainingUses = this.remainingUses.get(itemId) ?? 0;
       const available = this.phase === "idle" &&
         sessionState.status === "playing" &&
         remainingUses > 0 &&
-        this.canUse(runtimeDefinition, remainingUses);
+        this.canUse(behavior, remainingUses);
 
       return Object.freeze({
         id: itemId,
@@ -116,7 +99,7 @@ export class DogItemRuntime {
       selectedItemId: this.selectedItemId,
       selectedItemTargetType: this.selectedItemId === null
         ? null
-        : this.getDefinition(this.selectedItemId).definition.targetType,
+        : getDogItemDefinition(this.selectedItemId, this.config).targetType,
       visualFeedback: this.visualFeedback,
       tripleRemovalTargetBlockIds,
       wildcardTargetBlockIds,
@@ -134,27 +117,25 @@ export class DogItemRuntime {
       return this.createActionResult(false, false, false, null);
     }
 
-    const runtimeDefinition = this.definitions.get(itemId);
-    if (runtimeDefinition === undefined) {
-      return this.createActionResult(false, false, false, null);
-    }
+    const definition = getDogItemDefinition(itemId, this.config);
+    const behavior = DOG_ITEM_BEHAVIORS[itemId];
 
     const remainingUses = this.remainingUses.get(itemId) ?? 0;
     if (
       remainingUses <= 0 ||
       this.session.getState().status !== "playing" ||
-      !this.canUse(runtimeDefinition, remainingUses)
+      !this.canUse(behavior, remainingUses)
     ) {
       return this.createActionResult(false, false, false, null);
     }
 
-    if (runtimeDefinition.definition.targetType !== "none") {
+    if (definition.targetType !== "none") {
       this.phase = "targeting";
       this.selectedItemId = itemId;
       return this.createActionResult(true, false, true, itemId);
     }
 
-    return this.execute(itemId, runtimeDefinition, undefined);
+    return this.execute(itemId, behavior, undefined);
   }
 
   confirmTarget(target: DogItemTarget): DogItemActionResult {
@@ -163,8 +144,9 @@ export class DogItemRuntime {
     }
 
     const itemId = this.selectedItemId;
-    const runtimeDefinition = this.getDefinition(itemId);
-    if (!matchesTargetType(runtimeDefinition.definition.targetType, target)) {
+    const definition = getDogItemDefinition(itemId, this.config);
+    const behavior = DOG_ITEM_BEHAVIORS[itemId];
+    if (!matchesTargetType(definition.targetType, target)) {
       return this.createActionResult(false, false, true, itemId);
     }
 
@@ -172,12 +154,12 @@ export class DogItemRuntime {
     if (
       remainingUses <= 0 ||
       this.session.getState().status !== "playing" ||
-      !this.canUse(runtimeDefinition, remainingUses, target)
+      !this.canUse(behavior, remainingUses, target)
     ) {
       return this.createActionResult(false, false, true, itemId);
     }
 
-    return this.execute(itemId, runtimeDefinition, target);
+    return this.execute(itemId, behavior, target);
   }
 
   cancel(): DogItemRuntimeSnapshot {
@@ -278,13 +260,13 @@ export class DogItemRuntime {
 
   private execute(
     itemId: DogItemId,
-    runtimeDefinition: DogItemRuntimeDefinition,
+    behavior: DogItemBehavior,
     target: DogItemTarget | undefined,
   ): DogItemActionResult {
     const remainingUses = this.remainingUses.get(itemId) ?? 0;
     let result: DogItemExecutionResult;
     try {
-      result = runtimeDefinition.execute({
+      result = behavior.execute({
         config: this.config,
         level: this.level,
         session: this.session,
@@ -299,7 +281,7 @@ export class DogItemRuntime {
       return this.createActionResult(
         false,
         false,
-        runtimeDefinition.definition.targetType !== "none",
+        target !== undefined,
         itemId,
       );
     }
@@ -314,7 +296,7 @@ export class DogItemRuntime {
       return this.createActionResult(
         false,
         false,
-        runtimeDefinition.definition.targetType !== "none",
+        target !== undefined,
         itemId,
       );
     }
@@ -330,12 +312,12 @@ export class DogItemRuntime {
   }
 
   private canUse(
-    runtimeDefinition: DogItemRuntimeDefinition,
+    behavior: DogItemBehavior,
     remainingUses: number,
     target?: DogItemTarget,
   ): boolean {
     try {
-      return runtimeDefinition.canUse({
+      return behavior.canUse({
         config: this.config,
         level: this.level,
         session: this.session,
@@ -345,14 +327,6 @@ export class DogItemRuntime {
     } catch {
       return false;
     }
-  }
-
-  private getDefinition(itemId: DogItemId): DogItemRuntimeDefinition {
-    const definition = this.definitions.get(itemId);
-    if (definition === undefined) {
-      throw new Error(`狗了个狗 item runtime definition is missing: ${itemId}`);
-    }
-    return definition;
   }
 
   private createActionResult(
@@ -386,7 +360,6 @@ export type {
   DogItemEffect,
   DogItemExecutionContext,
   DogItemExecutionResult,
-  DogItemRuntimeDefinition,
   DogItemRuntimeOptions,
   DogItemRuntimePhase,
   DogItemRuntimeSnapshot,
@@ -394,6 +367,8 @@ export type {
   DogItemTarget,
   DogKeyDropResult,
 } from "@/games/dog-lege-dog/game/dog-item-contracts";
+
+type DogItemBehavior = (typeof DOG_ITEM_BEHAVIORS)[DogItemId];
 
 function matchesTargetType(
   targetType: import("@/games/dog-lege-dog/game/dog-loadout").DogItemTargetType,

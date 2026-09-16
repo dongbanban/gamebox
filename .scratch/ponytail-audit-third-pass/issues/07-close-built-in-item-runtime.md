@@ -4,16 +4,26 @@
 
 **Blocked by:** 03 — 以静态类型契约替代 v13 运行时 schema；06 — 将局内动作结果收敛为单一快照
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] 道具运行时不再接受自定义运行时 definition 集合。
-- [ ] 道具运行时 definition 不再暴露只供测试使用的 `getUses` 扩展点。
-- [ ] 固定八种道具直接使用现有内置行为表，普通道具次数来自 v13 配置 helper，钥匙继续由锁槽和掉落规则控制。
-- [ ] 删除只服务合成 definition 的次数归一化 adapter、类型导出和 fixture。
-- [ ] 删除只证明自定义道具可以注入的测试，不用另一种 mock 或 registry 替代。
-- [ ] 取消、无效目标、次数不足、目标失效、动画后提交和原子失败通过真实内置道具的可达路径覆盖。
-- [ ] 道具三消移除、扩容、万能方块、火把、检测仪、消磁仪、钥匙和复原哨行为保持不变。
-- [ ] 成功使用才扣次数，失败或取消不扣次数；动画后提交失败继续恢复次数且不留下完成效果。
-- [ ] 道具组渲染、剩余次数、可用状态、输入锁和视觉反馈保持不变。
-- [ ] 严格 TypeScript 未使用诊断与 `pnpm test:qa` 通过，并记录结果。
+- [x] 道具运行时不再接受自定义运行时 definition 集合。
+- [x] 道具运行时 definition 不再暴露只供测试使用的 `getUses` 扩展点。
+- [x] 固定八种道具直接使用现有内置行为表，普通道具次数来自 v13 配置 helper，钥匙继续由锁槽和掉落规则控制。
+- [x] 删除只服务合成 definition 的次数归一化 adapter、类型导出和 fixture。
+- [x] 删除只证明自定义道具可以注入的测试，不用另一种 mock 或 registry 替代。
+- [x] 取消、无效目标、次数不足、目标失效、动画后提交和原子失败通过真实内置道具的可达路径覆盖。
+- [x] 道具三消移除、扩容、万能方块、火把、检测仪、消磁仪、钥匙和复原哨行为保持不变。
+- [x] 成功使用才扣次数，失败或取消不扣次数；动画后提交失败继续恢复次数且不留下完成效果。
+- [x] 道具组渲染、剩余次数、可用状态、输入锁和视觉反馈保持不变。
+- [x] 严格 TypeScript 未使用诊断与 `pnpm test:qa` 通过，并记录结果。
 
+## Comments
+
+- 直接从冻结的内置八项行为表分派；删除 `DogItemRuntimeDefinition`、`getUses`、自定义 definitions 注入、次数归一化 adapter 与测试 fixture。
+- 真实内置路径覆盖取消、无效目标、次数不足、目标失效、动画后提交失败与同步原子提交失败；不引入 mock、registry 或替代插件。
+- `pnpm typecheck`：通过。
+- `pnpm exec tsc --noEmit --noUnusedLocals --noUnusedParameters --pretty false`：通过。
+- `pnpm exec vitest run tests/item-cases/basic.test.ts tests/item-cases/triple-removal.test.ts tests/item-cases/wildcard.test.ts tests/item-cases/torch-detector.test.ts tests/item-cases/restore-whistle.test.ts tests/dog-cases/items.test.ts`：6 个文件、35 个测试通过。
+- `pnpm exec vitest run tests/dog-cases/runtime.test.ts tests/special-cases/torch-ui.test.ts`：2 个文件、9 个测试通过。
+- `pnpm test:qa`：最终通过；48 个 core 文件/282 个测试、4 个 generation-lifecycle 测试、3 个随机回归测试、28 个 Chromium E2E、30 个跨浏览器 E2E、Pages build、diff check 与 500 行检查均通过。
+- Standards 与 Spec review 完成；冻结行为表并补充真实内置同步提交失败覆盖后无遗留问题。依赖未变。

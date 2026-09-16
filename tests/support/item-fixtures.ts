@@ -1,30 +1,9 @@
-import {
-  DOG_ITEM_DEFINITIONS,
-  type DogItemDefinition,
-} from "@/games/dog-lege-dog/game/dog-loadout";
-import type { DogItemRuntimeDefinition } from "@/games/dog-lege-dog/game/dog-item-runtime";
 import type {
   DogBlock,
   DogLegeDogLevel,
   DogPatternType,
 } from "@/games/dog-lege-dog/levels/level-types";
 import { TEST_LEVEL, TEST_PATTERN_TYPES } from "./dog-level-fixture";
-
-export function createTargetDefinition(): DogItemRuntimeDefinition {
-  const definition: DogItemDefinition = {
-    ...DOG_ITEM_DEFINITIONS[0]!,
-    targetType: "block",
-  };
-  return {
-    definition,
-    getUses: () => 1,
-    canUse: ({ target }) => target === undefined || target.type === "block",
-    execute: ({ target }) => ({
-      success: target?.type === "block",
-      visualFeedback: "triple-removal",
-    }),
-  };
-}
 
 export function createLevel(blocks: readonly DogBlock[]): DogLegeDogLevel {
   return {

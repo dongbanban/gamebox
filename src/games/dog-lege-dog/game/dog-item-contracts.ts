@@ -10,7 +10,6 @@ import type {
   DogPatternType,
 } from "@/games/dog-lege-dog/levels/level-types";
 import type {
-  DogItemDefinition,
   DogItemId,
   DogItemTargetType,
 } from "@/games/dog-lege-dog/game/dog-loadout";
@@ -63,13 +62,6 @@ export interface DogItemExecutionResult {
   readonly effect?: DogItemEffect;
 }
 
-export interface DogItemRuntimeDefinition {
-  readonly definition: DogItemDefinition;
-  readonly getUses?: (level: DogLegeDogLevel, config?: DogV13Config) => number;
-  readonly canUse: (context: DogItemAvailabilityContext) => boolean;
-  readonly execute: (context: DogItemExecutionContext) => DogItemExecutionResult;
-}
-
 export type DogItemRuntimePhase = "idle" | "targeting" | "animating";
 
 export interface DogItemState {
@@ -110,7 +102,6 @@ export interface DogItemRuntimeOptions {
   readonly level: DogLegeDogLevel;
   readonly session: GameSession;
   readonly loadout: readonly DogItemId[];
-  readonly definitions?: readonly DogItemRuntimeDefinition[];
 }
 
 export type { GameSessionMeltLocation };

@@ -413,4 +413,30 @@ describe("DogItemRuntime · basic", () => {
     expect(runtime.getState().phase).toBe("idle");
     expect(runtime.getState().items[0]?.available).toBe(false);
   });
+
+  it("待处理选择使容量提升原子提交失败时不扣次数", () => {
+    const session = new GameSession(
+      createLevel([createBlock("remaining", WORKING_DOG)]),
+    );
+    const runtime = new DogItemRuntime({
+      level: session.getState().level,
+      session,
+      loadout: ["tray-capacity"],
+    });
+
+    expect(session.beginBlockSelection("remaining").selected).toBe(true);
+    expect(runtime.getState().items[0]).toMatchObject({
+      remainingUses: 1,
+      available: true,
+    });
+
+    expect(runtime.begin("tray-capacity")).toMatchObject({
+      accepted: false,
+      success: false,
+      requiresTarget: false,
+    });
+    expect(runtime.getState()).toMatchObject({ phase: "idle" });
+    expect(runtime.getState().items[0]?.remainingUses).toBe(1);
+    expect(session.getState().trayCapacity).toBe(7);
+  });
 });

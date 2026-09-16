@@ -5,16 +5,8 @@ import {
   DOG_ILLUSION_MECHANISM_TYPE,
 } from "@/games/dog-lege-dog/game/special-mechanisms";
 import type { DogPatternType } from "@/games/dog-lege-dog/levels/level-types";
-import {
-  createBlock,
-  createLevel,
-  createTargetDefinition,
-} from "../support/item-fixtures";
-import { DOG_ITEM_DEFINITIONS } from "@/games/dog-lege-dog/game/dog-loadout";
-import {
-  DogItemRuntime,
-  type DogItemRuntimeDefinition,
-} from "@/games/dog-lege-dog/game/dog-item-runtime";
+import { createBlock, createLevel } from "../support/item-fixtures";
+import { DogItemRuntime } from "@/games/dog-lege-dog/game/dog-item-runtime";
 
 const WORKING_DOG: DogPatternType = "打工狗";
 const SINGLE_DOG: DogPatternType = "单身狗";
@@ -22,79 +14,37 @@ const LICKING_DOG: DogPatternType = "舔狗";
 const GUARD_DOG: DogPatternType = "看门狗";
 
 describe("DogItemRuntime · torch-detector", () => {
-  it("执行提交失败时不扣次数，并保持目标选择状态等待重试或取消", () => {
-    const session = new GameSession(
-      createLevel([createBlock("remaining", WORKING_DOG)]),
-    );
-    const definition: DogItemRuntimeDefinition = {
-      ...createTargetDefinition(),
-      execute: () => ({
-        success: true,
-        visualFeedback: "triple-removal",
-        commit: () => false,
-      }),
-    };
-    const runtime = new DogItemRuntime({
-      level: session.getState().level,
-      session,
-      loadout: ["triple-removal"],
-      definitions: [definition],
-    });
-
-    runtime.begin("triple-removal");
-    const action = runtime.confirmTarget({
-      type: "block",
-      blockId: "remaining",
-    });
-
-    expect(action).toMatchObject({ accepted: false, success: false });
-    expect(runtime.getState().phase).toBe("targeting");
-    expect(runtime.getState().items[0]?.remainingUses).toBe(1);
-    expect(session.getState().trayBlocks).toEqual([]);
-  });
-
-  it("动画后原子提交失败时恢复次数且不留下完成效果", () => {
+  it("动画后真实目标失效时恢复次数且不留下完成效果", () => {
     const session = new GameSession({
-      level: createLevel([createBlock("remaining", WORKING_DOG)]),
-      initialTrayBlocks: [{ id: "target-working", patternType: WORKING_DOG }],
+      level: createLevel([
+        createBlock("freeze", WORKING_DOG, {
+          type: DOG_FREEZE_MECHANISM_TYPE,
+          state: { status: "frozen", completedTriples: 0 },
+        }),
+        createBlock("ordinary", SINGLE_DOG),
+      ]),
     });
-    const wildcardDefinition = DOG_ITEM_DEFINITIONS.find(
-      (item) => item.id === "wildcard",
-    )!;
     const runtime = new DogItemRuntime({
       level: session.getState().level,
       session,
-      loadout: ["wildcard"],
-      definitions: [
-        {
-          definition: wildcardDefinition,
-          getUses: () => 1,
-          canUse: () => true,
-          execute: () => ({
-            success: true,
-            visualFeedback: "wildcard",
-            commitAfterAnimation: () => ({ success: false }),
-          }),
-        },
-      ],
+      loadout: ["torch"],
     });
-    const initial = session.getState();
 
-    runtime.begin("wildcard");
-    expect(
-      runtime.confirmTarget({ type: "tray-block", blockId: "target-working" }),
-    ).toMatchObject({ accepted: true, success: true });
+    runtime.begin("torch");
+    expect(runtime.confirmTarget({ type: "block", blockId: "freeze" })).toMatchObject({
+      accepted: true,
+      success: true,
+    });
     expect(runtime.getState().items[0]?.remainingUses).toBe(0);
+    expect(session.meltFrozenBlock("freeze", "board").melted).toBe(true);
 
     runtime.completeAnimation();
 
     expect(runtime.getState()).toMatchObject({ phase: "idle" });
     expect(runtime.getState().items[0]).toMatchObject({
       remainingUses: 1,
-      available: true,
     });
     expect(runtime.getLastCompletedEffect()).toBeNull();
-    expect(session.getState()).toEqual(initial);
   });
 
   it("火把只接受冻结方块目标，取消与无效目标不扣次", () => {
