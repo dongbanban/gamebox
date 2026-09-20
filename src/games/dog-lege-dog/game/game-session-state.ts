@@ -101,28 +101,7 @@ export class GameSessionState {
         `GameSession tray cannot contain more than ${effectiveTrayCapacity} unlocked slots`,
       );
     }
-    this.shuffleRuntime = new GameSessionShuffleRuntime({
-      config: this.config,
-      level: this.level,
-      remainingBlocks: this.remainingBlocks,
-      magneticRandom: this.magneticRandom,
-      tray: this.tray,
-      getEffectiveTrayCapacity: () => this.getEffectiveTrayCapacity(),
-      getLockedTraySlotCount: () => this.lockedTraySlotCount,
-      getStatus: () => this.status,
-      getTrayCapacity: () => this.trayCapacity,
-      isSelectionPending: () => this.isSelectionPending(),
-      setLockedTraySlotCount: (count) => {
-        this.lockedTraySlotCount = count;
-      },
-      setStatus: (status) => {
-        this.status = status;
-      },
-      setTrayCapacity: (capacity) => {
-        this.trayCapacity = capacity;
-      },
-      updateTerminalStatus: () => this.updateTerminalStatus(),
-    });
+    this.shuffleRuntime = new GameSessionShuffleRuntime(this);
     this.updateResult();
   }
 
@@ -278,7 +257,7 @@ export class GameSessionState {
     return this.shuffleRuntime.getShuffleReplayEvents();
   }
 
-  private updateTerminalStatus(): void {
+  updateTerminalStatus(): void {
     const trayLogicalUnitCount = getDogTrayLogicalUnitCount(this.tray);
     const effectiveTrayCapacity = this.getEffectiveTrayCapacity();
     if (trayLogicalUnitCount > effectiveTrayCapacity) {
@@ -387,11 +366,6 @@ export class GameSessionState {
       return getDogTrayLogicalUnitCount(shuffleResolution.tray) <= effectiveTrayCapacity;
     });
   }
-}
-
-export function removeSpecialMechanism<T extends DogBlock | DogTrayBlock>(block: T): T {
-  const { specialMechanism: _specialMechanism, ...ordinaryBlock } = block;
-  return ordinaryBlock as T;
 }
 
 function normalizeLockedTraySlotCount(value: number | undefined, maxLockedSlotCount: number): number {

@@ -1,5 +1,4 @@
 import type {
-  DogBlock,
   DogLegeDogLevel,
   DogTrayBlock,
 } from "@/games/dog-lege-dog/levels/level-types";
@@ -7,53 +6,35 @@ import {
   resolveDogShuffleState,
   type DogShuffleResolutionComputation,
 } from "@/games/dog-lege-dog/levels/level-shuffle";
+import type { GameSessionState } from "@/games/dog-lege-dog/game/game-session-state";
 import {
-  type DogV13Config,
-} from "@/games/dog-lege-dog/game/v13-config";
-import type { SeededRandom } from "@/games/dog-lege-dog/levels/level-random";
-import { cloneDogTrayBlock } from "@/games/dog-lege-dog/levels/level-tray-block";
+  cloneDogTrayBlock,
+  removeSpecialMechanism,
+} from "@/games/dog-lege-dog/levels/level-tray-block";
 import type {
   GameSessionShuffleReplayEvent,
   GameSessionShuffleResolution,
   GameSessionShuffleTransaction,
   GameSessionShuffleTransactionState,
-  GameSessionStatus,
 } from "@/games/dog-lege-dog/game/game-session-contracts";
-
-export interface GameSessionShuffleRuntimeContext {
-  readonly config: DogV13Config;
-  readonly level: DogLegeDogLevel;
-  readonly remainingBlocks: ReadonlyMap<string, DogBlock>;
-  readonly magneticRandom: SeededRandom;
-  readonly tray: DogTrayBlock[];
-  readonly getEffectiveTrayCapacity: () => number;
-  readonly getLockedTraySlotCount: () => number;
-  readonly getTrayCapacity: () => number;
-  readonly getStatus: () => GameSessionStatus;
-  readonly isSelectionPending: () => boolean;
-  readonly setLockedTraySlotCount: (count: number) => void;
-  readonly setStatus: (status: GameSessionStatus) => void;
-  readonly setTrayCapacity: (capacity: number) => void;
-  readonly updateTerminalStatus: () => void;
-}
 
 export class GameSessionShuffleRuntime {
   private shuffleSequence = 0;
   private lastShuffleTransaction: GameSessionShuffleTransaction | null = null;
   private readonly shuffleReplayEvents: GameSessionShuffleReplayEvent[] = [];
 
-  constructor(private readonly context: GameSessionShuffleRuntimeContext) {}
+  constructor(private readonly state: GameSessionState) {}
 
   updateResult(): GameSessionShuffleResolution | null {
-    if (this.context.isSelectionPending()) {
-      this.context.setStatus("playing");
+    if (this.state.isSelectionPending()) {
+      this.state.status = "playing";
       return null;
     }
 
     const pendingShuffle = this.updateShuffleState();
-    this.context.updateTerminalStatus();
+    this.state.updateTerminalStatus();
     if (pendingShuffle === null) {
-      if (this.context.getStatus() !== "playing") {
+      if (this.state.status !== "playing") {
         this.lastShuffleTransaction = null;
       }
       return null;
@@ -61,7 +42,7 @@ export class GameSessionShuffleRuntime {
 
     const after = this.createShuffleTransactionState();
     const replayEvent = createShuffleReplayEvent(
-      this.context.level,
+      this.state.level,
       pendingShuffle.computation,
       ++this.shuffleSequence,
     );
@@ -101,8 +82,8 @@ export class GameSessionShuffleRuntime {
 
   canRestoreLastShuffle(): boolean {
     return this.lastShuffleTransaction !== null &&
-      this.context.getStatus() === "playing" &&
-      !this.context.isSelectionPending();
+      this.state.status === "playing" &&
+      !this.state.isSelectionPending();
   }
 
   restoreLastShuffle(): boolean {
@@ -111,18 +92,18 @@ export class GameSessionShuffleRuntime {
       return false;
     }
 
-    this.context.tray.splice(
+    this.state.tray.splice(
       0,
-      this.context.tray.length,
+      this.state.tray.length,
       ...transaction.before.trayBlocks.map((block) =>
         block.id === transaction.replayEvent.triggerBlockId
-          ? removeDogTrayBlockMechanism(block)
+          ? removeSpecialMechanism(block)
           : cloneDogTrayBlock(block),
       ),
     );
-    this.context.setTrayCapacity(transaction.before.trayCapacity);
-    this.context.setLockedTraySlotCount(transaction.before.lockedTraySlotCount);
-    this.context.setStatus(transaction.before.status);
+    this.state.trayCapacity = transaction.before.trayCapacity;
+    this.state.lockedTraySlotCount = transaction.before.lockedTraySlotCount;
+    this.state.status = transaction.before.status;
     this.lastShuffleTransaction = null;
     return true;
   }
@@ -140,42 +121,37 @@ export class GameSessionShuffleRuntime {
   }
 
   private updateShuffleState(): PendingShuffleResolution | null {
-    const state = resolveDogShuffleState({
-      config: this.context.config,
-      level: this.context.level,
-      remainingBlockIds: [...this.context.remainingBlocks.keys()],
-      tray: this.context.tray,
-      effectiveTrayCapacity: this.context.getEffectiveTrayCapacity(),
-      magneticRandom: this.context.magneticRandom,
+    const shuffleState = resolveDogShuffleState({
+      config: this.state.config,
+      level: this.state.level,
+      remainingBlockIds: [...this.state.remainingBlocks.keys()],
+      tray: this.state.tray,
+      effectiveTrayCapacity: this.state.getEffectiveTrayCapacity(),
+      magneticRandom: this.state.magneticRandom,
       sequence: this.shuffleSequence + 1,
     });
-    if (state.computation === null) {
-      this.context.tray.splice(0, this.context.tray.length, ...state.tray);
+    if (shuffleState.computation === null) {
+      this.state.tray.splice(0, this.state.tray.length, ...shuffleState.tray);
       return null;
     }
 
-    const before = this.createShuffleTransactionState(state.computation.beforeTrayBlocks);
-    this.context.tray.splice(0, this.context.tray.length, ...state.tray);
-    return { before, computation: state.computation };
+    const before = this.createShuffleTransactionState(shuffleState.computation.beforeTrayBlocks);
+    this.state.tray.splice(0, this.state.tray.length, ...shuffleState.tray);
+    return { before, computation: shuffleState.computation };
   }
 
   private createShuffleTransactionState(
-    tray: readonly DogTrayBlock[] = this.context.tray,
+    tray: readonly DogTrayBlock[] = this.state.tray,
   ): GameSessionShuffleTransactionState {
     return Object.freeze({
-      status: this.context.getStatus(),
-      remainingBlockIds: Object.freeze([...this.context.remainingBlocks.keys()]),
+      status: this.state.status,
+      remainingBlockIds: Object.freeze([...this.state.remainingBlocks.keys()]),
       trayBlocks: Object.freeze(tray.map(cloneDogTrayBlock)),
-      trayCapacity: this.context.getTrayCapacity(),
-      effectiveTrayCapacity: this.context.getEffectiveTrayCapacity(),
-      lockedTraySlotCount: this.context.getLockedTraySlotCount(),
+      trayCapacity: this.state.trayCapacity,
+      effectiveTrayCapacity: this.state.getEffectiveTrayCapacity(),
+      lockedTraySlotCount: this.state.lockedTraySlotCount,
     });
   }
-}
-
-function removeDogTrayBlockMechanism(block: DogTrayBlock): DogTrayBlock {
-  const { specialMechanism: _specialMechanism, ...ordinaryBlock } = cloneDogTrayBlock(block);
-  return ordinaryBlock;
 }
 
 interface PendingShuffleResolution {

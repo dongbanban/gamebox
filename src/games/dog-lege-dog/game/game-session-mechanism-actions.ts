@@ -15,8 +15,8 @@ import {
   createMeltResult,
   createRevealResult,
 } from "@/games/dog-lege-dog/game/game-session-results";
+import { removeSpecialMechanism } from "@/games/dog-lege-dog/levels/level-tray-block";
 import {
-  removeSpecialMechanism,
   type GameSessionState,
 } from "@/games/dog-lege-dog/game/game-session-state";
 

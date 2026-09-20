@@ -21,11 +21,11 @@ import type {
 import {
   createSelectionResult,
 } from "@/games/dog-lege-dog/game/game-session-results";
+import type { GameSessionState } from "@/games/dog-lege-dog/game/game-session-state";
 import {
   removeSpecialMechanism,
-  type GameSessionState,
-} from "@/games/dog-lege-dog/game/game-session-state";
-import { toDogTrayBlock } from "@/games/dog-lege-dog/levels/level-tray-block";
+  toDogTrayBlock,
+} from "@/games/dog-lege-dog/levels/level-tray-block";
 
 export class GameSessionSelectionRuntime {
   constructor(

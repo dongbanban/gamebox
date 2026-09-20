@@ -26,3 +26,8 @@ export function cloneDogTrayBlock(block: DogTrayBlock): DogTrayBlock {
     }),
   });
 }
+
+export function removeSpecialMechanism<T extends DogBlock | DogTrayBlock>(block: T): T {
+  const { specialMechanism: _specialMechanism, ...ordinaryBlock } = block;
+  return ordinaryBlock as T;
+}
